@@ -2,6 +2,8 @@
 
 # 💧 Tolaria
 
+> This repository is a customized fork of [Tolaria](https://github.com/refactoringhq/tolaria). It is maintained for personal and project-specific development, so its product direction, design choices, and behavior may intentionally differ from the upstream project. See the upstream repository for the original project and its official releases.
+
 Tolaria is a desktop app for macOS, Windows, and Linux for managing **markdown knowledge bases**. People use it for a variety of use cases:
 
 * Operate second brains and personal knowledge
