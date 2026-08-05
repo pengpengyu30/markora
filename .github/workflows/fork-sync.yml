@@ -1,4 +1,4 @@
-name: Sync fork with upstream
+name: Sync main from upstream
 
 on:
   schedule:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: fork-sync-main
+  group: upstream-sync-main
   cancel-in-progress: false
 
 jobs:
@@ -17,11 +17,24 @@ jobs:
     name: Sync main from upstream
     runs-on: ubuntu-latest
     steps:
-      - name: Sync fork main with upstream
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPOSITORY: ${{ github.repository }}
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Merge upstream main
         run: |
-          gh api --method POST \
-            "repos/${REPOSITORY}/merge-upstream" \
-            --field branch=main
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git remote add upstream https://github.com/refactoringhq/tolaria.git
+          git fetch upstream main
+
+          if git merge-base --is-ancestor upstream/main HEAD; then
+            echo "main is already up to date with upstream/main"
+            exit 0
+          fi
+
+          git merge --no-edit upstream/main
+          git push origin main
