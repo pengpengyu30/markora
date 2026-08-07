@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+LOCAL_DIR="$ROOT_DIR/.tolaria-build.local"
+APP_PATH="$ROOT_DIR/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/Tolaria Dev.app"
+CONFIG_ROOT="$LOCAL_DIR/runtime/config"
+CONFIG_DIR="$CONFIG_ROOT/com.tolaria.app.dev"
+
+SETTINGS_FILE="$CONFIG_DIR/settings.json"
+VAULTS_FILE="$CONFIG_DIR/vaults.json"
+LAST_VAULT_FILE="$CONFIG_DIR/last-vault.txt"
+AI_SESSIONS_FILE="$CONFIG_DIR/ai-workspace-sessions.json"
+
+test -d "$APP_PATH" || {
+  echo "FAILED: Tolaria Dev.app has not been built" >&2
+  echo "Run ./scripts/build-macos-arm64.local first" >&2
+  exit 1
+}
+
+mkdir -p "$CONFIG_DIR"
+
+if test ! -f "$SETTINGS_FILE"; then
+  printf '%s\n' \
+    '{' \
+    '  "automatic_update_checks_enabled": false,' \
+    '  "telemetry_consent": false,' \
+    '  "crash_reporting_enabled": false,' \
+    '  "analytics_enabled": false' \
+    '}' > "$SETTINGS_FILE"
+fi
+
+if test ! -f "$VAULTS_FILE"; then
+  printf '%s\n' \
+    '{' \
+    '  "vaults": [],' \
+    '  "active_vault": null,' \
+    '  "default_workspace_path": null,' \
+    '  "hidden_defaults": []' \
+    '}' > "$VAULTS_FILE"
+fi
+
+if test ! -f "$LAST_VAULT_FILE"; then
+  : > "$LAST_VAULT_FILE"
+fi
+
+if test ! -f "$AI_SESSIONS_FILE"; then
+  printf '{}\n' > "$AI_SESSIONS_FILE"
+fi
+
+open --new \
+  --env "TOLARIA_APP_CONFIG_NAMESPACE=com.tolaria.app.dev" \
+  --env "XDG_CONFIG_HOME=$CONFIG_ROOT" \
+  "$APP_PATH"
