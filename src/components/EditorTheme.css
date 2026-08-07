@@ -75,11 +75,6 @@
   pointer-events: none;
 }
 
-/* More horizontal space between drag handle and content */
-.editor__blocknote-container .bn-side-menu ~ * ,
-.editor__blocknote-container [class*="bn-side-menu"] {
-  /* The side menu is positioned via transform — we shift it further left */
-}
 .editor__blocknote-container .bn-block-content {
   margin-inline-start: 8px;
 }
@@ -342,6 +337,112 @@
   color: var(--colors-text);
   border-radius: 2px;
   padding: 0 0.12em;
+}
+
+.editor__blocknote-container .bn-editor mark.markdown-highlight:has([data-style-type="backgroundColor"][data-value="green"]),
+.editor__blocknote-container .bn-editor [data-style-type="backgroundColor"][data-value="green"]:has(mark.markdown-highlight),
+.editor__blocknote-container .bn-editor [data-style-type="backgroundColor"][data-value="green"] mark.markdown-highlight,
+.editor__blocknote-container .bn-editor mark.markdown-highlight [data-style-type="backgroundColor"][data-value="green"] {
+  background-color: var(--accent-green-light);
+}
+
+.editor__blocknote-container .bn-editor mark.markdown-highlight:has([data-style-type="backgroundColor"][data-value="red"]),
+.editor__blocknote-container .bn-editor [data-style-type="backgroundColor"][data-value="red"]:has(mark.markdown-highlight),
+.editor__blocknote-container .bn-editor [data-style-type="backgroundColor"][data-value="red"] mark.markdown-highlight,
+.editor__blocknote-container .bn-editor mark.markdown-highlight [data-style-type="backgroundColor"][data-value="red"] {
+  background-color: var(--accent-red-light);
+}
+
+.editor__blocknote-container .bn-editor mark.markdown-highlight:has([data-style-type="backgroundColor"][data-value="blue"]),
+.editor__blocknote-container .bn-editor [data-style-type="backgroundColor"][data-value="blue"]:has(mark.markdown-highlight),
+.editor__blocknote-container .bn-editor [data-style-type="backgroundColor"][data-value="blue"] mark.markdown-highlight,
+.editor__blocknote-container .bn-editor mark.markdown-highlight [data-style-type="backgroundColor"][data-value="blue"] {
+  background-color: var(--accent-blue-light);
+}
+
+.editor__blocknote-container .bn-editor mark.markdown-highlight:has([data-style-type="backgroundColor"][data-value="purple"]),
+.editor__blocknote-container .bn-editor [data-style-type="backgroundColor"][data-value="purple"]:has(mark.markdown-highlight),
+.editor__blocknote-container .bn-editor [data-style-type="backgroundColor"][data-value="purple"] mark.markdown-highlight,
+.editor__blocknote-container .bn-editor mark.markdown-highlight [data-style-type="backgroundColor"][data-value="purple"] {
+  background-color: var(--accent-purple-light);
+}
+
+.markdown-highlight-toolbar-color-host {
+  position: relative;
+  z-index: 41;
+}
+
+.markdown-highlight-toolbar-main {
+  margin-right: 14px;
+}
+
+.markdown-highlight-toolbar-control {
+  position: fixed;
+  z-index: 41;
+}
+
+.markdown-highlight-toolbar-trigger {
+  width: 18px;
+  min-width: 18px;
+  padding: 0;
+  color: var(--colors-menu-text);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.markdown-highlight-toolbar-trigger-icon {
+  width: 11px;
+  height: 11px;
+}
+
+.markdown-highlight-boundary-host {
+  position: relative;
+  z-index: 39;
+}
+
+.markdown-highlight-boundary-control {
+  position: fixed;
+  z-index: 39;
+  transform: translateY(-50%);
+}
+
+.markdown-highlight-boundary-trigger {
+  color: var(--colors-menu-text);
+  background: var(--surface-popover);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 2px 8px var(--shadow-dialog);
+}
+
+.markdown-highlight-color-swatch {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+}
+
+.markdown-highlight-color-swatch--yellow {
+  color: var(--accent-yellow);
+  background: var(--feedback-warning-bg);
+}
+
+.markdown-highlight-color-swatch--green {
+  color: var(--accent-green);
+  background: var(--accent-green-light);
+}
+
+.markdown-highlight-color-swatch--red {
+  color: var(--accent-red);
+  background: var(--accent-red-light);
+}
+
+.markdown-highlight-color-swatch--blue {
+  color: var(--accent-blue);
+  background: var(--accent-blue-light);
+}
+
+.markdown-highlight-color-swatch--purple {
+  color: var(--accent-purple);
+  background: var(--accent-purple-light);
 }
 
 /* --- Inline: links --- */
@@ -846,6 +947,10 @@ body.tldraw-whiteboard-fullscreen-open {
   font-size: var(--table-font-size);
 }
 
+.editor__blocknote-container [data-content-type="table"] :is(th, td) {
+  border-color: var(--table-border-color);
+}
+
 .editor__blocknote-container [data-content-type="table"] th {
   background: var(--table-header-background);
   padding: var(--table-cell-padding-vertical) var(--table-cell-padding-horizontal);
@@ -853,8 +958,12 @@ body.tldraw-whiteboard-fullscreen-open {
 
 .editor__blocknote-container [data-content-type="table"] td {
   padding: var(--table-cell-padding-vertical) var(--table-cell-padding-horizontal);
-  border-color: var(--table-border-color);
   text-align: start;
+}
+
+/* Keep the one-pixel grid exposed beneath ProseMirror's selected-cell overlay. */
+.editor__blocknote-container [data-content-type="table"] .selectedCell::after {
+  inset: 1px;
 }
 
 /* --- Horizontal rule --- */
