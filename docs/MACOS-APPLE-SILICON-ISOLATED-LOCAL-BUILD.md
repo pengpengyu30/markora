@@ -1,10 +1,53 @@
 # Isolated Local Build for macOS Apple Silicon
 
-This guide builds and runs a local ARM64 Tolaria application on an Apple Silicon Mac. The required helper scripts are already in `scripts/`; do not recreate, paste, or source them.
+This guide builds and runs a local ARM64 Tolaria application on an Apple Silicon Mac. The required helper scripts are already in `scripts/`; do not recreate, paste, or source them. Complete the one-time pnpm and script-permission setup before running the build.
+
+## First-time setup after cloning
+
+Run the following setup from the repository root before the first build.
+
+### Install and verify pnpm
+
+A `pnpm` command must be available on the Mac before starting this workflow. If pnpm is missing and Homebrew is installed, run:
+
+```bash
+brew install pnpm
+```
+
+If Homebrew is not available, use pnpm's official installer instead:
+
+```bash
+curl -fsSL https://get.pnpm.io/install.sh | sh -
+exec zsh
+```
+
+Verify that the command is available in the new shell:
+
+```bash
+command -v pnpm
+pnpm --version
+```
+
+The build itself does not use a global pnpm version. After downloading the pinned Node.js runtime, `scripts/build-macos-arm64.local` installs and invokes pnpm `10.33.0` under `.tolaria-build.local/`. The system pnpm installation is the bootstrap prerequisite and remains unchanged by the build script.
+
+### Restore executable permissions for the helper scripts
+
+Run this once after cloning, and repeat it if a checkout or filesystem has lost Unix executable bits:
+
+```bash
+chmod +x scripts/build-macos-arm64.local scripts/run-macos-arm64.local
+```
+
+Confirm both scripts can be launched directly:
+
+```bash
+test -x scripts/build-macos-arm64.local && echo "Build script: OK"
+test -x scripts/run-macos-arm64.local && echo "Run script: OK"
+```
 
 ## What to run
 
-After completing the precheck once, the normal workflow is:
+After completing the one-time setup and precheck, the normal workflow is:
 
 ```bash
 cd /path/to/tolaria
@@ -43,7 +86,7 @@ The build script uses repository-local tools:
 | JavaScript cache | lockfile-controlled | `.tolaria-build.local/cache/pnpm-store/` |
 | Rust cache | lockfile-controlled | `.tolaria-build.local/toolchains/cargo/` |
 
-A newer global Node.js, pnpm, or Rust installation is not used. The exact local versions are intentional because pnpm major versions can interpret workspace overrides and patches differently. You do not need to uninstall or downgrade global tools.
+A newer global Node.js or Rust installation is not used. The build invokes the pinned local pnpm version after bootstrapping it, so a different global pnpm version does not affect dependency installation. The exact local versions are intentional because pnpm major versions can interpret workspace overrides and patches differently. You do not need to uninstall or downgrade global tools.
 
 The scripts do not edit shell startup files, global Git configuration, Homebrew links, the global Rust default, Keychain certificates, or the selected Xcode developer directory. Environment changes exist only inside each script process.
 
@@ -107,11 +150,12 @@ done
 
 The command should print nothing. `git`, compiler tools, signing verification, and the GUI launcher are provided by macOS or Apple Command Line Tools.
 
-Homebrew is not required. A global pnpm installation is not required.
+Homebrew is optional; it is one supported way to install the required bootstrap pnpm command.
 
 ### 4. Confirm the scripts are present and executable
 
 ```bash
+chmod +x scripts/build-macos-arm64.local scripts/run-macos-arm64.local
 test -x scripts/build-macos-arm64.local && echo "Build script: OK"
 test -x scripts/run-macos-arm64.local && echo "Run script: OK"
 ```
@@ -123,9 +167,9 @@ Build script: OK
 Run script: OK
 ```
 
-The scripts are supplied with this local project setup. Do not copy their source from this document. If either file is missing, obtain the current project package or checkout that contains the scripts.
+The scripts are tracked repository files. The `*.local` ignore rule only prevents new untracked `.local` files from being added; it does not exclude these tracked scripts from a clone or pull. Git stores their executable mode, and the `chmod` command above repairs existing checkouts whose mode is still `644`. Do not copy their source from this document. If either file is missing, obtain the current project package or checkout that contains the scripts.
 
-The filenames end in `.local` and are ignored by the current repository rules. A normal Git commit, clone, or pull will not transfer ignored untracked files. Anyone sharing this setup must deliver the two scripts through the agreed project bootstrap mechanism or intentionally change the repository policy so they are versioned.
+After the executable-mode fix is committed, a fresh clone receives both scripts with direct-execution permissions. Keep the `chmod` step for older clones and filesystems that do not preserve Unix modes.
 
 ### 5. Confirm that this is a Git checkout
 
@@ -411,7 +455,7 @@ After the first build and after any pinned-tool change, verify:
 - the launcher starts `Tolaria Dev`;
 - a dedicated test vault remains selected after one rebuild;
 - automatic update checks remain disabled after relaunch;
-- global Node.js, pnpm, Rust, Git, and Xcode selection remain unchanged;
+- the build uses the repository-local Node.js, pnpm, and Rust versions rather than global tool versions;
 - a second build reuses downloaded tools and dependencies;
 - no Apple certificate was imported into Keychain;
 - `git status --short` is reviewed for generated agent-doc changes before the next pull.
@@ -425,7 +469,7 @@ The local setup is ready when:
 - the build reports `BUILD PASSED` and `Architecture: arm64`;
 - the launcher starts the app with repository-local configuration;
 - a rebuild preserves settings, recent-vault history, and vault contents;
-- global development-tool versions remain unchanged;
+- the repository-local toolchain and pnpm cache are reused on later builds;
 - the second build reuses local toolchains and caches.
 
 After that, the normal workflow is only:
