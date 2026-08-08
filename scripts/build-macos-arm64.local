@@ -102,7 +102,7 @@ install_local_node() {
 }
 
 configure_process_environment() {
-  export PATH="$CARGO_HOME_DIR/bin:$NODE_DIR/bin:$PATH"
+  export PATH="$PNPM_DIR/node_modules/.bin:$CARGO_HOME_DIR/bin:$NODE_DIR/bin:$PATH"
   export RUSTUP_HOME="$RUSTUP_HOME_DIR"
   export CARGO_HOME="$CARGO_HOME_DIR"
   export NPM_CONFIG_USERCONFIG="$NPM_CONFIG_FILE"
@@ -208,7 +208,7 @@ verify_local_tools() {
 
 install_dependencies() {
   cd "$ROOT_DIR"
-  "$PNPM_BIN" install \
+  CI=true "$PNPM_BIN" install \
     --frozen-lockfile \
     --store-dir "$CACHE_DIR/pnpm-store"
 }
