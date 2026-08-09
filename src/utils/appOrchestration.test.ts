@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { ModifiedFile, SidebarSelection } from '../types'
 import {
   activeVaultModifiedFiles,
-  aiWorkspaceWindowContextForPath,
   canCustomizeColumnsForSelection,
   mergeModifiedFiles,
   runNativeTextHistoryCommand,
@@ -82,11 +81,6 @@ describe('app orchestration helpers', () => {
     expect(canCustomizeColumnsForSelection(inboxSelection, true)).toBe(true)
     expect(canCustomizeColumnsForSelection(typeSelection, true)).toBe(false)
     expect(canCustomizeColumnsForSelection(viewSelection, false)).toBe(true)
-  })
-
-  it('builds AI workspace context from a resolved vault path', () => {
-    expect(aiWorkspaceWindowContextForPath('/vault')).toEqual({ vaultPath: '/vault', vaultPaths: ['/vault'] })
-    expect(aiWorkspaceWindowContextForPath('')).toEqual({ vaultPath: '', vaultPaths: [] })
   })
 
   it('uses native history commands for focused text fields', () => {

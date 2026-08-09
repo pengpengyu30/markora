@@ -14,6 +14,7 @@ export default defineConfig([
     'src-tauri/resources/mcp-server/',
     'src-tauri/target/',
     'src-tauri/gen/',
+    '.tolaria-build.local/',
     'tools/',
   ]),
   {

@@ -34,7 +34,6 @@ function renderDenseStatusBar() {
       onOpenFeedback={vi.fn()}
       buildNumber="b281"
       onCheckForUpdates={vi.fn()}
-      mcpStatus="not_installed"
     />
   )
 }
@@ -589,14 +588,11 @@ describe('StatusBar', () => {
     expect(screen.getByTestId('status-pulse')).toBeInTheDocument()
     expect(screen.getByTestId('status-feedback')).toBeInTheDocument()
     expect(screen.getByTestId('status-build-number')).toBeInTheDocument()
-    expect(screen.queryByTestId('status-claude-code')).not.toBeInTheDocument()
     expect(screen.queryByText('Commit')).not.toBeInTheDocument()
     expect(screen.queryByText('History')).not.toBeInTheDocument()
     expect(screen.queryByText('Contribute')).not.toBeInTheDocument()
     expect(screen.queryByText('No remote')).not.toBeInTheDocument()
-    expect(screen.queryByText('MCP')).not.toBeInTheDocument()
     expect(screen.queryByText('b281')).not.toBeInTheDocument()
-    expect(screen.queryByText('Claude Code missing')).not.toBeInTheDocument()
   })
 
   it('keeps both icon groups on one compact row at narrow widths', () => {
@@ -610,21 +606,6 @@ describe('StatusBar', () => {
     expect(screen.getByTestId('status-commit-push')).toBeInTheDocument()
     expect(screen.getByTestId('status-pulse')).toBeInTheDocument()
     expect(screen.getByTestId('status-feedback')).toBeInTheDocument()
-  })
-
-  it('does not render the legacy AI agent control in the status bar', () => {
-    setWindowWidth(920)
-    render(
-      <StatusBar
-        noteCount={100}
-        vaultPath="/Users/luca/Laputa"
-        vaults={vaults}
-        onSwitchVault={vi.fn()}
-      />
-    )
-
-    expect(screen.queryByTestId('status-ai-agents')).not.toBeInTheDocument()
-    expect(screen.queryByText('Claude')).not.toBeInTheDocument()
   })
 
   it('does not show Changes badge when modifiedCount is 0', () => {
@@ -661,51 +642,6 @@ describe('StatusBar', () => {
       <StatusBar noteCount={100} modifiedCount={3} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} onClickPending={vi.fn()} />
     )
     await expectTooltip(screen.getByRole('button', { name: 'View pending changes' }), 'View pending changes')
-  })
-
-  it('shows MCP warning badge when status is not_installed', async () => {
-    render(
-      <StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} mcpStatus="not_installed" />
-    )
-    expect(screen.getByTestId('status-mcp')).toBeInTheDocument()
-    await expectTooltip(screen.getByRole('button', { name: 'External AI tools not connected — click to set up' }), 'External AI tools not connected — click to set up')
-  })
-
-  it('hides MCP badge when status is installed', () => {
-    render(
-      <StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} mcpStatus="installed" />
-    )
-    expect(screen.queryByTestId('status-mcp')).not.toBeInTheDocument()
-  })
-
-  it('hides MCP badge when status is checking', () => {
-    render(
-      <StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} mcpStatus="checking" />
-    )
-    expect(screen.queryByTestId('status-mcp')).not.toBeInTheDocument()
-  })
-
-  it('hides MCP badge when no mcpStatus prop provided', () => {
-    render(
-      <StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} />
-    )
-    expect(screen.queryByTestId('status-mcp')).not.toBeInTheDocument()
-  })
-
-  it('hides MCP badge when AI features are disabled', () => {
-    render(
-      <StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} aiFeaturesEnabled={false} mcpStatus="not_installed" />
-    )
-    expect(screen.queryByTestId('status-mcp')).not.toBeInTheDocument()
-  })
-
-  it('calls onInstallMcp when clicking MCP badge with not_installed status', () => {
-    const onInstallMcp = vi.fn()
-    render(
-      <StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} mcpStatus="not_installed" onInstallMcp={onInstallMcp} />
-    )
-    fireEvent.click(screen.getByTestId('status-mcp'))
-    expect(onInstallMcp).toHaveBeenCalledOnce()
   })
 
   it('shows Pull required label when syncStatus is pull_required', () => {
@@ -953,11 +889,6 @@ describe('StatusBar', () => {
   it('hides Commit button when no onCommitPush callback', () => {
     render(<StatusBar noteCount={100} modifiedCount={5} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} />)
     expect(screen.queryByTestId('status-commit-push')).not.toBeInTheDocument()
-  })
-
-  it('does not render the legacy Claude Code badge in the status bar', () => {
-    render(<StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} />)
-    expect(screen.queryByTestId('status-claude-code')).not.toBeInTheDocument()
   })
 
 })

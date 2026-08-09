@@ -10,7 +10,6 @@ interface GitCommandsConfig {
   repositories?: GitRepositoryOption[]
   onAddRemote?: () => void
   onCommitPush: () => void
-  onGenerateCommitMessage?: () => void
   onInitializeGit?: () => void
   onPull?: () => void
   onPullRepository?: (path: string) => void
@@ -29,18 +28,9 @@ function buildPullCommands({
 function buildCommitCommands({
   modifiedCount,
   onCommitPush,
-  onGenerateCommitMessage,
-}: Pick<GitCommandsConfig, 'modifiedCount' | 'onCommitPush' | 'onGenerateCommitMessage'>): CommandAction[] {
+}: Pick<GitCommandsConfig, 'modifiedCount' | 'onCommitPush'>): CommandAction[] {
   return [
     { id: 'commit-push', label: 'Commit & Push', group: 'Git', keywords: ['git', 'save', 'sync'], enabled: modifiedCount > 0, execute: onCommitPush },
-    {
-      id: 'generate-commit-message',
-      label: 'Generate Commit Message from Diff',
-      group: 'Git',
-      keywords: ['git', 'commit', 'message', 'diff', 'generate', 'ai'],
-      enabled: modifiedCount > 0 && Boolean(onGenerateCommitMessage),
-      execute: () => onGenerateCommitMessage?.(),
-    },
   ]
 }
 
@@ -65,14 +55,13 @@ function buildGitVaultCommands(config: GitCommandsConfig): CommandAction[] {
     canAddRemote,
     onAddRemote,
     onCommitPush,
-    onGenerateCommitMessage,
     onPull,
     onResolveConflicts,
     onSelect,
   } = config
 
   return [
-    ...buildCommitCommands({ modifiedCount, onCommitPush, onGenerateCommitMessage }),
+    ...buildCommitCommands({ modifiedCount, onCommitPush }),
     { id: 'add-remote', label: 'Add Remote to Current Vault', group: 'Git', keywords: ['git', 'remote', 'connect', 'origin', 'no remote'], enabled: canAddRemote && !!onAddRemote, execute: () => onAddRemote?.() },
     ...buildPullCommands({ onPull }),
     { id: 'resolve-conflicts', label: 'Resolve Conflicts', group: 'Git', keywords: ['conflict', 'merge', 'git', 'sync'], enabled: true, execute: () => onResolveConflicts?.() },

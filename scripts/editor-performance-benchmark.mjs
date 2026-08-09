@@ -329,7 +329,6 @@ function stopDevServer() {
 async function installSyntheticVault(page, entries, contentByPath) {
   await page.addInitScript(({ syntheticContent, syntheticEntries }) => {
     globalThis.__TOLARIA_PERFORMANCE_HARNESS__ = true
-    localStorage.setItem('tolaria:claude-code-onboarding-dismissed', '1')
     const jsonResponse = value => new Response(JSON.stringify(value), {
       headers: { 'Content-Type': 'application/json' },
       status: 200,

@@ -103,117 +103,6 @@ fn apply_title_bar_double_click_action(
     }
 }
 
-// ── MCP commands (desktop) ──────────────────────────────────────────────────
-
-#[cfg(desktop)]
-#[tauri::command]
-pub async fn register_mcp_tools(vault_path: String) -> Result<String, String> {
-    let vault_path = super::expand_tilde(&vault_path).into_owned();
-    tokio::task::spawn_blocking(move || crate::mcp::register_mcp(&vault_path))
-        .await
-        .map_err(|e| format!("Registration task failed: {e}"))?
-}
-
-#[cfg(desktop)]
-#[tauri::command]
-pub async fn remove_mcp_tools() -> Result<String, String> {
-    tokio::task::spawn_blocking(crate::mcp::remove_mcp)
-        .await
-        .map_err(|e| format!("Removal task failed: {e}"))
-}
-
-#[cfg(desktop)]
-#[tauri::command]
-pub async fn check_mcp_status(vault_path: String) -> Result<crate::mcp::McpStatus, String> {
-    let vault_path = super::expand_tilde(&vault_path).into_owned();
-    tokio::task::spawn_blocking(move || crate::mcp::check_mcp_status(&vault_path))
-        .await
-        .map_err(|e| format!("MCP status check failed: {e}"))
-}
-
-#[cfg(desktop)]
-#[tauri::command]
-pub async fn get_mcp_config_snippet(vault_path: String) -> Result<String, String> {
-    let vault_path = super::expand_tilde(&vault_path).into_owned();
-    tokio::task::spawn_blocking(move || crate::mcp::mcp_config_snippet(&vault_path))
-        .await
-        .map_err(|e| format!("MCP config task failed: {e}"))?
-}
-
-#[cfg(desktop)]
-#[tauri::command]
-pub async fn get_opencode_mcp_config_snippet(vault_path: String) -> Result<String, String> {
-    let vault_path = super::expand_tilde(&vault_path).into_owned();
-    tokio::task::spawn_blocking(move || crate::mcp::opencode_mcp_config_snippet(&vault_path))
-        .await
-        .map_err(|e| format!("OpenCode MCP config task failed: {e}"))?
-}
-
-#[cfg(desktop)]
-#[tauri::command]
-pub async fn sync_mcp_bridge_vault(
-    app: tauri::AppHandle,
-    vault_path: Option<String>,
-    vault_paths: Option<Vec<String>>,
-) -> Result<String, String> {
-    let expanded_vault_path = vault_path
-        .as_deref()
-        .map(str::trim)
-        .filter(|path| !path.is_empty())
-        .map(|path| super::expand_tilde(path).into_owned());
-    let vault_path = expanded_vault_path.as_deref().map(std::path::Path::new);
-    let expanded_vault_paths = vault_paths
-        .unwrap_or_default()
-        .into_iter()
-        .map(|path| super::expand_tilde(path.trim()).into_owned())
-        .filter(|path| !path.is_empty())
-        .map(std::path::PathBuf::from)
-        .collect::<Vec<_>>();
-
-    crate::sync_ws_bridge_for_vault(&app, vault_path, &expanded_vault_paths).map(str::to_string)
-}
-
-// ── MCP commands (mobile stubs) ─────────────────────────────────────────────
-
-#[cfg(mobile)]
-#[tauri::command]
-pub async fn register_mcp_tools(_vault_path: String) -> Result<String, String> {
-    Err("MCP is not available on mobile".into())
-}
-
-#[cfg(mobile)]
-#[tauri::command]
-pub async fn remove_mcp_tools() -> Result<String, String> {
-    Err("MCP is not available on mobile".into())
-}
-
-#[cfg(mobile)]
-#[tauri::command]
-pub async fn check_mcp_status(_vault_path: String) -> Result<crate::mcp::McpStatus, String> {
-    Ok(crate::mcp::McpStatus::NotInstalled)
-}
-
-#[cfg(mobile)]
-#[tauri::command]
-pub async fn get_mcp_config_snippet(_vault_path: String) -> Result<String, String> {
-    Err("MCP is not available on mobile".into())
-}
-
-#[cfg(mobile)]
-#[tauri::command]
-pub async fn get_opencode_mcp_config_snippet(_vault_path: String) -> Result<String, String> {
-    Err("MCP is not available on mobile".into())
-}
-
-#[cfg(mobile)]
-#[tauri::command]
-pub async fn sync_mcp_bridge_vault(
-    _vault_path: Option<String>,
-    _vault_paths: Option<Vec<String>>,
-) -> Result<String, String> {
-    Err("MCP is not available on mobile".into())
-}
-
 // ── Menu commands ───────────────────────────────────────────────────────────
 
 #[derive(Debug, Deserialize)]
@@ -396,16 +285,6 @@ pub fn get_settings() -> Result<Settings, String> {
 #[tauri::command]
 pub fn save_settings(settings: Settings) -> Result<(), String> {
     crate::settings::save_settings(settings)
-}
-
-#[tauri::command]
-pub fn get_ai_workspace_sessions() -> Result<serde_json::Value, String> {
-    crate::settings::get_ai_workspace_sessions()
-}
-
-#[tauri::command]
-pub fn save_ai_workspace_sessions(sessions: serde_json::Value) -> Result<(), String> {
-    crate::settings::save_ai_workspace_sessions(sessions)
 }
 
 #[cfg(desktop)]

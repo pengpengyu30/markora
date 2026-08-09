@@ -76,8 +76,6 @@ async function installOnboardingVaultMocks(page: Page, config: MockConfig) {
       localStorage.setItem(stateKey, JSON.stringify(state))
     }
 
-    localStorage.setItem('tolaria:ai-agents-onboarding-dismissed', '1')
-    localStorage.setItem('tolaria:claude-code-onboarding-dismissed', '1')
     if (!localStorage.getItem(stateKey)) {
       writeState(defaultState)
     }

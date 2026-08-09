@@ -905,21 +905,6 @@ describe('BreadcrumbBar — note width toggle', () => {
   })
 })
 
-describe('BreadcrumbBar — AI panel toggle', () => {
-  it('keeps the AI panel action out of the breadcrumb bar', () => {
-    render(<BreadcrumbBar entry={baseEntry} {...defaultProps} />)
-    expect(screen.queryByRole('button', { name: 'Open the AI panel' })).not.toBeInTheDocument()
-  })
-
-  it('does not render the breadcrumb AI panel action when a toggle callback is available', () => {
-    const onToggleAIChat = vi.fn()
-    render(<BreadcrumbBar entry={baseEntry} {...defaultProps} onToggleAIChat={onToggleAIChat} />)
-
-    expect(screen.queryByRole('button', { name: 'Open the AI panel' })).not.toBeInTheDocument()
-    expect(onToggleAIChat).not.toHaveBeenCalled()
-  })
-})
-
 describe('BreadcrumbBar — table of contents toggle', () => {
   it('shows the table of contents action and calls the toggle handler', () => {
     const onToggleTableOfContents = vi.fn()

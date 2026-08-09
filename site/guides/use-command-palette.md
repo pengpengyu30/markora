@@ -17,7 +17,6 @@ Open it with:
 - Open Getting Started Vault.
 - Toggle Raw Mode.
 - Toggle Table of Contents.
-- Toggle AI Panel.
 - Use Light, Dark, or System theme.
 - Open in New Window.
 

@@ -14,7 +14,6 @@ import {
 import type { ThemeMode } from '../../lib/themeMode'
 
 interface SettingsCommandsConfig {
-  mcpStatus?: string
   vaultCount?: number
   isGettingStartedHidden?: boolean
   onOpenSettings: () => void
@@ -24,7 +23,6 @@ interface SettingsCommandsConfig {
   onRemoveActiveVault?: () => void
   onRestoreGettingStarted?: () => void
   onCheckForUpdates?: () => void
-  onInstallMcp?: () => void
   onReloadVault?: () => void
   onRepairVault?: () => void
   onToggleGitignoredFilesVisibility?: () => void
@@ -175,21 +173,11 @@ function buildVaultSettingsCommands({
 }
 
 function buildMaintenanceCommands({
-  mcpStatus,
-  onInstallMcp,
   onReloadVault,
   onRepairVault,
   onToggleGitignoredFilesVisibility,
-}: Pick<SettingsCommandsConfig, 'mcpStatus' | 'onInstallMcp' | 'onReloadVault' | 'onRepairVault' | 'onToggleGitignoredFilesVisibility'>): CommandAction[] {
+}: Pick<SettingsCommandsConfig, 'onReloadVault' | 'onRepairVault' | 'onToggleGitignoredFilesVisibility'>): CommandAction[] {
   return [
-    {
-      id: 'install-mcp',
-      label: mcpStatus === 'installed' ? 'Manage External AI Tools…' : 'Set Up External AI Tools…',
-      group: 'Settings',
-      keywords: ['mcp', 'ai', 'tools', 'external', 'setup', 'details', 'copy', 'export', 'manual', 'config', 'connect', 'disconnect', 'claude', 'antigravity', 'gemini', 'codex', 'cursor', 'consent'],
-      enabled: true,
-      execute: () => onInstallMcp?.(),
-    },
     {
       id: 'toggle-gitignored-files-visibility',
       label: 'Toggle Gitignored Files Visibility',
@@ -199,15 +187,15 @@ function buildMaintenanceCommands({
       execute: onToggleGitignoredFilesVisibility ?? requestGitignoredVisibilityToggle,
     },
     { id: 'reload-vault', label: 'Reload Vault', group: 'Settings', keywords: ['reload', 'refresh', 'rescan', 'sync', 'filesystem', 'cache'], enabled: !!onReloadVault, execute: () => onReloadVault?.() },
-    { id: 'repair-vault', label: 'Repair Vault', group: 'Settings', keywords: ['repair', 'fix', 'restore', 'config', 'agents', 'themes', 'missing', 'reset', 'flatten', 'structure'], enabled: !!onRepairVault, execute: () => onRepairVault?.() },
+    { id: 'repair-vault', label: 'Repair Vault', group: 'Settings', keywords: ['repair', 'fix', 'restore', 'config', 'missing', 'reset', 'flatten', 'structure'], enabled: !!onRepairVault, execute: () => onRepairVault?.() },
   ]
 }
 
 export function buildSettingsCommands(config: SettingsCommandsConfig): CommandAction[] {
   const {
-    mcpStatus, vaultCount, isGettingStartedHidden,
+    vaultCount, isGettingStartedHidden,
     onOpenSettings, onOpenFeedback, onOpenVault, onCreateEmptyVault, onRemoveActiveVault, onRestoreGettingStarted,
-    onCheckForUpdates, onInstallMcp, onReloadVault, onRepairVault, onToggleGitignoredFilesVisibility,
+    onCheckForUpdates, onReloadVault, onRepairVault, onToggleGitignoredFilesVisibility,
     locale = 'en', systemLocale = locale, selectedUiLanguage = SYSTEM_UI_LANGUAGE, onSetUiLanguage, onSetThemeMode,
   } = config
 
@@ -230,8 +218,6 @@ export function buildSettingsCommands(config: SettingsCommandsConfig): CommandAc
       onRestoreGettingStarted,
     }),
     ...buildMaintenanceCommands({
-      mcpStatus,
-      onInstallMcp,
       onReloadVault,
       onRepairVault,
       onToggleGitignoredFilesVisibility,

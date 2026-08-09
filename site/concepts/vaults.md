@@ -42,4 +42,3 @@ Vault-level information should travel with the vault. Machine-specific preferenc
 | Saved views | Window size |
 | Pinned properties | Recent vault list |
 | Relationship conventions | Local cache |
-| Vault AI guidance files | AI target selection |

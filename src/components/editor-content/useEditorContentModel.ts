@@ -31,8 +31,6 @@ export interface EditorContentProps {
   onSave?: () => void
   activeStatus: NoteStatus
   showDiffToggle: boolean
-  showAIChat?: boolean
-  onToggleAIChat?: () => void
   showTableOfContents?: boolean
   onToggleTableOfContents?: () => void
   inspectorCollapsed: boolean

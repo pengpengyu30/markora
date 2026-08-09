@@ -1,13 +1,11 @@
 import type { Settings, NoteWidthMode } from '../types'
 import { trackEvent } from '../lib/telemetry'
 import {
-  trackAiFeaturesEnabledChanged,
   trackDateDisplayFormatChanged,
   trackDefaultNoteWidthChanged,
   trackGitFeaturesEnabledChanged,
   trackSidebarTypePluralizationChanged,
 } from '../lib/productAnalytics'
-import { areAiFeaturesEnabled } from '../lib/aiFeatures'
 import { areGitFeaturesEnabled } from '../lib/gitSettings'
 import { areAutomaticUpdateChecksEnabled } from '../lib/automaticUpdateChecks'
 import {
@@ -19,8 +17,6 @@ import { DEFAULT_NOTE_WIDTH_MODE, normalizeNoteWidthMode } from '../utils/noteWi
 
 export interface SettingsPreferenceDraft {
   analytics: boolean
-  aiFeaturesEnabled: boolean
-  autoGitAiCommitMessagesEnabled: boolean
   automaticUpdateChecksEnabled: boolean
   dateDisplayFormat: DateDisplayFormat
   defaultNoteWidth: NoteWidthMode
@@ -57,13 +53,7 @@ export function trackTelemetryConsentChange(previousAnalytics: boolean, nextAnal
 }
 
 export function trackSettingsPreferenceChanges(settings: Settings, draft: SettingsPreferenceDraft): void {
-  trackPreferenceChange(areAiFeaturesEnabled(settings), draft.aiFeaturesEnabled, trackAiFeaturesEnabledChanged)
   trackPreferenceChange(areGitFeaturesEnabled(settings), draft.gitFeaturesEnabled, trackGitFeaturesEnabledChanged)
-  trackEnabledPreferenceChange(
-    settings.autogit_use_ai_commit_messages === true,
-    draft.autoGitAiCommitMessagesEnabled,
-    'autogit_ai_commit_messages_changed',
-  )
   trackEnabledPreferenceChange(
     areAutomaticUpdateChecksEnabled(settings),
     draft.automaticUpdateChecksEnabled,

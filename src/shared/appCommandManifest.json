@@ -198,19 +198,6 @@
         "accelerator": "CmdOrCtrl+Shift+I"
       }
     },
-    "viewToggleAiChat": {
-      "id": "view-toggle-ai-chat",
-      "route": { "kind": "handler", "handler": "onToggleAIChat" },
-      "menuOwned": true,
-      "shortcut": {
-        "combo": "command-or-ctrl-shift",
-        "key": "l",
-        "code": "KeyL",
-        "display": "⌘⇧L",
-        "accelerator": "CmdOrCtrl+Shift+L",
-        "requiresManualNativeAcceleratorQa": true
-      }
-    },
     "viewToggleTableOfContents": {
       "id": "view-toggle-table-of-contents",
       "route": { "kind": "handler", "handler": "onToggleTableOfContents" },
@@ -425,11 +412,6 @@
       "route": { "kind": "handler", "handler": "onViewChanges" },
       "menuOwned": true
     },
-    "vaultInstallMcp": {
-      "id": "vault-install-mcp",
-      "route": { "kind": "handler", "handler": "onInstallMcp" },
-      "menuOwned": true
-    },
     "vaultReload": {
       "id": "vault-reload",
       "route": { "kind": "handler", "handler": "onReloadVault" },
@@ -493,7 +475,6 @@
           "label": "Toggle Properties Panel",
           "accelerator": null
         },
-        { "kind": "command", "command": "viewToggleAiChat", "label": "Toggle AI Panel" },
         { "kind": "separator" },
         { "kind": "command", "command": "viewZoomIn", "label": "Zoom In" },
         { "kind": "command", "command": "viewZoomOut", "label": "Zoom Out" },
@@ -544,8 +525,7 @@
         { "kind": "command", "command": "vaultViewChanges", "label": "View Pending Changes" },
         { "kind": "separator" },
         { "kind": "command", "command": "vaultReload", "label": "Reload Vault" },
-        { "kind": "command", "command": "vaultRepair", "label": "Repair Vault" },
-        { "kind": "command", "command": "vaultInstallMcp", "label": "Set Up External AI Tools…" }
+        { "kind": "command", "command": "vaultRepair", "label": "Repair Vault" }
       ]
     }
   ],

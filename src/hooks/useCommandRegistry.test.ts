@@ -2,7 +2,6 @@ import { describe, it, expect, vi } from 'vitest'
 import { renderHook } from '@testing-library/react'
 import { useCommandRegistry, buildTypeCommands, extractVaultTypes, pluralizeType, groupSortKey } from './useCommandRegistry'
 import type { CommandAction } from './useCommandRegistry'
-import { NEW_AI_CHAT_EVENT, OPEN_AI_CHAT_EVENT } from '../utils/aiPromptBridge'
 import { formatShortcutDisplay } from './appCommandCatalog'
 
 function makeConfig(overrides: Record<string, unknown> = {}) {
@@ -30,7 +29,6 @@ function makeConfig(overrides: Record<string, unknown> = {}) {
     defaultNoteWidth: 'normal',
     onSetNoteWidth: vi.fn(),
     onSetDefaultNoteWidth: vi.fn(),
-    onToggleAIChat: vi.fn(),
     onOpenVault: vi.fn(),
     activeNoteModified: false,
     onZoomIn: vi.fn(),
@@ -420,30 +418,6 @@ describe('useCommandRegistry', () => {
     })
   })
 
-  it('removes AI commands when AI features are disabled', () => {
-    const config = makeConfig({
-      aiFeaturesEnabled: false,
-      onToggleAIChat: vi.fn(),
-      onOpenAiAgents: vi.fn(),
-      aiAgentsStatus: {
-        claude_code: { status: 'installed', version: '1.0.0' },
-        codex: { status: 'missing', version: null },
-        copilot: { status: 'missing', version: null },
-        opencode: { status: 'missing', version: null },
-        pi: { status: 'missing', version: null },
-        antigravity: { status: 'missing', version: null },
-        kiro: { status: 'missing', version: null },
-        hermes: { status: 'missing', version: null },
-      },
-      selectedAiAgent: 'claude_code',
-    })
-    const { result } = renderHook(() => useCommandRegistry(config))
-
-    expect(findCommand(result.current, 'toggle-ai-panel')).toBeUndefined()
-    expect(findCommand(result.current, 'new-ai-chat')).toBeUndefined()
-    expect(findCommand(result.current, 'open-ai-agents')).toBeUndefined()
-  })
-
   it('exposes active file actions when a note is selected', () => {
     const onRevealActiveFile = vi.fn()
     const onCopyActiveFilePath = vi.fn()
@@ -647,27 +621,6 @@ describe('useCommandRegistry', () => {
     expect(onSetThemeMode).toHaveBeenNthCalledWith(1, 'light')
     expect(onSetThemeMode).toHaveBeenNthCalledWith(2, 'dark')
     expect(onSetThemeMode).toHaveBeenNthCalledWith(3, 'system')
-  })
-
-  it('includes a New AI chat command that opens and resets the panel session', () => {
-    vi.useFakeTimers()
-    const config = makeConfig()
-    const dispatchSpy = vi.spyOn(window, 'dispatchEvent')
-    const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'new-ai-chat')
-
-    expect(cmd).toBeDefined()
-    expect(cmd!.group).toBe('View')
-    expect(cmd!.label).toBe('New AI chat')
-    expect(cmd!.enabled).toBe(true)
-
-    cmd!.execute()
-
-    expect(dispatchSpy).toHaveBeenCalledWith(expect.objectContaining({ type: OPEN_AI_CHAT_EVENT }))
-    vi.runOnlyPendingTimers()
-    expect(dispatchSpy).toHaveBeenCalledWith(expect.objectContaining({ type: NEW_AI_CHAT_EVENT }))
-    dispatchSpy.mockRestore()
-    vi.useRealTimers()
   })
 
   it('omits Inbox navigation when the explicit workflow is disabled', () => {
@@ -965,65 +918,6 @@ describe('groupSortKey', () => {
   })
 })
 
-describe('install-mcp command', () => {
-  it('is enabled when mcpStatus is not_installed and handler provided', () => {
-    const config = makeConfig({ mcpStatus: 'not_installed', onInstallMcp: vi.fn() })
-    const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'install-mcp')
-    expect(cmd).toBeDefined()
-    expect(cmd!.enabled).toBe(true)
-    expect(cmd!.label).toBe('Set Up External AI Tools…')
-  })
-
-  it('is enabled when mcpStatus is installed and handler provided (manage use case)', () => {
-    const config = makeConfig({ mcpStatus: 'installed', onInstallMcp: vi.fn() })
-    const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'install-mcp')
-    expect(cmd!.enabled).toBe(true)
-    expect(cmd!.label).toBe('Manage External AI Tools…')
-  })
-
-  it('is enabled even when mcpStatus is checking', () => {
-    const config = makeConfig({ mcpStatus: 'checking', onInstallMcp: vi.fn() })
-    const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'install-mcp')
-    expect(cmd!.enabled).toBe(true)
-  })
-
-  it('is enabled even when no handler provided', () => {
-    const config = makeConfig({ mcpStatus: 'not_installed' })
-    const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'install-mcp')
-    expect(cmd!.enabled).toBe(true)
-  })
-
-  it('has setup keywords for discoverability', () => {
-    const config = makeConfig({ mcpStatus: 'installed', onInstallMcp: vi.fn() })
-    const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'install-mcp')
-    expect(cmd!.keywords).toContain('setup')
-    expect(cmd!.keywords).toContain('external')
-    expect(cmd!.keywords).toContain('mcp')
-    expect(cmd!.keywords).toContain('cursor')
-  })
-
-  it('executes onInstallMcp callback', () => {
-    const onInstallMcp = vi.fn()
-    const config = makeConfig({ mcpStatus: 'installed', onInstallMcp })
-    const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'install-mcp')
-    cmd!.execute()
-    expect(onInstallMcp).toHaveBeenCalled()
-  })
-
-  it('is in Settings group', () => {
-    const config = makeConfig({ mcpStatus: 'installed', onInstallMcp: vi.fn() })
-    const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'install-mcp')
-    expect(cmd!.group).toBe('Settings')
-  })
-})
-
 describe('reload-vault command', () => {
   it('is present in Settings group', () => {
     const config = makeConfig({ onReloadVault: vi.fn() })
@@ -1066,61 +960,6 @@ describe('reload-vault command', () => {
     expect(cmd!.keywords).toContain('rescan')
   })
 
-  it('builds explicit AI agent switch commands for installed alternatives', () => {
-    const onSetDefaultAiAgent = vi.fn()
-    const config = makeConfig({
-      aiAgentsStatus: {
-        claude_code: { status: 'installed', version: '1.0.20' },
-        codex: { status: 'installed', version: '0.37.0' },
-        copilot: { status: 'installed', version: '1.0.58' },
-        opencode: { status: 'installed', version: '0.3.1' },
-        pi: { status: 'installed', version: '0.70.2' },
-        antigravity: { status: 'installed', version: '0.5.1' },
-        kiro: { status: 'missing', version: null },
-        hermes: { status: 'missing', version: null },
-      },
-      selectedAiAgent: 'claude_code',
-      onSetDefaultAiAgent,
-    })
-    const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'switch-ai-agent-codex')
-
-    expect(cmd).toBeDefined()
-    expect(cmd!.label).toBe('Switch AI Agent to Codex')
-    expect(findCommand(result.current, 'switch-ai-agent-copilot')).toBeDefined()
-    expect(findCommand(result.current, 'switch-ai-agent-opencode')).toBeDefined()
-    expect(findCommand(result.current, 'switch-ai-agent-pi')).toBeDefined()
-    expect(findCommand(result.current, 'switch-ai-agent-antigravity')).toBeDefined()
-
-    cmd!.execute()
-    expect(onSetDefaultAiAgent).toHaveBeenCalledWith('codex')
-    expect(findCommand(result.current, 'switch-default-ai-agent')).toBeUndefined()
-  })
-
-  it('omits explicit AI switch commands when no alternate installed agent exists', () => {
-    const config = makeConfig({
-      aiAgentsStatus: {
-        claude_code: { status: 'installed', version: '1.0.20' },
-        codex: { status: 'missing', version: null },
-        copilot: { status: 'missing', version: null },
-        opencode: { status: 'missing', version: null },
-        pi: { status: 'missing', version: null },
-        antigravity: { status: 'missing', version: null },
-        kiro: { status: 'missing', version: null },
-        hermes: { status: 'missing', version: null },
-      },
-      selectedAiAgent: 'claude_code',
-      onSetDefaultAiAgent: vi.fn(),
-    })
-    const { result } = renderHook(() => useCommandRegistry(config))
-
-    expect(findCommand(result.current, 'switch-ai-agent-codex')).toBeUndefined()
-    expect(findCommand(result.current, 'switch-ai-agent-copilot')).toBeUndefined()
-    expect(findCommand(result.current, 'switch-ai-agent-opencode')).toBeUndefined()
-    expect(findCommand(result.current, 'switch-ai-agent-pi')).toBeUndefined()
-    expect(findCommand(result.current, 'switch-ai-agent-antigravity')).toBeUndefined()
-    expect(findCommand(result.current, 'switch-default-ai-agent')).toBeUndefined()
-  })
 })
 
 describe('buildTypeCommands', () => {

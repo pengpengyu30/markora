@@ -1,5 +1,3 @@
-#[cfg(desktop)]
-use super::optional_mcp_runtime_resource_dir;
 use super::should_use_native_desktop_menu;
 use super::MACOS_WEBVIEW_RESERVED_COMMAND_KEYS;
 use super::MACOS_WEBVIEW_RESERVED_COMMAND_SHIFT_KEYS;
@@ -7,89 +5,14 @@ use super::MACOS_WEBVIEW_RESERVED_COMMAND_SHIFT_KEYS;
 #[cfg(desktop)]
 use crate::asset_scope::{missing_asset_scope_roots, vault_asset_scope_roots};
 #[cfg(desktop)]
-use crate::desktop_runtime::{
-    selected_mcp_bridge_vault_paths, spawn_startup_tasks_for_vault_with,
-    validate_mcp_bridge_vault_path,
-};
-#[cfg(desktop)]
-use crate::vault_list::{VaultEntry, VaultList};
+use crate::desktop_runtime::spawn_startup_tasks_for_vault_with;
 #[cfg(desktop)]
 use std::path::PathBuf;
 
 #[test]
-fn macos_webview_shortcut_prevention_includes_ai_panel_shortcut() {
+fn macos_webview_shortcut_prevention_includes_reserved_keys() {
     assert_eq!(MACOS_WEBVIEW_RESERVED_COMMAND_KEYS, ["O", "F"]);
     assert_eq!(MACOS_WEBVIEW_RESERVED_COMMAND_SHIFT_KEYS, ["L"]);
-}
-
-#[cfg(desktop)]
-#[test]
-fn mcp_runtime_resource_dir_is_optional_in_dev() {
-    let unavailable: Result<PathBuf, &str> = Err("unknown path");
-
-    assert_eq!(optional_mcp_runtime_resource_dir(unavailable), None);
-}
-
-#[cfg(desktop)]
-#[test]
-fn mcp_runtime_resource_dir_keeps_available_path() {
-    let resource_dir = PathBuf::from("/Applications/Tolaria.app/Contents/Resources");
-
-    assert_eq!(
-        optional_mcp_runtime_resource_dir(Ok::<PathBuf, &str>(resource_dir.clone())),
-        Some(resource_dir)
-    );
-}
-
-#[cfg(desktop)]
-#[test]
-fn selected_mcp_bridge_vault_paths_puts_persisted_active_vault_first() {
-    let list = VaultList {
-        vaults: vec![
-            VaultEntry {
-                label: "Secondary".to_string(),
-                path: "/tmp/Secondary Vault".to_string(),
-                mounted: Some(true),
-                ..VaultEntry::default()
-            },
-            VaultEntry {
-                label: "Hidden".to_string(),
-                path: "/tmp/Hidden Vault".to_string(),
-                mounted: Some(false),
-                ..VaultEntry::default()
-            },
-            VaultEntry {
-                label: "Selected".to_string(),
-                path: "/tmp/Selected Vault".to_string(),
-                mounted: Some(true),
-                ..VaultEntry::default()
-            },
-        ],
-        active_vault: Some("/tmp/Selected Vault".to_string()),
-        default_workspace_path: None,
-        hidden_defaults: Vec::new(),
-    };
-
-    assert_eq!(
-        selected_mcp_bridge_vault_paths(&list),
-        vec![
-            PathBuf::from("/tmp/Selected Vault"),
-            PathBuf::from("/tmp/Secondary Vault"),
-        ]
-    );
-}
-
-#[cfg(desktop)]
-#[test]
-fn selected_mcp_bridge_vault_paths_ignores_blank_active_vault() {
-    let list = VaultList {
-        vaults: Vec::new(),
-        active_vault: Some("  ".to_string()),
-        default_workspace_path: None,
-        hidden_defaults: Vec::new(),
-    };
-
-    assert!(selected_mcp_bridge_vault_paths(&list).is_empty());
 }
 
 #[cfg(desktop)]
@@ -126,21 +49,6 @@ fn startup_tasks_run_in_background() {
         .recv_timeout(std::time::Duration::from_secs(1))
         .unwrap();
     release_sender.send(()).unwrap();
-}
-
-#[cfg(desktop)]
-#[test]
-fn validate_mcp_bridge_vault_path_requires_existing_directory() {
-    let directory = tempfile::tempdir().unwrap();
-    let vault = directory.path().join("Vault With Spaces");
-    std::fs::create_dir(&vault).unwrap();
-
-    let resolved = validate_mcp_bridge_vault_path(&vault).unwrap();
-    assert_eq!(resolved, vault.canonicalize().unwrap());
-
-    let missing = directory.path().join("Missing Vault");
-    let error = validate_mcp_bridge_vault_path(&missing).unwrap_err();
-    assert!(error.contains("MCP bridge vault is not available"));
 }
 
 #[cfg(all(desktop, unix))]

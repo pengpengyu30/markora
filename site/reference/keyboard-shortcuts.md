@@ -18,7 +18,6 @@
 | `Cmd+3` / `Ctrl+3` | Show all panels. |
 | `Cmd+Shift+T` / `Ctrl+Shift+T` | Toggle table of contents. |
 | `Cmd+Shift+I` / `Ctrl+Shift+I` | Toggle Properties panel. |
-| `Cmd+Shift+L` / `Ctrl+Shift+L` | Toggle AI panel. |
 | `Cmd+=` / `Ctrl+=` | Zoom in. |
 | `Cmd+-` / `Ctrl+-` | Zoom out. |
 | `Cmd+0` / `Ctrl+0` | Reset zoom. |

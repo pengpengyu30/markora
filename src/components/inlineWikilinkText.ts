@@ -1,5 +1,4 @@
 import type { VaultEntry } from '../types'
-import type { NoteReference } from '../utils/ai-context'
 import { resolveEntry } from '../utils/wikilink'
 import {
   chipToken,
@@ -19,6 +18,12 @@ export type InlineWikilinkSegment =
 export interface ActiveWikilinkQuery {
   start: number
   query: string
+}
+
+export interface InlineWikilinkReference {
+  title: string
+  path: string
+  type: string | null
 }
 
 const INLINE_WIKILINK_PATTERN = /\[\[([^[\]\r\n]+?)\]\]/g
@@ -63,8 +68,8 @@ export function buildInlineWikilinkSegments(
 export function extractInlineWikilinkReferences(
   value: string,
   entries: VaultEntry[],
-): NoteReference[] {
-  const references: NoteReference[] = []
+): InlineWikilinkReference[] {
+  const references: InlineWikilinkReference[] = []
   const seenPaths = new Set<string>()
 
   for (const segment of buildInlineWikilinkSegments(value, entries)) {

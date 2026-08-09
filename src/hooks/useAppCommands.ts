@@ -1,8 +1,6 @@
 import { useCallback, useRef } from 'react'
-import type { AiAgentId, AiAgentsStatus } from '../lib/aiAgents'
 import type { AppLocale, UiLanguagePreference } from '../lib/i18n'
 import type { ThemeMode } from '../lib/themeMode'
-import type { VaultAiGuidanceStatus } from '../lib/vaultAiGuidance'
 import { useAppKeyboard } from './useAppKeyboard'
 import { useCommandRegistry } from './useCommandRegistry'
 import type { CommandAction } from './useCommandRegistry'
@@ -46,7 +44,6 @@ interface AppCommandsConfig {
   onArchiveNote: (path: string) => void
   onUnarchiveNote: (path: string) => void
   onCommitPush: () => void
-  onGenerateCommitMessage?: () => void
   onPull?: () => void
   onPullRepository?: (path: string) => void
   onResolveConflicts?: () => void
@@ -87,8 +84,6 @@ interface AppCommandsConfig {
   gitRepositories?: GitRepositoryOption[]
   onInitializeGit?: () => void
   onCreateType?: () => void
-  aiFeaturesEnabled?: boolean
-  onToggleAIChat?: () => void
   onToggleTableOfContents?: () => void
   onCheckForUpdates?: () => void
   onRemoveActiveVault?: () => void
@@ -100,18 +95,6 @@ interface AppCommandsConfig {
   selectedUiLanguage?: UiLanguagePreference
   onSetUiLanguage?: (language: UiLanguagePreference) => void
   onSetThemeMode?: (mode: ThemeMode) => void
-  mcpStatus?: string
-  onInstallMcp?: () => void
-  aiAgentsStatus?: AiAgentsStatus
-  vaultAiGuidanceStatus?: VaultAiGuidanceStatus
-  onOpenAiAgents?: () => void
-  onRestoreVaultAiGuidance?: () => void
-  onSetDefaultAiAgent?: (agent: AiAgentId) => void
-  selectedAiAgent?: AiAgentId
-  onCycleDefaultAiAgent?: () => void
-  selectedAiAgentLabel?: string
-  claudeCodeStatus?: string
-  claudeCodeVersion?: string
   onReloadVault?: () => void
   onRepairVault?: () => void
   onSetNoteIcon?: () => void
@@ -185,7 +168,6 @@ type CommandRegistryCoreActions = Pick<
   | 'onArchiveNote'
   | 'onUnarchiveNote'
   | 'onCommitPush'
-  | 'onGenerateCommitMessage'
   | 'onPull'
   | 'onPullRepository'
   | 'onResolveConflicts'
@@ -202,7 +184,6 @@ type CommandRegistryCoreActions = Pick<
   | 'defaultNoteWidth'
   | 'onSetNoteWidth'
   | 'onSetDefaultNoteWidth'
-  | 'onToggleAIChat'
   | 'onToggleTableOfContents'
 >
 type CommandRegistryVaultActions = Pick<
@@ -236,20 +217,6 @@ type CommandRegistryVaultActions = Pick<
   | 'onRestoreDeletedNote'
   | 'canRestoreDeletedNote'
 >
-type CommandRegistryAiActions = Pick<
-  CommandRegistryConfig,
-  | 'aiFeaturesEnabled'
-  | 'mcpStatus'
-  | 'onInstallMcp'
-  | 'aiAgentsStatus'
-  | 'vaultAiGuidanceStatus'
-  | 'onOpenAiAgents'
-  | 'onRestoreVaultAiGuidance'
-  | 'onSetDefaultAiAgent'
-  | 'selectedAiAgent'
-  | 'onCycleDefaultAiAgent'
-  | 'selectedAiAgentLabel'
->
 type CommandRegistryNoteActions = Pick<
   CommandRegistryConfig,
   | 'onSetNoteIcon'
@@ -268,14 +235,6 @@ type CommandRegistryNoteActions = Pick<
   | 'noteListColumnsLabel'
   | 'onExportNoteAsPdf'
 >
-
-function aiFeaturesAreEnabled(config: Pick<AppCommandsConfig, 'aiFeaturesEnabled'>): boolean {
-  return config.aiFeaturesEnabled !== false
-}
-
-function enabledAiChatToggle(config: Pick<AppCommandsConfig, 'aiFeaturesEnabled' | 'onToggleAIChat'>): (() => void) | undefined {
-  return aiFeaturesAreEnabled(config) ? config.onToggleAIChat : undefined
-}
 
 function createKeyboardActions(
   config: AppCommandsConfig,
@@ -301,7 +260,6 @@ function createKeyboardActions(
     onZoomReset: config.onZoomReset,
     onGoBack: config.onGoBack,
     onGoForward: config.onGoForward,
-    onToggleAIChat: enabledAiChatToggle(config),
     onToggleTableOfContents: config.onToggleTableOfContents,
     onToggleRawEditor: config.onToggleRawEditor,
     onToggleInspector: config.onToggleInspector,
@@ -350,7 +308,6 @@ function createMenuEventActionHandlers(
   | 'onSearch'
   | 'onToggleRawEditor'
   | 'onToggleDiff'
-  | 'onToggleAIChat'
   | 'onToggleTableOfContents'
   | 'onExportNoteAsPdf'
   | 'onToggleOrganized'
@@ -380,7 +337,6 @@ function createMenuEventActionHandlers(
     onSearch: config.onSearch,
     onToggleRawEditor: config.onToggleRawEditor,
     onToggleDiff: config.onToggleDiff,
-    onToggleAIChat: enabledAiChatToggle(config),
     onToggleTableOfContents: config.onToggleTableOfContents,
     onExportNoteAsPdf: config.onExportNoteAsPdf,
     onToggleOrganized: config.onToggleOrganized,
@@ -404,7 +360,6 @@ function createMenuEventVaultHandlers(
   | 'onPull'
   | 'onResolveConflicts'
   | 'onViewChanges'
-  | 'onInstallMcp'
   | 'onReloadVault'
   | 'onRepairVault'
   | 'onOpenInNewWindow'
@@ -419,7 +374,6 @@ function createMenuEventVaultHandlers(
     onPull: config.onPull,
     onResolveConflicts: config.onResolveConflicts,
     onViewChanges: viewChanges,
-    onInstallMcp: config.onInstallMcp,
     onReloadVault: config.onReloadVault,
     onRepairVault: config.onRepairVault,
     onOpenInNewWindow: config.onOpenInNewWindow,
@@ -494,7 +448,6 @@ function createCommandRegistryCoreConfig(
     onArchiveNote: config.onArchiveNote,
     onUnarchiveNote: config.onUnarchiveNote,
     onCommitPush: config.onCommitPush,
-    onGenerateCommitMessage: config.onGenerateCommitMessage,
     onPull: config.onPull,
     onPullRepository: config.onPullRepository,
     onResolveConflicts: config.onResolveConflicts,
@@ -515,7 +468,6 @@ function createCommandRegistryCoreConfig(
     defaultNoteWidth: config.defaultNoteWidth,
     onSetNoteWidth: config.onSetNoteWidth,
     onSetDefaultNoteWidth: config.onSetDefaultNoteWidth,
-    onToggleAIChat: enabledAiChatToggle(config),
     onToggleTableOfContents: config.onToggleTableOfContents,
   }
 }
@@ -555,31 +507,6 @@ function createCommandRegistryVaultConfig(
   }
 }
 
-function createCommandRegistryAiConfig(
-  config: AppCommandsConfig,
-): CommandRegistryAiActions {
-  const aiFeaturesEnabled = aiFeaturesAreEnabled(config)
-  const sharedConfig = {
-    aiFeaturesEnabled,
-    mcpStatus: config.mcpStatus,
-    onInstallMcp: config.onInstallMcp,
-  }
-
-  if (!aiFeaturesEnabled) return sharedConfig
-
-  return {
-    ...sharedConfig,
-    aiAgentsStatus: config.aiAgentsStatus,
-    vaultAiGuidanceStatus: config.vaultAiGuidanceStatus,
-    onOpenAiAgents: config.onOpenAiAgents,
-    onRestoreVaultAiGuidance: config.onRestoreVaultAiGuidance,
-    onSetDefaultAiAgent: config.onSetDefaultAiAgent,
-    selectedAiAgent: config.selectedAiAgent,
-    onCycleDefaultAiAgent: config.onCycleDefaultAiAgent,
-    selectedAiAgentLabel: config.selectedAiAgentLabel,
-  }
-}
-
 function createCommandRegistryNoteConfig(
   config: AppCommandsConfig,
 ): CommandRegistryNoteActions {
@@ -606,7 +533,6 @@ function createCommandRegistryConfig(config: AppCommandsConfig): CommandRegistry
     ...createCommandRegistryCoreConfig(config),
     ...createCommandRegistrySelectionConfig(config),
     ...createCommandRegistryVaultConfig(config),
-    ...createCommandRegistryAiConfig(config),
     ...createCommandRegistryNoteConfig(config),
   }
 }

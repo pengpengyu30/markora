@@ -45,11 +45,6 @@ describe('LinuxMenuButton', () => {
     fireEvent.click(await screen.findByText('Paste without Formatting'))
     expect(invoke).toHaveBeenCalledWith('trigger_menu_command', { id: 'edit-paste-plain-text' })
     await waitFor(() => expect(screen.queryByText('Paste without Formatting')).not.toBeInTheDocument())
-
-    await openSubmenu('View')
-    expect(screen.getByText('Ctrl+Shift+L')).toBeInTheDocument()
-    fireEvent.click(await screen.findByText('Toggle AI Panel'))
-    expect(invoke).toHaveBeenCalledWith('trigger_menu_command', { id: 'view-toggle-ai-chat' })
   }, MENU_TEST_TIMEOUT_MS)
 
   it('dispatches shared menu commands from the horizontal desktop menu', async () => {
@@ -79,9 +74,6 @@ describe('LinuxMenuButton', () => {
 
     await openHorizontalMenu('视图')
     expect(await screen.findByText('实际大小')).toBeInTheDocument()
-    fireEvent.click(await screen.findByText('切换 AI 面板'))
-
-    expect(invoke).toHaveBeenCalledWith('trigger_menu_command', { id: 'view-toggle-ai-chat' })
   }, MENU_TEST_TIMEOUT_MS)
 
   it('invokes direct window actions from the Window submenu', async () => {

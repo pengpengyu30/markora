@@ -16,7 +16,6 @@ type Translate = ReturnType<typeof createTranslator>
 
 interface GitSettingsSectionProps {
   autoGitEnabled: boolean
-  autoGitAiCommitMessagesEnabled: boolean
   autoGitIdleThresholdSeconds: number
   autoGitInactiveThresholdSeconds: number
   gitProvider: GitProviderId
@@ -25,7 +24,6 @@ interface GitSettingsSectionProps {
   isGitVault: boolean
   vaultPath: string
   setAutoGitEnabled: (value: boolean) => void
-  setAutoGitAiCommitMessagesEnabled: (value: boolean) => void
   setAutoGitIdleThresholdSeconds: (value: number) => void
   setAutoGitInactiveThresholdSeconds: (value: number) => void
   setGitFeaturesEnabled: (value: boolean) => void
@@ -86,26 +84,22 @@ function GitRepositoryRootRow({ t, workspace }: { t: Translate; workspace: GitWo
 }
 
 function AutoGitSettingsRows({
-  autoGitAiCommitMessagesEnabled,
   autoGitEnabled,
   autoGitIdleThresholdSeconds,
   autoGitInactiveThresholdSeconds,
   gitControlsAvailable,
   gitFeaturesEnabled,
   isGitVault,
-  setAutoGitAiCommitMessagesEnabled,
   setAutoGitEnabled,
   setAutoGitIdleThresholdSeconds,
   setAutoGitInactiveThresholdSeconds,
   t,
 }: Pick<GitSettingsSectionProps,
-  | 'autoGitAiCommitMessagesEnabled'
   | 'autoGitEnabled'
   | 'autoGitIdleThresholdSeconds'
   | 'autoGitInactiveThresholdSeconds'
   | 'gitFeaturesEnabled'
   | 'isGitVault'
-  | 'setAutoGitAiCommitMessagesEnabled'
   | 'setAutoGitEnabled'
   | 'setAutoGitIdleThresholdSeconds'
   | 'setAutoGitInactiveThresholdSeconds'
@@ -122,14 +116,6 @@ function AutoGitSettingsRows({
         onChange={setAutoGitEnabled}
         disabled={!gitControlsAvailable}
         testId="settings-autogit-enabled"
-      />
-      <SettingsSwitchRow
-        label={t('settings.autogit.aiCommitMessages')}
-        description={t('settings.autogit.aiCommitMessagesDescription')}
-        checked={autoGitAiCommitMessagesEnabled}
-        onChange={setAutoGitAiCommitMessagesEnabled}
-        disabled={!gitControlsAvailable}
-        testId="settings-autogit-ai-commit-messages"
       />
       <SettingsRow label={t('settings.autogit.idleThreshold')} description={t('settings.autogit.idleThresholdDescription')} controlWidth="compact">
         <NumberInputControl ariaLabel={t('settings.autogit.idleThreshold')} value={autoGitIdleThresholdSeconds} onValueChange={setAutoGitIdleThresholdSeconds} testId="settings-autogit-idle-threshold" disabled={!gitControlsAvailable} />

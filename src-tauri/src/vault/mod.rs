@@ -26,10 +26,7 @@ mod view_value_conversions;
 mod views;
 
 pub use cache::{invalidate_cache, read_vault_snapshot, refresh_vault_cache, scan_vault_cached};
-pub use config_seed::{
-    get_ai_guidance_status, migrate_agents_md, repair_config_files, restore_ai_guidance_files,
-    seed_config_files, AiGuidanceFileState, VaultAiGuidanceStatus,
-};
+pub use config_seed::{repair_config_files, seed_config_files};
 pub use entry::{FolderNode, VaultEntry};
 pub use file::{create_note_content, get_note_content, note_content_matches, save_note_content};
 pub use folders::{delete_folder, rename_folder, FolderRenameResult};

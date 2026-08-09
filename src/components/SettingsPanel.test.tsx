@@ -1,9 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { SettingsPanel } from './SettingsPanel'
 import type { Settings } from '../types'
 import { THEME_MODE_STORAGE_KEY } from '../lib/themeMode'
-import type { AiAgentsStatus } from '../lib/aiAgents'
 import type { VaultOption } from './StatusBar'
 
 const { trackEventMock, registerEscapeSurfaceMock, unregisterEscapeSurfaceMock } = vi.hoisted(() => ({
@@ -27,7 +26,6 @@ const emptySettings: Settings = {
   git_provider: null,
   git_wsl_distro: null,
   autogit_enabled: null,
-  autogit_use_ai_commit_messages: null,
   autogit_idle_threshold_seconds: null,
   autogit_inactive_threshold_seconds: null,
   auto_advance_inbox_after_organize: null,
@@ -40,7 +38,6 @@ const emptySettings: Settings = {
   theme_mode: null,
   ui_language: null,
   date_display_format: null,
-  default_ai_agent: null,
   hide_gitignored_files: null,
   all_notes_show_pdfs: null,
   all_notes_show_images: null,
@@ -94,7 +91,6 @@ function installMatchMedia(matches = false) {
 
 function expectAutoGitControlsDisabled() {
   expect(screen.getByRole('switch', { name: 'Enable AutoGit' })).toBeDisabled()
-  expect(screen.getByRole('switch', { name: 'Use AI for AutoGit commit messages' })).toBeDisabled()
   expect(screen.getByTestId('settings-autogit-idle-threshold')).toBeDisabled()
   expect(screen.getByTestId('settings-autogit-inactive-threshold')).toBeDisabled()
 }
@@ -160,96 +156,6 @@ describe('SettingsPanel', () => {
     )
     expect(screen.getByText('Settings')).toBeInTheDocument()
     expect(screen.getAllByText('Sync & Updates').length).toBeGreaterThan(0)
-  })
-
-  it('separates local agents, local models, and API models in AI settings', async () => {
-    const aiAgentsStatus: AiAgentsStatus = {
-      claude_code: { status: 'installed', version: '2.1.18' },
-      codex: { status: 'missing', version: null },
-      copilot: { status: 'missing', version: null },
-      opencode: { status: 'missing', version: null },
-      pi: { status: 'missing', version: null },
-      antigravity: { status: 'missing', version: null },
-      kiro: { status: 'missing', version: null },
-      hermes: { status: 'missing', version: null },
-    }
-    render(
-      <SettingsPanel
-        open={true}
-        settings={emptySettings}
-        aiAgentsStatus={aiAgentsStatus}
-        onSave={onSave}
-        onClose={onClose}
-      />
-    )
-
-    expect(screen.getByText('Recognized local agents')).toBeInTheDocument()
-    expect(screen.getByText('Claude Code')).toBeInTheDocument()
-    expect(screen.getByText('2.1.18')).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Local model' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'API model' })).toBeInTheDocument()
-
-    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Local model' }), { button: 0, ctrlKey: false })
-    fireEvent.change(screen.getByLabelText('Model ID'), { target: { value: 'llama3.2' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Test model' }))
-    expect(await screen.findByText('Connection works. The model replied successfully.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Add local model' })).toBeInTheDocument()
-    expect(screen.queryByText('Recognized local agents')).not.toBeInTheDocument()
-
-    fireEvent.mouseDown(screen.getByRole('tab', { name: 'API model' }), { button: 0, ctrlKey: false })
-    expect(screen.getByRole('button', { name: 'Add API model' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Add local model' })).not.toBeInTheDocument()
-    fireEvent.pointerDown(screen.getByText('OpenAI').closest('button')!, { button: 0, pointerType: 'mouse' })
-    fireEvent.click(screen.getByRole('option', { name: 'Gemini' }))
-    expect(screen.getByDisplayValue('Gemini')).toBeInTheDocument()
-    expect(screen.getByDisplayValue('https://generativelanguage.googleapis.com/v1beta/openai')).toBeInTheDocument()
-    expect(screen.getByPlaceholderText('gemini-2.5-flash')).toBeInTheDocument()
-  })
-
-  it('supports API key storage for local model providers', async () => {
-    renderOpenSettings()
-
-    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Local model' }), { button: 0, ctrlKey: false })
-    expect(screen.getByText('Local providers are called from this device. If your local server requires a key, save it locally or read it from an environment variable.')).toBeInTheDocument()
-    expect(screen.getByText('API key storage')).toBeInTheDocument()
-
-    fireEvent.change(screen.getByLabelText('Model ID'), { target: { value: 'local-llama' } })
-    fireEvent.pointerDown(screen.getByText('No key').closest('button')!, { button: 0, pointerType: 'mouse' })
-    fireEvent.click(screen.getByRole('option', { name: 'Save locally in Tolaria' }))
-    fireEvent.change(screen.getByLabelText('API key'), { target: { value: 'lm-secret' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Add local model' }))
-    await waitFor(() => expect(screen.getByText('Ollama · local-llama')).toBeInTheDocument())
-    saveSettingsPanel()
-
-    expectSettingsSaved({
-      ai_model_providers: [
-        expect.objectContaining({
-          kind: 'ollama',
-          api_key_storage: 'local_file',
-          api_key_env_var: null,
-          models: [expect.objectContaining({ id: 'local-llama' })],
-        }),
-      ],
-    })
-  })
-
-  it('lets users disable AI surfaces without showing missing-agent setup', () => {
-    render(
-      <SettingsPanel
-        open={true}
-        settings={{ ...emptySettings, ai_features_enabled: false }}
-        onSave={onSave}
-        onClose={onClose}
-      />
-    )
-
-    expect(within(screen.getByTestId('settings-ai-features-enabled')).getByRole('switch')).toHaveAttribute('aria-checked', 'false')
-    expect(screen.queryByText('Recognized local agents')).not.toBeInTheDocument()
-
-    fireEvent.click(within(screen.getByTestId('settings-ai-features-enabled')).getByRole('switch'))
-    saveSettingsPanel()
-
-    expectSettingsSaved({ ai_features_enabled: true })
   })
 
   it('updates the draft language when stored settings finish loading', () => {
@@ -685,29 +591,6 @@ describe('SettingsPanel', () => {
     })
   })
 
-  it('anchors the default agent dropdown with the popper strategy', () => {
-    render(
-      <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
-    )
-
-    fireEvent.pointerDown(screen.getByTestId('settings-default-ai-agent'), { button: 0, pointerType: 'mouse' })
-
-    expect(document.querySelector('[data-anchor-strategy="popper"]')).toBeInTheDocument()
-  })
-
-  it('keeps keyboard opening enabled for the default agent dropdown', () => {
-    render(
-      <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
-    )
-
-    const trigger = screen.getByTestId('settings-default-ai-agent')
-    trigger.focus()
-    fireEvent.keyDown(trigger, { key: 'ArrowDown', code: 'ArrowDown' })
-
-    expect(document.querySelector('[data-anchor-strategy="popper"]')).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: /Codex/i })).toBeInTheDocument()
-  })
-
   it('treats a legacy beta release channel as stable', () => {
     render(
       <SettingsPanel
@@ -885,22 +768,6 @@ describe('SettingsPanel', () => {
     }))
   })
 
-  it('saves the AutoGit AI commit-message preference', () => {
-    render(
-      <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
-    )
-
-    fireEvent.click(screen.getByRole('switch', { name: 'Use AI for AutoGit commit messages' }))
-    fireEvent.click(screen.getByTestId('settings-save'))
-
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
-      autogit_use_ai_commit_messages: true,
-    }))
-    expect(trackEventMock).toHaveBeenCalledWith('autogit_ai_commit_messages_changed', {
-      enabled: 1,
-    })
-  })
-
   it('disables AutoGit controls when the current vault is not git-enabled', () => {
     render(
       <SettingsPanel
@@ -1061,46 +928,6 @@ describe('SettingsPanel', () => {
 
     fireEvent.keyDown(document, { key: 'Tab' })
     expect(closeButton).toHaveFocus()
-  })
-
-  it('does not trap focus away from a portaled settings dropdown', () => {
-    render(
-      <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
-    )
-
-    act(() => {
-      fireEvent.pointerDown(screen.getByTestId('settings-default-ai-agent'), { button: 0, pointerType: 'mouse' })
-    })
-    const option = screen.getByRole('option', { name: /Codex/i })
-    act(() => {
-      option.focus()
-    })
-
-    const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })
-    act(() => {
-      document.dispatchEvent(event)
-    })
-
-    expect(event.defaultPrevented).toBe(false)
-    expect(screen.getByTitle('Close settings')).not.toHaveFocus()
-    expect(screen.getByTestId('settings-save')).not.toHaveFocus()
-  })
-
-  it('copies the MCP config from the AI Agents section', () => {
-    const onCopyMcpConfig = vi.fn()
-    render(
-      <SettingsPanel
-        open={true}
-        settings={emptySettings}
-        onSave={onSave}
-        onCopyMcpConfig={onCopyMcpConfig}
-        onClose={onClose}
-      />
-    )
-
-    fireEvent.click(screen.getByRole('button', { name: 'Copy MCP config' }))
-
-    expect(onCopyMcpConfig).toHaveBeenCalledOnce()
   })
 
   describe('Privacy & Telemetry section', () => {

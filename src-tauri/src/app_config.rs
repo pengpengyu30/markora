@@ -1,24 +1,27 @@
-use serde::Deserialize;
 use std::path::{Path, PathBuf};
-use std::sync::OnceLock;
 
-const APP_CONFIG_POLICY_JSON: &str = include_str!("../../mcp-server/app-config-policy.json");
 const APP_CONFIG_NAMESPACE_ENV: &str = "TOLARIA_APP_CONFIG_NAMESPACE";
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug)]
 struct AppConfigPolicy {
-    current_namespace: String,
-    development_namespace: String,
-    legacy_namespace: String,
-    namespace_read_order: Vec<AppConfigNamespace>,
+    current_namespace: &'static str,
+    development_namespace: &'static str,
+    legacy_namespace: &'static str,
+    namespace_read_order: &'static [AppConfigNamespace],
 }
 
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, Copy)]
 enum AppConfigNamespace {
     Current,
     Legacy,
 }
+
+const APP_CONFIG_POLICY: AppConfigPolicy = AppConfigPolicy {
+    current_namespace: "com.tolaria.app",
+    development_namespace: "com.tolaria.app.dev",
+    legacy_namespace: "com.laputa.app",
+    namespace_read_order: &[AppConfigNamespace::Current, AppConfigNamespace::Legacy],
+};
 
 impl AppConfigPolicy {
     fn current_namespace(&self) -> &str {
@@ -26,7 +29,7 @@ impl AppConfigPolicy {
     }
 
     fn current_namespace_for(&self, requested_namespace: Option<&str>) -> &str {
-        if requested_namespace.map(str::trim) == Some(self.development_namespace.as_str()) {
+        if requested_namespace.map(str::trim) == Some(self.development_namespace) {
             &self.development_namespace
         } else {
             &self.current_namespace
@@ -46,11 +49,7 @@ impl AppConfigPolicy {
 }
 
 fn app_config_policy() -> &'static AppConfigPolicy {
-    static POLICY: OnceLock<AppConfigPolicy> = OnceLock::new();
-    POLICY.get_or_init(|| {
-        serde_json::from_str(APP_CONFIG_POLICY_JSON)
-            .expect("mcp-server/app-config-policy.json must be valid")
-    })
+    &APP_CONFIG_POLICY
 }
 
 fn app_config_dir() -> Result<PathBuf, String> {
@@ -237,7 +236,7 @@ mod tests {
             .join("settings.json");
         let legacy = dir
             .path()
-            .join(app_config_policy().legacy_namespace.as_str())
+            .join(app_config_policy().legacy_namespace)
             .join("settings.json");
         std::fs::create_dir_all(preferred.parent().unwrap()).unwrap();
         std::fs::create_dir_all(legacy.parent().unwrap()).unwrap();
@@ -255,7 +254,7 @@ mod tests {
         let dir = tempfile::TempDir::new().unwrap();
         let legacy = dir
             .path()
-            .join(app_config_policy().legacy_namespace.as_str())
+            .join(app_config_policy().legacy_namespace)
             .join("vaults.json");
         std::fs::create_dir_all(legacy.parent().unwrap()).unwrap();
         std::fs::write(&legacy, r#"{"vaults":[]}"#).unwrap();
@@ -273,7 +272,7 @@ mod tests {
         for file_name in ["settings.json", "vaults.json"] {
             let legacy = dir
                 .path()
-                .join(app_config_policy().legacy_namespace.as_str())
+                .join(app_config_policy().legacy_namespace)
                 .join(file_name);
             std::fs::create_dir_all(legacy.parent().unwrap()).unwrap();
             std::fs::write(&legacy, "{}").unwrap();

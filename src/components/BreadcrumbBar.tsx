@@ -68,8 +68,6 @@ interface BreadcrumbBarProps {
   onToggleRaw?: () => void
   /** When true, raw mode is forced (non-markdown file) — hide the toggle. */
   forceRawMode?: boolean
-  showAIChat?: boolean
-  onToggleAIChat?: () => void
   showTableOfContents?: boolean
   onToggleTableOfContents?: () => void
   inspectorCollapsed?: boolean

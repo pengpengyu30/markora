@@ -1,6 +1,5 @@
 import { BookOpen, GearSix as Settings, Megaphone, Moon, Package, Sun, type IconProps } from '@phosphor-icons/react'
 import type { ComponentType, MouseEventHandler } from 'react'
-import type { McpStatus } from '../../hooks/useMcpStatus'
 import type { ThemeMode } from '../../lib/themeMode'
 import { translate, type AppLocale, type TranslationKey } from '../../lib/i18n'
 import { useStatusBarAddRemote } from '../../hooks/useStatusBarAddRemote'
@@ -14,7 +13,6 @@ import {
   CommitButton,
   ConflictBadge,
   ChangesBadge,
-  McpBadge,
   MissingGitBadge,
   NoRemoteBadge,
   OfflineBadge,
@@ -73,8 +71,6 @@ interface StatusBarPrimarySectionProps {
   onRemoveVault?: (path: string) => void
   onReorderVaults?: (orderedPaths: string[]) => void
   onUpdateWorkspaceIdentity?: (path: string, patch: Partial<VaultOption>) => void
-  mcpStatus?: McpStatus
-  onInstallMcp?: () => void
   stacked?: boolean
   compact?: boolean
   locale?: AppLocale
@@ -150,14 +146,12 @@ function StatusBarPrimaryBadges(options: {
   conflictCount: number
   onClickPulse?: () => void
   isGitVault: boolean
-  mcpStatus?: McpStatus
-  onInstallMcp?: () => void
   isOffline: boolean
   isVaultReloading: boolean
   compact: boolean
   locale: AppLocale
 }) {
-  const { modifiedCount, visibleRemoteStatus, repositories, selectedRepositoryPath, onRepositoryChange, onAddRemote, onClickPending, onCommitPush, commitActionPending, gitFeaturesEnabled, onInitializeGit, syncStatus, lastSyncTime, onTriggerSync, onPullAndPush, onOpenConflictResolver, conflictCount, onClickPulse, isGitVault, mcpStatus, onInstallMcp, isOffline, isVaultReloading, compact, locale } = options
+  const { modifiedCount, visibleRemoteStatus, repositories, selectedRepositoryPath, onRepositoryChange, onAddRemote, onClickPending, onCommitPush, commitActionPending, gitFeaturesEnabled, onInitializeGit, syncStatus, lastSyncTime, onTriggerSync, onPullAndPush, onOpenConflictResolver, conflictCount, onClickPulse, isGitVault, isOffline, isVaultReloading, compact, locale } = options
   return (
     <>
       <OfflineBadge isOffline={isOffline} showSeparator={!compact} compact={compact} locale={locale} />
@@ -212,15 +206,6 @@ function StatusBarPrimaryBadges(options: {
       ) : gitFeaturesEnabled ? (
         <MissingGitBadge onClick={onInitializeGit} showSeparator={!compact} compact={compact} locale={locale} />
       ) : null}
-      {mcpStatus && (
-        <McpBadge
-          status={mcpStatus}
-          onInstall={onInstallMcp}
-          showSeparator={!compact}
-          compact={compact}
-          locale={locale}
-        />
-      )}
     </>
   )
 }
@@ -329,7 +314,7 @@ function StatusBarGitControls(
     locale: AppLocale
   },
 ) {
-  const { modifiedCount, vaultPath, onAddRemote, onClickPending, onCommitPush, commitActionPending, gitFeaturesEnabled, onInitializeGit, isOffline, isVaultReloading, isGitVault, syncStatus, lastSyncTime, conflictCount, remoteStatus, repositories, selectedRepositoryPath, onRepositoryChange, onTriggerSync, onPullAndPush, onOpenConflictResolver, onClickPulse, mcpStatus, onInstallMcp, compact, locale } = options
+  const { modifiedCount, vaultPath, onAddRemote, onClickPending, onCommitPush, commitActionPending, gitFeaturesEnabled, onInitializeGit, isOffline, isVaultReloading, isGitVault, syncStatus, lastSyncTime, conflictCount, remoteStatus, repositories, selectedRepositoryPath, onRepositoryChange, onTriggerSync, onPullAndPush, onOpenConflictResolver, onClickPulse, compact, locale } = options
   const gitVaultPath = selectedRepositoryPath || vaultPath
   const { openAddRemote, closeAddRemote, showAddRemote, visibleRemoteStatus, handleRemoteConnected } =
     useStatusBarAddRemote({
@@ -363,8 +348,6 @@ function StatusBarGitControls(
         conflictCount={conflictCount}
         onClickPulse={onClickPulse}
         isGitVault={isGitVault !== false}
-        mcpStatus={mcpStatus}
-        onInstallMcp={onInstallMcp}
         isOffline={isOffline === true}
         isVaultReloading={isVaultReloading === true}
         compact={compact}
@@ -381,7 +364,7 @@ function StatusBarGitControls(
 }
 
 export function StatusBarPrimarySection(options: StatusBarPrimarySectionProps) {
-  const { modifiedCount, vaultPath, defaultWorkspacePath, vaults, multiWorkspaceEnabled, onSwitchVault, onSetDefaultWorkspace, onOpenVaultSettings, onOpenLocalFolder, onCreateEmptyVault, onCloneVault, onCloneGettingStarted, onAddRemote, onClickPending, onClickPulse, onCommitPush, commitActionPending = false, gitFeaturesEnabled = true, onInitializeGit, isOffline = false, isVaultReloading = false, isGitVault = true, syncStatus, lastSyncTime, conflictCount, remoteStatus, repositories, selectedRepositoryPath, onRepositoryChange, onTriggerSync, onPullAndPush, onOpenConflictResolver, buildNumber, onCheckForUpdates, onRemoveVault, onReorderVaults, onUpdateWorkspaceIdentity, mcpStatus, onInstallMcp, locale = 'en', stacked = false, compact = false } = options
+  const { modifiedCount, vaultPath, defaultWorkspacePath, vaults, multiWorkspaceEnabled, onSwitchVault, onSetDefaultWorkspace, onOpenVaultSettings, onOpenLocalFolder, onCreateEmptyVault, onCloneVault, onCloneGettingStarted, onAddRemote, onClickPending, onClickPulse, onCommitPush, commitActionPending = false, gitFeaturesEnabled = true, onInitializeGit, isOffline = false, isVaultReloading = false, isGitVault = true, syncStatus, lastSyncTime, conflictCount, remoteStatus, repositories, selectedRepositoryPath, onRepositoryChange, onTriggerSync, onPullAndPush, onOpenConflictResolver, buildNumber, onCheckForUpdates, onRemoveVault, onReorderVaults, onUpdateWorkspaceIdentity, locale = 'en', stacked = false, compact = false } = options
   return (
     <div style={primarySectionStyle(stacked, compact)}>
       <VaultMenu
@@ -430,8 +413,6 @@ export function StatusBarPrimarySection(options: StatusBarPrimarySectionProps) {
         conflictCount={conflictCount}
         onClickPulse={onClickPulse}
         isGitVault={isGitVault}
-        mcpStatus={mcpStatus}
-        onInstallMcp={onInstallMcp}
         isOffline={isOffline}
         isVaultReloading={isVaultReloading}
         compact={compact}

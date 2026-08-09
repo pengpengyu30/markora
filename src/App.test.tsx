@@ -329,22 +329,6 @@ vi.mock('./mock-tauri', () => ({
   trackMockChange: vi.fn(),
 }))
 
-// Mock ai-chat utilities
-vi.mock('./utils/ai-chat', async () => {
-  const actual = await vi.importActual<typeof import('./utils/ai-chat')>('./utils/ai-chat')
-
-  return {
-    ...actual,
-    buildSystemPrompt: vi.fn(() => ({ prompt: '', totalTokens: 0, truncated: false })),
-    checkClaudeCli: vi.fn(async () => ({ installed: false })),
-    streamClaudeChat: vi.fn(async () => 'mock-session'),
-  }
-})
-
-vi.mock('./utils/streamAiAgent', () => ({
-  streamAiAgent: vi.fn(async () => {}),
-}))
-
 vi.mock('./hooks/useUpdater', async () => {
   const actual = await vi.importActual<typeof import('./hooks/useUpdater')>('./hooks/useUpdater')
 
@@ -454,10 +438,7 @@ import App from './App'
 import { TooltipProvider } from './components/ui/tooltip'
 import { useUpdater } from './hooks/useUpdater'
 import { isTauri } from './mock-tauri'
-import { streamAiAgent } from './utils/streamAiAgent'
 
-const AI_AGENTS_ONBOARDING_DISMISSED_STORAGE_NAME = 'tolaria:ai-agents-onboarding-dismissed'
-const CLAUDE_CODE_ONBOARDING_DISMISSED_STORAGE_NAME = 'tolaria:claude-code-onboarding-dismissed'
 const SLOW_APP_READY_TIMEOUT_MS = 10_000
 
 function render(ui: ReactElement, options?: Parameters<typeof testingLibraryRender>[1]) {
@@ -490,7 +471,6 @@ describe('App', () => {
     vi.mocked(useUpdater).mockReturnValue(createMockUpdaterResult())
     localStorage.clear()
     window.history.replaceState({}, '', '/')
-    localStorage.setItem(CLAUDE_CODE_ONBOARDING_DISMISSED_STORAGE_NAME, '1')
   })
 
   it('renders the four-panel layout', async () => {
@@ -728,121 +708,6 @@ describe('App', () => {
     })
   })
 
-  it('shows the external AI setup dialog from the menu when AI onboarding is active', async () => {
-    localStorage.removeItem(AI_AGENTS_ONBOARDING_DISMISSED_STORAGE_NAME)
-    localStorage.removeItem(CLAUDE_CODE_ONBOARDING_DISMISSED_STORAGE_NAME)
-    mockCommandResults.get_ai_agents_status = {
-      claude_code: { installed: true, version: '2.1.90' },
-      codex: { installed: true, version: '0.122.0-alpha.1' },
-      opencode: { installed: false, version: null },
-      pi: { installed: false, version: null },
-      antigravity: { installed: false, version: null },
-    }
-    mockCommandResults.check_mcp_status = 'installed'
-
-    render(<App />)
-
-    await waitFor(() => {
-      expect(screen.getByText('AI is ready')).toBeInTheDocument()
-    }, { timeout: SLOW_APP_READY_TIMEOUT_MS })
-
-    await waitFor(() => {
-      expect(typeof window.__laputaTest?.dispatchBrowserMenuCommand).toBe('function')
-    })
-
-    act(() => {
-      window.__laputaTest?.dispatchBrowserMenuCommand?.('vault-install-mcp')
-    })
-
-    await waitFor(() => {
-      expect(screen.getByText('Manage External AI Tools')).toBeInTheDocument()
-    })
-    expect(screen.getByTestId('mcp-setup-dialog')).toBeInTheDocument()
-    expect(screen.queryByText('AI is ready')).not.toBeInTheDocument()
-  })
-
-  it('routes right-panel AI chat messages to the selected default agent', async () => {
-    mockCommandResults.get_settings = createSettings({
-      auto_advance_inbox_after_organize: null,
-      default_ai_agent: 'codex',
-    })
-    mockCommandResults.get_ai_agents_status = {
-      claude_code: { installed: true, version: '2.1.90' },
-      codex: { installed: true, version: '0.122.0-alpha.1' },
-      opencode: { installed: false, version: null },
-      pi: { installed: false, version: null },
-      antigravity: { installed: false, version: null },
-    }
-
-    render(<App />)
-
-    await screen.findByText('All Notes')
-    fireEvent.keyDown(window, { key: 'l', code: 'KeyL', metaKey: true, shiftKey: true })
-
-    const input = await screen.findByTestId('agent-input')
-    await waitFor(() => {
-      expect(input).toHaveAttribute('aria-placeholder', 'Ask Codex')
-    })
-
-    input.textContent = 'Summarize the active vault'
-    fireEvent.input(input)
-    fireEvent.click(screen.getByTestId('agent-send'))
-
-    await waitFor(() => {
-      expect(streamAiAgent).toHaveBeenCalledWith(expect.objectContaining({
-        agent: 'codex',
-      }))
-    })
-  })
-
-  it('waits for saved AI agent settings before sending right-panel messages', async () => {
-    let resolveSettings: ((settings: Settings) => void) | null = null
-    mockCommandResults.get_settings = () => new Promise((resolve) => {
-      resolveSettings = resolve
-    })
-    mockCommandResults.get_ai_agents_status = {
-      claude_code: { installed: true, version: '2.1.90' },
-      codex: { installed: true, version: '0.122.0-alpha.1' },
-      opencode: { installed: false, version: null },
-      pi: { installed: false, version: null },
-      antigravity: { installed: false, version: null },
-    }
-
-    render(<App />)
-
-    await screen.findByText('All Notes')
-    fireEvent.keyDown(window, { key: 'l', code: 'KeyL', metaKey: true, shiftKey: true })
-
-    const input = await screen.findByTestId('agent-input')
-    fireEvent.click(screen.getByTestId('agent-send'))
-
-    await act(async () => {
-      await Promise.resolve()
-    })
-    expect(streamAiAgent).not.toHaveBeenCalled()
-
-    await act(async () => {
-      resolveSettings?.(createSettings({
-        auto_advance_inbox_after_organize: null,
-        default_ai_agent: 'codex',
-      }))
-    })
-
-    await waitFor(() => {
-      expect(input).toHaveAttribute('aria-placeholder', 'Ask Codex')
-    })
-
-    input.textContent = 'Summarize the active vault'
-    fireEvent.input(input)
-    fireEvent.click(screen.getByTestId('agent-send'))
-
-    await waitFor(() => {
-      expect(streamAiAgent).toHaveBeenCalledWith(expect.objectContaining({
-        agent: 'codex',
-      }))
-    })
-  })
-
   it('shows onboarding after telemetry consent when no active vault is configured', async () => {
     mockCommandResults.get_settings = createSettings({ telemetry_consent: null })
     mockCommandResults.load_vault_list = { vaults: [], active_vault: null, hidden_defaults: [] }
@@ -961,57 +826,6 @@ describe('App', () => {
       expect(screen.getByText('Welcome to Tolaria')).toBeInTheDocument()
     })
     expect(screen.getByTestId('welcome-open-folder')).toHaveTextContent('Open existing vault')
-  })
-
-  it('persists an existing vault and shows AI onboarding after first-run open', async () => {
-    const selectedVaultPath = '/Users/mock/Documents/Work Vault'
-    const saveVaultList = vi.fn()
-    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('file:///Users/mock/Documents/Work%20Vault')
-
-    localStorage.removeItem(CLAUDE_CODE_ONBOARDING_DISMISSED_STORAGE_NAME)
-    mockCommandResults.load_vault_list = { vaults: [], active_vault: null, hidden_defaults: [] }
-    mockCommandResults.check_vault_exists = (args?: { path?: string }) => args?.path === selectedVaultPath
-    mockCommandResults.get_ai_agents_status = {}
-    mockCommandResults.save_vault_list = (args?: {
-      list?: { vaults?: Array<{ label: string; path: string }>; active_vault?: string | null }
-    }) => {
-      saveVaultList(args)
-      return null
-    }
-
-    render(<App />)
-
-    await waitFor(() => {
-      expect(screen.getByTestId('welcome-screen')).toBeInTheDocument()
-    }, { timeout: SLOW_APP_READY_TIMEOUT_MS })
-
-    fireEvent.click(screen.getByTestId('welcome-open-folder'))
-
-    await waitFor(() => {
-      expect(saveVaultList).toHaveBeenCalledWith({
-        list: {
-          vaults: [{
-            label: 'Work Vault',
-            path: selectedVaultPath,
-            alias: null,
-            color: null,
-            icon: null,
-            mounted: true,
-          }],
-          active_vault: selectedVaultPath,
-          default_workspace_path: selectedVaultPath,
-          hidden_defaults: [],
-        },
-      })
-    })
-    expect(saveVaultList).toHaveBeenCalledTimes(1)
-
-    await waitFor(() => {
-      expect(screen.getByTestId('ai-agents-onboarding-screen')).toBeInTheDocument()
-    }, { timeout: SLOW_APP_READY_TIMEOUT_MS })
-    expect(screen.getByText('AI setup is optional')).toBeInTheDocument()
-
-    promptSpy.mockRestore()
   })
 
   it('persists and opens the onboarding template vault after cloning', async () => {

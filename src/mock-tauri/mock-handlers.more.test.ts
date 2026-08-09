@@ -160,7 +160,7 @@ describe('mockHandlers additional coverage', () => {
     })
   })
 
-  it('persists last-vault state, reports vault existence, and restores AI guidance state', async () => {
+  it('persists last-vault state and reports vault existence', async () => {
     const { mockHandlers } = await loadHandlers()
 
     expect(mockHandlers.get_last_vault_path()).toBe('/Users/mock/demo-vault-v2')
@@ -170,18 +170,6 @@ describe('mockHandlers additional coverage', () => {
     expect(mockHandlers.check_vault_exists({ path: '/tmp/demo-vault-v2-copy' })).toBe(true)
     expect(mockHandlers.check_vault_exists({ path: '/tmp/random-vault' })).toBe(false)
 
-    expect(mockHandlers.get_vault_ai_guidance_status()).toEqual({
-      agents_state: 'managed',
-      claude_state: 'managed',
-      gemini_state: 'managed',
-      can_restore: false,
-    })
-    expect(mockHandlers.restore_vault_ai_guidance()).toEqual({
-      agents_state: 'managed',
-      claude_state: 'managed',
-      gemini_state: 'managed',
-      can_restore: false,
-    })
     expect(mockHandlers.repair_vault()).toBe('Vault repaired')
   })
 
@@ -201,7 +189,7 @@ describe('mockHandlers additional coverage', () => {
     }))
   })
 
-  it('surfaces the simple command handlers for git, conflicts, trash, and telemetry', async () => {
+  it('surfaces the simple command handlers for git, conflicts, trash, clipboard, and telemetry', async () => {
     const { mockHandlers } = await loadHandlers()
 
     expect(mockHandlers.git_pull()).toEqual({
@@ -223,12 +211,8 @@ describe('mockHandlers additional coverage', () => {
     expect(mockHandlers.batch_archive_notes({ paths: ['/a.md', '/b.md', '/c.md'] })).toBe(3)
     expect(mockHandlers.batch_trash_notes({ paths: ['/a.md', '/b.md'] })).toBe(2)
     expect(mockHandlers.migrate_is_a_to_type()).toBe(0)
-    expect(mockHandlers.register_mcp_tools()).toBe('registered')
-    expect(mockHandlers.check_mcp_status()).toBe('installed')
     expect(mockHandlers.copy_text_to_clipboard()).toBeNull()
     expect(mockHandlers.read_text_from_clipboard()).toBe('')
     expect(mockHandlers.reinit_telemetry()).toBeNull()
-    expect(mockHandlers.stream_claude_chat()).toBe('mock-session')
-    expect(mockHandlers.stream_ai_agent()).toBeNull()
   })
 })

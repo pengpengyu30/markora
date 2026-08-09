@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { withBase } from "vitepress";
 
-type FeatureIcon = "archive" | "pen" | "git" | "sparkle";
+type FeatureIcon = "archive" | "pen" | "git";
 type DocsIcon = "rocket" | "network" | "workflow" | "refresh";
 
 type FeatureCard = {
@@ -108,20 +108,6 @@ const featureSections: FeatureSection[] = [
       },
     ],
   },
-  {
-    icon: "sparkle",
-    label: "AI",
-    title: "Local agents and direct models",
-    description:
-      "Use CLI coding agents such as Claude Code, Codex, OpenCode, Pi, and Gemini when you want tool-backed editing. Use local or API model providers for chat over note context without vault-write tools.",
-    cards: [
-      {
-        title: "Sidebar with custom sections",
-        image: "Ai chat 3.png",
-        alt: "AI chat integration",
-      },
-    ],
-  },
 ];
 
 const docsLinks: DocsLink[] = [
@@ -134,13 +120,13 @@ const docsLinks: DocsLink[] = [
   {
     icon: "network",
     title: "Understand the model",
-    text: "Learn how notes, properties, types, relationships, custom views, Git, and AI fit together.",
+    text: "Learn how notes, folders, links, and Markdown files fit together.",
     link: "/concepts/vaults",
   },
   {
     icon: "workflow",
     title: "Follow workflows",
-    text: "Capture notes, organize the inbox, use wikilinks, create types, push changes, configure AI, and navigate long notes.",
+    text: "Capture notes, use wikilinks, edit Markdown, and navigate long notes.",
     link: "/guides/capture-a-note",
   },
   {
@@ -184,7 +170,7 @@ const sponsors: Sponsor[] = [
     url: "https://www.codacy.com/?utm_source=tolaria&utm_medium=website&utm_campaign=refactoring",
     logo: "sponsors/codacy-dark.svg",
     lightLogo: "sponsors/codacy-light.svg",
-    text: "Quality and security checks that keep AI-assisted engineering accountable.",
+    text: "Quality and security checks that keep engineering accountable.",
   },
   {
     name: "CodeScene",
@@ -198,14 +184,14 @@ const sponsors: Sponsor[] = [
     url: "https://circleci.com/?utm_source=tolaria&utm_medium=website&utm_campaign=refactoring",
     logo: "sponsors/circleci-dark.svg",
     lightLogo: "sponsors/circleci-light.svg",
-    text: "Reliable CI infrastructure for build, test, and release confidence, now also locally for agents.",
+    text: "Reliable CI infrastructure for build, test, and release confidence.",
   },
   {
     name: "Unblocked",
     url: "https://getunblocked.com/?utm_source=tolaria&utm_medium=website&utm_campaign=refactoring",
     logo: "sponsors/unblocked-dark.svg",
     lightLogo: "sponsors/unblocked-light.svg",
-    text: "Engineering context that helps developers and agents understand the codebase.",
+    text: "Engineering context that helps developers understand the codebase.",
   },
 ];
 </script>
@@ -213,10 +199,10 @@ const sponsors: Sponsor[] = [
 <template>
   <main class="tolaria-landing">
     <section class="landing-container hero-section">
-      <h1>A second brain for the AI era. Free forever.</h1>
+      <h1>A simple Markdown notebook. Free forever.</h1>
       <p class="hero-lede">
-        Organize your notes as Markdown files, with native relationships, Git,
-        local agents, and direct AI model providers.
+        Organize your notes as Markdown files with a focused editor and folders
+        that stay on your disk.
       </p>
       <div class="hero-actions">
         <a
@@ -272,8 +258,8 @@ const sponsors: Sponsor[] = [
           <h2>Backed by the tools behind the work</h2>
           <p>
             Tolaria is supported by a small panel of tools that help keep the
-            project healthy, tested, and ready for AI-assisted development. I
-            use these tools every day.
+            project healthy, tested, and ready for reliable development. I use
+            these tools every day.
           </p>
         </div>
         <div class="sponsors-grid">
@@ -437,13 +423,12 @@ const sponsors: Sponsor[] = [
               </p>
             </div>
             <p>
-              Tolaria is born from 5 years of full-time writing at Refactoring,
-              during which I have written 300+ articles about software
-              engineering and developer productivity. Along the way, I amassed
-              9000+ notes on my Notion workspace, learned a lot about knowledge
-              management, productivity, and, more recently, on working well with
-              AI on docs. None of the existing tools matched what I wanted, so I
-              built one myself.
+            Tolaria is born from 5 years of full-time writing at Refactoring,
+            during which I have written 300+ articles about software
+            engineering and developer productivity. Along the way, I amassed
+            9000+ notes on my Notion workspace and learned a lot about
+            knowledge management and productivity. None of the existing tools
+            matched what I wanted, so I built one myself.
             </p>
             <div class="author-stats">
               <div>

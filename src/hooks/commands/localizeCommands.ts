@@ -43,7 +43,6 @@ const STATIC_LABEL_KEYS: Partial<Record<string, TranslationKey>> = {
   'open-in-new-window': 'command.note.openNewWindow',
   'initialize-git': 'command.git.initialize',
   'commit-push': 'command.git.commitPush',
-  'generate-commit-message': 'command.git.generateCommitMessage',
   'add-remote': 'command.git.addRemote',
   'git-pull': 'command.git.pull',
   'resolve-conflicts': 'command.git.resolveConflicts',
@@ -58,8 +57,6 @@ const STATIC_LABEL_KEYS: Partial<Record<string, TranslationKey>> = {
   'set-note-width-wide': 'command.view.noteWidthWide',
   'set-default-note-width-normal': 'command.view.defaultNoteWidthNormal',
   'set-default-note-width-wide': 'command.view.defaultNoteWidthWide',
-  'toggle-ai-panel': 'command.view.toggleAiPanel',
-  'new-ai-chat': 'command.view.newAiChat',
   'toggle-backlinks': 'command.view.toggleBacklinks',
   'zoom-reset': 'command.view.resetZoom',
   'create-empty-vault': 'command.settings.createEmptyVault',
@@ -72,8 +69,6 @@ const STATIC_LABEL_KEYS: Partial<Record<string, TranslationKey>> = {
   'use-dark-mode': 'command.settings.useDarkMode',
   'use-system-theme-mode': 'command.settings.useSystemTheme',
   'toggle-gitignored-files-visibility': 'command.settings.toggleGitignoredFilesVisibility',
-  'open-ai-agents': 'command.ai.openAgents',
-  'restore-vault-ai-guidance': 'command.ai.restoreGuidance',
 }
 
 function stripKnownPrefix(label: string, prefix: string): string {
@@ -165,29 +160,6 @@ function localizeViewStateCommand(command: CommandAction, t: Translate): string 
   return VIEW_STATE_LOCALIZERS.find(([id]) => id === command.id)?.[1](command, t) ?? null
 }
 
-function localizeSettingsStateCommand(command: CommandAction, t: Translate): string | null {
-  if (command.id === 'install-mcp') {
-    return t(command.label === 'Manage External AI Tools…'
-      ? 'command.settings.manageExternalAi'
-      : 'command.settings.setupExternalAi')
-  }
-
-  if (command.id === 'switch-default-ai-agent') {
-    const agent = parenthesizedSuffix(command.label)
-    return agent
-      ? t('command.ai.switchDefaultWithAgent', { agent })
-      : t('command.ai.switchDefault')
-  }
-
-  if (command.id.startsWith('switch-ai-agent-')) {
-    return t('command.ai.switchToAgent', {
-      agent: stripKnownPrefix(command.label, 'Switch AI Agent to '),
-    })
-  }
-
-  return null
-}
-
 function localizeGitStateCommand(command: CommandAction, t: Translate): string | null {
   if (command.id.startsWith('git-pull-')) {
     return t('command.git.pullRepository', {
@@ -217,7 +189,6 @@ export function localizeCommandGroup(group: CommandGroup, locale: AppLocale = 'e
 const DYNAMIC_COMMAND_LOCALIZERS: readonly NullableCommandLocalizer[] = [
   localizeNoteStateCommand,
   localizeViewStateCommand,
-  localizeSettingsStateCommand,
   localizeGitStateCommand,
   localizeTypeCommand,
 ]

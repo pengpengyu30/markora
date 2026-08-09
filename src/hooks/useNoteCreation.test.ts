@@ -675,10 +675,13 @@ describe('useNoteCreation hook', () => {
     })
     await act(async () => { await vi.runAllTimersAsync() })
 
-    expect(focusListener).toHaveBeenCalledTimes(1)
-    const event = focusListener.mock.calls[0][0] as CustomEvent
-    expect(event.detail.path).toMatch(/\/test\/vault\/untitled-note-\d+\.md$/)
-    expect(event.detail.selectTitle).toBe(true)
+    const createdPath = addEntry.mock.calls[0][0].path
+    const event = focusListener.mock.calls
+      .map(([focusEvent]) => focusEvent as CustomEvent)
+      .find((focusEvent) => focusEvent.detail.path === createdPath)
+    expect(event).toBeDefined()
+    expect(event?.detail.path).toMatch(/\/test\/vault\/untitled-note-\d+\.md$/)
+    expect(event?.detail.selectTitle).toBe(true)
 
     window.removeEventListener('laputa:focus-editor', focusListener)
   })

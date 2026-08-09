@@ -26,12 +26,9 @@ use std::io;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::sync::OnceLock;
 
 #[cfg(test)]
 use std::cell::RefCell;
-
-use crate::cli_agent_runtime::{env_bindings_from_process_or_user_shell, EnvName};
 
 pub(crate) use author::ensure_author_config;
 pub use author::{git_author_identity, GitAuthorIdentity};
@@ -91,15 +88,15 @@ const DEFAULT_GITIGNORE: &str = "# Tolaria app files (machine-specific, never co
 *.swp\n\
 *.swo\n";
 
-const GIT_SHELL_ENV_NAMES: [EnvName<'static>; 8] = [
-    EnvName::trusted("GIT_AUTHOR_NAME"),
-    EnvName::trusted("GIT_AUTHOR_EMAIL"),
-    EnvName::trusted("GIT_COMMITTER_NAME"),
-    EnvName::trusted("GIT_COMMITTER_EMAIL"),
-    EnvName::trusted("GIT_CONFIG_GLOBAL"),
-    EnvName::trusted("GIT_CONFIG_SYSTEM"),
-    EnvName::trusted("XDG_CONFIG_HOME"),
-    EnvName::trusted("EMAIL"),
+const GIT_SHELL_ENV_NAMES: [&str; 8] = [
+    "GIT_AUTHOR_NAME",
+    "GIT_AUTHOR_EMAIL",
+    "GIT_COMMITTER_NAME",
+    "GIT_COMMITTER_EMAIL",
+    "GIT_CONFIG_GLOBAL",
+    "GIT_CONFIG_SYSTEM",
+    "XDG_CONFIG_HOME",
+    "EMAIL",
 ];
 
 #[derive(Clone)]
@@ -187,22 +184,15 @@ fn apply_git_shell_env(command: &mut Command) {
     }
 }
 
-fn git_shell_env_bindings() -> &'static Vec<GitShellEnvBinding> {
-    static BINDINGS: OnceLock<Vec<GitShellEnvBinding>> = OnceLock::new();
-    BINDINGS.get_or_init(|| {
-        env_bindings_from_process_or_user_shell(&GIT_SHELL_ENV_NAMES)
-            .into_iter()
-            .filter_map(|(name, value)| {
-                GIT_SHELL_ENV_NAMES
-                    .iter()
-                    .find(|candidate| candidate.as_str() == name)
-                    .map(|candidate| GitShellEnvBinding {
-                        name: candidate.as_str(),
-                        value,
-                    })
-            })
-            .collect()
-    })
+fn git_shell_env_bindings() -> Vec<GitShellEnvBinding> {
+    GIT_SHELL_ENV_NAMES
+        .into_iter()
+        .filter_map(|name| {
+            std::env::var(name)
+                .ok()
+                .map(|value| GitShellEnvBinding { name, value })
+        })
+        .collect()
 }
 
 #[cfg(test)]

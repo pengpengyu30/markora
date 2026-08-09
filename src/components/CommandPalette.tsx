@@ -1,29 +1,19 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
-import type { VaultEntry } from '../types'
 import { fuzzyMatch } from '../utils/fuzzyMatch'
 import { detectIntentionalMouseMovement, type MouseMovementSnapshot } from '../utils/mouseMovement'
-import { queueAiPrompt, requestOpenAiChat } from '../utils/aiPromptBridge'
-import type { NoteReference } from '../utils/ai-context'
 import type { CommandAction, CommandGroup } from '../hooks/useCommandRegistry'
 import { groupSortKey } from '../hooks/useCommandRegistry'
 import { localizeCommandGroup } from '../hooks/commands/localizeCommands'
 import { rememberFeedbackDialogOpener } from '../lib/feedbackDialogOpener'
 import { createTranslator, type AppLocale } from '../lib/i18n'
 import { formatDroppedPathList } from './inlineWikilinkDropText'
-import { CommandPaletteAiMode } from './CommandPaletteAiMode'
 import { Input } from './ui/input'
 import { useNativePathDrop } from './useNativePathDrop'
 
 interface CommandPaletteProps {
   open: boolean
   commands: CommandAction[]
-  entries?: VaultEntry[]
-  claudeCodeReady?: boolean
-  aiAgentReady?: boolean
-  aiAgentLabel?: string
-  aiModeEnabled?: boolean
-  aiPromptTargetId?: string
   locale?: AppLocale
   onClose: () => void
 }
@@ -242,25 +232,11 @@ function CommandPaletteResults({
   )
 }
 
-function CommandPaletteFooter({
-  aiMode,
-  aiAgentLabel = 'Claude Code',
-  footerText,
-}: {
-  aiMode: boolean
-  aiAgentLabel?: string
-  footerText: {
-    aiMode: string
-    navigate: string
-    select: string
-    send: string
-    close: string
-  }
-}) {
+function CommandPaletteFooter({ footerText }: { footerText: { navigate: string; select: string; close: string } }) {
   return (
     <div className="flex items-center gap-4 border-t border-border px-4 py-1.5 text-[11px] text-muted-foreground">
-      <span>{aiMode ? footerText.aiMode.replace('{agent}', aiAgentLabel) : footerText.navigate}</span>
-      <span>{aiMode ? footerText.send : footerText.select}</span>
+      <span>{footerText.navigate}</span>
+      <span>{footerText.select}</span>
       <span>{footerText.close}</span>
     </div>
   )
@@ -274,36 +250,24 @@ export function CommandPalette({ open, ...props }: CommandPaletteProps) {
 function OpenCommandPalette(options: Omit<CommandPaletteProps, 'open'>) {
   const {
     commands,
-    entries = [],
-    claudeCodeReady = true,
-    aiAgentReady,
-    aiAgentLabel = 'Claude Code',
-    aiModeEnabled = true,
-    aiPromptTargetId,
     locale = 'en',
     onClose,
   } = options
   const [query, setQuery] = useState('')
-  const [aiValue, setAiValue] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
-  const aiInputRef = useRef<HTMLDivElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const rootRef = useRef<HTMLDivElement>(null)
-  const aiMode = aiModeEnabled && aiValue.startsWith(' ')
-  const resolvedAiAgentReady = aiAgentReady ?? claudeCodeReady
   const { groups, flatList } = usePaletteResults(commands, query)
   const t = createTranslator(locale)
   const footerText = {
-    aiMode: t('command.aiMode', { agent: '{agent}' }),
     navigate: t('command.footerNavigate'),
     select: t('command.footerSelect'),
-    send: t('command.footerSend'),
     close: t('command.footerClose'),
   }
 
   useLayoutEffect(() => {
-    const target = aiMode ? aiInputRef.current : inputRef.current
+    const target = inputRef.current
     if (!target) return
 
     focusPaletteTarget(target)
@@ -313,14 +277,14 @@ function OpenCommandPalette(options: Omit<CommandPaletteProps, 'open'>) {
       focusPaletteTarget(target)
     })
     return () => window.cancelAnimationFrame(focusRetry)
-  }, [aiMode])
+  }, [])
 
   useEffect(() => {
     void selectedIndex
-    if (aiMode || !listRef.current) return
+    if (!listRef.current) return
     const selectedHTMLElement = listRef.current.querySelector('[data-selected="true"]') as HTMLElement | null
     selectedHTMLElement?.scrollIntoView({ block: 'nearest' })
-  }, [aiMode, selectedIndex])
+  }, [selectedIndex])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -329,8 +293,6 @@ function OpenCommandPalette(options: Omit<CommandPaletteProps, 'open'>) {
         onClose()
         return
       }
-
-      if (aiMode) return
 
       if (event.key === 'ArrowDown') {
         event.preventDefault()
@@ -356,7 +318,7 @@ function OpenCommandPalette(options: Omit<CommandPaletteProps, 'open'>) {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [aiMode, flatList, onClose, selectedIndex])
+  }, [flatList, onClose, selectedIndex])
 
   useEffect(() => {
     const root = rootRef.current
@@ -372,44 +334,13 @@ function OpenCommandPalette(options: Omit<CommandPaletteProps, 'open'>) {
 
   const handleQueryChange = (nextQuery: string) => {
     setSelectedIndex(0)
-    if (aiModeEnabled && nextQuery.startsWith(' ')) {
-      setAiValue(nextQuery)
-      setQuery('')
-      return
-    }
-
     setQuery(nextQuery)
-  }
-
-  const handleAiValueChange = (nextValue: string) => {
-    setSelectedIndex(0)
-    if (nextValue.startsWith(' ')) {
-      setAiValue(nextValue)
-      return
-    }
-
-    setAiValue('')
-    setQuery(nextValue)
   }
 
   const handleSelectCommand = (command: CommandAction) => {
     rememberCommandOpener(command, inputRef.current)
     onClose()
     command.execute()
-  }
-
-  const handleSubmitAiPrompt = (text: string, references: NoteReference[]) => {
-    if (!text.trim()) {
-      onClose()
-      return
-    }
-
-    if (!resolvedAiAgentReady) return
-
-    if (aiPromptTargetId) queueAiPrompt(text, references, aiPromptTargetId)
-    else queueAiPrompt(text, references)
-    requestOpenAiChat()
-    onClose()
   }
 
   return (
@@ -427,40 +358,24 @@ function OpenCommandPalette(options: Omit<CommandPaletteProps, 'open'>) {
       <div
         className={cn(
           'relative z-10 flex w-[520px] max-h-[440px] max-w-[90vw] flex-col self-start overflow-hidden rounded-xl border border-[var(--border-dialog)] bg-popover shadow-[0_8px_32px_var(--shadow-dialog)]',
-          aiMode && 'min-h-[220px]',
         )}
       >
-        {aiMode ? (
-          <CommandPaletteAiMode
-            entries={entries}
-            value={aiValue}
-            claudeCodeReady={claudeCodeReady}
-            aiAgentReady={resolvedAiAgentReady}
-            aiAgentLabel={aiAgentLabel}
-            inputRef={aiInputRef}
-            onChange={handleAiValueChange}
-            onSubmit={handleSubmitAiPrompt}
-          />
-        ) : (
-          <>
-            <CommandPaletteInput
-              inputRef={inputRef}
-              query={query}
-              placeholder={t('command.palettePlaceholder')}
-              onChange={handleQueryChange}
-            />
-            <CommandPaletteResults
-              groups={groups}
-              selectedIndex={selectedIndex}
-              listRef={listRef}
-              emptyText={t('command.noMatches')}
-              locale={locale}
-              onHover={setSelectedIndex}
-              onSelect={handleSelectCommand}
-            />
-            <CommandPaletteFooter aiMode={false} aiAgentLabel={aiAgentLabel} footerText={footerText} />
-          </>
-        )}
+        <CommandPaletteInput
+          inputRef={inputRef}
+          query={query}
+          placeholder={t('command.palettePlaceholder')}
+          onChange={handleQueryChange}
+        />
+        <CommandPaletteResults
+          groups={groups}
+          selectedIndex={selectedIndex}
+          listRef={listRef}
+          emptyText={t('command.noMatches')}
+          locale={locale}
+          onHover={setSelectedIndex}
+          onSelect={handleSelectCommand}
+        />
+        <CommandPaletteFooter footerText={footerText} />
       </div>
     </div>
   )

@@ -1,6 +1,3 @@
-import type { AiAgentId } from './lib/aiAgents'
-import type { AiAgentPermissionMode } from './lib/aiAgentPermissionMode'
-import type { AiModelProvider } from './lib/aiTargets'
 import type { ThemeMode } from './lib/themeMode'
 import type { AppLocale } from './lib/i18n'
 import type { DateDisplayFormat } from './utils/dateDisplay'
@@ -123,7 +120,6 @@ export interface Settings {
   git_provider?: GitProviderId | null
   git_wsl_distro?: string | null
   autogit_enabled?: boolean | null
-  autogit_use_ai_commit_messages?: boolean | null
   autogit_idle_threshold_seconds?: number | null
   autogit_inactive_threshold_seconds?: number | null
   auto_advance_inbox_after_organize?: boolean | null
@@ -139,24 +135,11 @@ export interface Settings {
   note_width_mode?: NoteWidthMode | null
   sidebar_type_pluralization_enabled?: boolean | null
   initial_h1_auto_rename_enabled?: boolean | null
-  ai_features_enabled?: boolean | null
-  default_ai_agent?: AiAgentId | null
-  default_ai_target?: string | null
-  ai_model_providers?: AiModelProvider[] | null
-  ai_workspace_conversations?: AiWorkspaceConversationSetting[] | null
   hide_gitignored_files?: boolean | null
   all_notes_show_pdfs?: boolean | null
   all_notes_show_images?: boolean | null
   all_notes_show_unsupported?: boolean | null
   multi_workspace_enabled?: boolean | null
-}
-
-export interface AiWorkspaceConversationSetting {
-  archived?: boolean | null
-  id: string
-  model_id?: string | null
-  target_id?: string | null
-  title: string
 }
 
 export interface GitPullResult {
@@ -258,7 +241,6 @@ export interface VaultConfig {
   editor_mode: string | null
   note_layout?: NoteLayout | null
   git_setup_preference?: GitSetupPreference | null
-  ai_agent_permission_mode?: AiAgentPermissionMode | null
   tag_colors: Record<string, string> | null
   status_colors: Record<string, string> | null
   property_display_modes: Record<string, string> | null

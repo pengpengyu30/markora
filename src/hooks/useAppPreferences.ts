@@ -12,15 +12,11 @@ import {
 } from '../lib/i18n'
 import { DEFAULT_DATE_DISPLAY_FORMAT, normalizeDateDisplayFormat, type DateDisplayFormat } from '../utils/dateDisplay'
 import { resolveAllNotesFileVisibility } from '../utils/allNotesFileVisibility'
-import { useAiAgentPreferences } from './useAiAgentPreferences'
-import type { AiAgentsStatus } from '../lib/aiAgents'
 import { useDocumentThemeMode } from './useDocumentThemeMode'
 import { useTelemetry } from './useTelemetry'
 import { useThemeMode } from './useThemeMode'
 
 interface AppPreferencesConfig {
-  aiAgentsStatus: AiAgentsStatus
-  onToast: (message: string | null) => void
   saveSettings: (settings: Settings) => void | Promise<void>
   settings: Settings
   settingsLoaded: boolean
@@ -60,8 +56,6 @@ export function useDateDisplayFormat(): DateDisplayFormat {
 }
 
 export function useAppPreferences({
-  aiAgentsStatus,
-  onToast,
   saveSettings,
   settings,
   settingsLoaded,
@@ -101,18 +95,9 @@ export function useAppPreferences({
   const handleSetUiLanguage = useCallback((uiLanguage: UiLanguagePreference) => {
     void saveSettings({ ...settings, ui_language: serializeUiLanguagePreference(uiLanguage) })
   }, [saveSettings, settings])
-  const aiAgentPreferences = useAiAgentPreferences({
-    settings,
-    settingsLoaded,
-    saveSettings,
-    aiAgentsStatus,
-    onToast,
-  })
-
   useTelemetry(settings, settingsLoaded)
 
   return {
-    aiAgentPreferences,
     allNotesFileVisibility,
     appLocale,
     dateDisplayFormat,

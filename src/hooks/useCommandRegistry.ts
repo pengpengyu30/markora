@@ -1,8 +1,6 @@
 import { useMemo } from 'react'
-import type { AiAgentId, AiAgentsStatus } from '../lib/aiAgents'
 import type { AppLocale, UiLanguagePreference } from '../lib/i18n'
 import type { ThemeMode } from '../lib/themeMode'
-import type { VaultAiGuidanceStatus } from '../lib/vaultAiGuidance'
 import type { NoteWidthMode, SidebarSelection, VaultEntry } from '../types'
 import type { NoteListFilter } from '../utils/noteListHelpers'
 import type { ViewMode } from './useViewMode'
@@ -11,7 +9,6 @@ import { buildNoteCommands } from './commands/noteCommands'
 import { buildGitCommands } from './commands/gitCommands'
 import { buildViewCommands } from './commands/viewCommands'
 import { buildSettingsCommands } from './commands/settingsCommands'
-import { buildAiAgentCommands } from './commands/aiAgentCommands'
 import { buildTypeCommands } from './commands/typeCommands'
 import { buildFilterCommands } from './commands/filterCommands'
 import { localizeCommandActions } from './commands/localizeCommands'
@@ -32,17 +29,6 @@ interface CommandRegistryConfig {
   entries: VaultEntry[]
   modifiedCount: number
   activeNoteHasIcon?: boolean
-  mcpStatus?: string
-  onInstallMcp?: () => void
-  aiFeaturesEnabled?: boolean
-  aiAgentsStatus?: AiAgentsStatus
-  vaultAiGuidanceStatus?: VaultAiGuidanceStatus
-  onOpenAiAgents?: () => void
-  onRestoreVaultAiGuidance?: () => void
-  onSetDefaultAiAgent?: (agent: AiAgentId) => void
-  selectedAiAgent?: AiAgentId
-  onCycleDefaultAiAgent?: () => void
-  selectedAiAgentLabel?: string
   onReloadVault?: () => void
   onRepairVault?: () => void
   onSetNoteIcon?: () => void
@@ -95,7 +81,6 @@ interface CommandRegistryConfig {
   onArchiveNote: (path: string) => void
   onUnarchiveNote: (path: string) => void
   onCommitPush: () => void
-  onGenerateCommitMessage?: () => void
   onPull?: () => void
   onPullRepository?: (path: string) => void
   onResolveConflicts?: () => void
@@ -114,7 +99,6 @@ interface CommandRegistryConfig {
   defaultNoteWidth?: NoteWidthMode
   onSetNoteWidth?: (mode: NoteWidthMode) => void
   onSetDefaultNoteWidth?: (mode: NoteWidthMode) => void
-  onToggleAIChat?: () => void
   onToggleTableOfContents?: () => void
   activeNoteModified: boolean
   onCheckForUpdates?: () => void
@@ -156,8 +140,8 @@ export function useCommandRegistry(config: CommandRegistryConfig): import('./com
     onQuickOpen, onCreateNote, onCreateNoteOfType, onSave, onUndo, onRedo, canUndo, canRedo, undoLabel, redoLabel,
     onPastePlainText, onOpenSettings, onOpenFeedback,
     onDeleteNote, onArchiveNote, onUnarchiveNote,
-    onCommitPush, onGenerateCommitMessage, onPull, onResolveConflicts, onSetViewMode, onToggleInspector, onToggleDiff, onToggleRawEditor, onFindInNote, onReplaceInNote,
-    noteWidth, defaultNoteWidth, onSetNoteWidth, onSetDefaultNoteWidth, onToggleAIChat, onToggleTableOfContents, onOpenVault, onCreateEmptyVault,
+    onCommitPush, onPull, onResolveConflicts, onSetViewMode, onToggleInspector, onToggleDiff, onToggleRawEditor, onFindInNote, onReplaceInNote,
+    noteWidth, defaultNoteWidth, onSetNoteWidth, onSetDefaultNoteWidth, onToggleTableOfContents, onOpenVault, onCreateEmptyVault,
     selectedViewName, onMoveSelectedViewUp, onMoveSelectedViewDown, canMoveSelectedViewUp, canMoveSelectedViewDown,
     activeNoteModified,
     onZoomIn, onZoomOut, onZoomReset, zoomLevel,
@@ -166,9 +150,6 @@ export function useCommandRegistry(config: CommandRegistryConfig): import('./com
     onGoBack, onGoForward, canGoBack, canGoForward,
     onCheckForUpdates, onCreateType,
     onRemoveActiveVault, onRestoreGettingStarted, isGettingStartedHidden, vaultCount,
-    mcpStatus, onInstallMcp, aiFeaturesEnabled,
-    aiAgentsStatus, vaultAiGuidanceStatus,
-    onOpenAiAgents, onRestoreVaultAiGuidance, onSetDefaultAiAgent, selectedAiAgent, onCycleDefaultAiAgent, selectedAiAgentLabel,
     onReloadVault, onRepairVault,
     locale, systemLocale, selectedUiLanguage, onSetUiLanguage, onSetThemeMode,
     onSetNoteIcon, onRemoveNoteIcon, activeNoteHasIcon, onChangeNoteType, onMoveNoteToFolder, canMoveNoteToFolder, onTurnCurrentBlockInto,
@@ -250,7 +231,6 @@ export function useCommandRegistry(config: CommandRegistryConfig): import('./com
     canAddRemote: config.canAddRemote ?? false,
     onAddRemote: config.onAddRemote,
     onCommitPush,
-    onGenerateCommitMessage,
     onInitializeGit,
     onPull,
     onPullRepository,
@@ -258,50 +238,32 @@ export function useCommandRegistry(config: CommandRegistryConfig): import('./com
     onSelect,
   }), [
     modifiedCount, gitFeaturesEnabled, isGitVault, gitRepositories, config.canAddRemote, config.onAddRemote,
-    onCommitPush, onGenerateCommitMessage, onInitializeGit, onPull, onPullRepository, onResolveConflicts, onSelect,
+    onCommitPush, onInitializeGit, onPull, onPullRepository, onResolveConflicts, onSelect,
   ])
 
   const viewCommands = useMemo(() => buildViewCommands({
-    aiFeaturesEnabled,
     hasActiveNote, activeNoteModified, onSetViewMode, onToggleInspector,
-    onToggleDiff, onToggleRawEditor, noteWidth, defaultNoteWidth, onSetNoteWidth, onSetDefaultNoteWidth, onToggleAIChat, onToggleTableOfContents, zoomLevel, onZoomIn, onZoomOut, onZoomReset,
+    onToggleDiff, onToggleRawEditor, noteWidth, defaultNoteWidth, onSetNoteWidth, onSetDefaultNoteWidth, onToggleTableOfContents, zoomLevel, onZoomIn, onZoomOut, onZoomReset,
     onCustomizeNoteListColumns, canCustomizeNoteListColumns, noteListColumnsLabel,
     selectedViewName, onMoveSelectedViewUp, onMoveSelectedViewDown, canMoveSelectedViewUp, canMoveSelectedViewDown,
   }), [
-    aiFeaturesEnabled,
     hasActiveNote, activeNoteModified, onSetViewMode, onToggleInspector,
-    onToggleDiff, onToggleRawEditor, noteWidth, defaultNoteWidth, onSetNoteWidth, onSetDefaultNoteWidth, onToggleAIChat, onToggleTableOfContents,
+    onToggleDiff, onToggleRawEditor, noteWidth, defaultNoteWidth, onSetNoteWidth, onSetDefaultNoteWidth, onToggleTableOfContents,
     zoomLevel, onZoomIn, onZoomOut, onZoomReset,
     onCustomizeNoteListColumns, canCustomizeNoteListColumns, noteListColumnsLabel,
     selectedViewName, onMoveSelectedViewUp, onMoveSelectedViewDown, canMoveSelectedViewUp, canMoveSelectedViewDown,
   ])
 
   const settingsCommands = useMemo(() => buildSettingsCommands({
-    mcpStatus, vaultCount, isGettingStartedHidden,
+    vaultCount, isGettingStartedHidden,
     onOpenSettings, onOpenFeedback, onOpenVault, onCreateEmptyVault, onRemoveActiveVault, onRestoreGettingStarted,
-    onCheckForUpdates, onInstallMcp, onReloadVault, onRepairVault,
+    onCheckForUpdates, onReloadVault, onRepairVault,
     locale, systemLocale, selectedUiLanguage, onSetUiLanguage, onSetThemeMode,
   }), [
-    mcpStatus, vaultCount, isGettingStartedHidden, onOpenSettings, onOpenFeedback,
+    vaultCount, isGettingStartedHidden, onOpenSettings, onOpenFeedback,
     onOpenVault, onCreateEmptyVault, onRemoveActiveVault, onRestoreGettingStarted,
-    onCheckForUpdates, onInstallMcp, onReloadVault, onRepairVault,
+    onCheckForUpdates, onReloadVault, onRepairVault,
     locale, systemLocale, selectedUiLanguage, onSetUiLanguage, onSetThemeMode,
-  ])
-
-  const aiCommands = useMemo(() => buildAiAgentCommands({
-    aiFeaturesEnabled,
-    aiAgentsStatus,
-    vaultAiGuidanceStatus,
-    selectedAiAgent,
-    selectedAiAgentLabel,
-    onOpenAiAgents,
-    onRestoreVaultAiGuidance,
-    onSetDefaultAiAgent,
-    onCycleDefaultAiAgent,
-  }), [
-    aiFeaturesEnabled,
-    aiAgentsStatus, vaultAiGuidanceStatus, selectedAiAgent, selectedAiAgentLabel,
-    onOpenAiAgents, onRestoreVaultAiGuidance, onSetDefaultAiAgent, onCycleDefaultAiAgent,
   ])
 
   const typeCommands = useMemo(
@@ -318,12 +280,11 @@ export function useCommandRegistry(config: CommandRegistryConfig): import('./com
     ...gitCommands,
     ...viewCommands,
     ...settingsCommands,
-    ...aiCommands,
     ...typeCommands,
     ...filterCommands,
   ], [
     navigationCommands, noteCommands, gitCommands, viewCommands,
-    settingsCommands, aiCommands, typeCommands, filterCommands,
+    settingsCommands, typeCommands, filterCommands,
   ])
 
   return useMemo(() => localizeCommandActions(commands, locale), [commands, locale])

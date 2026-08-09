@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react'
-import { Sparkle } from '@phosphor-icons/react'
 import {
   Dialog,
   DialogContent,
@@ -62,16 +61,6 @@ const focusMessageInput = (inputRef: React.RefObject<HTMLTextAreaElement | null>
   setTimeout(() => inputRef.current?.focus(), 50)
 }
 
-const generationButtonDisabled = ({
-  isGenerating,
-  modifiedCount,
-  onGenerateMessage,
-}: {
-  isGenerating: boolean
-  modifiedCount: number
-  onGenerateMessage?: () => Promise<string> | string
-}): boolean => !onGenerateMessage || isGenerating || modifiedCount === 0
-
 const authorWarningText = (identity: GitAuthorIdentity, locale: AppLocale): string | null => {
   if (identity.warning === 'local_overrides_global') {
     return translate(locale, 'git.author.warning.localOverridesGlobal')
@@ -95,86 +84,17 @@ const CommitAuthorIdentity = ({ identity, locale }: { identity: GitAuthorIdentit
   )
 }
 
-function useGeneratedCommitMessage({
-  generatedMessage,
-  generatedMessageKey,
-  inputRef,
-  open,
-  setMessage,
-}: {
-  generatedMessage?: string
-  generatedMessageKey: number
-  inputRef: React.RefObject<HTMLTextAreaElement | null>
-  open: boolean
-  setMessage: (message: string) => void
-}) {
-  useEffect(() => {
-    if (!open || generatedMessageKey === 0 || !generatedMessage) return
-    setMessage(generatedMessage)
-    focusMessageInput(inputRef)
-  }, [generatedMessage, generatedMessageKey, inputRef, open, setMessage])
-}
-
-function CommitMessageGenerateButton({
-  isGeneratingMessage,
-  locale,
-  modifiedCount,
-  onGenerateMessage,
-  onGeneratedMessage,
-}: {
-  isGeneratingMessage: boolean
-  locale: AppLocale
-  modifiedCount: number
-  onGenerateMessage?: () => Promise<string> | string
-  onGeneratedMessage: (message: string) => void
-}) {
-  const handleGenerateMessage = async () => {
-    const generated = await onGenerateMessage?.()
-    if (generated) onGeneratedMessage(generated)
-  }
-
-  return (
-    <Button
-      type="button"
-      variant="outline"
-      onClick={() => {
-        void handleGenerateMessage()
-      }}
-      disabled={generationButtonDisabled({
-        isGenerating: isGeneratingMessage,
-        modifiedCount,
-        onGenerateMessage,
-      })}
-      aria-label={translate(locale, 'git.commitMessage.generateFromDiff')}
-      title={translate(locale, 'git.commitMessage.generateFromDiff')}
-    >
-      <Sparkle size={14} weight="fill" className="shrink-0" />
-      {translate(locale, isGeneratingMessage ? 'git.commitMessage.generating' : 'git.commitMessage.generate')}
-    </Button>
-  )
-}
-
 function CommitDialogActions(
   options: CommitDialogCopy & {
-    isGeneratingMessage: boolean
-    locale: AppLocale
     message: string
-    modifiedCount: number
     onClose: () => void
-    onGenerateMessage?: () => Promise<string> | string
-    onGeneratedMessage: (message: string) => void
     onSubmit: () => void
   },
 ) {
   const {
     actionLabel,
-    isGeneratingMessage,
-    locale,
     message,
-    modifiedCount,
     onClose,
-    onGenerateMessage,
-    onGeneratedMessage,
     onSubmit,
     shortcutHint,
   } = options
@@ -182,13 +102,6 @@ function CommitDialogActions(
     <DialogFooter className="flex-row items-center justify-between sm:justify-between">
       <span className="text-[11px] text-muted-foreground">{shortcutHint}</span>
       <div className="flex gap-2">
-        <CommitMessageGenerateButton
-          isGeneratingMessage={isGeneratingMessage}
-          locale={locale}
-          modifiedCount={modifiedCount}
-          onGenerateMessage={onGenerateMessage}
-          onGeneratedMessage={onGeneratedMessage}
-        />
         <Button variant="outline" onClick={onClose}>
           Cancel
         </Button>
@@ -208,11 +121,7 @@ interface CommitDialogProps {
   locale?: AppLocale
   repositories?: GitRepositoryOption[]
   selectedRepositoryPath?: string
-  generatedMessage?: string
-  generatedMessageKey?: number
-  isGeneratingMessage?: boolean
   suggestedMessage?: string
-  onGenerateMessage?: () => Promise<string> | string
   onRepositoryChange?: (path: string) => void
   onCommit: (message: string) => void
   onClose: () => void
@@ -223,13 +132,10 @@ interface CommitDialogViewOptions {
   authorIdentity: GitAuthorIdentity | null
   copy: ReturnType<typeof getDialogCopy>
   inputRef: React.RefObject<HTMLTextAreaElement | null>
-  isGeneratingMessage: boolean
   locale: AppLocale
   message: string
   modifiedCount: number
   onClose: () => void
-  onGenerateMessage?: () => Promise<string> | string
-  onGeneratedMessage: (generated: string) => void
   onKeyDown: (event: React.KeyboardEvent) => void
   onMessageChange: (message: string) => void
   onOpenChange: (open: boolean) => void
@@ -241,7 +147,7 @@ interface CommitDialogViewOptions {
 }
 
 function CommitDialogView({ options }: { options: CommitDialogViewOptions }) {
-  const { actionLabel, authorIdentity, copy, inputRef, isGeneratingMessage, locale, message, modifiedCount, onClose, onGenerateMessage, onGeneratedMessage, onKeyDown, onMessageChange, onOpenChange, onRepositoryChange, onSubmit, open, repositories, selectedRepositoryPath } = options
+  const { actionLabel, authorIdentity, copy, inputRef, locale, message, modifiedCount, onClose, onKeyDown, onMessageChange, onOpenChange, onRepositoryChange, onSubmit, open, repositories, selectedRepositoryPath } = options
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent showCloseButton={false} className="sm:max-w-[420px]">
@@ -257,7 +163,7 @@ function CommitDialogView({ options }: { options: CommitDialogViewOptions }) {
         )}
         <CommitAuthorIdentity identity={authorIdentity} locale={locale} />
         <Textarea ref={inputRef} className="min-h-[84px] resize-y bg-[var(--bg-input)] py-2.5 text-[13px]" placeholder="Commit message..." value={message} onChange={(event) => onMessageChange(event.target.value)} onKeyDown={onKeyDown} rows={3} />
-        <CommitDialogActions {...copy} actionLabel={actionLabel} isGeneratingMessage={isGeneratingMessage} locale={locale} message={message} modifiedCount={modifiedCount} onClose={onClose} onGenerateMessage={onGenerateMessage} onGeneratedMessage={onGeneratedMessage} onSubmit={onSubmit} />
+        <CommitDialogActions {...copy} actionLabel={actionLabel} message={message} onClose={onClose} onSubmit={onSubmit} />
       </DialogContent>
     </Dialog>
   )
@@ -292,11 +198,7 @@ export function CommitDialog(props: CommitDialogProps) {
     locale = 'en',
     repositories = [],
     selectedRepositoryPath = '',
-    generatedMessage,
-    generatedMessageKey = 0,
-    isGeneratingMessage = false,
     suggestedMessage,
-    onGenerateMessage,
     onRepositoryChange,
     onCommit,
     onClose,
@@ -317,33 +219,17 @@ export function CommitDialog(props: CommitDialogProps) {
     }
   }, [open])
 
-  useGeneratedCommitMessage({
-    generatedMessage,
-    generatedMessageKey,
-    inputRef,
-    open,
-    setMessage,
-  })
-
   const { handleKeyDown, handleSubmit } = createCommitDialogHandlers({ message, onClose, onCommit })
-
-  const handleGeneratedMessage = (generated: string) => {
-    setMessage(generated)
-    focusMessageInput(inputRef)
-  }
 
   return <CommitDialogView options={{
     actionLabel: copy.actionLabel,
     authorIdentity,
     copy,
     inputRef,
-    isGeneratingMessage,
     locale,
     message,
     modifiedCount,
     onClose,
-    onGenerateMessage,
-    onGeneratedMessage: handleGeneratedMessage,
     onKeyDown: handleKeyDown,
     onMessageChange: setMessage,
     onOpenChange: (isOpen) => { if (!isOpen) onClose() },

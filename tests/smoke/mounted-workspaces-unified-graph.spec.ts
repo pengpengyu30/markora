@@ -100,7 +100,6 @@ async function installMountedWorkspaceMocks(page: Page): Promise<void> {
 
   await page.addInitScript((data: MountedWorkspaceInitData) => {
     localStorage.clear()
-    localStorage.setItem('tolaria:claude-code-onboarding-dismissed', '1')
 
     const mockWindow = window as MockWindow
     mockWindow.__mountedWorkspaceSearchCalls = []

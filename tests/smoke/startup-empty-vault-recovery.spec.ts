@@ -57,8 +57,6 @@ const recoveredEntry = {
 async function installStartupRecoveryMock(page: Page): Promise<void> {
   await page.addInitScript(({ defaultPath, vaultPath, noteEntry }) => {
     localStorage.setItem('tolaria_welcome_dismissed', '1')
-    localStorage.setItem('tolaria:ai-agents-onboarding-dismissed', '1')
-    localStorage.setItem('tolaria:claude-code-onboarding-dismissed', '1')
 
     const startupWindow = window as StartupWindow
     const noteContent = {
@@ -101,9 +99,6 @@ async function installStartupRecoveryMock(page: Page): Promise<void> {
         ui_language: null,
         note_width_mode: null,
         sidebar_type_pluralization_enabled: null,
-        default_ai_agent: null,
-        default_ai_target: null,
-        ai_model_providers: [],
       }),
       get_vault_settings: () => ({ theme: null }),
       read_vault_snapshot: () => null,
@@ -119,7 +114,6 @@ async function installStartupRecoveryMock(page: Page): Promise<void> {
       get_all_content: () => noteContent,
       get_note_content: (args) => noteContent[commandPath(args) as keyof typeof noteContent] ?? '',
       is_git_repo: () => true,
-      sync_mcp_bridge_vault: () => null,
       start_vault_watcher: () => null,
       stop_vault_watcher: () => null,
       update_menu_state: () => null,

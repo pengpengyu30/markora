@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import type { McpStatus } from '../hooks/useMcpStatus'
 import type { ThemeMode } from '../lib/themeMode'
 import type { AppLocale } from '../lib/i18n'
 import type { GitRemoteStatus, SyncStatus } from '../types'
@@ -95,9 +94,6 @@ interface StatusBarProps {
   onRemoveVault?: (path: string) => void
   onReorderVaults?: (orderedPaths: string[]) => void
   onUpdateWorkspaceIdentity?: (path: string, patch: Partial<VaultOption>) => void
-  aiFeaturesEnabled?: boolean
-  mcpStatus?: McpStatus
-  onInstallMcp?: () => void
   locale?: AppLocale
 }
 
@@ -114,7 +110,6 @@ function StatusBarPrimaryFromFooter(options: StatusBarFooterProps) {
       syncStatus={options.syncStatus ?? 'idle'}
       lastSyncTime={options.lastSyncTime ?? null}
       conflictCount={options.conflictCount ?? 0}
-      mcpStatus={options.aiFeaturesEnabled === false ? undefined : options.mcpStatus}
     />
   )
 }

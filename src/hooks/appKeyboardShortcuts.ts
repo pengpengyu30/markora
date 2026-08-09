@@ -29,7 +29,6 @@ export type KeyboardActions = Pick<
   | 'onZoomReset'
   | 'onGoBack'
   | 'onGoForward'
-  | 'onToggleAIChat'
   | 'onToggleTableOfContents'
   | 'onToggleRawEditor'
   | 'onToggleInspector'

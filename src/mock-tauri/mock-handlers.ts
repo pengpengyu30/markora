@@ -126,7 +126,6 @@ let mockSettings: Settings = {
   git_provider: null,
   git_wsl_distro: null,
   autogit_enabled: false,
-  autogit_use_ai_commit_messages: false,
   autogit_idle_threshold_seconds: 90,
   autogit_inactive_threshold_seconds: 30,
   auto_advance_inbox_after_organize: false,
@@ -142,11 +141,6 @@ let mockSettings: Settings = {
   note_width_mode: null,
   sidebar_type_pluralization_enabled: null,
   initial_h1_auto_rename_enabled: null,
-  ai_features_enabled: null,
-  default_ai_agent: 'claude_code',
-  default_ai_target: null,
-  ai_model_providers: null,
-  ai_workspace_conversations: null,
   hide_gitignored_files: null,
   all_notes_show_pdfs: null,
   all_notes_show_images: null,
@@ -167,13 +161,6 @@ let mockVaultList: { vaults: Array<{ label: string; path: string }>; active_vaul
   vaults: [DEFAULT_MOCK_VAULT],
   active_vault: DEFAULT_MOCK_VAULT_PATH,
 }
-
-let mockVaultAiGuidanceStatus = {
-  agents_state: 'managed',
-  claude_state: 'managed',
-  gemini_state: 'managed',
-  can_restore: false,
-} as const
 
 function normalizeMockVaultPath(path: string | null | undefined): string | null {
   const trimmed = path?.trim()
@@ -562,48 +549,6 @@ export const mockHandlers = {
   },
   get_conflict_files: (): string[] => [],
   get_conflict_mode: () => 'none',
-  check_claude_cli: () => ({ installed: false, version: null }),
-  get_ai_agents_status: () => ({
-    claude_code: { installed: false, version: null },
-    codex: { installed: false, version: null },
-    copilot: { installed: false, version: null },
-    opencode: { installed: false, version: null },
-    pi: { installed: false, version: null },
-    antigravity: { installed: false, version: null },
-    kiro: { installed: false, version: null },
-    hermes: { installed: false, version: null },
-  }),
-  get_ai_agent_model_catalog: () => ([
-    {
-      agent: 'claude_code',
-      models: [
-        { id: 'sonnet', label: 'Sonnet' },
-        { id: 'opus', label: 'Opus' },
-        { id: 'haiku', label: 'Haiku' },
-      ],
-    },
-    {
-      agent: 'codex',
-      models: [
-        { id: 'gpt-5.6-sol', label: 'GPT-5.6 Sol' },
-        { id: 'gpt-5.6-terra', label: 'GPT-5.6 Terra' },
-      ],
-    },
-  ]),
-  get_agent_docs_path: () => '/mock/Tolaria/resources/agent-docs',
-  get_vault_ai_guidance_status: () => ({ ...mockVaultAiGuidanceStatus }),
-  restore_vault_ai_guidance: () => {
-    mockVaultAiGuidanceStatus = {
-      agents_state: 'managed',
-      claude_state: 'managed',
-      gemini_state: 'managed',
-      can_restore: false,
-    }
-    return { ...mockVaultAiGuidanceStatus }
-  },
-  stream_claude_chat: () => 'mock-session',
-  stream_ai_agent: () => null,
-  abort_ai_agent_stream: () => false,
   save_note_content: (args: { path: string; content: string }) => {
     MOCK_CONTENT[args.path] = args.content
     mockSavedSinceCommit.add(args.path)
@@ -634,7 +579,6 @@ export const mockHandlers = {
       git_provider: s.git_provider ?? null,
       git_wsl_distro: s.git_wsl_distro ?? null,
       autogit_enabled: s.autogit_enabled ?? false,
-      autogit_use_ai_commit_messages: s.autogit_use_ai_commit_messages ?? false,
       autogit_idle_threshold_seconds: s.autogit_idle_threshold_seconds ?? 90,
       autogit_inactive_threshold_seconds: s.autogit_inactive_threshold_seconds ?? 30,
       auto_advance_inbox_after_organize: s.auto_advance_inbox_after_organize ?? false,
@@ -650,11 +594,6 @@ export const mockHandlers = {
       note_width_mode: s.note_width_mode ?? null,
       sidebar_type_pluralization_enabled: s.sidebar_type_pluralization_enabled ?? null,
       initial_h1_auto_rename_enabled: s.initial_h1_auto_rename_enabled ?? null,
-      ai_features_enabled: s.ai_features_enabled ?? null,
-      default_ai_agent: s.default_ai_agent ?? null,
-      default_ai_target: s.default_ai_target ?? null,
-      ai_model_providers: s.ai_model_providers ?? null,
-      ai_workspace_conversations: s.ai_workspace_conversations ?? null,
       hide_gitignored_files: s.hide_gitignored_files ?? null,
       all_notes_show_pdfs: s.all_notes_show_pdfs ?? null,
       all_notes_show_images: s.all_notes_show_images ?? null,
@@ -721,43 +660,9 @@ export const mockHandlers = {
     setMockRemoteState(targetPath, false)
     return targetPath
   },
-  register_mcp_tools: () => 'registered',
-  check_mcp_status: () => 'installed',
-  get_mcp_config_snippet: () => JSON.stringify({
-    mcpServers: {
-      tolaria: {
-        type: 'stdio',
-        command: 'node',
-        args: ['/mock/Tolaria/mcp-server/index.js'],
-        env: {
-          WS_UI_PORT: '9711',
-        },
-      },
-    },
-  }, null, 2),
-  get_opencode_mcp_config_snippet: () => JSON.stringify({
-    $schema: 'https://opencode.ai/config.json',
-    mcp: {
-      tolaria: {
-        type: 'local',
-        command: ['node', '/mock/Tolaria/mcp-server/index.js'],
-        enabled: true,
-        environment: {
-          WS_UI_PORT: '9711',
-        },
-      },
-    },
-  }, null, 2),
   copy_text_to_clipboard: () => null,
   read_text_from_clipboard: () => '',
-  sync_mcp_bridge_vault: (args: { vaultPath?: string | null }) => args.vaultPath ? 'started' : 'stopped',
   repair_vault: (): string => {
-    mockVaultAiGuidanceStatus = {
-      agents_state: 'managed',
-      claude_state: 'managed',
-      gemini_state: 'managed',
-      can_restore: false,
-    }
     return 'Vault repaired'
   },
   reinit_telemetry: (): null => null,

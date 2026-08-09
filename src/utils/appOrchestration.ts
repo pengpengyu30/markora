@@ -1,5 +1,4 @@
 import type { ModifiedFile, SidebarSelection } from '../types'
-import type { AiWorkspaceWindowContext } from './openAiWorkspaceWindow'
 
 export const ACTIVE_EDITOR_SURFACE_SELECTOR = '.editor__blocknote-container, .raw-editor-codemirror'
 
@@ -71,11 +70,4 @@ export function canCustomizeColumnsForSelection(
   if (selection.kind !== 'filter') return false
   if (selection.filter === 'all') return true
   return explicitOrganizationEnabled && selection.filter === 'inbox'
-}
-
-export function aiWorkspaceWindowContextForPath(resolvedPath: string): AiWorkspaceWindowContext {
-  return {
-    vaultPath: resolvedPath,
-    vaultPaths: resolvedPath ? [resolvedPath] : [],
-  }
 }

@@ -150,15 +150,6 @@ describe('useAppKeyboard', () => {
     expect(onToggleInspector).toHaveBeenCalled()
   })
 
-  it('Cmd+Shift+L still works in Tauri mode', () => {
-    const actions = makeActions()
-    const onToggleAIChat = vi.fn()
-    ;(window as typeof window & { __TAURI__?: object }).__TAURI__ = {}
-    renderHook(() => useAppKeyboard({ ...actions, onToggleAIChat }))
-    fireKey('l', { metaKey: true, shiftKey: true })
-    expect(onToggleAIChat).toHaveBeenCalled()
-  })
-
   it('Cmd+D triggers toggle favorite on active note', () => {
     const actions = makeActions()
     actions.onToggleFavorite = vi.fn()
@@ -551,59 +542,6 @@ describe('useAppKeyboard', () => {
     expect(actions.onZoomReset).toHaveBeenCalled()
   })
 
-  it('Cmd+Shift+L triggers toggle AI chat', () => {
-    const actions = makeActions()
-    const onToggleAIChat = vi.fn()
-    renderHook(() => useAppKeyboard({ ...actions, onToggleAIChat }))
-    fireKey('l', { metaKey: true, shiftKey: true })
-    expect(onToggleAIChat).toHaveBeenCalled()
-  })
-
-  it('Cmd+Shift+L works when text input is focused', () => {
-    const actions = makeActions()
-    const onToggleAIChat = vi.fn()
-    renderHook(() => useAppKeyboard({ ...actions, onToggleAIChat }))
-    withFocusedInput(() => {
-      fireKey('l', { metaKey: true, shiftKey: true })
-      expect(onToggleAIChat).toHaveBeenCalled()
-    })
-  })
-
-  it('Cmd+Shift+L works when editor stops propagation', () => {
-    const actions = makeActions()
-    const onToggleAIChat = vi.fn()
-    renderHook(() => useAppKeyboard({ ...actions, onToggleAIChat }))
-    withFocusedContentEditable((editable) => {
-      editable.addEventListener('keydown', (event) => event.stopPropagation())
-      fireKeyOnTarget(editable, 'l', { metaKey: true, shiftKey: true })
-      expect(onToggleAIChat).toHaveBeenCalled()
-    })
-  })
-
-  it('Cmd+Shift+L matches by physical key code when the localized key differs', () => {
-    const actions = makeActions()
-    const onToggleAIChat = vi.fn()
-    renderHook(() => useAppKeyboard({ ...actions, onToggleAIChat }))
-    fireKey('¬', { code: 'KeyL', metaKey: true, shiftKey: true })
-    expect(onToggleAIChat).toHaveBeenCalled()
-  })
-
-  it('Ctrl+Shift+L triggers toggle AI chat', () => {
-    const actions = makeActions()
-    const onToggleAIChat = vi.fn()
-    renderHook(() => useAppKeyboard({ ...actions, onToggleAIChat }))
-    fireKey('l', { ctrlKey: true, shiftKey: true })
-    expect(onToggleAIChat).toHaveBeenCalled()
-  })
-
-  it('Cmd+I does not trigger AI chat (reserved for italic)', () => {
-    const actions = makeActions()
-    const onToggleAIChat = vi.fn()
-    renderHook(() => useAppKeyboard({ ...actions, onToggleAIChat }))
-    fireKey('i', { metaKey: true })
-    expect(onToggleAIChat).not.toHaveBeenCalled()
-  })
-
   it('Cmd+Shift+O triggers open in new window', () => {
     const actions = makeActions()
     const onOpenInNewWindow = vi.fn()
@@ -620,13 +558,4 @@ describe('useAppKeyboard', () => {
     expect(onToggleInspector).toHaveBeenCalled()
   })
 
-  it('Cmd+Shift+I does not trigger AI chat toggle', () => {
-    const actions = makeActions()
-    const onToggleAIChat = vi.fn()
-    const onToggleInspector = vi.fn()
-    renderHook(() => useAppKeyboard({ ...actions, onToggleAIChat, onToggleInspector }))
-    fireKey('i', { metaKey: true, shiftKey: true })
-    expect(onToggleInspector).toHaveBeenCalled()
-    expect(onToggleAIChat).not.toHaveBeenCalled()
-  })
 })

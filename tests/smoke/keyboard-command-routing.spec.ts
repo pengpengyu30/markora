@@ -281,27 +281,4 @@ test.describe('keyboard command routing', () => {
     expect(runtimeStyleCspSignals).toEqual([])
   })
 
-  test('desktop menu-command bridge toggles the AI panel, while the wrong modifier event does not', async ({ page }) => {
-    await openAlphaProjectInEditor(page)
-
-    await dispatchShortcutEvent(page, {
-      key: 'l',
-      code: 'KeyL',
-      ctrlKey: false,
-      metaKey: false,
-      shiftKey: true,
-      altKey: true,
-      bubbles: true,
-      cancelable: true,
-    })
-    await page.waitForTimeout(200)
-    await expect(page.getByTestId('ai-panel')).not.toBeVisible()
-
-    await triggerMenuCommand(page, APP_COMMAND_IDS.viewToggleAiChat)
-    await expect(page.getByTestId('ai-panel')).toBeVisible({ timeout: 5_000 })
-    await expect(page.getByTitle('Close AI workspace')).toBeVisible()
-
-    await triggerMenuCommand(page, APP_COMMAND_IDS.viewToggleAiChat)
-    await expect(page.getByTestId('ai-panel')).not.toBeVisible({ timeout: 5_000 })
-  })
 })

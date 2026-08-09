@@ -50,7 +50,6 @@ function makeHandlers(): AppCommandHandlers {
     onSearch: vi.fn(),
     onToggleRawEditor: vi.fn(),
     onToggleDiff: vi.fn(),
-    onToggleAIChat: vi.fn(),
     onToggleTableOfContents: vi.fn(),
     onPastePlainText: vi.fn(),
     onGoBack: vi.fn(),
@@ -64,7 +63,6 @@ function makeHandlers(): AppCommandHandlers {
     onPull: vi.fn(),
     onResolveConflicts: vi.fn(),
     onViewChanges: vi.fn(),
-    onInstallMcp: vi.fn(),
     onOpenInNewWindow: vi.fn(),
     onReloadVault: vi.fn(),
     onRepairVault: vi.fn(),
@@ -134,13 +132,12 @@ describe('appCommandDispatcher', () => {
     }
   })
 
-  it('finds raw editor, AI, and plain-text paste shortcuts from the shared catalog', () => {
+  it('finds raw editor, table-of-contents, and plain-text paste shortcuts from the shared catalog', () => {
     expect(findShortcutCommandId('command-or-ctrl', 'o', 'KeyO')).toBe(APP_COMMAND_IDS.fileQuickOpen)
     expect(findShortcutCommandId('command-or-ctrl', 'z', 'KeyZ')).toBe(APP_COMMAND_IDS.editUndo)
     expect(findShortcutCommandId('command-or-ctrl-shift', 'z', 'KeyZ')).toBe(APP_COMMAND_IDS.editRedo)
     expect(findShortcutCommandId('command-or-ctrl', '\\')).toBe(APP_COMMAND_IDS.editToggleRawEditor)
     expect(findShortcutCommandId('command-or-ctrl', '§', 'Backslash')).toBe(APP_COMMAND_IDS.editToggleRawEditor)
-    expect(findShortcutCommandId('command-or-ctrl-shift', '¬', 'KeyL')).toBe(APP_COMMAND_IDS.viewToggleAiChat)
     expect(findShortcutCommandId('command-or-ctrl-shift', 'T', 'KeyT')).toBe(APP_COMMAND_IDS.viewToggleTableOfContents)
     expect(findShortcutCommandId('command-or-ctrl-shift', 'v', 'KeyV')).toBe(APP_COMMAND_IDS.editPastePlainText)
   })
@@ -183,20 +180,6 @@ describe('appCommandDispatcher', () => {
   })
 
   it('builds deterministic keyboard events from the shared shortcut manifest', () => {
-    expect(getShortcutEventInit(APP_COMMAND_IDS.viewToggleAiChat)).toMatchObject({
-      key: 'l',
-      code: 'KeyL',
-      metaKey: true,
-      ctrlKey: false,
-      shiftKey: true,
-    })
-    expect(getShortcutEventInit(APP_COMMAND_IDS.viewToggleAiChat, { preferControl: true })).toMatchObject({
-      key: 'l',
-      code: 'KeyL',
-      metaKey: false,
-      ctrlKey: true,
-      shiftKey: true,
-    })
     expect(getShortcutEventInit(APP_COMMAND_IDS.viewGoBack)).toMatchObject({
       key: 'ArrowLeft',
       code: 'ArrowLeft',
@@ -210,11 +193,9 @@ describe('appCommandDispatcher', () => {
   it('resolves event modifiers through the shared shortcut catalog', () => {
     expectShortcutEventCommand({ key: 'o', code: 'KeyO', metaKey: true }, APP_COMMAND_IDS.fileQuickOpen)
     expectShortcutEventCommand({ key: '§', code: 'Backslash', metaKey: true }, APP_COMMAND_IDS.editToggleRawEditor)
-    expectShortcutEventCommand({ key: '¬', code: 'KeyL', metaKey: true, shiftKey: true }, APP_COMMAND_IDS.viewToggleAiChat)
     expectShortcutEventCommand({ key: 'I', code: 'KeyI', metaKey: true, shiftKey: true }, APP_COMMAND_IDS.viewToggleProperties)
     expectShortcutEventCommand({ key: 'ArrowLeft', code: 'ArrowLeft', metaKey: true }, APP_COMMAND_IDS.viewGoBack)
     expectShortcutEventCommand({ key: 'ArrowRight', code: 'ArrowRight', metaKey: true }, APP_COMMAND_IDS.viewGoForward)
-    expectShortcutEventCommand({ key: 'l', code: 'KeyL', ctrlKey: true, shiftKey: true }, APP_COMMAND_IDS.viewToggleAiChat)
     expectShortcutEventCommand({ key: 'T', code: 'KeyT', metaKey: true, shiftKey: true }, APP_COMMAND_IDS.viewToggleTableOfContents)
     expectShortcutEventCommand({ key: 'V', code: 'KeyV', metaKey: true, shiftKey: true }, APP_COMMAND_IDS.editPastePlainText)
     expectShortcutEventCommand({ key: 'z', code: 'KeyZ', metaKey: true }, APP_COMMAND_IDS.editUndo)
@@ -254,12 +235,6 @@ describe('appCommandDispatcher', () => {
     const handlers = makeHandlers()
     expect(dispatchAppCommand(APP_COMMAND_IDS.viewToggleProperties, handlers)).toBe(true)
     expect(handlers.onToggleInspector).toHaveBeenCalled()
-  })
-
-  it('dispatches AI panel toggle through the shared command path', () => {
-    const handlers = makeHandlers()
-    expect(dispatchAppCommand(APP_COMMAND_IDS.viewToggleAiChat, handlers)).toBe(true)
-    expect(handlers.onToggleAIChat).toHaveBeenCalled()
   })
 
   it('dispatches table of contents toggle through the shared command path', () => {
@@ -344,14 +319,6 @@ describe('appCommandDispatcher', () => {
     expect(executeAppCommand(APP_COMMAND_IDS.viewToggleProperties, handlers, 'renderer-keyboard')).toBe(true)
     expect(executeAppCommand(APP_COMMAND_IDS.viewToggleProperties, handlers, 'native-menu')).toBe(false)
     expect(handlers.onToggleInspector).toHaveBeenCalledTimes(1)
-  })
-
-  it('suppresses a renderer keyboard echo after native-menu dispatch', () => {
-    const handlers = makeHandlers()
-
-    expect(executeAppCommand(APP_COMMAND_IDS.viewToggleAiChat, handlers, 'native-menu')).toBe(true)
-    expect(executeAppCommand(APP_COMMAND_IDS.viewToggleAiChat, handlers, 'renderer-keyboard')).toBe(false)
-    expect(handlers.onToggleAIChat).toHaveBeenCalledTimes(1)
   })
 
   it('suppresses a native-menu history echo after renderer keyboard yields to text editing', () => {

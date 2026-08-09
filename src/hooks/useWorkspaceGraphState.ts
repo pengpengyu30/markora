@@ -1,6 +1,4 @@
-import { useEffect, useMemo } from 'react'
-import { invoke } from '@tauri-apps/api/core'
-import { isTauri, mockInvoke } from '../mock-tauri'
+import { useMemo } from 'react'
 import type { Settings, VaultEntry } from '../types'
 import type { VaultOption } from '../components/status-bar/types'
 import {
@@ -17,7 +15,6 @@ interface WorkspaceGraphConfig {
   defaultWorkspacePath?: string | null
   resolvedPath: string
   settings: Settings
-  vaultSwitcherLoaded: boolean
   windowMode: boolean
 }
 
@@ -58,16 +55,6 @@ interface FolderVaultParams {
   graphDefaultWorkspacePath: string
   multiWorkspaceEnabled: boolean
   windowMode: boolean
-}
-
-interface BridgeVaultSyncParams {
-  vaultSwitcherLoaded: boolean
-  windowMode: boolean
-  writableVaultPaths: string[]
-}
-
-function invokeAppCommand<T>(command: string, args: Record<string, unknown>): Promise<T> {
-  return isTauri() ? invoke<T>(command, args) : mockInvoke<T>(command, args)
 }
 
 function workspaceGraphDefaultPath({
@@ -167,30 +154,12 @@ function useFolderVaults({
   )
 }
 
-function useBridgeVaultSync({
-  vaultSwitcherLoaded,
-  windowMode,
-  writableVaultPaths,
-}: BridgeVaultSyncParams): void {
-  useEffect(() => {
-    if (windowMode || !vaultSwitcherLoaded) return
-
-    const bridgeVaultPath = writableVaultPaths[0] ?? null
-    void invokeAppCommand<string>('sync_mcp_bridge_vault', {
-      vaultPath: bridgeVaultPath,
-      vaultPaths: writableVaultPaths,
-    }).catch((err) => {
-      console.warn('Failed to sync MCP bridge vault scope:', err)
-    })
-  }, [vaultSwitcherLoaded, windowMode, writableVaultPaths])
-}
-
 export function hideWorkspaceMetadata(entries: VaultEntry[]): VaultEntry[] {
   if (!entries.some((entry) => entry.workspace)) return entries
   return entries.map((entry) => entry.workspace ? { ...entry, workspace: undefined } : entry)
 }
 
-export function useWorkspaceGraphState({ allVaults, defaultWorkspacePath, resolvedPath, settings, vaultSwitcherLoaded, windowMode }: WorkspaceGraphConfig): WorkspaceGraphState {
+export function useWorkspaceGraphState({ allVaults, defaultWorkspacePath, resolvedPath, settings, windowMode }: WorkspaceGraphConfig): WorkspaceGraphState {
   const multiWorkspaceEnabled = settings.multi_workspace_enabled === true
   const workspaceGraphLoadingEnabled = !windowMode
   const graphDefaultWorkspacePath = workspaceGraphDefaultPath({
@@ -225,8 +194,6 @@ export function useWorkspaceGraphState({ allVaults, defaultWorkspacePath, resolv
     multiWorkspaceEnabled,
     windowMode,
   })
-
-  useBridgeVaultSync({ vaultSwitcherLoaded, windowMode, writableVaultPaths })
 
   return {
     folderVaults,

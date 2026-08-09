@@ -64,8 +64,6 @@ test('status bar keeps a Getting Started clone entry available after onboarding'
   await page.getByTestId('welcome-create-vault').click()
 
   await expect(page.getByText('Getting Started vault cloned and opened at /Users/mock/Documents/Getting Started')).toBeVisible()
-  await expect(page.getByTestId('claude-onboarding-screen')).toBeVisible()
-  await page.getByTestId('claude-onboarding-continue').click()
   await expect(page.locator('[data-testid="note-list-container"]')).toBeVisible()
   await page.getByTestId('status-vault-trigger').click()
   await expect(page.getByTestId('vault-menu-clone-getting-started')).toBeVisible()

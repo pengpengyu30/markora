@@ -1,12 +1,12 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import type { VaultEntry } from '../types'
-import type { NoteReference } from '../utils/ai-context'
 import { buildTypeEntryMap } from '../utils/typeColors'
 import { deleteInlineSelection, replaceInlineSelection, selectedInlineText } from './inlineWikilinkEdits'
 import {
   buildInlineWikilinkSegments,
   extractInlineWikilinkReferences,
   findActiveWikilinkQuery,
+  type InlineWikilinkReference,
 } from './inlineWikilinkText'
 import { extractDroppedPathText, formatDroppedPathList } from './inlineWikilinkDropText'
 import { readSelectionRange, serializeInlineNode, type InlineSelectionRange } from './inlineWikilinkDom'
@@ -32,7 +32,7 @@ interface InlineWikilinkInputProps {
   entries: VaultEntry[]
   value: string
   onChange: (value: string) => void
-  onSubmit?: (text: string, references: NoteReference[]) => void
+  onSubmit?: (text: string, references: InlineWikilinkReference[]) => void
   onUnsupportedPaste?: (message: string) => void
   submitOnEmpty?: boolean
   disabled?: boolean
@@ -96,7 +96,7 @@ function isNativeCompositionBeforeInput(
   )
 }
 
-export const UNSUPPORTED_INLINE_PASTE_MESSAGE = 'Only text paste is supported in the AI composer right now.'
+export const UNSUPPORTED_INLINE_PASTE_MESSAGE = 'Only text paste is supported in this input.'
 const POST_COMPOSITION_TEXT_INPUT_SETTLE_MS = 120
 
 function usePostCompositionTextInputSettle() {
@@ -157,10 +157,10 @@ function submitInlineValue({
   value,
   references,
 }: {
-  onSubmit?: (text: string, references: NoteReference[]) => void
+  onSubmit?: (text: string, references: InlineWikilinkReference[]) => void
   submitOnEmpty: boolean
   value: string
-  references: NoteReference[]
+  references: InlineWikilinkReference[]
 }) {
   if (!onSubmit) return
   const normalizedValue = normalizeInlineWikilinkValue(value)
@@ -212,7 +212,7 @@ export function InlineWikilinkInput(options: InlineWikilinkInputProps) {
     placeholder,
     placeholderClassName,
     inputRef,
-    dataTestId = 'agent-input',
+    dataTestId = 'wikilink-input',
     editorClassName,
     editorStyle,
     suggestionListVariant = 'floating',

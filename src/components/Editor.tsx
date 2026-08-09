@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, memo, useState, type ReactNode } from 'react'
+import { useRef, useEffect, useCallback, memo, useState } from 'react'
 import { useEditorTabSwap } from '../hooks/useEditorTabSwap'
 import { useCreateBlockNote } from '@blocknote/react'
 import '@blocknote/mantine/style.css'
@@ -10,12 +10,9 @@ import {
   type ImageImportError,
   type UploadImageFileResult,
 } from '../hooks/useImageDrop'
-import { DEFAULT_AI_AGENT, type AiAgentId, type AiAgentReadiness } from '../lib/aiAgents'
-import type { AiTarget } from '../lib/aiTargets'
 import { translate, type AppLocale } from '../lib/i18n'
 import { RUNTIME_STYLE_NONCE } from '../lib/runtimeStyleNonce'
 import type { VaultEntry, GitCommit, NoteWidthMode, NoteStatus, WorkspaceIdentity } from '../types'
-import type { NoteListItem } from '../utils/ai-context'
 import type { FrontmatterValue } from './Inspector'
 import type { FrontmatterOpOptions } from '../hooks/frontmatterOps'
 import { ResizeHandle } from './ResizeHandle'
@@ -75,7 +72,6 @@ export interface EditorProps {
   isVaultLoading?: boolean
   entries: VaultEntry[]
   onNavigateWikilink: (target: string) => void
-  onUnsupportedAiPaste?: (message: string) => void
   onLoadDiff?: (path: string) => Promise<string>
   onLoadDiffAtCommit?: (path: string, commitHash: string) => Promise<string>
   pendingCommitDiffRequest?: CommitDiffRequest | null
@@ -85,10 +81,6 @@ export interface EditorProps {
   inspectorCollapsed: boolean
   onToggleInspector: () => void
   inspectorWidth: number
-  defaultAiAgent?: AiAgentId
-  defaultAiTarget?: AiTarget
-  defaultAiAgentReadiness?: AiAgentReadiness
-  defaultAiAgentReady?: boolean
   onInspectorResize: (delta: number) => void
   inspectorEntry: VaultEntry | null
   inspectorContent: string | null
@@ -105,13 +97,7 @@ export interface EditorProps {
   onCreateAndOpenNote?: (title: string) => Promise<boolean>
   onChangeWorkspace?: (entry: VaultEntry, workspace: WorkspaceIdentity) => Promise<void> | void
   onInitializeProperties?: (path: string) => void
-  showAIChat?: boolean
-  onToggleAIChat?: () => void
-  aiWorkspaceSurface?: ReactNode
   vaultPath?: string
-  vaultPaths?: string[]
-  noteList?: NoteListItem[]
-  noteListFilter?: { type: string | null; query: string }
   onToggleFavorite?: (path: string) => void
   onToggleOrganized?: (path: string) => void
   onEnterNeighborhood?: (entry: VaultEntry) => void
@@ -148,9 +134,6 @@ export interface EditorProps {
   turnCurrentBlockIntoRef?: React.MutableRefObject<((target: RichEditorBlockTypeDefinition) => void) | null>
   /** Emits short user-visible messages for editor actions. */
   onToast?: (message: string | null) => void
-  onFileCreated?: (relativePath: string) => void
-  onFileModified?: (relativePath: string) => void
-  onVaultChanged?: () => void
   workspaces?: WorkspaceIdentity[]
   /** Whether the active note has a merge conflict. */
   isConflicted?: boolean
@@ -515,9 +498,6 @@ function useEditorSetup(options: EditorSetupParams) {
       onSave?: () => void
       activeStatus: NoteStatus
       showDiffToggle: boolean
-      showAIChat?: boolean
-      onToggleAIChat?: () => void
-      aiWorkspaceSurface?: ReactNode
       showTableOfContents?: boolean
       onToggleTableOfContents?: () => void
       inspectorCollapsed: boolean
@@ -536,7 +516,6 @@ function useEditorSetup(options: EditorSetupParams) {
       onArchiveNote?: (path: string) => void
       onUnarchiveNote?: (path: string) => void
       vaultPath?: string
-      vaultPaths?: string[]
       rawModeContent: string | null
       findRequest?: RawEditorFindRequest | null
       rawLatestContentRef: React.MutableRefObject<string | null>
@@ -549,15 +528,9 @@ function useEditorSetup(options: EditorSetupParams) {
       onKeepTheirs?: (path: string) => void
       onInspectorResize: (delta: number) => void
       inspectorWidth: number
-      defaultAiAgent: AiAgentId
-      defaultAiTarget?: AiTarget
-      defaultAiAgentReadiness?: AiAgentReadiness
-      defaultAiAgentReady: boolean
       inspectorEntry: VaultEntry | null
       inspectorContent: string | null
       gitHistory: GitCommit[]
-      noteList?: NoteListItem[]
-      noteListFilter?: { type: string | null; query: string }
       handleViewCommitDiff: (commitHash: string) => Promise<void>
       onUpdateFrontmatter?: (
         path: string,
@@ -571,11 +544,7 @@ function useEditorSetup(options: EditorSetupParams) {
       onCreateAndOpenNote?: (title: string) => Promise<boolean>
       onChangeWorkspace?: (entry: VaultEntry, workspace: WorkspaceIdentity) => Promise<void> | void
       onInitializeProperties?: (path: string) => void
-      onFileCreated?: (relativePath: string) => void
-      onFileModified?: (relativePath: string) => void
-      onVaultChanged?: () => void
       workspaces?: WorkspaceIdentity[]
-      onUnsupportedAiPaste?: (message: string) => void
       onImageImportError?: ImageImportErrorHandler
       locale?: AppLocale
       onExportPdf?: (source?: NotePdfExportSource) => void
@@ -599,9 +568,6 @@ function useEditorSetup(options: EditorSetupParams) {
       onSave,
       activeStatus,
       showDiffToggle,
-      showAIChat,
-      onToggleAIChat,
-      aiWorkspaceSurface,
       showTableOfContents,
       onToggleTableOfContents,
       inspectorCollapsed,
@@ -621,7 +587,6 @@ function useEditorSetup(options: EditorSetupParams) {
       onArchiveNote,
       onUnarchiveNote,
       vaultPath,
-      vaultPaths,
       rawModeContent,
       findRequest,
       rawLatestContentRef,
@@ -634,15 +599,9 @@ function useEditorSetup(options: EditorSetupParams) {
       onKeepTheirs,
       onInspectorResize,
       inspectorWidth,
-      defaultAiAgent,
-      defaultAiTarget,
-      defaultAiAgentReadiness,
-      defaultAiAgentReady,
       inspectorEntry,
       inspectorContent,
       gitHistory,
-      noteList,
-      noteListFilter,
       handleViewCommitDiff,
       onUpdateFrontmatter,
       onDeleteProperty,
@@ -651,11 +610,7 @@ function useEditorSetup(options: EditorSetupParams) {
       onCreateAndOpenNote,
       onChangeWorkspace,
       onInitializeProperties,
-      onFileCreated,
-      onFileModified,
-      onVaultChanged,
       workspaces,
-      onUnsupportedAiPaste,
       onImageImportError,
       locale,
   } = options
@@ -696,8 +651,6 @@ function useEditorSetup(options: EditorSetupParams) {
               onSave={onSave}
               activeStatus={activeStatus}
               showDiffToggle={showDiffToggle}
-              showAIChat={showAIChat}
-              onToggleAIChat={onToggleAIChat}
               showTableOfContents={showTableOfContents}
               onToggleTableOfContents={onToggleTableOfContents}
               inspectorCollapsed={inspectorCollapsed}
@@ -732,26 +685,16 @@ function useEditorSetup(options: EditorSetupParams) {
         )}
         {(showTableOfContents || !inspectorCollapsed) && <ResizeHandle onResize={onInspectorResize} />}
         <EditorRightPanel
-          showAIChat={false}
           showTableOfContents={showTableOfContents}
           inspectorCollapsed={inspectorCollapsed}
           inspectorWidth={inspectorWidth}
           editor={editor}
-          defaultAiAgent={defaultAiAgent}
-          defaultAiTarget={defaultAiTarget}
-          defaultAiAgentReadiness={defaultAiAgentReadiness}
-          defaultAiAgentReady={defaultAiAgentReady}
-          onUnsupportedAiPaste={onUnsupportedAiPaste}
           inspectorEntry={inspectorEntry}
           inspectorContent={inspectorContent}
           entries={entries}
           gitHistory={gitHistory}
           vaultPath={vaultPath ?? ''}
-          vaultPaths={vaultPaths}
-          noteList={noteList}
-          noteListFilter={noteListFilter}
           onToggleInspector={onToggleInspector}
-          onToggleAIChat={onToggleAIChat}
           onToggleTableOfContents={onToggleTableOfContents}
           onNavigateWikilink={onNavigateWikilink}
           onViewCommitDiff={handleViewCommitDiff}
@@ -763,14 +706,9 @@ function useEditorSetup(options: EditorSetupParams) {
           onChangeWorkspace={onChangeWorkspace}
           onInitializeProperties={onInitializeProperties}
           onToggleRawEditor={handleToggleRawExclusive}
-          onOpenNote={onNavigateWikilink}
-          onFileCreated={onFileCreated}
-          onFileModified={onFileModified}
-          onVaultChanged={onVaultChanged}
           workspaces={workspaces}
           locale={locale}
         />
-        {showAIChat && aiWorkspaceSurface}
       </div>
       <EditorMemoryProbe entries={entries} vaultPath={vaultPath} locale={locale} />
     </div>
@@ -789,8 +727,6 @@ function buildEditorLayoutProps(
     ...props,
     ...runtime,
     activeTabPath: props.activeTabPath,
-    defaultAiAgent: props.defaultAiAgent ?? DEFAULT_AI_AGENT,
-    defaultAiAgentReady: props.defaultAiAgentReady ?? true,
     findRequest,
   }
 }
@@ -863,8 +799,6 @@ export const Editor = memo(function Editor(props: EditorProps) {
       {...buildEditorLayoutProps(props, runtime, findRequest)}
       onImageImportError={handleImageImportError}
       onToggleInspector={rightPanel.handleToggleInspectorPanel}
-      showAIChat={props.showAIChat}
-      onToggleAIChat={props.onToggleAIChat ? rightPanel.handleToggleAIChatPanel : undefined}
       showTableOfContents={rightPanel.showTableOfContents}
       onToggleTableOfContents={rightPanel.handleToggleTableOfContents}
       onExportPdf={handleExportPdf}

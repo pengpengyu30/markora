@@ -51,7 +51,6 @@ export interface AppCommandHandlers {
   onSearch: () => void
   onToggleRawEditor?: () => void
   onToggleDiff?: () => void
-  onToggleAIChat?: () => void
   onToggleTableOfContents?: () => void
   onExportNoteAsPdf?: () => void
   onGoBack?: () => void
@@ -66,7 +65,6 @@ export interface AppCommandHandlers {
   onPull?: () => void
   onResolveConflicts?: () => void
   onViewChanges?: () => void
-  onInstallMcp?: () => void
   onOpenInNewWindow?: () => void
   onReloadVault?: () => void
   onRepairVault?: () => void
@@ -92,7 +90,6 @@ type SimpleHandlerKey = keyof Pick<
   | 'onToggleRawEditor'
   | 'onToggleDiff'
   | 'onToggleInspector'
-  | 'onToggleAIChat'
   | 'onToggleTableOfContents'
   | 'onExportNoteAsPdf'
   | 'onCommandPalette'
@@ -109,7 +106,6 @@ type SimpleHandlerKey = keyof Pick<
   | 'onPull'
   | 'onResolveConflicts'
   | 'onViewChanges'
-  | 'onInstallMcp'
   | 'onReloadVault'
   | 'onRepairVault'
   | 'onOpenInNewWindow'
@@ -140,7 +136,6 @@ const SIMPLE_HANDLER_EXECUTORS: readonly [SimpleHandlerKey, SimpleHandlerExecuto
   ['onToggleRawEditor', (handlers) => handlers.onToggleRawEditor?.()],
   ['onToggleDiff', (handlers) => handlers.onToggleDiff?.()],
   ['onToggleInspector', (handlers) => handlers.onToggleInspector()],
-  ['onToggleAIChat', (handlers) => handlers.onToggleAIChat?.()],
   ['onToggleTableOfContents', (handlers) => handlers.onToggleTableOfContents?.()],
   ['onExportNoteAsPdf', (handlers) => handlers.onExportNoteAsPdf?.()],
   ['onCommandPalette', (handlers) => handlers.onCommandPalette()],
@@ -157,7 +152,6 @@ const SIMPLE_HANDLER_EXECUTORS: readonly [SimpleHandlerKey, SimpleHandlerExecuto
   ['onPull', (handlers) => handlers.onPull?.()],
   ['onResolveConflicts', (handlers) => handlers.onResolveConflicts?.()],
   ['onViewChanges', (handlers) => handlers.onViewChanges?.()],
-  ['onInstallMcp', (handlers) => handlers.onInstallMcp?.()],
   ['onReloadVault', (handlers) => handlers.onReloadVault?.()],
   ['onRepairVault', (handlers) => handlers.onRepairVault?.()],
   ['onOpenInNewWindow', (handlers) => handlers.onOpenInNewWindow?.()],

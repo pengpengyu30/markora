@@ -76,13 +76,12 @@ const SYSTEM_OVERVIEW_DIAGRAM = [
   '            NL["NoteList / PulseView\\n(filtered list / activity)"]',
   '            ED["Editor\\n(BlockNote + diff + raw)"]',
   '            IN["Inspector\\n(metadata + relationships)"]',
-  '            AIP["AiPanel\\n(selected CLI agent + tools)"]',
   '            SP["SearchPanel\\n(keyword search)"]',
   '            ST["StatusBar\\n(vault picker + sync + version)"]',
   '            CP["CommandPalette\\n(Cmd+K launcher)"]',
   '',
   '            App --> WS & SB & NL & ED & SP & ST & CP',
-  '            ED --> IN & AIP',
+  '            ED --> IN',
   '        end',
   '',
   '        subgraph RB["Rust Backend"]',
@@ -92,19 +91,14 @@ const SYSTEM_OVERVIEW_DIAGRAM = [
   '            GIT["git/\\n(commit, sync, clone)"]',
   '            SETTINGS["settings.rs"]',
   '            SEARCH["search.rs"]',
-  '            CLI["ai_agents.rs\\n+ claude_cli.rs"]',
   '        end',
   '',
   '        subgraph EXT["External Services"]',
-  '            CCLI["Claude / Codex / OpenCode / Pi CLI\\n(agent subprocesses)"]',
-  '            MCP["MCP Server\\n(ws://9710, 9711)"]',
   '            GCLI["git CLI\\n(system executable)"]',
   '            REMOTE["Git remotes\\n(GitHub/GitLab/Gitea/etc.)"]',
   '        end',
   '',
   '        FE -->|"Tauri IPC"| RB',
-  '        CLI -->|"spawn subprocess"| CCLI',
-  '        LIB -->|"register / monitor"| MCP',
   '        GIT -->|"clone / fetch / push / pull"| GCLI',
   '        GCLI -->|"network auth via user config"| REMOTE',
   '    end',
@@ -209,7 +203,7 @@ test.beforeEach(async ({ page }, testInfo) => {
       '',
     ].join('\n'),
   )
-  await openFixtureVault(page, tempVaultDir, { installedAiAgents: ['claude_code'] })
+  await openFixtureVault(page, tempVaultDir)
 })
 
 test.afterEach(async () => {
@@ -650,7 +644,7 @@ ${SYSTEM_OVERVIEW_DIAGRAM}
   expect(reopenedRaw).toContain(SYSTEM_OVERVIEW_DIAGRAM)
 })
 
-test('invalid reported Mermaid syntax recovers across source and AI panel rerenders', async ({ page }) => {
+test('invalid reported Mermaid syntax recovers across source rerenders', async ({ page }) => {
   await openNote(page, 'Note B')
   await toggleRawMode(page, '.cm-content')
 
@@ -666,17 +660,9 @@ ${REPORTED_INVALID_DIAGRAM}
   await expect(mermaidBodyArtifacts(page)).toHaveCount(0)
   await expect(page.locator('#tolaria-fatal-render-error')).toHaveCount(0)
 
-  await page.getByRole('button', { name: 'Open the AI panel' }).click()
-  await expect(page.getByTestId('ai-panel')).toBeVisible({ timeout: 5_000 })
   await toggleRawMode(page, '.cm-content')
   await toggleRawMode(page, '.bn-editor')
   await expect(page.locator('[data-testid="mermaid-diagram-error"]')).toContainText('## ABC')
-  await expect(mermaidBodyArtifacts(page)).toHaveCount(0)
-
-  const input = page.getByTestId('agent-input')
-  await input.fill('Confirm the note is still usable.')
-  await page.getByTestId('agent-send').click()
-  await expect(page.getByTestId('ai-message').last()).toBeVisible({ timeout: 5_000 })
   await expect(mermaidBodyArtifacts(page)).toHaveCount(0)
   await expect(page.locator('#tolaria-fatal-render-error')).toHaveCount(0)
 })

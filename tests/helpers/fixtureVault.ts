@@ -9,7 +9,6 @@ const FIXTURE_VAULT = path.resolve('tests/fixtures/test-vault')
 const FIXTURE_VAULT_READY_TIMEOUT = 30_000
 const FIXTURE_VAULT_REMOVE_RETRIES = 10
 const FIXTURE_VAULT_REMOVE_RETRY_DELAY_MS = 100
-const CLAUDE_CODE_ONBOARDING_DISMISSED_KEY = 'tolaria:claude-code-onboarding-dismissed'
 type FixtureCommandArgs = Record<string, unknown> | undefined
 
 interface FixtureVaultPageArgs {
@@ -17,7 +16,6 @@ interface FixtureVaultPageArgs {
   vaultPath: string
   isGitRepo: boolean
   folders: FolderNode[]
-  installedAiAgents: string[]
 }
 
 interface FixturePageArgs {
@@ -28,7 +26,6 @@ interface FixtureVaultOptions {
   isGitRepo?: boolean
   expectedReadyTitle?: string
   folders?: FolderNode[]
-  installedAiAgents?: string[]
 }
 
 interface CopyDirArgs {
@@ -73,12 +70,10 @@ export function removeFixtureVaultCopy(tempVaultDir: string | null | undefined):
   removeFixtureVaultDirectory({ tempVaultDir })
 }
 
-async function installFixtureVaultInitScript({ page, vaultPath, isGitRepo, folders, installedAiAgents }: FixtureVaultPageArgs): Promise<void> {
-  await page.addInitScript(({ dismissedKey, fixtureFolders, fixtureInstalledAiAgents, initialIsGitRepo, resolvedVaultPath }: { dismissedKey: string; fixtureFolders: FolderNode[]; fixtureInstalledAiAgents: string[]; initialIsGitRepo: boolean; resolvedVaultPath: string }) => {
+async function installFixtureVaultInitScript({ page, vaultPath, isGitRepo, folders }: FixtureVaultPageArgs): Promise<void> {
+  await page.addInitScript(({ fixtureFolders, initialIsGitRepo, resolvedVaultPath }: { fixtureFolders: FolderNode[]; initialIsGitRepo: boolean; resolvedVaultPath: string }) => {
     localStorage.clear()
-    localStorage.setItem(dismissedKey, '1')
     let gitRepoReady = initialIsGitRepo
-    const installedAiAgentSet = new Set(fixtureInstalledAiAgents)
 
     const jsonHeaders = { 'Content-Type': 'application/json' }
     const FRONTMATTER_DELIMITER = '---'
@@ -342,19 +337,6 @@ async function installFixtureVaultInitScript({ page, vaultPath, isGitRepo, folde
       get_default_vault_path: () => resolvedVaultPath,
       save_vault_list: () => null,
       save_settings: () => null,
-      register_mcp_tools: () => null,
-      get_mcp_config_snippet: () => JSON.stringify({
-        mcpServers: {
-          tolaria: {
-            type: 'stdio',
-            command: 'node',
-            args: ['/fixture/Tolaria/mcp-server/index.js'],
-            env: {
-              WS_UI_PORT: '9711',
-            },
-          },
-        },
-      }, null, 2),
       reinit_telemetry: () => null,
       update_menu_state: () => null,
       get_settings: () => ({
@@ -365,22 +347,6 @@ async function installFixtureVaultInitScript({ page, vaultPath, isGitRepo, folde
         anonymous_id: null,
         release_channel: null,
       }),
-      get_ai_agents_status: () => {
-        const availability = (agentId: string) => ({
-          installed: installedAiAgentSet.has(agentId),
-          version: installedAiAgentSet.has(agentId) ? 'mock' : null,
-        })
-        return {
-          claude_code: availability('claude_code'),
-          codex: availability('codex'),
-          copilot: availability('copilot'),
-          opencode: availability('opencode'),
-          pi: availability('pi'),
-          antigravity: availability('antigravity'),
-          kiro: availability('kiro'),
-          hermes: availability('hermes'),
-        }
-      },
     })
 
     const buildFixtureReadHandlers = () => ({
@@ -522,9 +488,7 @@ async function installFixtureVaultInitScript({ page, vaultPath, isGitRepo, folde
       },
     })
   }, {
-    dismissedKey: CLAUDE_CODE_ONBOARDING_DISMISSED_KEY,
     fixtureFolders: folders,
-    fixtureInstalledAiAgents: installedAiAgents,
     initialIsGitRepo: isGitRepo,
     resolvedVaultPath: vaultPath,
   })
@@ -549,7 +513,6 @@ export async function openFixtureVault(
     vaultPath,
     isGitRepo: options.isGitRepo ?? true,
     folders: options.folders ?? [],
-    installedAiAgents: options.installedAiAgents ?? [],
   })
   await waitForFixtureVaultReady({
     page,

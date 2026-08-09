@@ -8,6 +8,8 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+.tools/
+/.pnpm-store/
 dist
 dist-ssr
 site/.vitepress/cache/
@@ -43,9 +45,6 @@ final_selection.py
 .claude-done
 .claude-blocked
 src-tauri/target
-
-# Generated mcp-server bundle (built by scripts/bundle-mcp-server.mjs)
-src-tauri/resources/mcp-server/
 
 # Python cache
 __pycache__/

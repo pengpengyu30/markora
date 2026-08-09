@@ -6,7 +6,7 @@ const base = process.env.VITEPRESS_BASE ?? "/";
 export default defineConfig({
   title: "Tolaria",
   description:
-    "Tolaria is a local-first Markdown knowledge base with native relationships, Git history, and AI workflows.",
+    "Tolaria is a simple local-first Markdown notebook with folders and a focused editor.",
   base,
   vite: {
     build: {
@@ -23,7 +23,7 @@ export default defineConfig({
       {
         property: "og:description",
         content:
-          "A second brain for the AI era. Free forever, local-first, Markdown-based, Git-ready, and AI-friendly.",
+          "A simple Markdown notebook. Free forever, local-first, and built around files you own.",
       },
     ],
   ],
@@ -62,7 +62,6 @@ export default defineConfig({
           { text: "Files And Media", link: "/concepts/files-and-media" },
           { text: "Inbox", link: "/concepts/inbox" },
           { text: "Git", link: "/concepts/git" },
-          { text: "AI", link: "/concepts/ai" },
         ],
       },
       {
@@ -78,8 +77,6 @@ export default defineConfig({
           { text: "Build Custom Views", link: "/guides/build-custom-views" },
           { text: "Connect A Git Remote", link: "/guides/connect-a-git-remote" },
           { text: "Manage Git", link: "/guides/commit-and-push" },
-          { text: "Use The AI", link: "/guides/use-ai-panel" },
-          { text: "Configure AI Models", link: "/guides/configure-ai-models" },
           { text: "Use The Table Of Contents", link: "/guides/use-table-of-contents" },
           { text: "Use Media Previews", link: "/guides/use-media-previews" },
           { text: "Manage Display Preferences", link: "/guides/manage-display-preferences" },
@@ -113,8 +110,6 @@ export default defineConfig({
         items: [
           { text: "Vault Not Loading", link: "/troubleshooting/vault-not-loading" },
           { text: "Git Authentication", link: "/troubleshooting/git-auth" },
-          { text: "AI Agent Not Found", link: "/troubleshooting/ai-agent-not-found" },
-          { text: "Model Provider Connection", link: "/troubleshooting/model-provider-connection" },
           { text: "Sync Conflicts", link: "/troubleshooting/sync-conflicts" },
         ],
       },

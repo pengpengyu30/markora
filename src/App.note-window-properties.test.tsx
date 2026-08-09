@@ -69,20 +69,6 @@ vi.mock('./hooks/useUpdater', () => ({
   }),
 }))
 
-vi.mock('./utils/ai-chat', async () => {
-  const actual = await vi.importActual<typeof import('./utils/ai-chat')>('./utils/ai-chat')
-  return {
-    ...actual,
-    buildSystemPrompt: vi.fn(() => ({ prompt: '', totalTokens: 0, truncated: false })),
-    checkClaudeCli: vi.fn(async () => ({ installed: false })),
-    streamClaudeChat: vi.fn(async () => 'mock-session'),
-  }
-})
-
-vi.mock('./utils/streamAiAgent', () => ({
-  streamAiAgent: vi.fn(async () => {}),
-}))
-
 function makeEntry(overrides: Partial<VaultEntry>): VaultEntry {
   return {
     path: '/vault/note.md',
@@ -214,7 +200,6 @@ describe('App note windows', () => {
     editorSnapshots.length = 0
     resetCommandResults()
     localStorage.clear()
-    localStorage.setItem('tolaria:claude-code-onboarding-dismissed', '1')
     window.history.replaceState(
       {},
       '',
@@ -309,23 +294,4 @@ describe('App note windows', () => {
     expect(gitRemoteStatus).not.toHaveBeenCalled()
   })
 
-  it('probes installed AI agents in note windows for target-picker parity', async () => {
-    const getAiAgentsStatus = vi.fn(() => ({
-      claude_code: { installed: true, version: '2.1.90' },
-      codex: { installed: true, version: '0.122.0-alpha.1' },
-      copilot: { installed: true, version: '1.0.58' },
-      opencode: { installed: true, version: '0.7.4' },
-      pi: { installed: false, version: null },
-      antigravity: { installed: true, version: '0.3.2' },
-      kiro: { installed: false, version: null },
-      hermes: { installed: false, version: null },
-    }))
-    commandResults.get_ai_agents_status = getAiAgentsStatus
-
-    renderApp(<App />)
-
-    await waitFor(() => {
-      expect(getAiAgentsStatus).toHaveBeenCalled()
-    })
-  })
 })

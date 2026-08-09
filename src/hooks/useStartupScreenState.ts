@@ -12,13 +12,11 @@ interface StartupVaultSwitcherState {
 }
 
 interface UseStartupScreenStateArgs {
-  aiAgentsPromptVisible: boolean
   isNoteWindow: boolean
   onboardingState: StartupOnboardingState
   runtimeMissingVaultPath: string | null
   selectedVaultPath: string | null
   settingsLoaded: boolean
-  showMcpSetupDialog: boolean
   telemetryConsent: boolean | null
   vaultIsLoading: boolean
   vaultSwitcher: StartupVaultSwitcherState
@@ -32,14 +30,12 @@ interface StartupScreenState {
 }
 
 interface ShouldShowStartupScreenArgs {
-  aiAgentsPromptVisible: boolean
   isNoteWindow: boolean
   isStartupLoading: boolean
   onboardingState: StartupOnboardingState
   runtimeMissingVaultPath: string | null
   settingsLoaded: boolean
   shouldResumeFreshStartOnboarding: boolean
-  showMcpSetupDialog: boolean
   telemetryConsent: boolean | null
 }
 
@@ -71,24 +67,14 @@ function needsTelemetryConsent(
   return !isStartupLoading && settingsLoaded && telemetryConsent === null
 }
 
-function needsAiAgentsOnboarding(
-  onboardingState: StartupOnboardingState,
-  aiAgentsPromptVisible: boolean,
-  showMcpSetupDialog: boolean,
-): boolean {
-  return onboardingState.status === 'ready' && aiAgentsPromptVisible && !showMcpSetupDialog
-}
-
 function shouldShowStartupScreenForState(options: ShouldShowStartupScreenArgs): boolean {
   const {
-    aiAgentsPromptVisible,
     isNoteWindow,
     isStartupLoading,
     onboardingState,
     runtimeMissingVaultPath,
     settingsLoaded,
     shouldResumeFreshStartOnboarding,
-    showMcpSetupDialog,
     telemetryConsent,
   } = options
   if (isNoteWindow) return false
@@ -99,7 +85,6 @@ function shouldShowStartupScreenForState(options: ShouldShowStartupScreenArgs): 
     onboardingState.status === 'welcome',
     onboardingState.status === 'vault-missing',
     shouldResumeFreshStartOnboarding,
-    needsAiAgentsOnboarding(onboardingState, aiAgentsPromptVisible, showMcpSetupDialog),
   ]
   return startupReasons.some(Boolean)
 }
@@ -116,13 +101,11 @@ function isVaultContentLoading(
 
 export function useStartupScreenState(options: UseStartupScreenStateArgs): StartupScreenState {
   const {
-    aiAgentsPromptVisible,
     isNoteWindow,
     onboardingState,
     runtimeMissingVaultPath,
     selectedVaultPath,
     settingsLoaded,
-    showMcpSetupDialog,
     telemetryConsent,
     vaultIsLoading,
     vaultSwitcher,
@@ -134,14 +117,12 @@ export function useStartupScreenState(options: UseStartupScreenStateArgs): Start
 
   const isStartupLoading = !isNoteWindow && onboardingState.status === 'loading'
   const shouldShowStartupScreen = shouldShowStartupScreenForState({
-    aiAgentsPromptVisible,
     isNoteWindow,
     isStartupLoading,
     onboardingState,
     runtimeMissingVaultPath,
     settingsLoaded,
     shouldResumeFreshStartOnboarding,
-    showMcpSetupDialog,
     telemetryConsent,
   })
   const vaultContentLoading = isVaultContentLoading(isNoteWindow, isStartupLoading, onboardingState, vaultIsLoading)

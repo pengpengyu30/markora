@@ -5,7 +5,6 @@ export function useDialogs() {
   const [showCreateTypeDialog, setShowCreateTypeDialog] = useState(false)
   const [showQuickOpen, setShowQuickOpen] = useState(false)
   const [showCommandPalette, setShowCommandPalette] = useState(false)
-  const [showAIChat, setShowAIChat] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showCloneVault, setShowCloneVault] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
@@ -23,9 +22,6 @@ export function useDialogs() {
   const closeSettings = useCallback(() => setShowSettings(false), [])
   const openCloneVault = useCallback(() => setShowCloneVault(true), [])
   const closeCloneVault = useCallback(() => setShowCloneVault(false), [])
-  const openAIChat = useCallback(() => setShowAIChat(true), [])
-  const closeAIChat = useCallback(() => setShowAIChat(false), [])
-  const toggleAIChat = useCallback(() => setShowAIChat((c) => !c), [])
   const openSearch = useCallback(() => setShowSearch(true), [])
   const closeSearch = useCallback(() => setShowSearch(false), [])
   const openConflictResolver = useCallback(() => setShowConflictResolver(true), [])
@@ -41,7 +37,6 @@ export function useDialogs() {
     showCreateTypeDialog, openCreateType, closeCreateType,
     showQuickOpen, openQuickOpen, closeQuickOpen,
     showCommandPalette, openCommandPalette, closeCommandPalette,
-    showAIChat, openAIChat, closeAIChat, toggleAIChat,
     showSettings, openSettings, closeSettings,
     showCloneVault, openCloneVault, closeCloneVault,
     showSearch, openSearch, closeSearch,

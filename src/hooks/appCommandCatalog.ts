@@ -46,7 +46,6 @@ type SimpleHandlerKey =
   | 'onToggleRawEditor'
   | 'onToggleDiff'
   | 'onToggleInspector'
-  | 'onToggleAIChat'
   | 'onToggleTableOfContents'
   | 'onExportNoteAsPdf'
   | 'onCommandPalette'
@@ -63,7 +62,6 @@ type SimpleHandlerKey =
   | 'onPull'
   | 'onResolveConflicts'
   | 'onViewChanges'
-  | 'onInstallMcp'
   | 'onReloadVault'
   | 'onRepairVault'
   | 'onOpenInNewWindow'
@@ -190,7 +188,6 @@ const MENU_LABEL_KEYS = {
   'Editor + Notes': 'command.view.editorNoteList',
   'All Panels': 'menu.view.allPanels',
   'Toggle Properties Panel': 'command.view.toggleProperties',
-  'Toggle AI Panel': 'command.view.toggleAiPanel',
   'Zoom In': 'menu.view.zoomIn',
   'Zoom Out': 'menu.view.zoomOut',
   'Actual Size': 'menu.view.actualSize',
@@ -220,7 +217,6 @@ const MENU_LABEL_KEYS = {
   'View Pending Changes': 'command.git.viewChanges',
   'Reload Vault': 'command.settings.reloadVault',
   'Repair Vault': 'command.settings.repairVault',
-  'Set Up External AI Tools…': 'command.settings.setupExternalAi',
 } as const
 
 export type AppCommandMenuLabelKey = (typeof MENU_LABEL_KEYS)[keyof typeof MENU_LABEL_KEYS]

@@ -182,11 +182,6 @@ function syncDefaultVaultExport(path: string) {
   DEFAULT_VAULTS[0] = { label: GETTING_STARTED_LABEL, path }
 }
 
-function selectedBridgeVaultPath(selectedVaultPath: string | null): string | null {
-  const path = selectedVaultPath?.trim()
-  return path ? path : null
-}
-
 function isCanonicalGettingStartedPath(path: string, resolvedDefaultPath: string): boolean {
   return path === resolvedDefaultPath
 }
@@ -591,18 +586,6 @@ function useLoadPersistedVaultState(store: PersistedVaultStore, onSwitchRef: Mut
         setVaultPath,
         vaultPath,
       }
-    }
-
-    function useMcpBridgeVaultSync(loaded: boolean, selectedVaultPath: string | null) {
-      useEffect(() => {
-        if (!loaded) return
-
-        tauriCall<string>('sync_mcp_bridge_vault', {
-          vaultPath: selectedBridgeVaultPath(selectedVaultPath),
-        }).catch((err) => {
-          console.warn('Failed to sync MCP bridge vault:', err)
-        })
-      }, [loaded, selectedVaultPath])
     }
 
     function formatGettingStartedRestoreError(err: unknown): string {
@@ -1223,7 +1206,6 @@ export function useVaultSwitcher({ onSwitch, onToast }: UseVaultSwitcherOptions)
     hiddenDefaults,
     extraVaults,
   )
-  useMcpBridgeVaultSync(loaded, selectedVaultPath)
   const {
     handleCreateEmptyVault,
     handleOpenLocalFolder,

@@ -1,20 +1,4 @@
-import { Copy, Cube, Monitor, Moon, Sun, X } from '@phosphor-icons/react'
-import {
-  AI_AGENT_DEFINITIONS,
-  createMissingAiAgentsStatus,
-  getAiAgentAvailability,
-  getAiAgentDefinition,
-  resolveDefaultAiAgent,
-  type AiAgentId,
-  type AiAgentsStatus,
-} from '../lib/aiAgents'
-import {
-  agentTargetId,
-  configuredModelTargets,
-  normalizeAiModelProviders,
-  resolveAiTarget,
-  type AiModelProvider,
-} from '../lib/aiTargets'
+import { Cube, Monitor, Moon, Sun, X } from '@phosphor-icons/react'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { GitProviderId, Settings } from '../types'
 import {
@@ -37,11 +21,8 @@ import {
 import { normalizeReleaseChannel, serializeReleaseChannel, type ReleaseChannel } from '../lib/releaseChannel'
 import { shouldHideGitignoredFiles } from '../lib/gitignoredVisibility'
 import { areGitFeaturesEnabled } from '../lib/gitSettings'
-import { areAiFeaturesEnabled } from '../lib/aiFeatures'
 import { areAutomaticUpdateChecksEnabled } from '../lib/automaticUpdateChecks'
 import { trackAllNotesVisibilityChanged } from '../lib/productAnalytics'
-import { AiProviderSettings } from './AiProviderSettings'
-import { AiAgentIcon } from './AiAgentIcon'
 import { GitSettingsSection } from './GitSettingsSection'
 import { PrivacySettingsSection } from './PrivacySettingsSection'
 import { SettingsBodyNav } from './SettingsBodyNav'
@@ -64,7 +45,6 @@ import {
 import { DEFAULT_NOTE_WIDTH_MODE, normalizeNoteWidthMode } from '../utils/noteWidth'
 import { DEFAULT_DATE_DISPLAY_FORMAT, normalizeDateDisplayFormat, type DateDisplayFormat } from '../utils/dateDisplay'
 import { Button } from './ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import type { NoteWidthMode } from '../types'
 import type { VaultOption } from './status-bar/types'
 import { SETTINGS_SECTION_IDS } from './settingsSectionIds'
@@ -75,12 +55,10 @@ import { registerMacosDismissableEscapeSurface } from '../utils/macosDismissable
 interface SettingsPanelProps {
   open: boolean
   settings: Settings
-  aiAgentsStatus?: AiAgentsStatus
   initialSectionId?: string | null
   locale?: AppLocale
   systemLocale?: AppLocale
   onSave: (settings: Settings) => void
-  onCopyMcpConfig?: () => void
   vaults?: VaultOption[]
   defaultWorkspacePath?: string | null
   onRemoveVault?: (path: string) => void
@@ -100,14 +78,9 @@ interface SettingsDraft {
   gitProvider: GitProviderId
   gitWslDistro: string | null
   autoGitEnabled: boolean
-  autoGitAiCommitMessagesEnabled: boolean
   autoGitIdleThresholdSeconds: number
   autoGitInactiveThresholdSeconds: number
   autoAdvanceInboxAfterOrganize: boolean
-  aiFeaturesEnabled: boolean
-  defaultAiAgent: AiAgentId
-  defaultAiTarget: string
-  aiModelProviders: AiModelProvider[]
   releaseChannel: ReleaseChannel
   automaticUpdateChecksEnabled: boolean
   themeMode: ThemeMode
@@ -138,24 +111,12 @@ interface SettingsBodyProps {
   vaultPath: string
   autoGitEnabled: boolean
   setAutoGitEnabled: (value: boolean) => void
-  autoGitAiCommitMessagesEnabled: boolean
-  setAutoGitAiCommitMessagesEnabled: (value: boolean) => void
   autoGitIdleThresholdSeconds: number
   setAutoGitIdleThresholdSeconds: (value: number) => void
   autoGitInactiveThresholdSeconds: number
   setAutoGitInactiveThresholdSeconds: (value: number) => void
   autoAdvanceInboxAfterOrganize: boolean
   setAutoAdvanceInboxAfterOrganize: (value: boolean) => void
-  aiFeaturesEnabled: boolean
-  setAiFeaturesEnabled: (value: boolean) => void
-  aiAgentsStatus: AiAgentsStatus
-  defaultAiAgent: AiAgentId
-  setDefaultAiAgent: (value: AiAgentId) => void
-  defaultAiTarget: string
-  setDefaultAiTarget: (value: string) => void
-  aiModelProviders: AiModelProvider[]
-  setAiModelProviders: (value: AiModelProvider[]) => void
-  onCopyMcpConfig?: () => void
   releaseChannel: ReleaseChannel
   setReleaseChannel: (value: ReleaseChannel) => void
   automaticUpdateChecksEnabled: boolean
@@ -210,7 +171,6 @@ function createSettingsDraft(settings: Settings, explicitOrganizationEnabled: bo
     gitProvider: normalizeSettingsGitProvider(settings.git_provider),
     gitWslDistro: settings.git_wsl_distro?.trim() || null,
     autoGitEnabled: settings.autogit_enabled ?? false,
-    autoGitAiCommitMessagesEnabled: settings.autogit_use_ai_commit_messages ?? false,
     autoGitIdleThresholdSeconds: sanitizePositiveInteger(
       settings.autogit_idle_threshold_seconds,
       DEFAULT_AUTOGIT_IDLE_THRESHOLD_SECONDS,
@@ -220,10 +180,6 @@ function createSettingsDraft(settings: Settings, explicitOrganizationEnabled: bo
       DEFAULT_AUTOGIT_INACTIVE_THRESHOLD_SECONDS,
     ),
     autoAdvanceInboxAfterOrganize: settings.auto_advance_inbox_after_organize ?? false,
-    aiFeaturesEnabled: areAiFeaturesEnabled(settings),
-    defaultAiAgent: resolveDefaultAiAgent(settings.default_ai_agent),
-    defaultAiTarget: resolveAiTarget(settings).id,
-    aiModelProviders: normalizeAiModelProviders(settings.ai_model_providers),
     releaseChannel: normalizeReleaseChannel(settings.release_channel),
     automaticUpdateChecksEnabled: areAutomaticUpdateChecksEnabled(settings),
     themeMode: resolveSettingsDraftThemeMode(settings.theme_mode),
@@ -267,7 +223,6 @@ function buildSettingsFromDraft(settings: Settings, draft: SettingsDraft): Setti
     git_provider: draft.gitProvider === 'native' ? null : draft.gitProvider,
     git_wsl_distro: draft.gitProvider === 'wsl' ? draft.gitWslDistro : null,
     autogit_enabled: draft.autoGitEnabled,
-    autogit_use_ai_commit_messages: draft.autoGitAiCommitMessagesEnabled,
     autogit_idle_threshold_seconds: draft.autoGitIdleThresholdSeconds,
     autogit_inactive_threshold_seconds: draft.autoGitInactiveThresholdSeconds,
     auto_advance_inbox_after_organize: draft.autoAdvanceInboxAfterOrganize,
@@ -283,10 +238,6 @@ function buildSettingsFromDraft(settings: Settings, draft: SettingsDraft): Setti
     note_width_mode: draft.defaultNoteWidth,
     sidebar_type_pluralization_enabled: draft.sidebarTypePluralizationEnabled,
     initial_h1_auto_rename_enabled: draft.initialH1AutoRename,
-    ai_features_enabled: draft.aiFeaturesEnabled,
-    default_ai_agent: draft.defaultAiAgent,
-    default_ai_target: draft.defaultAiTarget,
-    ai_model_providers: draft.aiModelProviders.length > 0 ? draft.aiModelProviders : null,
     hide_gitignored_files: draft.hideGitignoredFiles,
     multi_workspace_enabled: draft.multiWorkspaceEnabled,
   }
@@ -309,7 +260,7 @@ function applyThemeModeSelection(value: ThemeMode): void {
 }
 
 export function SettingsPanel(options: SettingsPanelProps) {
-  const { open, settings, aiAgentsStatus = createMissingAiAgentsStatus(), initialSectionId = null, locale = 'en', systemLocale = locale, onSave, onCopyMcpConfig, vaults = [], defaultWorkspacePath = null, onRemoveVault, onReorderVaults, onSetDefaultWorkspace, onUpdateWorkspaceIdentity, isGitVault = true, vaultPath = '', explicitOrganizationEnabled = true, onSaveExplicitOrganization, onClose } = options
+  const { open, settings, initialSectionId = null, locale = 'en', systemLocale = locale, onSave, vaults = [], defaultWorkspacePath = null, onRemoveVault, onReorderVaults, onSetDefaultWorkspace, onUpdateWorkspaceIdentity, isGitVault = true, vaultPath = '', explicitOrganizationEnabled = true, onSaveExplicitOrganization, onClose } = options
   if (!open) return null
   const initialDraft = createSettingsDraft(settings, explicitOrganizationEnabled)
 
@@ -317,13 +268,11 @@ export function SettingsPanel(options: SettingsPanelProps) {
     <SettingsPanelInner
       key={JSON.stringify(initialDraft)}
       settings={settings}
-      aiAgentsStatus={aiAgentsStatus}
       initialDraft={initialDraft}
       initialSectionId={initialSectionId}
       locale={locale}
       systemLocale={systemLocale}
       onSave={onSave}
-      onCopyMcpConfig={onCopyMcpConfig}
       vaults={vaults}
       defaultWorkspacePath={defaultWorkspacePath}
       {...{
@@ -343,9 +292,8 @@ export function SettingsPanel(options: SettingsPanelProps) {
 
 type SettingsPanelInnerProps = Omit<
   SettingsPanelProps,
-  'open' | 'explicitOrganizationEnabled' | 'aiAgentsStatus' | 'isGitVault' | 'vaultPath'
+  'open' | 'explicitOrganizationEnabled' | 'isGitVault' | 'vaultPath'
 > & {
-  aiAgentsStatus: AiAgentsStatus
   initialDraft: SettingsDraft
   initialSectionId: string | null
   locale: AppLocale
@@ -426,7 +374,7 @@ function useSettingsPanelInteractions(options: {
 }
 
 function SettingsPanelInner(options: SettingsPanelInnerProps) {
-  const { settings, aiAgentsStatus, initialDraft, initialSectionId, systemLocale, onSave, onCopyMcpConfig, vaults, defaultWorkspacePath, onRemoveVault, onReorderVaults, onSetDefaultWorkspace, onUpdateWorkspaceIdentity, isGitVault, vaultPath, onSaveExplicitOrganization, onClose } = options
+  const { settings, initialDraft, initialSectionId, systemLocale, onSave, vaults, defaultWorkspacePath, onRemoveVault, onReorderVaults, onSetDefaultWorkspace, onUpdateWorkspaceIdentity, isGitVault, vaultPath, onSaveExplicitOrganization, onClose } = options
   const backdropRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
   const { draft, updateDraft, handleGitignoredVisibilityChange, handleAllNotesFileVisibilityChange, handleThemeModeChange, handleSave } = useSettingsDraftActions({ initialDraft, onClose, onSave, onSaveExplicitOrganization, settings })
@@ -461,8 +409,6 @@ function SettingsPanelInner(options: SettingsPanelInnerProps) {
           updateDraft={updateDraft}
           isGitVault={isGitVault}
           vaultPath={vaultPath}
-          aiAgentsStatus={aiAgentsStatus}
-          onCopyMcpConfig={onCopyMcpConfig}
           vaults={vaults ?? []}
           defaultWorkspacePath={defaultWorkspacePath}
           {...{
@@ -524,8 +470,6 @@ interface SettingsBodyFromDraftProps {
   updateDraft: <Key extends keyof SettingsDraft>(key: Key, value: SettingsDraft[Key]) => void
   isGitVault: boolean
   vaultPath: string
-  aiAgentsStatus: AiAgentsStatus
-  onCopyMcpConfig?: () => void
   vaults: VaultOption[]
   defaultWorkspacePath?: string | null
   onRemoveVault?: (path: string) => void
@@ -538,7 +482,7 @@ interface SettingsBodyFromDraftProps {
 }
 
 function SettingsBodyFromDraft(options: SettingsBodyFromDraftProps) {
-  const { t, draft, locale, systemLocale, updateDraft, isGitVault, vaultPath, aiAgentsStatus, onCopyMcpConfig, vaults, defaultWorkspacePath, onRemoveVault, onReorderVaults, onSetDefaultWorkspace, onUpdateWorkspaceIdentity, setThemeMode, setHideGitignoredFiles, setAllNotesFileVisibility } = options
+  const { t, draft, locale, systemLocale, updateDraft, isGitVault, vaultPath, vaults, defaultWorkspacePath, onRemoveVault, onReorderVaults, onSetDefaultWorkspace, onUpdateWorkspaceIdentity, setThemeMode, setHideGitignoredFiles, setAllNotesFileVisibility } = options
   return (
     <SettingsBody
       t={t}
@@ -556,24 +500,12 @@ function SettingsBodyFromDraft(options: SettingsBodyFromDraftProps) {
       vaultPath={vaultPath}
       autoGitEnabled={draft.autoGitEnabled}
       setAutoGitEnabled={(value) => updateDraft('autoGitEnabled', value)}
-      autoGitAiCommitMessagesEnabled={draft.autoGitAiCommitMessagesEnabled}
-      setAutoGitAiCommitMessagesEnabled={(value) => updateDraft('autoGitAiCommitMessagesEnabled', value)}
       autoGitIdleThresholdSeconds={draft.autoGitIdleThresholdSeconds}
       setAutoGitIdleThresholdSeconds={(value) => updateDraft('autoGitIdleThresholdSeconds', value)}
       autoGitInactiveThresholdSeconds={draft.autoGitInactiveThresholdSeconds}
       setAutoGitInactiveThresholdSeconds={(value) => updateDraft('autoGitInactiveThresholdSeconds', value)}
       autoAdvanceInboxAfterOrganize={draft.autoAdvanceInboxAfterOrganize}
       setAutoAdvanceInboxAfterOrganize={(value) => updateDraft('autoAdvanceInboxAfterOrganize', value)}
-      aiFeaturesEnabled={draft.aiFeaturesEnabled}
-      setAiFeaturesEnabled={(value) => updateDraft('aiFeaturesEnabled', value)}
-      aiAgentsStatus={aiAgentsStatus}
-      defaultAiAgent={draft.defaultAiAgent}
-      setDefaultAiAgent={(value) => updateDraft('defaultAiAgent', value)}
-      defaultAiTarget={draft.defaultAiTarget}
-      setDefaultAiTarget={(value) => updateDraft('defaultAiTarget', value)}
-      aiModelProviders={draft.aiModelProviders}
-      setAiModelProviders={(value) => updateDraft('aiModelProviders', value)}
-      onCopyMcpConfig={onCopyMcpConfig}
       releaseChannel={draft.releaseChannel}
       setReleaseChannel={(value) => updateDraft('releaseChannel', value)}
       automaticUpdateChecksEnabled={draft.automaticUpdateChecksEnabled}
@@ -621,14 +553,14 @@ function SettingsBody(props: SettingsBodyProps) {
       <div className="min-w-0 flex-1 overflow-auto px-6 py-4">
         <SettingsSyncAndAppearanceSections {...props} />
         <SettingsContentSections {...props} />
-        <SettingsAgentWorkflowSections {...props} />
+        <SettingsWorkflowSections {...props} />
       </div>
     </div>
   )
 }
 
 function SettingsSyncAndAppearanceSections(options: SettingsBodyProps) {
-  const { t, locale, systemLocale, pullInterval, setPullInterval, gitFeaturesEnabled, setGitFeaturesEnabled, gitProvider, setGitProvider, gitWslDistro, setGitWslDistro, isGitVault, vaultPath, autoGitEnabled, setAutoGitEnabled, autoGitAiCommitMessagesEnabled, setAutoGitAiCommitMessagesEnabled, autoGitIdleThresholdSeconds, setAutoGitIdleThresholdSeconds, autoGitInactiveThresholdSeconds, setAutoGitInactiveThresholdSeconds, releaseChannel, setReleaseChannel, automaticUpdateChecksEnabled, setAutomaticUpdateChecksEnabled, multiWorkspaceEnabled, setMultiWorkspaceEnabled, vaults, defaultWorkspacePath, onRemoveVault, onReorderVaults, onSetDefaultWorkspace, onUpdateWorkspaceIdentity, themeMode, setThemeMode, uiLanguage, setUiLanguage } = options
+  const { t, locale, systemLocale, pullInterval, setPullInterval, gitFeaturesEnabled, setGitFeaturesEnabled, gitProvider, setGitProvider, gitWslDistro, setGitWslDistro, isGitVault, vaultPath, autoGitEnabled, setAutoGitEnabled, autoGitIdleThresholdSeconds, setAutoGitIdleThresholdSeconds, autoGitInactiveThresholdSeconds, setAutoGitInactiveThresholdSeconds, releaseChannel, setReleaseChannel, automaticUpdateChecksEnabled, setAutomaticUpdateChecksEnabled, multiWorkspaceEnabled, setMultiWorkspaceEnabled, vaults, defaultWorkspacePath, onRemoveVault, onReorderVaults, onSetDefaultWorkspace, onUpdateWorkspaceIdentity, themeMode, setThemeMode, uiLanguage, setUiLanguage } = options
   return (
     <>
       <SettingsSection id={SETTINGS_SECTION_IDS.sync} showDivider={false}>
@@ -671,8 +603,6 @@ function SettingsSyncAndAppearanceSections(options: SettingsBodyProps) {
           vaultPath={vaultPath}
           autoGitEnabled={autoGitEnabled}
           setAutoGitEnabled={setAutoGitEnabled}
-          autoGitAiCommitMessagesEnabled={autoGitAiCommitMessagesEnabled}
-          setAutoGitAiCommitMessagesEnabled={setAutoGitAiCommitMessagesEnabled}
           autoGitIdleThresholdSeconds={autoGitIdleThresholdSeconds}
           setAutoGitIdleThresholdSeconds={setAutoGitIdleThresholdSeconds}
           autoGitInactiveThresholdSeconds={autoGitInactiveThresholdSeconds}
@@ -720,26 +650,10 @@ function SettingsContentSections(options: SettingsBodyProps) {
   )
 }
 
-function SettingsAgentWorkflowSections(options: SettingsBodyProps) {
-  const { t, autoAdvanceInboxAfterOrganize, setAutoAdvanceInboxAfterOrganize, aiFeaturesEnabled, setAiFeaturesEnabled, aiAgentsStatus, defaultAiAgent, setDefaultAiAgent, defaultAiTarget, setDefaultAiTarget, aiModelProviders, setAiModelProviders, onCopyMcpConfig, explicitOrganization, setExplicitOrganization, crashReporting, setCrashReporting, analytics, setAnalytics } = options
+function SettingsWorkflowSections(options: SettingsBodyProps) {
+  const { t, autoAdvanceInboxAfterOrganize, setAutoAdvanceInboxAfterOrganize, explicitOrganization, setExplicitOrganization, crashReporting, setCrashReporting, analytics, setAnalytics } = options
   return (
     <>
-      <SettingsSection id={SETTINGS_SECTION_IDS.ai}>
-        <AiAgentSettingsSection
-          t={t}
-          aiFeaturesEnabled={aiFeaturesEnabled}
-          setAiFeaturesEnabled={setAiFeaturesEnabled}
-          aiAgentsStatus={aiAgentsStatus}
-          defaultAiAgent={defaultAiAgent}
-          setDefaultAiAgent={setDefaultAiAgent}
-          defaultAiTarget={defaultAiTarget}
-          setDefaultAiTarget={setDefaultAiTarget}
-          aiModelProviders={aiModelProviders}
-          setAiModelProviders={setAiModelProviders}
-          onCopyMcpConfig={onCopyMcpConfig}
-        />
-      </SettingsSection>
-
       <SettingsSection id={SETTINGS_SECTION_IDS.workflow}>
         <OrganizationWorkflowSection
           t={t}
@@ -942,228 +856,6 @@ function LanguageSettingsSection({
       />
     </SettingsRow>
   )
-}
-
-function buildDefaultAiTargetOptions(
-  aiAgentsStatus: AiAgentsStatus,
-  providers: AiModelProvider[],
-  t: Translate,
-): Array<{ value: string; label: string }> {
-  const agentOptions = AI_AGENT_DEFINITIONS.map((definition) => {
-    const status = getAiAgentAvailability(aiAgentsStatus, definition.id)
-    const suffix =
-      status.status === 'installed'
-      ? ` (${t('settings.aiAgents.installed')}${status.version ? ` ${status.version}` : ''})`
-      : ` (${t('settings.aiAgents.missing')})`
-    return {
-      value: agentTargetId(definition.id),
-      label: `${t('settings.aiAgents.agentGroup')}: ${definition.label}${suffix}`,
-    }
-  })
-  const modelOptions = configuredModelTargets(providers).map((target) => ({
-    value: target.id,
-    label: `${target.provider.kind === 'ollama' || target.provider.kind === 'lm_studio' ? t('settings.aiAgents.localGroup') : t('settings.aiAgents.apiGroup')}: ${target.label}`,
-  }))
-  return [...agentOptions, ...modelOptions]
-}
-
-function AiAgentSettingsSection(
-  functionOptions: Pick<
-  SettingsBodyProps,
-  | 't'
-  | 'aiFeaturesEnabled'
-  | 'setAiFeaturesEnabled'
-  | 'aiAgentsStatus'
-  | 'defaultAiAgent'
-  | 'setDefaultAiAgent'
-  | 'defaultAiTarget'
-  | 'setDefaultAiTarget'
-  | 'aiModelProviders'
-  | 'setAiModelProviders'
-  | 'onCopyMcpConfig'
-  >,
-) {
-  const {
-    t,
-    aiFeaturesEnabled,
-    setAiFeaturesEnabled,
-    aiAgentsStatus,
-    defaultAiAgent,
-    setDefaultAiAgent,
-    defaultAiTarget,
-    setDefaultAiTarget,
-    aiModelProviders,
-    setAiModelProviders,
-    onCopyMcpConfig,
-  } = functionOptions
-  const selectedTarget = resolveAiTarget({
-    default_ai_agent: defaultAiAgent,
-    default_ai_target: defaultAiTarget,
-    ai_model_providers: aiModelProviders,
-  } as Settings)
-
-  return (
-    <>
-      <SectionHeading title={t('settings.aiAgents.title')} />
-
-      <SettingsGroup>
-        <SettingsSwitchRow
-          label={t('settings.aiFeatures.enable')}
-          description={t('settings.aiFeatures.enableDescription')}
-          checked={aiFeaturesEnabled}
-          onChange={setAiFeaturesEnabled}
-          testId="settings-ai-features-enabled"
-        />
-      </SettingsGroup>
-
-      {aiFeaturesEnabled ? (
-        <>
-          <SettingsGroup>
-            <SettingsRow
-              label={t('settings.aiAgents.defaultTarget')}
-              description={renderDefaultAiTargetSummary(selectedTarget, aiAgentsStatus, t)}
-              controlWidth="wide"
-            >
-              <SelectControl
-                ariaLabel={t('settings.aiAgents.defaultTarget')}
-                value={defaultAiTarget}
-                onValueChange={(value) => {
-                  setDefaultAiTarget(value)
-                  if (value.startsWith('agent:')) {
-                    const agent = value.replace('agent:', '') as AiAgentId
-                    setDefaultAiAgent(agent)
-                  }
-                }}
-                options={buildDefaultAiTargetOptions(aiAgentsStatus, aiModelProviders, t)}
-                testId="settings-default-ai-agent"
-              />
-            </SettingsRow>
-          </SettingsGroup>
-
-          <AiTargetManagementTabs
-            t={t}
-            aiAgentsStatus={aiAgentsStatus}
-            aiModelProviders={aiModelProviders}
-            setAiModelProviders={setAiModelProviders}
-            onCopyMcpConfig={onCopyMcpConfig}
-          />
-        </>
-      ) : null}
-    </>
-  )
-}
-
-function AiTargetManagementTabs({
-  t,
-  aiAgentsStatus,
-  aiModelProviders,
-  setAiModelProviders,
-  onCopyMcpConfig,
-}: {
-  t: Translate
-  aiAgentsStatus: AiAgentsStatus
-  aiModelProviders: AiModelProvider[]
-  setAiModelProviders: (value: AiModelProvider[]) => void
-  onCopyMcpConfig?: () => void
-}) {
-  return (
-    <Tabs defaultValue="agents" className="gap-3">
-      <TabsList className="grid h-9 w-full grid-cols-3">
-        <TabsTrigger value="agents">{t('settings.aiAgents.agentGroup')}</TabsTrigger>
-        <TabsTrigger value="local">{t('settings.aiAgents.localGroup')}</TabsTrigger>
-        <TabsTrigger value="api">{t('settings.aiAgents.apiGroup')}</TabsTrigger>
-      </TabsList>
-      <TabsContent value="agents" className="space-y-3">
-        <AiAgentsInstalledSection t={t} aiAgentsStatus={aiAgentsStatus} />
-        {onCopyMcpConfig ? <CopyMcpConfigButton t={t} onCopyMcpConfig={onCopyMcpConfig} /> : null}
-      </TabsContent>
-      <TabsContent value="local">
-        <AiProviderSettings t={t} mode="local" providers={aiModelProviders} onChange={setAiModelProviders} />
-      </TabsContent>
-      <TabsContent value="api">
-        <AiProviderSettings t={t} mode="api" providers={aiModelProviders} onChange={setAiModelProviders} />
-      </TabsContent>
-    </Tabs>
-  )
-}
-
-function CopyMcpConfigButton({ t, onCopyMcpConfig }: { t: Translate; onCopyMcpConfig: () => void }) {
-  return (
-    <Button
-      type="button"
-      variant="outline"
-      size="sm"
-      onClick={onCopyMcpConfig}
-      className="w-fit gap-2"
-      aria-label={t('ai.panel.copyMcpConfig')}
-      data-testid="settings-copy-mcp-config"
-    >
-      <Copy size={15} />
-      {t('ai.panel.copyMcpConfig')}
-    </Button>
-  )
-}
-
-function AiAgentsInstalledSection({ t, aiAgentsStatus }: { t: Translate; aiAgentsStatus: AiAgentsStatus }) {
-  return (
-    <div className="rounded-md border border-border bg-card p-3">
-      <div className="text-sm font-medium text-foreground">{t('settings.aiAgents.installedTitle')}</div>
-      <div className="mt-1 text-xs leading-5 text-muted-foreground">{t('settings.aiAgents.installedDescription')}</div>
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        {AI_AGENT_DEFINITIONS.map((definition) => {
-          const status = getAiAgentAvailability(aiAgentsStatus, definition.id)
-          const installed = status.status === 'installed'
-          return (
-            <div key={definition.id} className="rounded-md border border-border bg-background px-3 py-2">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex min-w-0 items-center gap-2">
-                  <AiAgentIcon agent={definition.id} size={16} />
-                  <div className="truncate text-sm font-medium text-foreground">{definition.label}</div>
-                </div>
-                <div className={installed ? 'text-xs text-emerald-700' : 'text-xs text-muted-foreground'}>
-                  {installed ? t('settings.aiAgents.installed') : t('settings.aiAgents.missing')}
-                </div>
-              </div>
-              <div className="mt-1 truncate text-xs text-muted-foreground">
-                {status.version || t('settings.aiAgents.noVersion')}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-function renderDefaultAiAgentSummary(defaultAiAgent: AiAgentId, aiAgentsStatus: AiAgentsStatus, t: Translate): string {
-  const definition = getAiAgentDefinition(defaultAiAgent)
-  const status = getAiAgentAvailability(aiAgentsStatus, defaultAiAgent)
-  if (status.status === 'installed') {
-    return t('settings.aiAgents.ready', {
-      agent: definition.label,
-      version: status.version ? ` ${status.version}` : '',
-    })
-  }
-  return t('settings.aiAgents.notInstalled', { agent: definition.label })
-}
-
-function renderDefaultAiTargetSummary(
-  target: ReturnType<typeof resolveAiTarget>,
-  aiAgentsStatus: AiAgentsStatus,
-  t: Translate,
-): string {
-  if (target.kind === 'api_model') {
-    const storage =
-      target.provider.api_key_storage === 'local_file'
-      ? t('settings.aiAgents.apiLocalKey')
-      : target.provider.api_key_env_var
-          ? t('settings.aiAgents.apiEnv', {
-              env: target.provider.api_key_env_var,
-            })
-      : t('settings.aiAgents.apiNoKey')
-    return t('settings.aiAgents.apiReady', { target: target.label, storage })
-  }
-  return renderDefaultAiAgentSummary(target.agent, aiAgentsStatus, t)
 }
 
 function OrganizationWorkflowSection({

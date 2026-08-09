@@ -1,27 +1,17 @@
-import type { AiAgentId } from './aiAgents'
-import type { AiAgentPermissionMode } from './aiAgentPermissionMode'
 import { trackEvent } from './telemetry'
 import type { AllNotesFileVisibility } from '../utils/allNotesFileVisibility'
 import type { DateDisplayFormat } from '../utils/dateDisplay'
 import type { FilePreviewKind } from '../utils/filePreview'
 import type { GitProviderId, NoteWidthMode } from '../types'
-import type { CommitMessageDraftSource } from '../utils/commitMessageDraft'
 import type { ThemeMode } from './themeMode'
 
 type TrackedPreviewKind = FilePreviewKind | 'unsupported'
 type FilePreviewAction = 'copy_deep_link' | 'copy_path' | 'open_external' | 'reveal'
-type AgentBlockedReason = 'agent_unavailable' | 'missing_vault'
-type AiWorkspaceMode = 'docked' | 'side' | 'window'
-type AiWorkspaceTitleSource = 'generated' | 'manual'
 type NotePdfExportFailureReason = 'export_unavailable' | 'export_error'
 type NotePdfExportSource = 'breadcrumb' | 'app_command' | 'note_list_context_menu'
-type CommitMessageDraftSurface = 'autogit' | 'manual'
 type NoteRetargetKind = 'folder' | 'type'
 type NoteRetargetFolderDestination = 'folder' | 'root'
 type AnalyticsBoolean = boolean
-type AiAgentResponseText = string
-type AiAgentToolCount = number
-type AiAgentResponseTextFlag = 'had_text' | 'had_partial_response'
 type SheetFormulaFunctionName = string
 type StartupSource = 'scan' | 'snapshot'
 
@@ -67,19 +57,6 @@ export function trackStartupBackgroundReconciled(properties: {
     entry_count: properties.entryCount,
   })
 }
-function aiAgentResponsePayload(
-  agent: AiAgentId,
-  response: AiAgentResponseText,
-  toolCount: AiAgentToolCount,
-  textFlag: AiAgentResponseTextFlag,
-) {
-  return {
-    agent,
-    [textFlag]: numericFlag(response.trim().length > 0),
-    tool_count: toolCount,
-  }
-}
-
 export function trackFilePreviewOpened(previewKind: FilePreviewKind | null): void {
   trackEvent('file_preview_opened', {
     preview_kind: trackedPreviewKind(previewKind),
@@ -133,12 +110,6 @@ export function trackAllNotesVisibilityChanged(
   }
 }
 
-export function trackAiFeaturesEnabledChanged(enabled: AnalyticsBoolean): void {
-  trackEvent('ai_features_visibility_changed', {
-    enabled: numericFlag(enabled),
-  })
-}
-
 export function trackGitFeaturesEnabledChanged(enabled: AnalyticsBoolean): void {
   trackEvent('git_features_visibility_changed', {
     enabled: numericFlag(enabled),
@@ -160,21 +131,6 @@ export function trackGitProviderTested(provider: GitProviderId, available: Analy
     available: numericFlag(available),
     provider,
   })
-}
-
-export function trackCommitMessageGenerated(params: {
-  aiAttempted: AnalyticsBoolean
-  fileCount: number
-  source: CommitMessageDraftSource
-  surface?: CommitMessageDraftSurface
-}): void {
-  const payload = {
-    ai_attempted: numericFlag(params.aiAttempted),
-    file_count: params.fileCount,
-    source: params.source,
-    ...(params.surface ? { surface: params.surface } : {}),
-  }
-  trackEvent('commit_message_generated', payload)
 }
 
 export function trackDefaultNoteWidthChanged(mode: NoteWidthMode): void {
@@ -217,90 +173,4 @@ export function trackSheetEditorOpened(params: {
 
 export function trackSheetFormulaAutocompleteUsed(functionName: SheetFormulaFunctionName): void {
   trackEvent('sheet_formula_autocomplete_used', { function_name: functionName })
-}
-
-export function trackAiAgentMessageBlocked(agent: AiAgentId, reason: AgentBlockedReason): void {
-  trackEvent('ai_agent_message_blocked', { agent, reason })
-}
-
-export function trackAiAgentMessageSent(params: {
-  agent: AiAgentId
-  permissionMode: AiAgentPermissionMode
-  hasContext: boolean
-  referenceCount: number
-  historyMessageCount: number
-}): void {
-  trackEvent('ai_agent_message_sent', {
-    agent: params.agent,
-    permission_mode: params.permissionMode,
-    has_context: numericFlag(params.hasContext),
-    reference_count: params.referenceCount,
-    history_message_count: params.historyMessageCount,
-  })
-}
-
-export function trackAiAgentResponseCompleted(
-  agent: AiAgentId,
-  response: AiAgentResponseText,
-  toolCount: AiAgentToolCount,
-  skipped: AnalyticsBoolean,
-): void {
-  if (skipped) return
-  trackEvent('ai_agent_response_completed', aiAgentResponsePayload(agent, response, toolCount, 'had_text'))
-}
-
-export function trackAiAgentResponseFailed(
-  agent: AiAgentId,
-  response: AiAgentResponseText,
-  toolCount: AiAgentToolCount,
-): void {
-  trackEvent('ai_agent_response_failed', {
-    ...aiAgentResponsePayload(agent, response, toolCount, 'had_partial_response'),
-    error_kind: 'stream_error',
-  })
-}
-
-export function trackAiAgentResponseStopped(
-  agent: AiAgentId,
-  response: AiAgentResponseText,
-  toolCount: AiAgentToolCount,
-): void {
-  trackEvent('ai_agent_response_stopped', aiAgentResponsePayload(agent, response, toolCount, 'had_partial_response'))
-}
-
-export function trackAiAgentPermissionModeChanged(agent: AiAgentId, permissionMode: AiAgentPermissionMode): void {
-  trackEvent('ai_agent_permission_mode_changed', {
-    agent,
-    permission_mode: permissionMode,
-  })
-}
-
-export function trackAiAgentModelSelected(
-  agent: AiAgentId,
-  usedAgentDefault: AnalyticsBoolean,
-  surface: AiWorkspaceMode,
-): void {
-  trackEvent('ai_agent_model_selected', {
-    agent_id: agent,
-    surface,
-    used_agent_default: numericFlag(usedAgentDefault),
-  })
-}
-
-export function trackAiAgentModelFallback(agent: AiAgentId, reason: 'unavailable'): void {
-  trackEvent('ai_agent_model_fallback', {
-    agent_id: agent,
-    reason,
-  })
-}
-
-export function trackAiWorkspaceSidebarToggled(collapsed: AnalyticsBoolean, mode: AiWorkspaceMode): void {
-  trackEvent('ai_workspace_sidebar_toggled', {
-    collapsed: numericFlag(collapsed),
-    mode,
-  })
-}
-
-export function trackAiWorkspaceChatTitled(source: AiWorkspaceTitleSource): void {
-  trackEvent('ai_workspace_chat_titled', { source })
 }

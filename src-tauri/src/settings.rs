@@ -2,18 +2,6 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 
-use crate::ai_models::{normalize_ai_model_providers, AiModelProvider};
-
-const SUPPORTED_DEFAULT_AI_AGENTS: &[&str] = &[
-    "claude_code",
-    "codex",
-    "copilot",
-    "opencode",
-    "pi",
-    "antigravity",
-    "kiro",
-    "hermes",
-];
 pub const DEFAULT_HIDE_GITIGNORED_FILES: bool = true;
 const SUPPORTED_NOTE_WIDTH_MODES: &[&str] = &["normal", "wide"];
 const SUPPORTED_DATE_DISPLAY_FORMATS: &[&str] = &["us", "european", "friendly", "iso"];
@@ -81,15 +69,6 @@ const SUPPORTED_UI_LANGUAGE_ALIASES: &[(&str, &str)] = &[
 ];
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct AiWorkspaceConversationSetting {
-    pub archived: Option<bool>,
-    pub id: String,
-    pub model_id: Option<String>,
-    pub target_id: Option<String>,
-    pub title: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct Settings {
     pub auto_pull_interval_minutes: Option<u32>,
     pub git_enabled: Option<bool>,
@@ -97,7 +76,6 @@ pub struct Settings {
     pub git_provider: Option<String>,
     pub git_wsl_distro: Option<String>,
     pub autogit_enabled: Option<bool>,
-    pub autogit_use_ai_commit_messages: Option<bool>,
     pub autogit_idle_threshold_seconds: Option<u32>,
     pub autogit_inactive_threshold_seconds: Option<u32>,
     pub auto_advance_inbox_after_organize: Option<bool>,
@@ -113,11 +91,6 @@ pub struct Settings {
     pub note_width_mode: Option<String>,
     pub sidebar_type_pluralization_enabled: Option<bool>,
     pub initial_h1_auto_rename_enabled: Option<bool>,
-    pub ai_features_enabled: Option<bool>,
-    pub default_ai_agent: Option<String>,
-    pub default_ai_target: Option<String>,
-    pub ai_model_providers: Option<Vec<AiModelProvider>>,
-    pub ai_workspace_conversations: Option<Vec<AiWorkspaceConversationSetting>>,
     pub hide_gitignored_files: Option<bool>,
     pub all_notes_show_pdfs: Option<bool>,
     pub all_notes_show_images: Option<bool>,
@@ -147,14 +120,6 @@ pub fn effective_release_channel(value: Option<&str>) -> &'static str {
         "alpha"
     } else {
         "stable"
-    }
-}
-
-pub fn normalize_default_ai_agent(value: Option<&str>) -> Option<String> {
-    match value.map(|candidate| candidate.trim().to_ascii_lowercase()) {
-        Some(agent) if agent == "gemini" => Some("antigravity".to_string()),
-        Some(agent) if SUPPORTED_DEFAULT_AI_AGENTS.contains(&agent.as_str()) => Some(agent),
-        _ => None,
     }
 }
 
@@ -222,7 +187,6 @@ fn normalize_settings(settings: Settings) -> Settings {
         git_provider: normalize_git_provider(settings.git_provider.as_deref()),
         git_wsl_distro: normalize_optional_string(settings.git_wsl_distro),
         autogit_enabled: settings.autogit_enabled,
-        autogit_use_ai_commit_messages: settings.autogit_use_ai_commit_messages,
         autogit_idle_threshold_seconds: normalize_optional_positive_u32(
             settings.autogit_idle_threshold_seconds,
         ),
@@ -242,49 +206,11 @@ fn normalize_settings(settings: Settings) -> Settings {
         note_width_mode: normalize_note_width_mode(settings.note_width_mode.as_deref()),
         sidebar_type_pluralization_enabled: settings.sidebar_type_pluralization_enabled,
         initial_h1_auto_rename_enabled: settings.initial_h1_auto_rename_enabled,
-        ai_features_enabled: settings.ai_features_enabled,
-        default_ai_agent: normalize_default_ai_agent(settings.default_ai_agent.as_deref()),
-        default_ai_target: normalize_optional_string(settings.default_ai_target),
-        ai_model_providers: normalize_ai_model_providers(settings.ai_model_providers),
-        ai_workspace_conversations: normalize_ai_workspace_conversations(
-            settings.ai_workspace_conversations,
-        ),
         hide_gitignored_files: settings.hide_gitignored_files,
         all_notes_show_pdfs: settings.all_notes_show_pdfs,
         all_notes_show_images: settings.all_notes_show_images,
         all_notes_show_unsupported: settings.all_notes_show_unsupported,
         multi_workspace_enabled: settings.multi_workspace_enabled,
-    }
-}
-
-fn normalize_ai_workspace_conversations(
-    conversations: Option<Vec<AiWorkspaceConversationSetting>>,
-) -> Option<Vec<AiWorkspaceConversationSetting>> {
-    let normalized: Vec<AiWorkspaceConversationSetting> = conversations
-        .unwrap_or_default()
-        .into_iter()
-        .filter_map(|conversation| {
-            let id = conversation.id.trim().to_string();
-            let title = conversation.title.trim().to_string();
-            if id.is_empty() || title.is_empty() {
-                return None;
-            }
-
-            Some(AiWorkspaceConversationSetting {
-                archived: conversation.archived,
-                id,
-                model_id: normalize_optional_string(conversation.model_id),
-                target_id: normalize_optional_string(conversation.target_id),
-                title,
-            })
-        })
-        .take(100)
-        .collect();
-
-    if normalized.is_empty() {
-        None
-    } else {
-        Some(normalized)
     }
 }
 
@@ -330,55 +256,6 @@ pub fn get_settings() -> Result<Settings, String> {
 
 pub fn save_settings(settings: Settings) -> Result<(), String> {
     save_settings_at(&preferred_app_config_path("settings.json")?, settings)
-}
-
-fn ai_workspace_sessions_path() -> Result<PathBuf, String> {
-    resolve_existing_or_preferred_app_config_path("ai-workspace-sessions.json")
-}
-
-fn get_ai_workspace_sessions_at(path: &PathBuf) -> Result<serde_json::Value, String> {
-    if !path.exists() {
-        return Ok(serde_json::json!({}));
-    }
-
-    let content = fs::read_to_string(path)
-        .map_err(|e| format!("Failed to read AI workspace sessions: {}", e))?;
-    let sessions: serde_json::Value = serde_json::from_str(&content)
-        .map_err(|e| format!("Failed to parse AI workspace sessions: {}", e))?;
-    if sessions.is_object() {
-        Ok(sessions)
-    } else {
-        Ok(serde_json::json!({}))
-    }
-}
-
-fn save_ai_workspace_sessions_at(
-    path: &PathBuf,
-    sessions: serde_json::Value,
-) -> Result<(), String> {
-    if !sessions.is_object() {
-        return Err("AI workspace sessions must be a JSON object".to_string());
-    }
-
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent)
-            .map_err(|e| format!("Failed to create config directory: {}", e))?;
-    }
-
-    let json = serde_json::to_string_pretty(&sessions)
-        .map_err(|e| format!("Failed to serialize AI workspace sessions: {}", e))?;
-    fs::write(path, json).map_err(|e| format!("Failed to write AI workspace sessions: {}", e))
-}
-
-pub fn get_ai_workspace_sessions() -> Result<serde_json::Value, String> {
-    get_ai_workspace_sessions_at(&ai_workspace_sessions_path()?)
-}
-
-pub fn save_ai_workspace_sessions(sessions: serde_json::Value) -> Result<(), String> {
-    save_ai_workspace_sessions_at(
-        &preferred_app_config_path("ai-workspace-sessions.json")?,
-        sessions,
-    )
 }
 
 fn last_vault_file() -> Result<PathBuf, String> {
@@ -452,7 +329,6 @@ mod tests {
             git_provider: Some("wsl".to_string()),
             git_wsl_distro: Some("Ubuntu".to_string()),
             autogit_enabled: Some(true),
-            autogit_use_ai_commit_messages: Some(true),
             autogit_idle_threshold_seconds: Some(90),
             autogit_inactive_threshold_seconds: Some(30),
             auto_advance_inbox_after_organize: Some(true),
@@ -468,11 +344,6 @@ mod tests {
             note_width_mode: Some("wide".to_string()),
             sidebar_type_pluralization_enabled: Some(false),
             initial_h1_auto_rename_enabled: Some(false),
-            ai_features_enabled: Some(false),
-            default_ai_agent: Some("codex".to_string()),
-            default_ai_target: Some("agent:codex".to_string()),
-            ai_model_providers: None,
-            ai_workspace_conversations: None,
             hide_gitignored_files: Some(false),
             multi_workspace_enabled: Some(true),
             all_notes_show_pdfs: Some(true),
@@ -498,7 +369,6 @@ mod tests {
             auto_pull_interval_minutes: Some(10),
             git_enabled: Some(false),
             autogit_enabled: Some(true),
-            autogit_use_ai_commit_messages: Some(true),
             autogit_idle_threshold_seconds: Some(90),
             autogit_inactive_threshold_seconds: Some(30),
             auto_advance_inbox_after_organize: Some(true),
@@ -510,8 +380,6 @@ mod tests {
             note_width_mode: Some("wide".to_string()),
             sidebar_type_pluralization_enabled: Some(false),
             initial_h1_auto_rename_enabled: Some(false),
-            ai_features_enabled: Some(false),
-            default_ai_agent: Some("codex".to_string()),
             hide_gitignored_files: Some(false),
             multi_workspace_enabled: Some(true),
             all_notes_show_pdfs: Some(true),
@@ -522,7 +390,6 @@ mod tests {
         assert_eq!(loaded.auto_pull_interval_minutes, Some(10));
         assert_eq!(loaded.git_enabled, Some(false));
         assert_eq!(loaded.autogit_enabled, Some(true));
-        assert_eq!(loaded.autogit_use_ai_commit_messages, Some(true));
         assert_eq!(loaded.autogit_idle_threshold_seconds, Some(90));
         assert_eq!(loaded.autogit_inactive_threshold_seconds, Some(30));
         assert_eq!(loaded.auto_advance_inbox_after_organize, Some(true));
@@ -534,8 +401,6 @@ mod tests {
         assert_eq!(loaded.note_width_mode.as_deref(), Some("wide"));
         assert_eq!(loaded.sidebar_type_pluralization_enabled, Some(false));
         assert_eq!(loaded.initial_h1_auto_rename_enabled, Some(false));
-        assert_eq!(loaded.ai_features_enabled, Some(false));
-        assert_eq!(loaded.default_ai_agent.as_deref(), Some("codex"));
         assert_eq!(loaded.hide_gitignored_files, Some(false));
         assert_eq!(loaded.multi_workspace_enabled, Some(true));
         assert_eq!(loaded.all_notes_show_pdfs, Some(true));
@@ -587,7 +452,6 @@ mod tests {
             ui_language: Some("  zh-cn  ".to_string()),
             date_display_format: Some("  ISO  ".to_string()),
             note_width_mode: Some("  WIDE  ".to_string()),
-            default_ai_agent: Some("  codex  ".to_string()),
             ..Default::default()
         });
         assert_eq!(loaded.anonymous_id.as_deref(), Some("test-uuid"));
@@ -599,7 +463,6 @@ mod tests {
         assert_eq!(loaded.ui_language.as_deref(), Some("zh-CN"));
         assert_eq!(loaded.date_display_format.as_deref(), Some("iso"));
         assert_eq!(loaded.note_width_mode.as_deref(), Some("wide"));
-        assert_eq!(loaded.default_ai_agent.as_deref(), Some("codex"));
     }
 
     #[test]
@@ -629,69 +492,6 @@ mod tests {
             ..Default::default()
         });
         assert!(loaded.release_channel.is_none());
-    }
-
-    #[test]
-    fn test_invalid_default_ai_agent_is_filtered() {
-        let loaded = save_and_reload(Settings {
-            default_ai_agent: Some("cursor".to_string()),
-            ..Default::default()
-        });
-        assert!(loaded.default_ai_agent.is_none());
-    }
-
-    #[test]
-    fn test_opencode_default_ai_agent_is_preserved() {
-        let loaded = save_and_reload(Settings {
-            default_ai_agent: Some("opencode".to_string()),
-            ..Default::default()
-        });
-        assert_eq!(loaded.default_ai_agent.as_deref(), Some("opencode"));
-    }
-
-    #[test]
-    fn test_copilot_default_ai_agent_is_preserved() {
-        let loaded = normalize_settings(Settings {
-            default_ai_agent: Some("copilot".to_string()),
-            ..Default::default()
-        });
-        assert_eq!(loaded.default_ai_agent.as_deref(), Some("copilot"));
-    }
-
-    #[test]
-    fn test_pi_default_ai_agent_is_preserved() {
-        let loaded = save_and_reload(Settings {
-            default_ai_agent: Some("pi".to_string()),
-            ..Default::default()
-        });
-        assert_eq!(loaded.default_ai_agent.as_deref(), Some("pi"));
-    }
-
-    #[test]
-    fn test_antigravity_default_ai_agent_is_preserved() {
-        let loaded = save_and_reload(Settings {
-            default_ai_agent: Some("antigravity".to_string()),
-            ..Default::default()
-        });
-        assert_eq!(loaded.default_ai_agent.as_deref(), Some("antigravity"));
-    }
-
-    #[test]
-    fn test_legacy_gemini_default_ai_agent_migrates_to_antigravity() {
-        let loaded = save_and_reload(Settings {
-            default_ai_agent: Some("gemini".to_string()),
-            ..Default::default()
-        });
-        assert_eq!(loaded.default_ai_agent.as_deref(), Some("antigravity"));
-    }
-
-    #[test]
-    fn test_hermes_default_ai_agent_is_preserved() {
-        let loaded = save_and_reload(Settings {
-            default_ai_agent: Some("hermes".to_string()),
-            ..Default::default()
-        });
-        assert_eq!(loaded.default_ai_agent.as_deref(), Some("hermes"));
     }
 
     #[test]
@@ -886,47 +686,6 @@ mod tests {
             .to_str()
             .unwrap()
             .contains("com.tolaria.app"));
-    }
-
-    #[test]
-    fn test_ai_workspace_sessions_roundtrip() {
-        let dir = tempfile::TempDir::new().unwrap();
-        let path = dir.path().join("ai-workspace-sessions.json");
-        let sessions = serde_json::json!({
-            "chat-1": {
-                "messages": [
-                    {
-                        "userMessage": "Hello",
-                        "actions": [],
-                        "response": "Hi"
-                    }
-                ],
-                "status": "done"
-            }
-        });
-
-        save_ai_workspace_sessions_at(&path, sessions.clone()).unwrap();
-
-        assert_eq!(get_ai_workspace_sessions_at(&path).unwrap(), sessions);
-    }
-
-    #[test]
-    fn test_ai_workspace_sessions_missing_file_returns_empty_object() {
-        let dir = tempfile::TempDir::new().unwrap();
-        let path = dir.path().join("ai-workspace-sessions.json");
-
-        assert_eq!(
-            get_ai_workspace_sessions_at(&path).unwrap(),
-            serde_json::json!({})
-        );
-    }
-
-    #[test]
-    fn test_ai_workspace_sessions_rejects_non_object_payload() {
-        let dir = tempfile::TempDir::new().unwrap();
-        let path = dir.path().join("ai-workspace-sessions.json");
-
-        assert!(save_ai_workspace_sessions_at(&path, serde_json::json!([])).is_err());
     }
 
     #[test]
