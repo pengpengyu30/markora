@@ -388,13 +388,12 @@ describe('Editor', () => {
       tabs: [],
       activeTabPath: mockEntry.path,
       entries: [mockEntry],
-      inspectorCollapsed: false,
-      inspectorEntry: mockEntry,
-      inspectorContent: mockContent,
+      rightPanelCollapsed: false,
+      rightPanelEntry: mockEntry,
+      rightPanelContent: mockContent,
     })
 
     expect(screen.getByTestId('breadcrumb-filename-trigger')).toHaveTextContent('test')
-    expect(screen.getAllByText('Properties').length).toBeGreaterThan(0)
     expect(screen.queryByText('Select a note to start editing')).not.toBeInTheDocument()
     expect(screen.queryByTestId('blocknote-view')).not.toBeInTheDocument()
     expect(screen.queryByTestId('editor-content-skeleton')).not.toBeInTheDocument()
@@ -441,19 +440,6 @@ describe('Editor', () => {
     expect(within(await screen.findByRole('menu')).getByRole('menuitem', { name: 'Git diff' })).toBeInTheDocument()
   })
 
-  it('includes inspector panel', () => {
-    render(
-      <Editor
-        {...defaultProps}
-        inspectorCollapsed={false}
-        inspectorEntry={mockEntry}
-        inspectorContent={mockContent}
-      />
-    )
-    // Inspector renders "Properties" header
-    expect(screen.getAllByText('Properties').length).toBeGreaterThan(0)
-  })
-
   it('renders the table of contents panel from the active note content', async () => {
     mockEditor.document = [
       { id: 'toc-heading', type: 'heading', content: [{ type: 'text', text: 'Table Heading' }], props: { level: 2 }, children: [] },
@@ -464,8 +450,9 @@ describe('Editor', () => {
         {...defaultProps}
         tabs={[mockTab]}
         activeTabPath={mockEntry.path}
-        inspectorEntry={mockEntry}
-        inspectorContent={`${mockContent}\n\n## Table Heading`}
+        rightPanelCollapsed={false}
+        rightPanelEntry={mockEntry}
+        rightPanelContent={`${mockContent}\n\n## Table Heading`}
       />
     )
 
@@ -515,10 +502,6 @@ describe('Editor', () => {
         zoom: null,
         view_mode: null,
         editor_mode: null,
-        tag_colors: null,
-        status_colors: null,
-        property_display_modes: null,
-        inbox: null,
       },
       vi.fn(),
     )
@@ -610,10 +593,6 @@ describe('Editor', () => {
         zoom: null,
         view_mode: null,
         editor_mode: null,
-        tag_colors: null,
-        status_colors: null,
-        property_display_modes: null,
-        inbox: null,
       },
       vi.fn(),
     )
@@ -670,10 +649,6 @@ describe('Editor', () => {
         zoom: null,
         view_mode: null,
         editor_mode: null,
-        tag_colors: null,
-        status_colors: null,
-        property_display_modes: null,
-        inbox: null,
       },
       vi.fn(),
     )
@@ -787,38 +762,6 @@ describe('click empty editor space', () => {
     container.removeChild(editableDiv)
   })
 
-})
-
-describe('archived note behavior', () => {
-  it('shows archive banner immediately when entry changes to archived (reactive)', () => {
-    const { rerender } = render(
-      <Editor {...defaultProps} tabs={[mockTab]} activeTabPath={mockEntry.path} onUnarchiveNote={vi.fn()} />
-    )
-    expect(screen.queryByTestId('archived-note-banner')).not.toBeInTheDocument()
-
-    const archivedEntry = { ...mockEntry, archived: true }
-    const archivedTab = { entry: archivedEntry, content: mockContent }
-    rerender(
-      <Editor {...defaultProps} entries={[archivedEntry]} tabs={[archivedTab]} activeTabPath={mockEntry.path} onUnarchiveNote={vi.fn()} />
-    )
-    expect(screen.getByTestId('archived-note-banner')).toBeInTheDocument()
-  })
-
-  it('removes archive banner immediately when entry is unarchived (reactive)', () => {
-    const archivedEntry: VaultEntry = { ...mockEntry, archived: true }
-    const archivedTab = { entry: archivedEntry, content: mockContent }
-    const { rerender } = render(
-      <Editor {...defaultProps} entries={[archivedEntry]} tabs={[archivedTab]} activeTabPath={archivedEntry.path} onUnarchiveNote={vi.fn()} />
-    )
-    expect(screen.getByTestId('archived-note-banner')).toBeInTheDocument()
-
-    const unarchivedEntry = { ...archivedEntry, archived: false }
-    const unarchivedTab = { entry: unarchivedEntry, content: mockContent }
-    rerender(
-      <Editor {...defaultProps} entries={[unarchivedEntry]} tabs={[unarchivedTab]} activeTabPath={archivedEntry.path} onUnarchiveNote={vi.fn()} />
-    )
-    expect(screen.queryByTestId('archived-note-banner')).not.toBeInTheDocument()
-  })
 })
 
 describe('wikilink autocomplete', () => {
@@ -986,44 +929,6 @@ describe('wikilink autocomplete', () => {
     mockFilterSuggestionItems.mockImplementation((items: unknown[]) => items)
   })
 
-  it('shows Note chips and icons for explicit Note entries while keeping untyped entries neutral', async () => {
-    const mixedEntries: VaultEntry[] = [
-      { ...mockEntry, title: 'Test Project', filename: 'proj.md', path: '/vault/proj.md', isA: 'Project', aliases: [] },
-      { ...mockEntry, title: 'Test Plain', filename: 'plain.md', path: '/vault/plain.md', isA: null, aliases: [] },
-      { ...mockEntry, title: 'Test Explicit', filename: 'explicit.md', path: '/vault/explicit.md', isA: 'Note', aliases: [] },
-    ]
-    capturedSuggestionState.getItems = null
-    mockFilterSuggestionItems.mockImplementation((items: unknown[]) => items)
-    render(
-      <Editor
-        {...defaultProps}
-        tabs={[mockTab]}
-        activeTabPath={mockEntry.path}
-        entries={mixedEntries}
-      />
-    )
-    const items = await capturedSuggestionState.getItems!('Test')
-    // Typed entries should have noteType, color, and a left-side icon
-    const project = items.find((i: { title: string }) => i.title === 'Test Project')
-    expect(project).toBeDefined()
-    expect(project!.noteType).toBe('Project')
-    expect(project!.typeColor).toBeTruthy()
-    expect(project!.TypeIcon).toBeTruthy()
-
-    const explicitNote = items.find((i: { title: string }) => i.title === 'Test Explicit')
-    expect(explicitNote).toBeDefined()
-    expect(explicitNote!.noteType).toBe('Note')
-    expect(explicitNote!.typeColor).toBeTruthy()
-    expect(explicitNote!.TypeIcon).toBeTruthy()
-
-    // Untyped entries should remain neutral
-    const plainNote = items.find((i: { title: string }) => i.title === 'Test Plain')
-    expect(plainNote).toBeDefined()
-    expect(plainNote!.noteType).toBeUndefined()
-    expect(plainNote!.typeColor).toBeUndefined()
-    mockFilterSuggestionItems.mockImplementation((items: unknown[]) => items)
-  })
-
   it('disambiguates entries with the same title by appending folder name', async () => {
     const sameTitle: VaultEntry[] = [
       { ...mockEntry, title: 'Standup', filename: 'standup.md', path: '/vault/work/standup.md', aliases: [] },
@@ -1120,7 +1025,6 @@ describe('@ wikilink autocomplete', () => {
       { type: 'wikilink', props: { target: 'vault/project/laputa-app' } },
       ' ',
     ], { updateSelection: true })
-    expect(items[0].noteType).toBe('Project')
   })
 
   it('preserves cross-workspace wikilink targets when an @ item is clicked', async () => {

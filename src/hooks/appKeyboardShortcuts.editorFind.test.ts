@@ -21,7 +21,7 @@ function makeActions(): KeyboardActions {
     onSearch: vi.fn(),
     onSetViewMode: vi.fn(),
     onToggleFavorite: vi.fn(),
-    onToggleInspector: vi.fn(),
+    onToggleBacklinks: vi.fn(),
     onToggleOrganized: vi.fn(),
     onToggleRawEditor: vi.fn(),
     onZoomIn: vi.fn(),

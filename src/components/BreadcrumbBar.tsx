@@ -35,17 +35,11 @@ import {
   GitBranch,
   Code,
   ListBullets,
-  SidebarSimple,
   Trash,
-  Archive,
-  ArrowUUpLeft,
   ClipboardText,
   FilePdf,
   FolderOpen,
   Link,
-  MapTrifold,
-  Star,
-  CheckCircle,
   ArrowsClockwise,
   ArrowsInLineHorizontal,
   ArrowsOutLineHorizontal,
@@ -70,19 +64,12 @@ interface BreadcrumbBarProps {
   forceRawMode?: boolean
   showTableOfContents?: boolean
   onToggleTableOfContents?: () => void
-  inspectorCollapsed?: boolean
-  onToggleInspector?: () => void
-  onToggleFavorite?: () => void
-  onToggleOrganized?: () => void
   onRevealFile?: (path: string) => void
   onCopyFilePath?: (path: string) => void
   onCopyDeepLink?: (entry: VaultEntry) => void
   onCopyGitUrl?: (entry: VaultEntry) => void
   onExportPdf?: () => void
   onDelete?: () => void
-  onArchive?: () => void
-  onUnarchive?: () => void
-  onEnterNeighborhood?: (entry: VaultEntry) => void
   onRenameFilename?: (path: string, newFilenameStem: string) => void
   noteWidth?: NoteWidthMode
   onToggleNoteWidth?: () => void
@@ -301,20 +288,6 @@ const TOGGLE_ACTION_CONFIGS = {
     shortcut: '⌘\\',
     renderIcon: () => <Code size={16} className={BREADCRUMB_ICON_CLASS} />,
   },
-  favorite: {
-    activeClassName: 'text-[var(--accent-yellow)]',
-    activeLabelKey: 'editor.toolbar.removeFavorite',
-    inactiveLabelKey: 'editor.toolbar.addFavorite',
-    shortcut: '⌘D',
-    renderIcon: (active: boolean) => <Star size={16} weight={active ? 'fill' : 'regular'} className={BREADCRUMB_ICON_CLASS} />,
-  },
-  organized: {
-    activeClassName: 'text-[var(--accent-green)]',
-    activeLabelKey: 'editor.toolbar.markUnorganized',
-    inactiveLabelKey: 'editor.toolbar.markOrganized',
-    shortcut: '⌘E',
-    renderIcon: (active: boolean) => <CheckCircle size={16} weight={active ? 'fill' : 'regular'} className={BREADCRUMB_ICON_CLASS} />,
-  },
 } satisfies Record<string, {
   activeClassName: string
   activeLabelKey: Parameters<typeof translate>[1]
@@ -344,7 +317,7 @@ function ConfiguredToggleAction({
       onClick={onClick}
       shortcut={formatShortcutDisplay({ display: config.shortcut })}
     >
-      {config.renderIcon(active)}
+      {config.renderIcon()}
     </TranslatedToggleIconAction>
   )
 }
@@ -374,42 +347,6 @@ function NoteWidthAction({
       {isWide
         ? <ArrowsInLineHorizontal size={16} className={BREADCRUMB_ICON_CLASS} />
         : <ArrowsOutLineHorizontal size={16} className={BREADCRUMB_ICON_CLASS} />}
-    </IconActionButton>
-  )
-}
-
-function FavoriteAction({ favorite, locale = 'en', onToggleFavorite }: { favorite: boolean; locale?: AppLocale; onToggleFavorite?: () => void }) {
-  if (!onToggleFavorite) return null
-  return <ConfiguredToggleAction active={favorite} config={TOGGLE_ACTION_CONFIGS.favorite} locale={locale} onClick={onToggleFavorite} />
-}
-
-function OrganizedAction({
-  organized,
-  locale = 'en',
-  onToggleOrganized,
-}: {
-  organized: boolean
-  locale?: AppLocale
-  onToggleOrganized?: () => void
-}) {
-  if (!onToggleOrganized) return null
-  return <ConfiguredToggleAction active={organized} config={TOGGLE_ACTION_CONFIGS.organized} locale={locale} onClick={onToggleOrganized} />
-}
-
-function NeighborhoodAction({
-  entry,
-  locale = 'en',
-  onEnterNeighborhood,
-}: Pick<BreadcrumbBarProps, 'entry' | 'locale' | 'onEnterNeighborhood'>) {
-  if (!onEnterNeighborhood) return null
-
-  return (
-    <IconActionButton
-      copy={{ label: translate(locale, 'editor.toolbar.openNeighborhood') }}
-      onClick={() => onEnterNeighborhood(entry)}
-      className="hover:text-foreground"
-    >
-      <MapTrifold size={16} className={BREADCRUMB_ICON_CLASS} />
     </IconActionButton>
   )
 }
@@ -467,28 +404,6 @@ function FilePathActions({
   )
 }
 
-function InspectorAction({
-  inspectorCollapsed,
-  locale = 'en',
-  onToggleInspector,
-}: Pick<BreadcrumbBarProps, 'inspectorCollapsed' | 'locale' | 'onToggleInspector'>) {
-  if (!inspectorCollapsed) return null
-  return (
-    <IconActionButton
-      copy={{
-        label: translate(locale, 'editor.toolbar.openProperties'),
-        shortcut: formatShortcutDisplay({ display: '⌘⇧I' }),
-      }}
-      onClick={onToggleInspector}
-      className="hover:text-foreground"
-      testId="breadcrumb-properties-button"
-      tooltipAlign="end"
-    >
-      <SidebarSimple size={16} weight="regular" className={BREADCRUMB_ICON_CLASS} />
-    </IconActionButton>
-  )
-}
-
 function OverflowToolbarAction({ children }: { children: ReactNode }) {
   return <span className="breadcrumb-bar__overflowable-action flex items-center gap-2">{children}</span>
 }
@@ -505,35 +420,12 @@ function NoteWidthMenuIcon({ noteWidth = 'normal' }: { noteWidth?: NoteWidthMode
   return noteWidth === 'wide' ? <ArrowsInLineHorizontal size={16} /> : <ArrowsOutLineHorizontal size={16} />
 }
 
-function archiveLabelKey(archived: boolean): Parameters<typeof translate>[1] {
-  return archived ? 'editor.toolbar.restoreArchived' : 'editor.toolbar.archive'
-}
-
-function archiveAction(
-  archived: boolean,
-  onArchive?: () => void,
-  onUnarchive?: () => void,
-): (() => void) | undefined {
-  return archived ? onUnarchive : onArchive
-}
-
 function pathAction(action: ((path: string) => void) | undefined, path: string): (() => void) | undefined {
   return action ? () => action(path) : undefined
 }
 
 function entryAction(action: ((entry: VaultEntry) => void) | undefined, entry: VaultEntry): (() => void) | undefined {
   return action ? () => action(entry) : undefined
-}
-
-function ArchiveMenuIcon({ archived }: { archived: boolean }) {
-  return archived ? <ArrowUUpLeft size={16} /> : <Archive size={16} />
-}
-
-function neighborhoodAction(
-  entry: VaultEntry,
-  onEnterNeighborhood?: (entry: VaultEntry) => void,
-): (() => void) | undefined {
-  return onEnterNeighborhood ? () => onEnterNeighborhood(entry) : undefined
 }
 
 function readElementWidth(element: HTMLElement): number {
@@ -924,26 +816,19 @@ function BreadcrumbActions(options: Omit<BreadcrumbBarProps, 'wordCount' | 'barR
     onToggleNoteWidth,
     showTableOfContents,
     onToggleTableOfContents,
-    inspectorCollapsed,
-    onToggleInspector,
-    onToggleFavorite,
-    onToggleOrganized,
     onRevealFile,
     onCopyFilePath,
     onCopyDeepLink,
     onCopyGitUrl,
     onExportPdf,
     onDelete,
-    onArchive,
-    onUnarchive,
-    onEnterNeighborhood,
     actionsRef,
     overflowCollapsed,
     locale = 'en',
 } = options
-  let favoriteAction = onToggleFavorite, organizedAction = onToggleOrganized, neighborhoodAction = onEnterNeighborhood,
-    noteWidthAction = onToggleNoteWidth, tableOfContentsAction = onToggleTableOfContents
-  if (isHtmlFileEntry(entry)) favoriteAction = organizedAction = neighborhoodAction = noteWidthAction = tableOfContentsAction = undefined
+  let noteWidthAction = onToggleNoteWidth,
+    tableOfContentsAction = onToggleTableOfContents
+  if (isHtmlFileEntry(entry)) noteWidthAction = tableOfContentsAction = undefined
 
   return (
     <div
@@ -952,11 +837,6 @@ function BreadcrumbActions(options: Omit<BreadcrumbBarProps, 'wordCount' | 'barR
       data-overflow-collapsed={overflowCollapsed}
       style={{ gap: 8 }}
     >
-      <FavoriteAction favorite={entry.favorite} locale={locale} onToggleFavorite={favoriteAction} />
-      <OrganizedAction organized={entry.organized} locale={locale} onToggleOrganized={organizedAction} />
-      <OverflowToolbarAction>
-        <NeighborhoodAction entry={entry} locale={locale} onEnterNeighborhood={neighborhoodAction} />
-      </OverflowToolbarAction>
       {!forceRawMode && <RawToggleButton rawMode={rawMode} locale={locale} onToggleRaw={onToggleRaw} />}
       <OverflowToolbarAction>
         <NoteWidthAction noteWidth={noteWidth} locale={locale} onToggleNoteWidth={noteWidthAction} />
@@ -984,14 +864,10 @@ function BreadcrumbActions(options: Omit<BreadcrumbBarProps, 'wordCount' | 'barR
         onCopyDeepLink={onCopyDeepLink}
         onCopyGitUrl={onCopyGitUrl}
         onExportPdf={onExportPdf}
-        onArchive={onArchive}
-        onUnarchive={onUnarchive}
         onDelete={onDelete}
-        onEnterNeighborhood={onEnterNeighborhood}
         showResponsiveActions={overflowCollapsed}
         locale={locale}
       />
-      <InspectorAction inspectorCollapsed={inspectorCollapsed} locale={locale} onToggleInspector={onToggleInspector} />
     </div>
   )
 }
@@ -1010,10 +886,7 @@ function BreadcrumbOverflowMenu(options: Pick<
   | 'onCopyDeepLink'
   | 'onCopyGitUrl'
   | 'onExportPdf'
-  | 'onArchive'
-  | 'onUnarchive'
   | 'onDelete'
-  | 'onEnterNeighborhood'
   | 'locale'
 > & {
   showResponsiveActions: boolean
@@ -1031,10 +904,7 @@ function BreadcrumbOverflowMenu(options: Pick<
     onCopyDeepLink,
     onCopyGitUrl,
     onExportPdf,
-    onArchive,
-    onUnarchive,
     onDelete,
-    onEnterNeighborhood,
     showResponsiveActions,
     locale = 'en',
 } = options
@@ -1044,14 +914,10 @@ function BreadcrumbOverflowMenu(options: Pick<
   const runRevealAction = pathAction(onRevealFile, entry.path)
   const runCopyPathAction = pathAction(onCopyFilePath, entry.path)
   const runCopyDeepLinkAction = entryAction(onCopyDeepLink, entry)
-  const runArchiveAction = archiveAction(entry.archived, onArchive, onUnarchive)
-  const runNeighborhoodAction = neighborhoodAction(entry, onEnterNeighborhood)
   const diffLabel = translate(locale, 'editor.toolbar.gitDiff')
   const exportPdfLabel = translate(locale, 'editor.toolbar.exportPdf')
   const noteWidthLabel = translate(locale, noteWidthLabelKey(noteWidth))
-  const archiveLabel = translate(locale, archiveLabelKey(entry.archived))
   const tableOfContentsLabel = translate(locale, showTableOfContents ? 'editor.toolbar.closeTableOfContents' : 'editor.toolbar.openTableOfContents')
-  const neighborhoodLabel = translate(locale, 'editor.toolbar.openNeighborhood')
   const moreActionsLabel = translate(locale, 'editor.toolbar.moreActions')
   const tooltipControl = useBreadcrumbTooltipControl(moreActionsLabel)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -1070,10 +936,6 @@ function BreadcrumbOverflowMenu(options: Pick<
         </DropdownMenuItem>
         {showResponsiveActions && showMarkdownActions && (
           <>
-            <DropdownMenuItem disabled={!runNeighborhoodAction} onSelect={runNeighborhoodAction}>
-              <MapTrifold size={16} />
-              {neighborhoodLabel}
-            </DropdownMenuItem>
             <DropdownMenuItem disabled={!onToggleNoteWidth} onSelect={onToggleNoteWidth}>
               <NoteWidthMenuIcon noteWidth={noteWidth} />
               {noteWidthLabel}
@@ -1101,12 +963,6 @@ function BreadcrumbOverflowMenu(options: Pick<
           {translate(locale, 'editor.toolbar.copyNoteDeepLink')}
         </DropdownMenuItem>
         <CopyGitUrlMenuItem action={entryAction(onCopyGitUrl, entry)} locale={locale} />
-        {showMarkdownActions && (
-          <DropdownMenuItem disabled={!runArchiveAction} onSelect={runArchiveAction}>
-            <ArchiveMenuIcon archived={entry.archived} />
-            {archiveLabel}
-          </DropdownMenuItem>
-        )}
         <DropdownMenuItem disabled={!onDelete} variant="destructive" onSelect={onDelete}>
           <Trash size={16} />
           {translate(locale, 'editor.toolbar.delete')}
@@ -1159,12 +1015,9 @@ function BreadcrumbTitle({
   loadingTitle,
   onRenameFilename,
 }: Pick<BreadcrumbBarProps, 'content' | 'entry' | 'locale' | 'loadingTitle' | 'onRenameFilename'>) {
-  const typeLabel = entry.isA ?? 'Note'
   return (
     <div className="breadcrumb-bar__title-content flex items-center gap-1.5 min-w-0 text-sm text-muted-foreground">
       <WorkspaceCrumb entry={entry} />
-      <span className="shrink-0">{typeLabel}</span>
-      <BreadcrumbSeparator />
       <div className="flex min-w-0 items-center gap-1 truncate">
         {loadingTitle
           ? <BreadcrumbTitleSkeleton />

@@ -1,16 +1,12 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  Archive,
   ArrowSquareOut,
-  CheckCircle,
   ClipboardText,
   FilePdf,
   FolderOpen,
   GitBranch,
-  MapTrifold,
   PencilSimple,
-  Star,
   Trash,
   type Icon,
 } from '@phosphor-icons/react'
@@ -40,14 +36,10 @@ interface NoteListContextMenuNodeProps {
   ctxMenu: NoteListContextMenuState | null
   ctxMenuRef: RefObject<HTMLDivElement | null>
   locale: AppLocale
-  onEnterNeighborhood?: (entry: VaultEntry) => void
   onOpenInNewWindow?: (entry: VaultEntry) => void
   onRequestRename?: (entry: VaultEntry) => void
-  onArchivePaths?: (paths: string[]) => void
   onDeletePaths?: (paths: string[]) => void
   onExportPdf?: (entry: VaultEntry) => void
-  onToggleFavorite?: (path: string) => void
-  onToggleOrganized?: (path: string) => void
   onRevealFile?: (path: string) => void
   onCopyFilePath?: (path: string) => void
   canCopyGitUrl?: (entry: VaultEntry) => boolean
@@ -58,14 +50,10 @@ interface NoteListContextMenuNodeProps {
 type BuildContextMenuItemsParams = Pick<
   NoteListContextMenuNodeProps,
   | 'locale'
-  | 'onEnterNeighborhood'
   | 'onOpenInNewWindow'
   | 'onRequestRename'
-  | 'onArchivePaths'
   | 'onDeletePaths'
   | 'onExportPdf'
-  | 'onToggleFavorite'
-  | 'onToggleOrganized'
   | 'onRevealFile'
   | 'onCopyFilePath'
   | 'canCopyGitUrl'
@@ -87,38 +75,6 @@ function openWindowItem(
   }]
 }
 
-function favoriteItem(
-  entry: VaultEntry,
-  locale: AppLocale,
-  onToggleFavorite: ((path: string) => void) | undefined,
-  selectAction: SelectContextAction,
-) {
-  if (!onToggleFavorite) return []
-  return [{
-    icon: Star,
-    iconWeight: entry.favorite ? 'fill' as const : 'regular' as const,
-    label: translate(locale, entry.favorite ? 'command.note.removeFavorite' : 'command.note.addFavorite'),
-    onSelect: () => { selectAction('toggle_favorite', () => { onToggleFavorite(entry.path); }); },
-    shortcut: getAppCommandShortcutDisplay(APP_COMMAND_IDS.noteToggleFavorite),
-  }]
-}
-
-function organizedItem(
-  entry: VaultEntry,
-  locale: AppLocale,
-  onToggleOrganized: ((path: string) => void) | undefined,
-  selectAction: SelectContextAction,
-) {
-  if (!onToggleOrganized || !isMarkdownEntry(entry)) return []
-  return [{
-    icon: CheckCircle,
-    iconWeight: entry.organized ? 'fill' as const : 'regular' as const,
-    label: translate(locale, entry.organized ? 'command.note.markUnorganized' : 'command.note.markOrganized'),
-    onSelect: () => { selectAction('toggle_organized', () => { onToggleOrganized(entry.path); }); },
-    shortcut: getAppCommandShortcutDisplay(APP_COMMAND_IDS.noteToggleOrganized),
-  }]
-}
-
 function renameItem(
   entry: VaultEntry,
   locale: AppLocale,
@@ -130,20 +86,6 @@ function renameItem(
     icon: PencilSimple,
     label: translate(locale, 'noteList.context.renameNote'),
     onSelect: () => { selectAction('rename_filename', () => { onRequestRename(entry); }); },
-  }]
-}
-
-function neighborhoodItem(
-  entry: VaultEntry,
-  locale: AppLocale,
-  onEnterNeighborhood: ((entry: VaultEntry) => void) | undefined,
-  selectAction: SelectContextAction,
-) {
-  if (!onEnterNeighborhood || entry.fileKind === 'binary') return []
-  return [{
-    icon: MapTrifold,
-    label: translate(locale, 'editor.toolbar.openNeighborhood'),
-    onSelect: () => { selectAction('open_neighborhood', () => { onEnterNeighborhood(entry); }); },
   }]
 }
 
@@ -205,20 +147,6 @@ function exportPdfItem(
   }]
 }
 
-function archiveItem(
-  entry: VaultEntry,
-  locale: AppLocale,
-  onArchivePaths: ((paths: string[]) => void) | undefined,
-  selectAction: SelectContextAction,
-) {
-  if (!onArchivePaths || entry.archived) return []
-  return [{
-    icon: Archive,
-    label: translate(locale, 'editor.toolbar.archive'),
-    onSelect: () => { selectAction('archive', () => { onArchivePaths([entry.path]); }); },
-  }]
-}
-
 function deleteItem(
   entry: VaultEntry,
   locale: AppLocale,
@@ -242,15 +170,11 @@ function buildContextMenuItems(
 ): NoteListContextMenuItem[] {
   return [
     ...openWindowItem(entry, props.locale, props.onOpenInNewWindow, selectAction),
-    ...favoriteItem(entry, props.locale, props.onToggleFavorite, selectAction),
-    ...organizedItem(entry, props.locale, props.onToggleOrganized, selectAction),
     ...renameItem(entry, props.locale, props.onRequestRename, selectAction),
-    ...neighborhoodItem(entry, props.locale, props.onEnterNeighborhood, selectAction),
     ...revealFileItem(entry, props.locale, props.onRevealFile, selectAction),
     ...copyFilePathItem(entry, props.locale, props.onCopyFilePath, selectAction),
     ...copyGitUrlItem(entry, props.locale, props.canCopyGitUrl, props.onCopyGitUrl, selectAction),
     ...exportPdfItem(entry, props.locale, props.onExportPdf, selectAction),
-    ...archiveItem(entry, props.locale, props.onArchivePaths, selectAction),
     ...deleteItem(entry, props.locale, props.onDeletePaths, selectAction),
   ]
 }
@@ -276,14 +200,10 @@ export function NoteListContextMenuNode(props: NoteListContextMenuNodeProps) {
     ctxMenu,
     ctxMenuRef,
     locale,
-    onEnterNeighborhood,
     onOpenInNewWindow,
     onRequestRename,
-    onArchivePaths,
     onDeletePaths,
     onExportPdf,
-    onToggleFavorite,
-    onToggleOrganized,
     onRevealFile,
     onCopyFilePath,
     canCopyGitUrl,
@@ -301,14 +221,10 @@ export function NoteListContextMenuNode(props: NoteListContextMenuNodeProps) {
   }
   const items = buildContextMenuItems({
     locale,
-    onEnterNeighborhood,
     onOpenInNewWindow,
     onRequestRename,
-    onArchivePaths,
     onDeletePaths,
     onExportPdf,
-    onToggleFavorite,
-    onToggleOrganized,
     onRevealFile,
     onCopyFilePath,
     canCopyGitUrl,

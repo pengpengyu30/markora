@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { ListView } from './NoteListViews'
+import { ListView } from './NoteListLayout'
 import { makeEntry } from '../../test-utils/noteListTestUtils'
 import type { VaultEntry } from '../../types'
 

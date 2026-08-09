@@ -1,7 +1,6 @@
 import { ArrowSquareOut as ExternalLink, Copy } from '@phosphor-icons/react'
 import { Component, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
-  GridSuggestionMenuController,
   BlockNoteViewRaw,
   ComponentsContext,
   DeleteLinkButton,
@@ -13,7 +12,6 @@ import {
   useComponentsContext,
   type useCreateBlockNote,
   useDictionary,
-  type DefaultReactGridSuggestionItem,
   type LinkToolbarProps,
   type SideMenuProps,
 } from '@blocknote/react'
@@ -26,8 +24,6 @@ import { useImageDrop, type ImageImportError } from '../hooks/useImageDrop'
 import { useImageLightbox } from '../hooks/useImageLightbox'
 import { createTranslator, type AppLocale } from '../lib/i18n'
 import { writeClipboardText } from '../utils/clipboardText'
-import { buildTypeEntryMap } from '../utils/typeColors'
-import { searchEmojis, type EmojiEntry } from '../utils/emoji'
 import { preFilterWikilinks, deduplicateByPath, MIN_QUERY_LENGTH } from '../utils/wikilinkSuggestions'
 import {
   attachClickHandlers,
@@ -116,8 +112,6 @@ const TOOLBAR_MOUSE_DOWN_ALLOW_SELECTOR = [
   '[contenteditable="true"]',
 ].join(', ')
 const MAX_BLOCKNOTE_RENDER_RECOVERY_RETRIES = 1
-const EMOJI_SHORTCODE_RESULT_LIMIT = 80
-
 type TestTableBlock = {
   type?: string
   content?: { type?: string; columnWidths?: Array<number | null> }
@@ -125,10 +119,6 @@ type TestTableBlock = {
 type SuggestionAction = () => void
 type WikilinkAutocompleteTrigger = '[[' | '@'
 type SuggestionItemWithClick = { onItemClick?: SuggestionAction }
-type EmojiSuggestionItem = DefaultReactGridSuggestionItem & {
-  group: string
-  name: string
-}
 type BlockNoteRenderRecoveryState = {
   error: unknown
   recoveryKey: number
@@ -402,16 +392,6 @@ function recoverMissingEditableSelection(options: {
 
 function normalizeSuggestionQuery(query: string, triggerCharacter: string): string {
   return query.startsWith(triggerCharacter) ? query.slice(triggerCharacter.length) : query
-}
-
-function emojiSuggestionRank(entry: EmojiEntry, query: string): number {
-  const normalizedName = entry.name.toLowerCase()
-  const tokens = normalizedName.split(/[^a-z0-9]+/).filter(Boolean)
-  if (normalizedName === query) return 0
-  if (tokens.includes(query)) return 1
-  if (tokens.some((token) => token.startsWith(query))) return 2
-  if (normalizedName.startsWith(query)) return 3
-  return 4
 }
 
 const CODE_BLOCK_COPY_RESET_MS = 1200
@@ -914,14 +894,11 @@ function buildBaseSuggestionItems(entries: VaultEntry[]) {
     const filename = nonEmptyString(entry.filename)
     const filenameStem = filename ? markdownStem(filename) : pathStem(path)
     const title = nonEmptyString(entry.title) ?? filenameStem
-    const entryType = nonEmptyString(entry.isA)
       return [
         {
       title,
       aliases: [...new Set([filenameStem, ...safeStringArray(entry.aliases)])],
-      group: entryType ?? 'Note',
       entry,
-      entryType,
       entryTitle: title,
       path,
         },
@@ -954,10 +931,9 @@ function useSuggestionMenuItems(options: {
   locale: AppLocale
   runEditorAction: (action: SuggestionAction) => void
   sourceEntry?: VaultEntry
-  typeEntryMap: Record<string, VaultEntry>
   vaultPath?: string
 }) {
-  const { baseItems, editor, insertWikilink, locale, runEditorAction, sourceEntry, typeEntryMap, vaultPath } = options
+  const { baseItems, editor, insertWikilink, locale, runEditorAction, sourceEntry, vaultPath } = options
   const t = useMemo(() => createTranslator(locale), [locale])
 
   const buildItems = useCallback(
@@ -973,13 +949,13 @@ function useSuggestionMenuItems(options: {
       sourceEntry,
     )
     return guardSuggestionMenuItems(
-      enrichSuggestionItems(items, normalizedQuery, typeEntryMap, {
+      enrichSuggestionItems(items, normalizedQuery, {
         showWorkspace: hasMultipleSuggestionWorkspaces(baseItems),
       }),
       runEditorAction,
     )
     },
-    [baseItems, insertWikilink, runEditorAction, sourceEntry, typeEntryMap, vaultPath],
+    [baseItems, insertWikilink, runEditorAction, sourceEntry, vaultPath],
   )
 
   const getWikilinkItems = useCallback(
@@ -990,35 +966,6 @@ function useSuggestionMenuItems(options: {
   const getAtWikilinkItems = useCallback(
     async (query: string): Promise<WikilinkSuggestionItem[]> => buildItems(query, '@') ?? [],
     [buildItems],
-  )
-
-  const getEmojiItems = useCallback(
-    async (query: string): Promise<EmojiSuggestionItem[]> => {
-    const normalizedQuery = normalizeSuggestionQuery(query, ':').trim().toLowerCase()
-    if (!normalizedQuery) return []
-
-    return searchEmojis(normalizedQuery)
-      .sort((left, right) => {
-        const rankDelta = emojiSuggestionRank(left, normalizedQuery) - emojiSuggestionRank(right, normalizedQuery)
-        return rankDelta || left.name.localeCompare(right.name)
-      })
-      .slice(0, EMOJI_SHORTCODE_RESULT_LIMIT)
-      .map((entry) => ({
-        id: entry.emoji,
-        icon: <span title={entry.name}>{entry.emoji}</span>,
-        name: entry.name,
-        group: entry.group,
-        onItemClick: () => {
-          runEditorAction(() => {
-              editor.insertInlineContent(entry.emoji, {
-                updateSelection: true,
-              })
-            trackEvent('emoji_shortcode_inserted', { group: entry.group })
-          })
-        },
-      }))
-    },
-    [editor, runEditorAction],
   )
 
   const getSlashMenuItems = useCallback(
@@ -1063,7 +1010,6 @@ function useSuggestionMenuItems(options: {
   return {
     getWikilinkItems,
     getAtWikilinkItems,
-    getEmojiItems,
     getSlashMenuItems,
   }
 }
@@ -1076,7 +1022,6 @@ type EditorInteractionControllersProps = ReturnType<typeof useSuggestionMenuItem
 
 function EditorInteractionControllers({
   getAtWikilinkItems,
-  getEmojiItems,
   getSlashMenuItems,
   getWikilinkItems,
   locale,
@@ -1110,7 +1055,6 @@ function EditorInteractionControllers({
         getItems={getSlashMenuItems}
         suggestionMenuComponent={TolariaSlashMenu}
       />
-      <GridSuggestionMenuController triggerCharacter=":" columns={10} minQueryLength={1} getItems={getEmojiItems} />
       <SuggestionMenuController
         triggerCharacter="[["
         getItems={getWikilinkItems}
@@ -1312,7 +1256,6 @@ export function SingleEditorView(options: {
 
   useSeedBlockNoteTableBridge(editor)
 
-  const typeEntryMap = useMemo(() => buildTypeEntryMap(entries), [entries])
   const baseItems = useMemo(() => buildBaseSuggestionItems(entries), [entries])
   const runEditorAction = useCallback(
     (action: SuggestionAction) => {
@@ -1374,7 +1317,6 @@ export function SingleEditorView(options: {
     locale,
     runEditorAction,
     sourceEntry: sourceEntry ?? undefined,
-    typeEntryMap,
     vaultPath,
   })
 

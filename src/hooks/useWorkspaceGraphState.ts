@@ -22,7 +22,7 @@ interface WorkspaceGraphState {
   folderVaults?: VaultOption[]
   graphDefaultWorkspacePath: string
   graphVaults?: VaultOption[]
-  inspectorWorkspaces: ReturnType<typeof workspaceIdentityFromVault>[]
+  workspaceOptions: ReturnType<typeof workspaceIdentityFromVault>[]
   multiWorkspaceEnabled: boolean
   visibleWorkspacePathList?: string[]
   writableVaultPaths: string[]
@@ -42,7 +42,7 @@ interface VisibleWorkspacePathParams {
   windowMode: boolean
 }
 
-interface InspectorWorkspaceParams {
+interface WorkspaceOptionsParams {
   defaultWorkspacePath?: string | null
   graphVaults?: VaultOption[]
   multiWorkspaceEnabled: boolean
@@ -121,13 +121,13 @@ function useWritableVaultPaths(
   )
 }
 
-function useInspectorWorkspaces({
+function useWorkspaceOptions({
   defaultWorkspacePath,
   graphVaults,
   multiWorkspaceEnabled,
   windowMode,
   writableVaultPaths,
-}: InspectorWorkspaceParams): ReturnType<typeof workspaceIdentityFromVault>[] {
+}: WorkspaceOptionsParams): ReturnType<typeof workspaceIdentityFromVault>[] {
   return useMemo(() => {
     if (!multiWorkspaceEnabled || windowMode) return []
     const writablePathSet = new Set(writableVaultPaths)
@@ -181,7 +181,7 @@ export function useWorkspaceGraphState({ allVaults, defaultWorkspacePath, resolv
     windowMode,
   })
   const writableVaultPaths = useWritableVaultPaths(graphDefaultWorkspacePath, visibleWorkspacePathList)
-  const inspectorWorkspaces = useInspectorWorkspaces({
+  const workspaceOptions = useWorkspaceOptions({
     defaultWorkspacePath,
     graphVaults,
     multiWorkspaceEnabled,
@@ -199,7 +199,7 @@ export function useWorkspaceGraphState({ allVaults, defaultWorkspacePath, resolv
     folderVaults,
     graphDefaultWorkspacePath,
     graphVaults,
-    inspectorWorkspaces,
+    workspaceOptions,
     multiWorkspaceEnabled,
     visibleWorkspacePathList,
     writableVaultPaths,

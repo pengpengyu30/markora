@@ -1,6 +1,5 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import type { VaultEntry } from '../types'
-import { buildTypeEntryMap } from '../utils/typeColors'
 import { deleteInlineSelection, replaceInlineSelection, selectedInlineText } from './inlineWikilinkEdits'
 import {
   buildInlineWikilinkSegments,
@@ -173,7 +172,6 @@ function renderInlineSuggestionList({
   selectedSuggestionIndex,
   setSuggestionIndex,
   selectSuggestion,
-  typeEntryMap,
   suggestionListVariant,
   suggestionEmptyLabel,
 }: {
@@ -181,7 +179,6 @@ function renderInlineSuggestionList({
   selectedSuggestionIndex: number
   setSuggestionIndex: (index: number) => void
   selectSuggestion: (index: number) => void
-  typeEntryMap: Record<string, VaultEntry>
   suggestionListVariant: 'floating' | 'palette'
   suggestionEmptyLabel: string
 }) {
@@ -193,7 +190,6 @@ function renderInlineSuggestionList({
       selectedIndex={selectedSuggestionIndex}
       onHover={setSuggestionIndex}
       onSelect={selectSuggestion}
-      typeEntryMap={typeEntryMap}
       variant={suggestionListVariant}
       emptyLabel={suggestionEmptyLabel}
     />
@@ -224,7 +220,6 @@ export function InlineWikilinkInput(options: InlineWikilinkInputProps) {
   const [renderVersion, forceRender] = useState(0)
   const isComposingRef = useRef(false)
   const segments = useMemo(() => buildInlineWikilinkSegments(value, entries), [entries, value])
-  const typeEntryMap = useMemo(() => buildTypeEntryMap(entries), [entries])
   const {
     editorRef,
     selectionRange,
@@ -600,7 +595,6 @@ export function InlineWikilinkInput(options: InlineWikilinkInputProps) {
       onPaste={handlePaste}
       onSelectionChange={syncSelectionRange}
       segments={segments}
-      typeEntryMap={typeEntryMap}
     />
   )
   const suggestionList = renderInlineSuggestionList({
@@ -608,7 +602,6 @@ export function InlineWikilinkInput(options: InlineWikilinkInputProps) {
     selectedSuggestionIndex,
     setSuggestionIndex,
     selectSuggestion,
-    typeEntryMap,
     suggestionListVariant,
     suggestionEmptyLabel,
   })

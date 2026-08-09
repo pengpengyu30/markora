@@ -6,7 +6,7 @@ describe('buildInlineWikilinkSuggestions', () => {
   it('deduplicates and disambiguates empty-query suggestions', () => {
     const suggestions = buildInlineWikilinkSuggestions([
       makeEntry({ path: '/vault/projects/alpha.md', title: 'Alpha' }),
-      makeEntry({ path: '/vault/archive/alpha.md', title: 'Alpha' }),
+      makeEntry({ path: '/vault/archive/alpha.md', title: 'Alpha', archived: true }),
       makeEntry({ path: '/vault/projects/alpha.md', title: 'Alpha Duplicate' }),
     ], '')
 

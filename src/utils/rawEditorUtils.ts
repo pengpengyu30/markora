@@ -7,9 +7,7 @@ import type { WikilinkSuggestionItem } from '../components/WikilinkSuggestionMen
 export interface RawEditorBaseItem {
   title: string
   aliases: string[]
-  group: string
   entry?: VaultEntry
-  entryType?: string | null
   entryTitle: string
   path: string
 }
@@ -25,7 +23,6 @@ interface RawEditorAutocompleteParams {
   view: EditorView
   baseItems: RawEditorBaseItem[]
   query: string
-  typeEntryMap: Record<string, VaultEntry>
   onInsertTarget: (target: string) => void
   sourceEntry?: VaultEntry
   vaultPath: string
@@ -61,9 +58,7 @@ export function buildRawEditorBaseItems(entries: VaultEntry[]): RawEditorBaseIte
   return deduplicateByPath(entries.map(entry => ({
     title: entry.title,
     aliases: [...new Set([entry.filename.replace(/\.md$/, ''), ...entry.aliases])],
-    group: entry.isA || 'Note',
     entry,
-    entryType: entry.isA,
     entryTitle: entry.title,
     path: entry.path,
   })))
@@ -80,7 +75,6 @@ export function buildRawEditorAutocompleteState({
   view,
   baseItems,
   query,
-  typeEntryMap,
   onInsertTarget,
   sourceEntry,
   vaultPath,
@@ -90,7 +84,7 @@ export function buildRawEditorAutocompleteState({
 
   const candidates = preFilterWikilinks(baseItems, query)
   const withHandlers = attachClickHandlers(candidates, onInsertTarget, vaultPath, sourceEntry)
-  const items = enrichSuggestionItems(withHandlers, query, typeEntryMap, {
+  const items = enrichSuggestionItems(withHandlers, query, {
     showWorkspace: hasMultipleSuggestionWorkspaces(baseItems),
   })
 

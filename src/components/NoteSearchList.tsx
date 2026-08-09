@@ -1,19 +1,12 @@
-import { useRef, useEffect, type ComponentType, type MouseEvent, type PointerEvent, type SVGAttributes } from 'react'
+import { useRef, useEffect, type MouseEvent, type PointerEvent } from 'react'
 import { cn } from '@/lib/utils'
-import { Badge } from '@/components/ui/badge'
 import { scrollSelectedHTMLChildIntoView } from '../utils/domScroll'
 import { detectIntentionalMouseMovement, type MouseMovementSnapshot } from '../utils/mouseMovement'
-import { NoteTitleIcon } from './NoteTitleIcon'
 import { WorkspaceInitialsBadge } from './WorkspaceInitialsBadge'
 import type { WorkspaceIdentity } from '../types'
 
 export interface NoteSearchResultItem {
   title: string
-  noteIcon?: string | null
-  noteType?: string
-  typeColor?: string
-  typeLightColor?: string
-  TypeIcon?: ComponentType<SVGAttributes<SVGSVGElement>>
   workspace?: WorkspaceIdentity | null
 }
 
@@ -109,35 +102,10 @@ function NoteSearchListItem<T extends NoteSearchResultItem>({
         onMouseMove={(event) => onItemHover?.(index, event)}
       >
         <span className="flex min-w-0 flex-1 items-center gap-1.5 truncate text-sm text-foreground">
-          {item.TypeIcon && (
-            <item.TypeIcon
-              width={14}
-              height={14}
-              className="shrink-0"
-              style={item.typeColor ? { color: item.typeColor } : undefined}
-            />
-          )}
-          <NoteTitleIcon icon={item.noteIcon} size={14} testId="note-search-item-icon" />
           <span className="truncate">{item.title}</span>
         </span>
-        {(item.noteType || item.workspace) && (
+        {item.workspace && (
           <span className="ml-2 flex shrink-0 items-center gap-1.5">
-            {item.noteType && (
-              <Badge
-                variant="secondary"
-                className="shrink-0 text-[11px]"
-                style={
-                  item.typeColor
-                    ? {
-                        color: item.typeColor,
-                        backgroundColor: item.typeLightColor,
-                      }
-                    : undefined
-                }
-              >
-                {item.noteType}
-              </Badge>
-            )}
             <WorkspaceInitialsBadge workspace={item.workspace} testId="note-search-workspace-badge" />
           </span>
         )}

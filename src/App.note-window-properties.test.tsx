@@ -158,7 +158,6 @@ function resetCommandResults() {
     list_themes: [],
     list_vault: vi.fn(() => entries),
     list_vault_folders: [],
-    list_views: [],
     load_vault_list: {
       active_vault: '/vault',
       hidden_defaults: [],

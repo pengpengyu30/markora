@@ -79,14 +79,11 @@ fn test_parse_template_block_scalar() {
 }
 
 #[test]
-fn test_parse_template_from_type_body_when_it_looks_like_a_template() {
+fn test_type_body_is_not_inferred_as_a_template() {
     let dir = TempDir::new().unwrap();
     let content = "---\ntype: Type\n---\n\n# Book\n\nTitle:\nAuthor:\n\n## Summary\n";
     let entry = parse_test_entry(&dir, "book.md", content);
-    assert_eq!(
-        entry.template,
-        Some("Title:\nAuthor:\n\n## Summary".to_string())
-    );
+    assert_eq!(entry.template, None);
 }
 
 #[test]

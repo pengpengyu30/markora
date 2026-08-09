@@ -9,7 +9,6 @@ interface PulledVaultRefreshOptions {
   isActiveTabContentCurrent?: (path: string) => Promise<boolean> | boolean
   reloadFolders: () => Promise<unknown> | unknown
   reloadVault: () => Promise<VaultEntry[]>
-  reloadViews: () => Promise<unknown> | unknown
   replaceActiveTab: (entry: VaultEntry) => Promise<void>
   refocusActiveEditor?: (path: string) => void
   shouldRefocusActiveEditor?: () => boolean
@@ -151,7 +150,6 @@ export async function refreshPulledVaultState(options: PulledVaultRefreshOptions
     isActiveTabContentCurrent,
     reloadFolders,
     reloadVault,
-    reloadViews,
     replaceActiveTab,
     refocusActiveEditor,
     shouldRefocusActiveEditor,
@@ -162,7 +160,6 @@ export async function refreshPulledVaultState(options: PulledVaultRefreshOptions
   const [entries] = await Promise.all([
     reloadVault(),
     Promise.resolve(reloadFolders()),
-    Promise.resolve(reloadViews()),
   ])
 
   const latestActiveTabPath = getActiveTabPath?.() ?? activeTabPath

@@ -208,7 +208,6 @@ describe('mockHandlers additional coverage', () => {
     expect(mockHandlers.empty_trash()).toEqual([])
     expect(mockHandlers.delete_note({ path: '/vault/trash/me.md' })).toBe('/vault/trash/me.md')
     expect(mockHandlers.batch_delete_notes({ paths: ['/a.md', '/b.md'] })).toEqual(['/a.md', '/b.md'])
-    expect(mockHandlers.batch_archive_notes({ paths: ['/a.md', '/b.md', '/c.md'] })).toBe(3)
     expect(mockHandlers.batch_trash_notes({ paths: ['/a.md', '/b.md'] })).toBe(2)
     expect(mockHandlers.migrate_is_a_to_type()).toBe(0)
     expect(mockHandlers.copy_text_to_clipboard()).toBeNull()

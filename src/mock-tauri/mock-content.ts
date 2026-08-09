@@ -96,7 +96,7 @@ status: Active
 | Feature | Status | Priority |
 |---------|--------|----------|
 | Editor | Done | High |
-| Inspector | Done | High |
+| Right panel | Done | High |
 | Git Integration | Done | Medium |
 | Mobile App | Planned | Low |
 
@@ -359,7 +359,7 @@ related_to:
 - Agreed on four-panel layout inspired by Bear Notes
 - CodeMirror 6 for the editor — live preview is critical
 - MVP by end of Q1: sidebar + note list + editor working
-- Inspector panel can wait for M4
+- Right panel can wait for M4
 
 ## Action Items
 - [ ] Luca: finalize ontology mapping

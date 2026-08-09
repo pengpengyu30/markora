@@ -57,13 +57,11 @@ export function useFolderDelete(options: UseFolderDeleteInput) {
         vaultPath,
       })
       await reloadFolders()
-      const refreshedEntries = await reloadVault()
+      await reloadVault()
       resetSelectionIfFolderDeleted({
         folderPath,
-        refreshedEntries,
         selection,
         setSelection,
-        vaultPath,
       })
       setToastMessage(`Deleted folder "${folderLabel({ folderPath })}"`)
     } catch (error) {

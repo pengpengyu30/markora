@@ -166,7 +166,7 @@ describe('useNoteActions missing-path recovery', () => {
 
     await openNoteForFrontmatterRecovery(result, entry)
     await act(async () => {
-      await result.current.handleUpdateFrontmatter(entry.path, 'status', 'Done')
+      await result.current.handleUpdateFrontmatter(entry.path, '_width', 'wide')
     })
 
     expectMissingFrontmatterRecovery(result, config)
@@ -186,7 +186,7 @@ describe('useNoteActions missing-path recovery', () => {
 
     await act(async () => {
       try {
-        await result.current.handleUpdateFrontmatter(entry.path, '_archived', true, { silent: true })
+      await result.current.handleUpdateFrontmatter(entry.path, '_width', 'wide', { silent: true })
       } catch (err) {
         thrown = err
       }

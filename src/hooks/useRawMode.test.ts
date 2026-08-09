@@ -11,7 +11,7 @@ describe('useRawMode', () => {
     // Reset vault config to defaults before each test
     store.resetVaultConfigStore()
     store.bindVaultConfigStore(
-      { zoom: null, view_mode: null, editor_mode: null, tag_colors: null, status_colors: null, property_display_modes: null },
+      { zoom: null, view_mode: null, editor_mode: null },
       vi.fn(),
     )
   })
@@ -128,7 +128,7 @@ describe('useRawMode', () => {
     const saveFn = vi.fn()
     store.resetVaultConfigStore()
     store.bindVaultConfigStore(
-      { zoom: null, view_mode: null, editor_mode: null, tag_colors: null, status_colors: null, property_display_modes: null },
+      { zoom: null, view_mode: null, editor_mode: null },
       saveFn,
     )
 
@@ -144,7 +144,7 @@ describe('useRawMode', () => {
   it('restores raw mode from vault config on init', () => {
     store.resetVaultConfigStore()
     store.bindVaultConfigStore(
-      { zoom: null, view_mode: null, editor_mode: 'raw', tag_colors: null, status_colors: null, property_display_modes: null },
+      { zoom: null, view_mode: null, editor_mode: 'raw' },
       vi.fn(),
     )
 

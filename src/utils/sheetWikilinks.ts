@@ -1,5 +1,4 @@
 import type { VaultEntry } from '../types'
-import { resolveNoteIcon } from './noteIcon'
 import { lookupColorForEntry } from './wikilinkColors'
 import { resolveEntry, wikilinkDisplay, wikilinkTarget } from './wikilink'
 
@@ -13,11 +12,6 @@ function displayTitleForTarget(rawTarget: string, entry: VaultEntry | undefined)
   const pipeIndex = rawTarget.indexOf('|')
   if (pipeIndex >= 0) return rawTarget.slice(pipeIndex + 1)
   return entry?.title ?? wikilinkDisplay(wikilinkRef(rawTarget))
-}
-
-function displayIconForEntry(entry: VaultEntry | undefined): string {
-  const icon = resolveNoteIcon(entry?.icon)
-  return icon.kind === 'emoji' ? `${icon.value} ` : ''
 }
 
 function resolveTargetEntry(
@@ -41,7 +35,7 @@ export function sheetWikilinkDisplayValue(
   SHEET_WIKILINK_PATTERN.lastIndex = 0
   return value.replace(SHEET_WIKILINK_PATTERN, (_match, rawTarget: string) => {
     const entry = resolveTargetEntry(entries, rawTarget, sourceEntry)
-    return `${displayIconForEntry(entry)}${displayTitleForTarget(rawTarget, entry)}`
+    return displayTitleForTarget(rawTarget, entry)
   })
 }
 

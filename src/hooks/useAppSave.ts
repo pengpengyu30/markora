@@ -464,7 +464,6 @@ function useUntitledRenameCoordinator(options: {
       handleSwitchTab: (path: string) => void
       setToastMessage: (msg: string | null) => void
       loadModifiedFiles: () => void
-      reloadViews?: () => Promise<void>
       trackUnsaved?: (path: string) => void
       clearUnsaved: (path: string) => void
       unsavedPaths: Set<string>
@@ -498,7 +497,6 @@ function useUntitledRenameCoordinator(options: {
       trackUnsaved?: AppSaveDeps['trackUnsaved']
       clearUnsaved: AppSaveDeps['clearUnsaved']
       onInternalVaultWrite?: AppSaveDeps['onInternalVaultWrite']
-      reloadViews: AppSaveDeps['reloadViews']
       refreshPendingUntitledRename: (path: string, content: string) => void
       scheduleUntitledRename: (path: string, content: string) => void
       resolveCurrentPath: (path: string) => string
@@ -726,7 +724,7 @@ function useHandleSaveAction({
 }
 
 function useEditorPersistence(options: EditorPersistenceOptions) {
-  const { updateEntry, setTabs, setToastMessage, loadModifiedFiles, trackUnsaved, clearUnsaved, onInternalVaultWrite, reloadViews, refreshPendingUntitledRename, scheduleUntitledRename, resolveCurrentPath, resolvePathBeforeSave, canPersist, persistenceScope, locale } = options
+  const { updateEntry, setTabs, setToastMessage, loadModifiedFiles, trackUnsaved, clearUnsaved, onInternalVaultWrite, refreshPendingUntitledRename, scheduleUntitledRename, resolveCurrentPath, resolvePathBeforeSave, canPersist, persistenceScope, locale } = options
   const onAfterSave = useCallback(() => {
     loadModifiedFiles()
   }, [loadModifiedFiles])
@@ -735,10 +733,9 @@ function useEditorPersistence(options: EditorPersistenceOptions) {
     (path: string, content: string) => {
     onInternalVaultWrite?.(path)
     clearUnsaved(path)
-    if (path.endsWith('.yml')) reloadViews?.()
     scheduleUntitledRename(path, content)
     },
-    [clearUnsaved, onInternalVaultWrite, reloadViews, scheduleUntitledRename],
+    [clearUnsaved, onInternalVaultWrite, scheduleUntitledRename],
   )
 
   const {
@@ -884,7 +881,7 @@ function useAppSaveServices(
   refs: ReturnType<typeof useAppSaveStateRefs>,
   canPersist: boolean,
 ) {
-  const { updateEntry, setTabs, handleSwitchTab, setToastMessage, loadModifiedFiles, reloadViews, trackUnsaved, clearUnsaved, replaceEntry, resolvedPath, writableVaultPaths, initialH1AutoRenameEnabled, onInternalVaultWrite, locale = 'en' } = options
+  const { updateEntry, setTabs, handleSwitchTab, setToastMessage, loadModifiedFiles, trackUnsaved, clearUnsaved, replaceEntry, resolvedPath, writableVaultPaths, initialH1AutoRenameEnabled, onInternalVaultWrite, locale = 'en' } = options
   const { tabsRef, activeTabPathRef } = refs
   const {
     pendingUntitledRenameRef,
@@ -914,7 +911,6 @@ function useAppSaveServices(
     trackUnsaved,
     clearUnsaved,
     onInternalVaultWrite,
-    reloadViews,
     refreshPendingUntitledRename,
     scheduleUntitledRename,
     resolveCurrentPath,

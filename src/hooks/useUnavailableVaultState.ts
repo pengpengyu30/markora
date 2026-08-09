@@ -18,7 +18,6 @@ export function useUnavailableVaultState(options: UnavailableVaultStateOptions) 
     setIsLoading,
     setModifiedFiles,
     setModifiedFilesError,
-    setViews,
     vaultPath,
   } = options
 
@@ -33,7 +32,6 @@ export function useUnavailableVaultState(options: UnavailableVaultStateOptions) 
       setIsLoading,
       setModifiedFiles,
       setModifiedFilesError,
-      setViews,
     })
     setUnavailableVaultPath(path)
   }, [
@@ -45,7 +43,6 @@ export function useUnavailableVaultState(options: UnavailableVaultStateOptions) 
     setIsLoading,
     setModifiedFiles,
     setModifiedFilesError,
-    setViews,
   ])
 
   const markVaultAvailable = useCallback((path: string) => {

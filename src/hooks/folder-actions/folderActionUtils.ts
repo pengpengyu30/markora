@@ -76,18 +76,14 @@ export async function invokeDeleteFolder(params: { vaultPath: string; folderPath
 }
 
 export function updateSelectionAfterFolderRename(params: {
-  refreshedEntries: VaultEntry[]
   renameResult: FolderRenameResult
   selection: SidebarSelection
   setSelection: (selection: SidebarSelection) => void
-  vaultPath: string
 }) {
   const {
-    refreshedEntries,
     renameResult,
     selection,
     setSelection,
-    vaultPath,
   } = params
 
   if (selection.kind === 'folder') {
@@ -103,18 +99,6 @@ export function updateSelectionAfterFolderRename(params: {
     return
   }
 
-  if (selection.kind !== 'entity') return
-
-  const oldPrefix = folderAbsolutePath({ vaultPath, folderPath: renameResult.old_path })
-  if (!isWithinPrefix({ path: selection.entry.path, prefix: oldPrefix })) return
-
-  const renamedPath = replaceFolderPrefix({
-    path: selection.entry.path,
-    oldPrefix,
-    newPrefix: folderAbsolutePath({ vaultPath, folderPath: renameResult.new_path }),
-  })
-  const refreshedEntry = refreshedEntries.find((entry) => entry.path === renamedPath)
-  setSelection(refreshedEntry ? { kind: 'entity', entry: refreshedEntry } : DEFAULT_SELECTION)
 }
 
 export function updateTabsAfterFolderRename(params: {
@@ -176,17 +160,13 @@ export function clearDeletedFolderTabs(params: {
 
 export function resetSelectionIfFolderDeleted(params: {
   folderPath: string
-  refreshedEntries: VaultEntry[]
   selection: SidebarSelection
   setSelection: (selection: SidebarSelection) => void
-  vaultPath: string
 }) {
   const {
     folderPath,
-    refreshedEntries,
     selection,
     setSelection,
-    vaultPath,
   } = params
 
   if (selection.kind === 'folder' && isWithinPrefix({ path: selection.path, prefix: folderPath })) {
@@ -194,11 +174,4 @@ export function resetSelectionIfFolderDeleted(params: {
     return
   }
 
-  if (selection.kind !== 'entity') return
-
-  const folderPrefix = folderAbsolutePath({ vaultPath, folderPath })
-  if (!isWithinPrefix({ path: selection.entry.path, prefix: folderPrefix })) return
-
-  const replacement = refreshedEntries.find((entry) => entry.path === selection.entry.path)
-  setSelection(replacement ? { kind: 'entity', entry: replacement } : DEFAULT_SELECTION)
 }

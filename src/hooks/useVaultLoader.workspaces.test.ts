@@ -24,7 +24,6 @@ const defaultMockHandlers: Record<string, MockCommandHandler> = {
   reload_vault: () => mockEntries,
   get_modified_files: () => [],
   list_vault_folders: () => [],
-  list_views: () => [],
 }
 
 function defaultMockInvoke(cmd: string, args?: Record<string, unknown>) {
@@ -98,30 +97,17 @@ function mountedFolderRoot(label: string, rootPath: string, childName: string) {
   }
 }
 
-function viewFile(filename: string, name: string) {
-  return {
-    filename,
-    definition: { name, icon: null, color: null, sort: null, filters: { all: [] } },
-  }
-}
-
 function mockWorkspaceBackend(options: {
   entriesByPath?: Record<string, EntryLoad>
   foldersByPath?: Record<string, ReturnType<typeof backendFolder>[]>
-  viewsByVaultPath?: Record<string, ReturnType<typeof viewFile>[]>
 } = {}) {
   backendInvokeFn.mockImplementation(((cmd: string, args?: Record<string, unknown>) => {
     const path = typeof args?.path === 'string' ? args.path : ''
-    const vaultPath = typeof args?.vaultPath === 'string' ? args.vaultPath : ''
-
     if (isVaultLoadCommand(cmd)) {
       return Promise.resolve(options.entriesByPath?.[path] ?? [entryForPath(path)])
     }
     if (cmd === 'list_vault_folders') {
       return Promise.resolve(options.foldersByPath?.[path] ?? [])
-    }
-    if (cmd === 'list_views') {
-      return Promise.resolve(options.viewsByVaultPath?.[vaultPath] ?? [])
     }
     if (cmd === 'get_modified_files') {
       return Promise.resolve([])
@@ -396,29 +382,4 @@ describe('useVaultLoader workspaces', () => {
     expect(laputaLoadCommands).not.toContain('reload_vault')
   })
 
-  it('clears stale views immediately when switching to another preloaded workspace', async () => {
-    mockWorkspaceBackend({
-      viewsByVaultPath: {
-        '/brian': [viewFile('brian.yml', 'Brian View')],
-      },
-    })
-    const brian = { label: 'Brian', path: '/brian', alias: 'brian', available: true, mounted: true }
-    const laputa = { label: 'Laputa', path: '/laputa', alias: 'laputa', available: true, mounted: true }
-    const vaults = [brian, laputa]
-    const { result, rerender } = renderHook(
-      ({ path }) => useVaultLoader(path, vaults, path),
-      { initialProps: { path: '/brian' } },
-    )
-
-    await waitFor(() => {
-      expect(result.current.views.map((view) => view.filename)).toEqual(['brian.yml'])
-    })
-
-    rerender({ path: '/laputa' })
-
-    expect(result.current.views).toEqual([])
-    await waitFor(() => {
-      expect(result.current.views).toEqual([])
-    })
-  })
 })

@@ -1,5 +1,4 @@
 use crate::commands::expand_tilde;
-use crate::vault::filename_rules::validate_view_filename_stem;
 use crate::vault_list;
 use std::ffi::OsString;
 use std::path::{Component, Path, PathBuf};
@@ -8,7 +7,6 @@ pub(crate) const ACTIVE_VAULT_PATH_ERROR: &str = "Path must stay inside the acti
 const ACTIVE_VAULT_MISMATCH_ERROR: &str = "Vault path must match the active vault";
 const ACTIVE_VAULT_UNAVAILABLE_ERROR: &str = "Active vault is not available";
 const NO_ACTIVE_VAULT_ERROR: &str = "No active vault selected";
-pub(crate) const INVALID_VIEW_FILENAME_ERROR: &str = "Invalid view filename";
 
 #[derive(Clone, Debug)]
 struct VaultRootPaths {
@@ -278,23 +276,6 @@ fn validate_relative_child_path(relative_path: &str) -> Result<(), String> {
     Ok(())
 }
 
-pub(crate) fn validate_view_filename(filename: &str) -> Result<(), String> {
-    if !filename.ends_with(".yml") {
-        return Err("Filename must end with .yml".to_string());
-    }
-
-    let path = Path::new(filename);
-    let mut components = path.components();
-    match (components.next(), components.next()) {
-        (Some(Component::Normal(value)), None) => {
-            let stem = value.to_string_lossy();
-            let stem = stem.strip_suffix(".yml").unwrap_or(&stem);
-            validate_view_filename_stem(stem)
-        }
-        _ => Err(INVALID_VIEW_FILENAME_ERROR.to_string()),
-    }
-}
-
 fn path_to_string(path: &Path) -> String {
     path.to_string_lossy().into_owned()
 }
@@ -398,18 +379,6 @@ pub(crate) fn with_existing_path_in_requested_vault<T>(
         Err(error) => return Err(error),
     };
     action(&validated.0, &validated.1)
-}
-
-pub(crate) fn with_view_file<T>(
-    vault_path: &str,
-    filename: &str,
-    action: impl FnOnce(&str, &str) -> Result<T, String>,
-) -> Result<T, String> {
-    with_boundary(Some(vault_path), |boundary| {
-        validate_view_filename(filename)?;
-        let requested_root = boundary.requested_root_str();
-        action(&requested_root, filename)
-    })
 }
 
 #[cfg(test)]

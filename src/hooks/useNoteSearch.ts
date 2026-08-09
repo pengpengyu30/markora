@@ -1,8 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import type { VaultEntry } from '../types'
 import { fuzzyMatch } from '../utils/fuzzyMatch'
-import { getTypeColor, getTypeLightColor, buildTypeEntryMap } from '../utils/typeColors'
-import { getTypeIcon } from '../components/NoteItem'
 import type { NoteSearchResultItem } from '../components/NoteSearchList'
 import { slugifyNoteStem } from '../utils/noteSlug'
 
@@ -52,11 +50,6 @@ interface RankedEntryInput {
   entry: VaultEntry
 }
 
-interface TypePresentationInput {
-  noteType: string | undefined
-  typeEntry: VaultEntry | undefined
-}
-
 interface WorkspacePresentationInput {
   entry: VaultEntry
   showWorkspace: boolean
@@ -64,7 +57,6 @@ interface WorkspacePresentationInput {
 
 interface ResultInput {
   entry: VaultEntry
-  typeEntryMap: Record<string, VaultEntry>
   showWorkspace: boolean
 }
 
@@ -151,50 +143,29 @@ function rankSearchEntry({ query, entry }: RankedEntryInput): CandidateMatch {
   ), NO_MATCH)
 }
 
-function typePresentation({ noteType, typeEntry }: TypePresentationInput) {
-  if (!noteType) return {}
-  return {
-    noteType,
-    typeColor: getTypeColor(noteType, typeEntry?.color),
-    typeLightColor: getTypeLightColor(noteType, typeEntry?.color),
-    TypeIcon: getTypeIcon(noteType, typeEntry?.icon),
-  }
-}
-
 function workspacePresentation({ entry, showWorkspace }: WorkspacePresentationInput) {
   return showWorkspace ? entry.workspace ?? null : null
 }
 
-function toResult({ entry, typeEntryMap, showWorkspace }: ResultInput): NoteSearchResult {
-  const noteType = entry.isA || undefined
-  const te = noteType ? typeEntryMap[noteType] : undefined
+function toResult({ entry, showWorkspace }: ResultInput): NoteSearchResult {
   return {
     entry,
     title: entry.title,
-    noteIcon: entry.icon,
-    ...typePresentation({ noteType, typeEntry: te }),
     workspace: workspacePresentation({ entry, showWorkspace }),
   }
 }
 
-/** Types excluded from note search results (internal infrastructure). */
-const SEARCH_EXCLUDED_TYPES = new Set(['Config'])
-
 export function useNoteSearch(entries: VaultEntry[], query: string, maxResults = DEFAULT_MAX_RESULTS) {
   const [selectedIndex, setSelectedIndex] = useState(0)
-  const typeEntryMap = useMemo(() => buildTypeEntryMap(entries), [entries])
 
-  const searchableEntries = useMemo(
-    () => entries.filter((e) => !SEARCH_EXCLUDED_TYPES.has(e.isA ?? '')),
-    [entries],
-  )
+  const searchableEntries = entries
   const showWorkspace = useMemo(
     () => new Set(entries.map((entry) => entry.workspace?.alias).filter(Boolean)).size > 1,
     [entries],
   )
 
   const results: NoteSearchResult[] = useMemo(() => {
-    const mapResult = (entry: VaultEntry) => toResult({ entry, typeEntryMap, showWorkspace })
+    const mapResult = (entry: VaultEntry) => toResult({ entry, showWorkspace })
     if (!query.trim()) {
       return [...searchableEntries]
         .sort((a, b) => (b.modifiedAt ?? 0) - (a.modifiedAt ?? 0))
@@ -210,7 +181,7 @@ export function useNoteSearch(entries: VaultEntry[], query: string, maxResults =
       .sort((a, b) => a.rank - b.rank || b.score - a.score)
       .slice(0, maxResults)
       .map((r) => mapResult(r.entry))
-  }, [searchableEntries, query, maxResults, typeEntryMap, showWorkspace])
+  }, [searchableEntries, query, maxResults, showWorkspace])
 
   useEffect(() => {
     void query

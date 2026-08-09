@@ -1,5 +1,4 @@
 mod cache;
-mod config_seed;
 mod entry;
 mod file;
 pub(crate) mod filename_rules;
@@ -8,7 +7,6 @@ mod frontmatter;
 mod getting_started;
 mod ignored;
 mod image;
-mod migration;
 mod parsing;
 pub(crate) mod path_identity;
 mod remote_image;
@@ -16,24 +14,14 @@ mod rename;
 mod rename_transaction;
 mod title_sync;
 mod trash;
-mod type_templates;
-mod view_date_filters;
-mod view_migration;
-mod view_relationships;
-#[cfg(test)]
-mod view_tests;
-mod view_value_conversions;
-mod views;
 
 pub use cache::{invalidate_cache, read_vault_snapshot, refresh_vault_cache, scan_vault_cached};
-pub use config_seed::{repair_config_files, seed_config_files};
 pub use entry::{FolderNode, VaultEntry};
 pub use file::{create_note_content, get_note_content, note_content_matches, save_note_content};
 pub use folders::{delete_folder, rename_folder, FolderRenameResult};
 pub use getting_started::{create_getting_started_vault, default_vault_path, vault_exists};
 pub use ignored::{filter_gitignored_entries, filter_gitignored_folders, filter_gitignored_paths};
 pub use image::{copy_image_to_vault, save_image};
-pub use migration::migrate_is_a_to_type;
 pub use remote_image::download_remote_image;
 pub use rename::{
     auto_rename_untitled, detect_renames, move_note_to_folder, move_note_to_workspace, rename_note,
@@ -43,17 +31,12 @@ pub use rename::{
 };
 pub use title_sync::{sync_title_on_open, SyncAction};
 pub use trash::{batch_delete_notes, delete_note};
-pub use views::{
-    delete_view, evaluate_view, save_view, scan_views, FilterCondition, FilterGroup, FilterNode,
-    FilterOp, ViewDefinition, ViewFile,
-};
 
 use file::read_file_metadata;
 use frontmatter::{
     extract_fm_and_rels, resolve_is_a, resolve_note_display, resolve_note_width, Frontmatter,
 };
 use parsing::{count_body_words, extract_outgoing_links, extract_snippet, extract_title};
-use type_templates::TypeTemplateSource;
 
 use gray_matter::engine::YAML;
 use gray_matter::Matter;
@@ -92,21 +75,6 @@ fn resolve_entry_dates(
         }
         None => (fs_modified, fs_created),
     }
-}
-
-fn insert_type_relationship(
-    relationships: &mut std::collections::HashMap<String, Vec<String>>,
-    is_a: Option<&str>,
-) {
-    let Some(type_name) = is_a.filter(|name| *name != "Type") else {
-        return;
-    };
-    let type_link = if type_name.starts_with("[[") && type_name.ends_with("]]") {
-        type_name.to_string()
-    } else {
-        format!("[[{}]]", type_name.to_lowercase())
-    };
-    relationships.insert("Type".to_string(), vec![type_link]);
 }
 
 fn apply_markdown_frontmatter(entry: VaultEntry, frontmatter: Frontmatter) -> VaultEntry {
@@ -155,7 +123,7 @@ pub fn parse_md_file(path: &Path, git_dates: Option<(u64, u64)>) -> Result<Vault
 
     let matter = Matter::<YAML>::new();
     let parsed = matter.parse(&content);
-    let (frontmatter, mut relationships, properties) = extract_fm_and_rels(parsed.data, &content);
+    let (frontmatter, relationships, properties) = extract_fm_and_rels(parsed.data, &content);
 
     let title = derive_markdown_title_from_content(&content, &filename);
     let has_h1 = parsing::extract_h1_title(&content).is_some();
@@ -165,18 +133,10 @@ pub fn parse_md_file(path: &Path, git_dates: Option<(u64, u64)>) -> Result<Vault
     let (fs_modified, fs_created, file_size) = read_file_metadata(path)?;
     let (modified_at, created_at) = resolve_entry_dates(fs_modified, fs_created, git_dates);
     let is_a = resolve_is_a(frontmatter.is_a.clone());
-    let template = TypeTemplateSource {
-        explicit_template: frontmatter
-            .template
-            .clone()
-            .map(|value| value.into_scalar().unwrap_or_default()),
-        is_a: is_a.as_deref(),
-        title: &title,
-        body: &parsed.content,
-    }
-    .resolve();
-
-    insert_type_relationship(&mut relationships, is_a.as_deref());
+    let template = frontmatter
+        .template
+        .clone()
+        .and_then(|value| value.into_scalar());
 
     let belongs_to = preferred_relationship_refs(&relationships, "belongs_to", "Belongs to");
     let related_to = preferred_relationship_refs(&relationships, "related_to", "Related to");
@@ -257,15 +217,12 @@ pub fn reload_entry(path: &Path) -> Result<VaultEntry, String> {
 
 /// Directories hidden from user-facing vault scans.
 const HIDDEN_DIRS: &[&str] = &[".git", ".laputa", ".DS_Store"];
-/// Keep type definitions in their dedicated sidebar section instead of the generic folder tree.
-const FOLDER_TREE_EXCLUDED_DIRS: &[&str] = &["type"];
-
 fn is_hidden_dir(name: &str) -> bool {
     name.starts_with('.') || HIDDEN_DIRS.contains(&name)
 }
 
 fn is_folder_tree_hidden_dir(name: &str) -> bool {
-    is_hidden_dir(name) || FOLDER_TREE_EXCLUDED_DIRS.contains(&name)
+    is_hidden_dir(name)
 }
 
 pub(crate) fn is_md_file(path: &Path) -> bool {

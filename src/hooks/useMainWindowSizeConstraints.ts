@@ -6,30 +6,30 @@ const MAIN_WINDOW_MIN_HEIGHT = 400
 const EDITOR_ONLY_MAIN_WINDOW_MIN_WIDTH = 480
 const MAIN_WINDOW_SIDEBAR_MIN_WIDTH = 220
 const MAIN_WINDOW_NOTE_LIST_MIN_WIDTH = 220
-const MAIN_WINDOW_INSPECTOR_MIN_WIDTH = 240
+const MAIN_WINDOW_RIGHT_PANEL_MIN_WIDTH = 240
 
 export type MainWindowPaneVisibility = {
   sidebarVisible: boolean
   noteListVisible: boolean
-  inspectorCollapsed: boolean
+  rightPanelCollapsed: boolean
   sidebarWidth?: number
   noteListWidth?: number
-  inspectorWidth?: number
+  rightPanelWidth?: number
 }
 
 export function getMainWindowMinWidth({
   sidebarVisible,
   noteListVisible,
-  inspectorCollapsed,
+  rightPanelCollapsed,
   sidebarWidth,
   noteListWidth,
-  inspectorWidth,
+  rightPanelWidth,
 }: MainWindowPaneVisibility): number {
   let minWidth = EDITOR_ONLY_MAIN_WINDOW_MIN_WIDTH
 
   if (sidebarVisible) minWidth += getPaneWidth(sidebarWidth, MAIN_WINDOW_SIDEBAR_MIN_WIDTH)
   if (noteListVisible) minWidth += getPaneWidth(noteListWidth, MAIN_WINDOW_NOTE_LIST_MIN_WIDTH)
-  if (!inspectorCollapsed) minWidth += getPaneWidth(inspectorWidth, MAIN_WINDOW_INSPECTOR_MIN_WIDTH)
+  if (!rightPanelCollapsed) minWidth += getPaneWidth(rightPanelWidth, MAIN_WINDOW_RIGHT_PANEL_MIN_WIDTH)
 
   return minWidth
 }
@@ -59,18 +59,18 @@ export function useMainWindowSizeConstraints({
   enabled = true,
   sidebarVisible,
   noteListVisible,
-  inspectorCollapsed,
+  rightPanelCollapsed,
   sidebarWidth,
   noteListWidth,
-  inspectorWidth,
+  rightPanelWidth,
 }: MainWindowSizeConstraintsOptions): void {
   const minWidth = getMainWindowMinWidth({
     sidebarVisible,
     noteListVisible,
-    inspectorCollapsed,
+    rightPanelCollapsed,
     sidebarWidth,
     noteListWidth,
-    inspectorWidth,
+    rightPanelWidth,
   })
 
   useEffect(() => {

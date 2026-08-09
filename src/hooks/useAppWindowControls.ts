@@ -17,7 +17,7 @@ type PdfExportHandler = (source?: NotePdfExportSource) => void
 type WindowConstraintUpdater = (
   nextSidebarVisible: boolean,
   nextNoteListVisible: boolean,
-  nextInspectorCollapsed?: boolean,
+  nextRightPanelCollapsed?: boolean,
 ) => void
 
 interface UseAppWindowControlsParams {
@@ -26,6 +26,7 @@ interface UseAppWindowControlsParams {
 }
 
 interface AppWindowActionRefs {
+  backlinksToggleRef: MutableRefObject<() => void>
   diffToggleRef: MutableRefObject<() => void>
   findInNoteRef: MutableRefObject<FindInNoteHandler | null>
   pdfExportRef: MutableRefObject<PdfExportHandler | null>
@@ -34,12 +35,13 @@ interface AppWindowActionRefs {
 }
 
 interface AppWindowControls {
+  backlinksToggleRef: MutableRefObject<() => void>
   buildNumber: string | undefined
   diffToggleRef: MutableRefObject<() => void>
   findInNoteRef: MutableRefObject<FindInNoteHandler | null>
   handleCollapseSidebar: () => void
   handleSetViewMode: (mode: ViewMode) => void
-  handleToggleInspector: () => void
+  handleToggleRightPanel: () => void
   noteListVisible: boolean
   pdfExportRef: MutableRefObject<PdfExportHandler | null>
   rawToggleRef: MutableRefObject<() => void>
@@ -50,6 +52,7 @@ interface AppWindowControls {
 
 function useAppWindowActionRefs(): AppWindowActionRefs {
   return {
+    backlinksToggleRef: useRef<() => void>(() => { /* Initialized before the action is exposed. */ }),
     diffToggleRef: useRef<() => void>(() => { /* Initialized before the action is exposed. */ }),
     findInNoteRef: useRef<FindInNoteHandler | null>(null),
     pdfExportRef: useRef<PdfExportHandler | null>(null),
@@ -65,24 +68,24 @@ function useMainWindowConstraintUpdater(
   return useCallback((
     nextSidebarVisible: boolean,
     nextNoteListVisible: boolean,
-    nextInspectorCollapsed: boolean = layout.inspectorCollapsed,
+    nextRightPanelCollapsed: boolean = layout.rightPanelCollapsed,
   ) => {
     if (windowMode) return
 
     const minWidth = getMainWindowMinWidth({
       sidebarVisible: nextSidebarVisible,
       noteListVisible: nextNoteListVisible,
-      inspectorCollapsed: nextInspectorCollapsed,
+      rightPanelCollapsed: nextRightPanelCollapsed,
       sidebarWidth: layout.sidebarWidth,
       noteListWidth: layout.noteListWidth,
-      inspectorWidth: layout.inspectorWidth,
+      rightPanelWidth: layout.rightPanelWidth,
     })
 
     void applyMainWindowSizeConstraints(minWidth, { growToFit: !isWindows() })
       .catch((err: unknown) => { console.warn('[window] Size constraints failed:', err); })
   }, [
-    layout.inspectorCollapsed,
-    layout.inspectorWidth,
+    layout.rightPanelCollapsed,
+    layout.rightPanelWidth,
     layout.noteListWidth,
     layout.sidebarWidth,
     windowMode,
@@ -94,6 +97,7 @@ export function useAppWindowControls({
   windowMode,
 }: UseAppWindowControlsParams): AppWindowControls {
   const {
+    backlinksToggleRef,
     diffToggleRef,
     findInNoteRef,
     pdfExportRef,
@@ -117,10 +121,10 @@ export function useAppWindowControls({
     handleSetViewMode('editor-list')
   }, [handleSetViewMode])
 
-  const handleToggleInspector = useCallback(() => {
-    const nextInspectorCollapsed = !layout.inspectorCollapsed
-    layout.setInspectorCollapsed(nextInspectorCollapsed)
-    updateMainWindowConstraints(sidebarVisible, noteListVisible, nextInspectorCollapsed)
+  const handleToggleRightPanel = useCallback(() => {
+    const nextRightPanelCollapsed = !layout.rightPanelCollapsed
+    layout.setRightPanelCollapsed(nextRightPanelCollapsed)
+    updateMainWindowConstraints(sidebarVisible, noteListVisible, nextRightPanelCollapsed)
   }, [
     layout,
     noteListVisible,
@@ -132,19 +136,20 @@ export function useAppWindowControls({
     enabled: !windowMode,
     sidebarVisible,
     noteListVisible,
-    inspectorCollapsed: layout.inspectorCollapsed,
+    rightPanelCollapsed: layout.rightPanelCollapsed,
     sidebarWidth: layout.sidebarWidth,
     noteListWidth: layout.noteListWidth,
-    inspectorWidth: layout.inspectorWidth,
+    rightPanelWidth: layout.rightPanelWidth,
   })
 
   return {
+    backlinksToggleRef,
     buildNumber,
     diffToggleRef,
     findInNoteRef,
     handleCollapseSidebar,
     handleSetViewMode,
-    handleToggleInspector,
+    handleToggleRightPanel,
     noteListVisible,
     pdfExportRef,
     rawToggleRef,

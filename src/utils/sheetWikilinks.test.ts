@@ -51,9 +51,9 @@ describe('sheetWikilinks', () => {
   })
 
   it('renders resolved wikilinks as note titles while preserving surrounding text', () => {
-    const entry = makeEntry({ icon: '📈' })
+    const entry = makeEntry({})
 
-    expect(sheetWikilinkDisplayValue('Owner: [[project-alpha]]', [entry])).toBe('Owner: 📈 Project Alpha')
+    expect(sheetWikilinkDisplayValue('Owner: [[project-alpha]]', [entry])).toBe('Owner: Project Alpha')
   })
 
   it('keeps explicit wikilink aliases as display text', () => {

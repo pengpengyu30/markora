@@ -8,7 +8,6 @@ import { dispatchEditorFindAvailability } from '../../utils/editorFindEvents'
 import { DiffView } from '../DiffView'
 import { BreadcrumbBar } from '../BreadcrumbBar'
 import { HtmlFilePreview } from '../HtmlFilePreview'
-import { ArchivedNoteBanner } from '../ArchivedNoteBanner'
 import { ConflictNoteBanner } from '../ConflictNoteBanner'
 import { RawEditorView } from '../RawEditorView'
 import { SingleEditorView } from '../SingleEditorView'
@@ -26,20 +25,13 @@ type BreadcrumbActions = Pick<
   | 'forceRawMode'
   | 'showTableOfContents'
   | 'onToggleTableOfContents'
-  | 'inspectorCollapsed'
-  | 'onToggleInspector'
   | 'showDiffToggle'
-  | 'onToggleFavorite'
-  | 'onToggleOrganized'
-  | 'onEnterNeighborhood'
   | 'onRevealFile'
   | 'onCopyFilePath'
   | 'onCopyDeepLink'
   | 'onCopyGitUrl'
   | 'onExportPdf'
   | 'onDeleteNote'
-  | 'onArchiveNote'
-  | 'onUnarchiveNote'
   | 'onRenameFilename'
   | 'noteWidth'
   | 'onToggleNoteWidth'
@@ -216,19 +208,12 @@ function ActiveTabBreadcrumb({
       forceRawMode={actions.forceRawMode}
       showTableOfContents={actions.showTableOfContents}
       onToggleTableOfContents={actions.onToggleTableOfContents}
-      inspectorCollapsed={actions.inspectorCollapsed}
-      onToggleInspector={actions.onToggleInspector}
-      onToggleFavorite={bindPath(actions.onToggleFavorite, path)}
-      onToggleOrganized={bindPath(actions.onToggleOrganized, path)}
-      onEnterNeighborhood={actions.onEnterNeighborhood}
       onRevealFile={actions.onRevealFile}
       onCopyFilePath={actions.onCopyFilePath}
       onCopyDeepLink={actions.onCopyDeepLink}
       onCopyGitUrl={actions.onCopyGitUrl}
       onExportPdf={actions.onExportPdf}
       onDelete={bindPath(actions.onDeleteNote, path)}
-      onArchive={bindPath(actions.onArchiveNote, path)}
-      onUnarchive={bindPath(actions.onUnarchiveNote, path)}
       onRenameFilename={actions.onRenameFilename}
       noteWidth={actions.noteWidth}
       onToggleNoteWidth={actions.onToggleNoteWidth}
@@ -260,8 +245,6 @@ function EditorLoadingBreadcrumb({
       forceRawMode={false}
       showTableOfContents={actions.showTableOfContents}
       onToggleTableOfContents={actions.onToggleTableOfContents}
-      inspectorCollapsed={actions.inspectorCollapsed}
-      onToggleInspector={actions.onToggleInspector}
       noteWidth={actions.noteWidth}
       onToggleNoteWidth={actions.onToggleNoteWidth}
       locale={locale}
@@ -279,20 +262,13 @@ function buildBreadcrumbActions(model: EditorContentModel): BreadcrumbActions {
     forceRawMode: model.forceRawMode,
     showTableOfContents: model.showTableOfContents,
     onToggleTableOfContents: model.onToggleTableOfContents,
-    inspectorCollapsed: model.inspectorCollapsed,
-    onToggleInspector: model.onToggleInspector,
     showDiffToggle: model.showDiffToggle,
-    onToggleFavorite: model.onToggleFavorite,
-    onToggleOrganized: model.onToggleOrganized,
-    onEnterNeighborhood: model.onEnterNeighborhood,
     onRevealFile: model.onRevealFile,
     onCopyFilePath: model.onCopyFilePath,
     onCopyDeepLink: model.onCopyDeepLink,
     onCopyGitUrl: model.onCopyGitUrl,
     onExportPdf: model.onExportPdf,
     onDeleteNote: model.onDeleteNote,
-    onArchiveNote: model.onArchiveNote,
-    onUnarchiveNote: model.onUnarchiveNote,
     onRenameFilename: model.onRenameFilename,
     noteWidth: model.noteWidth,
     onToggleNoteWidth: model.onToggleNoteWidth,
@@ -338,8 +314,6 @@ function EditorBreadcrumbArea({
 function EditorChrome(
   options: Pick<
     EditorContentModel,
-    | 'isArchived'
-    | 'onUnarchiveNote'
     | 'path'
     | 'isConflicted'
     | 'onKeepMine'
@@ -351,8 +325,6 @@ function EditorChrome(
   >,
 ) {
   const {
-    isArchived,
-    onUnarchiveNote,
     path,
     isConflicted,
     onKeepMine,
@@ -364,9 +336,6 @@ function EditorChrome(
   } = options
   return (
     <>
-      {isArchived && onUnarchiveNote && (
-        <ArchivedNoteBanner onUnarchive={() => onUnarchiveNote(path)} locale={locale} />
-      )}
       {isConflicted && (
         <ConflictNoteBanner
           onKeepMine={() => onKeepMine?.(path)}
@@ -520,8 +489,6 @@ export function EditorContentLayout(model: EditorContentModel) {
     onRawContentChange,
     onSave,
     showEditor,
-    isArchived,
-    onUnarchiveNote,
     path,
     isConflicted,
     onKeepMine,
@@ -569,8 +536,6 @@ export function EditorContentLayout(model: EditorContentModel) {
       {showActiveContent && (
         <>
           <EditorChrome
-            isArchived={isArchived}
-            onUnarchiveNote={onUnarchiveNote}
             path={path}
             isConflicted={isConflicted}
             onKeepMine={onKeepMine}

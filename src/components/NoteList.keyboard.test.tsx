@@ -7,24 +7,21 @@ import {
   makeIndexedEntry,
   mockEntries,
 } from '../test-utils/noteListTestUtils'
-import type { SidebarSelection, VaultEntry } from '../types'
+import type { VaultEntry } from '../types'
 import * as tabManagement from '../hooks/useTabManagement'
-import { isMac } from '../utils/platform'
 
 function NoteListKeyboardHarness({
   entries = mockEntries,
   initialSelectedNote = null,
   onOpen,
-  onEnterNeighborhood = () => {},
   selectedNoteOverride,
   selection = allSelection,
 }: {
   entries?: VaultEntry[]
   initialSelectedNote?: VaultEntry | null
   onOpen: (entry: VaultEntry) => void
-  onEnterNeighborhood?: (entry: VaultEntry) => void
   selectedNoteOverride?: VaultEntry
-  selection?: SidebarSelection
+  selection?: typeof allSelection
 }) {
   const [selectedNote, setSelectedNote] = useState<VaultEntry | null>(initialSelectedNote)
   const visibleSelectedNote = selectedNoteOverride ?? selectedNote
@@ -43,7 +40,6 @@ function NoteListKeyboardHarness({
       onNoteListFilterChange={() => {}}
       onSelectNote={handleOpen}
       onReplaceActiveTab={handleOpen}
-      onEnterNeighborhood={onEnterNeighborhood}
       onCreateNote={() => {}}
     />
   )
@@ -90,28 +86,6 @@ describe('NoteList keyboard activation', () => {
 
     await waitFor(() => {
       expect(onOpen).toHaveBeenCalledWith(mockEntries[0])
-    })
-  })
-
-  it('supports the platform primary modifier with Enter to pivot the highlighted note into Neighborhood mode', async () => {
-    const onOpen = vi.fn()
-    const onEnterNeighborhood = vi.fn()
-    render(
-      <NoteListKeyboardHarness
-        onOpen={onOpen}
-        onEnterNeighborhood={onEnterNeighborhood}
-        selection={{ kind: 'entity', entry: mockEntries[0] }}
-      />,
-    )
-
-    const container = screen.getByTestId('note-list-container')
-    fireEvent.keyDown(container, { key: 'ArrowDown' })
-    fireEvent.keyDown(container, { key: 'ArrowDown' })
-    fireEvent.keyDown(container, { key: 'Enter', ...(isMac() ? { metaKey: true } : { ctrlKey: true }) })
-
-    await waitFor(() => {
-      expect(onOpen).toHaveBeenLastCalledWith(mockEntries[4])
-      expect(onEnterNeighborhood).toHaveBeenCalledWith(mockEntries[4])
     })
   })
 

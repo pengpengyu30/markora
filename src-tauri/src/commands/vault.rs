@@ -4,7 +4,6 @@ mod frontmatter_cmds;
 mod lifecycle_cmds;
 mod rename_cmds;
 mod scan_cmds;
-mod view_cmds;
 
 pub(super) use boundary::VaultBoundary;
 pub use file_cmds::*;
@@ -12,23 +11,16 @@ pub use frontmatter_cmds::*;
 pub use lifecycle_cmds::*;
 pub use rename_cmds::*;
 pub use scan_cmds::*;
-pub use view_cmds::*;
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::vault::ViewDefinition;
     use std::path::Path;
 
     const ACTIVE_VAULT_PATH_ERROR: &str = super::boundary::ACTIVE_VAULT_PATH_ERROR;
-    const INVALID_VIEW_FILENAME_ERROR: &str = super::boundary::INVALID_VIEW_FILENAME_ERROR;
 
     fn vault_path_arg(vault_path: &Path) -> Option<std::path::PathBuf> {
         Some(vault_path.to_path_buf())
-    }
-
-    fn vault_path_string_arg(vault_path: &Path) -> Option<String> {
-        Some(vault_path.to_string_lossy().to_string())
     }
 
     fn assert_note_write_rejects_escape<T: std::fmt::Debug>(
@@ -48,38 +40,6 @@ mod tests {
         assert_eq!(err, ACTIVE_VAULT_PATH_ERROR);
     }
 
-    fn sample_view_definition() -> ViewDefinition {
-        ViewDefinition {
-            name: "Inbox".to_string(),
-            icon: None,
-            color: None,
-            order: None,
-            sort: None,
-            list_properties_display: vec![],
-            filters: crate::vault::FilterGroup::All(vec![]),
-        }
-    }
-
-    fn assert_save_view_cmd_rejects_invalid_filename(filename: &str) {
-        let dir = tempfile::TempDir::new().unwrap();
-
-        let err = save_view_cmd(
-            dir.path().to_string_lossy().to_string(),
-            filename.to_string(),
-            sample_view_definition(),
-        )
-        .expect_err("expected invalid filename to be rejected");
-
-        assert_eq!(err, INVALID_VIEW_FILENAME_ERROR);
-    }
-
-    fn temp_note(body: &str) -> (tempfile::TempDir, std::path::PathBuf) {
-        let dir = tempfile::TempDir::new().unwrap();
-        let note = dir.path().join("note.md");
-        std::fs::write(&note, body).unwrap();
-        (dir, note)
-    }
-
     fn assert_paths_exist(root: &Path, paths: &[&str]) {
         for path in paths {
             assert!(root.join(path).exists(), "{path} should exist");
@@ -90,13 +50,6 @@ mod tests {
         for path in paths {
             assert!(!root.join(path).exists(), "{path} should be absent");
         }
-    }
-
-    fn assert_seeded_type_scaffolding(vault_path: &Path) {
-        let type_definition = std::fs::read_to_string(vault_path.join("type.md")).unwrap();
-
-        assert!(type_definition.contains("visible: false"));
-        assert!(type_definition.contains("# Type"));
     }
 
     fn initialize_test_git_repository(vault_path: &Path) {
@@ -111,22 +64,6 @@ mod tests {
                 .output()
                 .unwrap();
         }
-    }
-
-    #[test]
-    fn test_batch_archive_notes() {
-        let (dir, note) = temp_note("---\nStatus: Active\n---\n# Note\n");
-        assert_eq!(
-            batch_archive_notes(
-                vec![note.to_str().unwrap().to_string()],
-                vault_path_string_arg(dir.path()),
-            )
-            .unwrap(),
-            1
-        );
-        let content = std::fs::read_to_string(&note).unwrap();
-        assert!(content.contains("_archived: true"));
-        assert!(content.contains("Status: Active"));
     }
 
     #[test]
@@ -254,16 +191,6 @@ mod tests {
         assert!(dir.path().join("Inbox").is_dir());
     }
 
-    #[test]
-    fn test_save_view_cmd_rejects_nested_filename() {
-        assert_save_view_cmd_rejects_invalid_filename("../escape.yml");
-    }
-
-    #[test]
-    fn test_save_view_cmd_rejects_windows_invalid_filename() {
-        assert_save_view_cmd_rejects_invalid_filename("con.yml");
-    }
-
     #[tokio::test]
     async fn test_reload_vault_invalidates_cache_and_rescans() {
         let dir = tempfile::TempDir::new().unwrap();
@@ -322,43 +249,27 @@ mod tests {
     }
 
     #[test]
-    fn test_repair_vault_migrates_is_a_to_type() {
-        let dir = tempfile::TempDir::new().unwrap();
-        let vault_path = dir.path();
-        let note_dir = vault_path.join("note");
-        std::fs::create_dir_all(&note_dir).unwrap();
-        std::fs::write(note_dir.join("hello.md"), "---\nis_a: Note\n---\n# Hello\n").unwrap();
-
-        let result = repair_vault(vault_path.to_str().unwrap().to_string());
-        assert!(result.is_ok());
-        assert!(note_dir.join("hello.md").exists());
-        let content = std::fs::read_to_string(note_dir.join("hello.md")).unwrap();
-        assert!(content.contains("type: Note"));
-        assert!(!content.contains("is_a:"));
-    }
-
-    #[test]
-    fn test_repair_vault_creates_config_files() {
+    fn test_repair_vault_only_ensures_gitignore() {
         let dir = tempfile::TempDir::new().unwrap();
         let vault_path = dir.path();
 
         let result = repair_vault(vault_path.to_str().unwrap().to_string());
         assert!(result.is_ok());
-        assert_paths_exist(vault_path, &["type.md", "note.md", ".gitignore"]);
-        assert_paths_absent(vault_path, &["config.md"]);
+        assert_paths_exist(vault_path, &[".gitignore"]);
+        assert_paths_absent(vault_path, &["type.md", "note.md", "config.md"]);
     }
 
     #[test]
-    fn test_create_empty_vault_seeds_type_scaffolding_without_guidance_files() {
+    fn test_create_empty_vault_does_not_seed_type_scaffolding() {
         let dir = tempfile::TempDir::new().unwrap();
         let vault_path = dir.path().join("fresh-vault");
 
         let result = create_empty_vault(vault_path.to_string_lossy().to_string());
         assert!(result.is_ok());
-        assert_paths_exist(&vault_path, &[".git", "type.md", "note.md"]);
+        assert_paths_exist(&vault_path, &[".git"]);
         assert_paths_absent(&vault_path, &["config.md"]);
         assert_paths_absent(&vault_path, &["AGENTS.md", "CLAUDE.md", "GEMINI.md"]);
-        assert_seeded_type_scaffolding(&vault_path);
+        assert_paths_absent(&vault_path, &["type.md", "note.md"]);
     }
 
     #[test]

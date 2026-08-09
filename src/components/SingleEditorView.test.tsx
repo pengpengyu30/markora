@@ -339,34 +339,6 @@ describe('SingleEditorView', () => {
     }
   })
 
-  it('inserts the selected emoji from shortcode suggestions', async () => {
-    const editor = createEditor()
-
-    render(
-      <SingleEditorView
-        editor={editor as never}
-        entries={[makeEntry()]}
-        onNavigateWikilink={vi.fn()}
-      />,
-    )
-
-    const getEmojiItems = state.capturedSuggestionProps[':'].getItems as (
-      query: string
-    ) => Promise<Array<{ id: string; name: string; onItemClick: () => void }>>
-
-    const italyItems = await getEmojiItems(':it')
-    expect(italyItems[0]).toMatchObject({ id: '🇮🇹' })
-    expect(italyItems[0].name).toMatch(/italy/i)
-
-    const items = await getEmojiItems(':rocket')
-    const rocketItem = items.find(item => item.id === '🚀')
-
-    expect(rocketItem).toMatchObject({ name: 'rocket' })
-    rocketItem!.onItemClick()
-
-    expect(editor.insertInlineContent).toHaveBeenCalledWith('🚀', { updateSelection: true })
-  })
-
   it('guards stale click handlers stored on wikilink suggestion items', async () => {
     const editor = createEditor()
     editor.domElement = document.createElement('div')

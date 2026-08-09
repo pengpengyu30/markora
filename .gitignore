@@ -31,6 +31,7 @@ _site/
 # Playwright
 /test-results/
 /playwright-report/
+/.playwright-browsers/
 
 # Coverage reports
 /coverage/

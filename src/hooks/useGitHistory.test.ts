@@ -84,7 +84,7 @@ describe('useGitHistory', () => {
     ])
   })
 
-  it('clears previously loaded history when the inspector is hidden', async () => {
+  it('clears previously loaded history when the right panel is hidden', async () => {
     const loadGitHistory = vi.fn().mockResolvedValue(mockHistory)
 
     const { result, rerender } = renderHook(

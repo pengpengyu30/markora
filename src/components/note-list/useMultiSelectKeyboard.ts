@@ -3,7 +3,6 @@ import type { MultiSelectState } from '../../hooks/useMultiSelect'
 
 interface UseMultiSelectKeyboardOptions {
   multiSelect: MultiSelectState
-  isEntityView: boolean
   onBulkOrganize?: () => void
   onBulkDelete?: () => void
   enableActionShortcuts?: boolean
@@ -28,8 +27,8 @@ function clearSelectionOnEscape(event: KeyboardEvent, multiSelect: MultiSelectSt
   multiSelect.clear()
 }
 
-function selectVisibleNotes(event: KeyboardEvent, multiSelect: MultiSelectState, isEntityView: boolean) {
-  if (event.key !== 'a' || !(event.metaKey || event.ctrlKey) || isEntityView || isInputHtmlElementFocused()) return
+function selectVisibleNotes(event: KeyboardEvent, multiSelect: MultiSelectState) {
+  if (event.key !== 'a' || !(event.metaKey || event.ctrlKey) || isInputHtmlElementFocused()) return
   event.preventDefault()
   multiSelect.selectAll()
 }
@@ -76,7 +75,7 @@ export function useMultiSelectKeyboard(options: UseMultiSelectKeyboardOptions) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       clearSelectionOnEscape(event, options.multiSelect)
-      selectVisibleNotes(event, options.multiSelect, options.isEntityView)
+      selectVisibleNotes(event, options.multiSelect)
       runBulkShortcut(event, options)
     }
 

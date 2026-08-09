@@ -21,7 +21,7 @@ describe('getMainWindowMinWidth', () => {
       visibility: {
         sidebarVisible: true,
         noteListVisible: true,
-        inspectorCollapsed: true,
+        rightPanelCollapsed: true,
       },
       expectedWidth: 920,
     },
@@ -30,7 +30,7 @@ describe('getMainWindowMinWidth', () => {
       visibility: {
         sidebarVisible: false,
         noteListVisible: false,
-        inspectorCollapsed: true,
+        rightPanelCollapsed: true,
       },
       expectedWidth: 480,
     },
@@ -39,16 +39,16 @@ describe('getMainWindowMinWidth', () => {
       visibility: {
         sidebarVisible: false,
         noteListVisible: true,
-        inspectorCollapsed: true,
+        rightPanelCollapsed: true,
       },
       expectedWidth: 700,
     },
     {
-      name: 'adds inspector width when the properties panel is open',
+      name: 'adds right panel width when the right panel is open',
       visibility: {
         sidebarVisible: false,
         noteListVisible: false,
-        inspectorCollapsed: false,
+        rightPanelCollapsed: false,
       },
       expectedWidth: 720,
     },
@@ -57,10 +57,10 @@ describe('getMainWindowMinWidth', () => {
       visibility: {
         sidebarVisible: true,
         noteListVisible: true,
-        inspectorCollapsed: false,
+        rightPanelCollapsed: false,
         sidebarWidth: 360,
         noteListWidth: 340,
-        inspectorWidth: 320,
+        rightPanelWidth: 320,
       },
       expectedWidth: 1500,
     },
@@ -83,7 +83,7 @@ describe('useMainWindowSizeConstraints', () => {
       visibility: {
         sidebarVisible: false,
         noteListVisible: false,
-        inspectorCollapsed: true,
+        rightPanelCollapsed: true,
       },
       expectedWidth: 480,
     },
@@ -92,7 +92,7 @@ describe('useMainWindowSizeConstraints', () => {
       visibility: {
         sidebarVisible: true,
         noteListVisible: true,
-        inspectorCollapsed: false,
+        rightPanelCollapsed: false,
       },
       expectedWidth: 1160,
     },
@@ -115,7 +115,7 @@ describe('useMainWindowSizeConstraints', () => {
       enabled: false,
       sidebarVisible: false,
       noteListVisible: false,
-      inspectorCollapsed: true,
+      rightPanelCollapsed: true,
     }))
 
     await Promise.resolve()
@@ -144,7 +144,7 @@ describe('useMainWindowSizeConstraints', () => {
       renderHook(() => useMainWindowSizeConstraints({
         sidebarVisible: true,
         noteListVisible: true,
-        inspectorCollapsed: false,
+        rightPanelCollapsed: false,
       }))
 
       await waitFor(() => {
@@ -166,7 +166,7 @@ describe('useMainWindowSizeConstraints', () => {
     renderHook(() => useMainWindowSizeConstraints({
       sidebarVisible: true,
       noteListVisible: true,
-      inspectorCollapsed: false,
+      rightPanelCollapsed: false,
     }))
 
     await waitFor(() => {

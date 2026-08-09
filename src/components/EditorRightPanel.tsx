@@ -1,116 +1,60 @@
 import type { useCreateBlockNote } from '@blocknote/react'
 import type { AppLocale } from '../lib/i18n'
-import type { GitCommit, VaultEntry, WorkspaceIdentity } from '../types'
-import type { FrontmatterOpOptions } from '../hooks/frontmatterOps'
-import type { FrontmatterValue } from './Inspector'
-import { Inspector } from './Inspector'
+import type { VaultEntry } from '../types'
+import { BacklinksPanel } from './BacklinksPanel'
 import { TableOfContentsPanel } from './TableOfContentsPanel'
+import { useBacklinks } from '../hooks/useBacklinks'
 
 interface EditorRightPanelProps {
   showTableOfContents?: boolean
-  inspectorCollapsed: boolean
-  inspectorWidth: number
+  showBacklinks?: boolean
+  rightPanelCollapsed: boolean
+  rightPanelWidth: number
   editor: ReturnType<typeof useCreateBlockNote>
-  inspectorEntry: VaultEntry | null
-  inspectorContent: string | null
+  entry: VaultEntry | null
+  content: string | null
   entries: VaultEntry[]
-  gitHistory: GitCommit[]
-  vaultPath: string
-  onToggleInspector: () => void
   onToggleTableOfContents?: () => void
   onNavigateWikilink: (target: string) => void
-  onViewCommitDiff: (commitHash: string) => Promise<void>
-  onUpdateFrontmatter?: (
-    path: string,
-    key: string,
-    value: FrontmatterValue,
-    options?: FrontmatterOpOptions,
-  ) => Promise<void>
-  onDeleteProperty?: (path: string, key: string, options?: FrontmatterOpOptions) => Promise<void>
-  onAddProperty?: (path: string, key: string, value: FrontmatterValue, options?: FrontmatterOpOptions) => Promise<void>
-  onCreateMissingType?: (path: string, missingType: string, nextTypeName: string) => Promise<boolean | undefined>
-  onCreateAndOpenNote?: (title: string) => Promise<boolean>
-  onChangeWorkspace?: (entry: VaultEntry, workspace: WorkspaceIdentity) => Promise<void> | void
-  onInitializeProperties?: (path: string) => void
-  onToggleRawEditor?: () => void
-  workspaces?: WorkspaceIdentity[]
+  onToggleBacklinks?: () => void
   locale?: AppLocale
 }
 
 export function EditorRightPanel(options: EditorRightPanelProps) {
-  if (!options.inspectorCollapsed) {
-    return renderExpandedInspector(options)
-  }
+  if (options.rightPanelCollapsed) return null
 
   if (options.showTableOfContents) {
     return renderTableOfContents(options)
   }
 
+  if (options.showBacklinks) {
+    return <BacklinksRightPanel {...options} />
+  }
+
   return null
 }
 
-function renderExpandedInspector(options: EditorRightPanelProps) {
-  const {
-    inspectorCollapsed,
-    inspectorWidth,
-    inspectorEntry,
-    inspectorContent,
-    entries,
-    gitHistory,
-    vaultPath,
-    onToggleInspector,
-    onNavigateWikilink,
-    onViewCommitDiff,
-    onUpdateFrontmatter,
-    onDeleteProperty,
-    onAddProperty,
-    onCreateMissingType,
-    onCreateAndOpenNote,
-    onChangeWorkspace,
-    onInitializeProperties,
-    onToggleRawEditor,
-    workspaces,
-    locale,
-  } = options
+function BacklinksRightPanel({ entry, entries, rightPanelWidth, onNavigateWikilink }: EditorRightPanelProps) {
+  const backlinks = useBacklinks(entry, entries)
 
   return (
-    <div className="shrink-0 flex flex-col min-h-0" style={{ width: inspectorWidth, height: '100%' }}>
-      <Inspector
-        collapsed={inspectorCollapsed}
-        onToggle={onToggleInspector}
-        entry={inspectorEntry}
-        content={inspectorContent}
-        entries={entries}
-        gitHistory={gitHistory}
-        vaultPath={vaultPath}
-        onNavigate={onNavigateWikilink}
-        onViewCommitDiff={onViewCommitDiff}
-        onUpdateFrontmatter={onUpdateFrontmatter}
-        onDeleteProperty={onDeleteProperty}
-        onAddProperty={onAddProperty}
-        onCreateMissingType={onCreateMissingType}
-        onCreateAndOpenNote={onCreateAndOpenNote}
-        onChangeWorkspace={onChangeWorkspace}
-        onInitializeProperties={onInitializeProperties}
-        onToggleRawEditor={onToggleRawEditor}
-        workspaces={workspaces}
-        locale={locale}
-      />
+    <div className="shrink-0 flex flex-col min-h-0 overflow-y-auto border-l border-border bg-background p-3" style={{ width: rightPanelWidth, height: '100%' }}>
+      <BacklinksPanel backlinks={backlinks} onNavigate={onNavigateWikilink} />
     </div>
   )
 }
 
 function renderTableOfContents(options: EditorRightPanelProps) {
-  const { editor, inspectorContent, inspectorEntry, inspectorWidth, locale, onToggleTableOfContents } = options
+  const { editor, content, entry, rightPanelWidth, locale, onToggleTableOfContents } = options
 
   return (
-    <div className="shrink-0 flex flex-col min-h-0" style={{ width: inspectorWidth, minWidth: 240, height: '100%' }}>
+    <div className="shrink-0 flex flex-col min-h-0" style={{ width: rightPanelWidth, minWidth: 240, height: '100%' }}>
       <TableOfContentsPanel
         editor={editor}
-        entry={inspectorEntry}
+        entry={entry}
         locale={locale}
         onClose={() => onToggleTableOfContents?.()}
-        sourceContent={inspectorContent}
+        sourceContent={content}
       />
     </div>
   )

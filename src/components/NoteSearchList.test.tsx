@@ -11,9 +11,9 @@ interface TestItem extends NoteSearchResultItem {
 }
 
 const items: TestItem[] = [
-  { id: '1', title: 'Alpha Project', noteType: 'Project', typeColor: 'var(--accent-blue)', typeLightColor: 'var(--accent-blue-light)' },
+  { id: '1', title: 'Alpha Project' },
   { id: '2', title: 'Beta Notes' },
-  { id: '3', title: 'Gamma Experiment', noteType: 'Experiment' },
+  { id: '3', title: 'Gamma Experiment' },
 ]
 
 const teamWorkspace = {
@@ -79,47 +79,6 @@ describe('NoteSearchList', () => {
     expect(screen.getByText('Gamma Experiment')).toBeInTheDocument()
   })
 
-  it('shows type badge when noteType is present', () => {
-    render(
-      <NoteSearchList
-        items={items}
-        selectedIndex={0}
-        getItemKey={(item) => item.id}
-        onItemClick={onItemClick}
-      />,
-    )
-    expect(screen.getByText('Project')).toBeInTheDocument()
-    expect(screen.getByText('Experiment')).toBeInTheDocument()
-  })
-
-  it('does not show type badge when noteType is absent', () => {
-    render(
-      <NoteSearchList
-        items={[{ id: '2', title: 'Beta Notes' }]}
-        selectedIndex={0}
-        getItemKey={(item: TestItem) => item.id}
-        onItemClick={onItemClick}
-      />,
-    )
-    expect(screen.getByText('Beta Notes')).toBeInTheDocument()
-    // No badge element should exist
-    expect(screen.queryByText('Note')).not.toBeInTheDocument()
-  })
-
-  it('applies typeColor and typeLightColor to badge when provided', () => {
-    render(
-      <NoteSearchList
-        items={[items[0]]}
-        selectedIndex={0}
-        getItemKey={(item) => item.id}
-        onItemClick={onItemClick}
-      />,
-    )
-    const badge = screen.getByText('Project')
-    expect(badge.style.color).toBe('var(--accent-blue)')
-    expect(badge.style.backgroundColor).toBe('var(--accent-blue-light)')
-  })
-
   it('shows workspace initials at the far right when workspace metadata is present', () => {
     render(
       <NoteSearchList
@@ -130,11 +89,11 @@ describe('NoteSearchList', () => {
       />,
     )
 
-    const typeBadge = screen.getByText('Project')
+    const title = screen.getByText('Alpha Project')
     const workspaceBadge = screen.getByTestId('note-search-workspace-badge')
     const row = workspaceBadge.closest('div')!
     expect(workspaceBadge).toHaveTextContent('TE')
-    expect(typeBadge.compareDocumentPosition(workspaceBadge) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(title.compareDocumentPosition(workspaceBadge) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(row).toContainElement(workspaceBadge)
     expect(workspaceBadge.getAttribute('style')).toContain('border-color: var(--accent-green)')
   })

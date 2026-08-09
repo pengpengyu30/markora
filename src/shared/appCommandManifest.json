@@ -30,11 +30,6 @@
         "requiresManualNativeAcceleratorQa": true
       }
     },
-    "fileNewType": {
-      "id": "file-new-type",
-      "route": { "kind": "handler", "handler": "onCreateType" },
-      "menuOwned": true
-    },
     "fileQuickOpen": {
       "id": "file-quick-open",
       "route": { "kind": "handler", "handler": "onQuickOpen" },
@@ -185,19 +180,6 @@
         "accelerator": "CmdOrCtrl+3"
       }
     },
-    "viewToggleProperties": {
-      "id": "view-toggle-properties",
-      "route": { "kind": "handler", "handler": "onToggleInspector" },
-      "menuOwned": true,
-      "preferredShortcutQaMode": "renderer-shortcut-event",
-      "shortcut": {
-        "combo": "command-or-ctrl-shift",
-        "key": "i",
-        "code": "KeyI",
-        "display": "⌘⇧I",
-        "accelerator": "CmdOrCtrl+Shift+I"
-      }
-    },
     "viewToggleTableOfContents": {
       "id": "view-toggle-table-of-contents",
       "route": { "kind": "handler", "handler": "onToggleTableOfContents" },
@@ -213,7 +195,7 @@
     },
     "viewToggleBacklinks": {
       "id": "view-toggle-backlinks",
-      "route": { "kind": "handler", "handler": "onToggleInspector" },
+      "route": { "kind": "handler", "handler": "onToggleBacklinks" },
       "menuOwned": true
     },
     "viewCommandPalette": {
@@ -292,50 +274,9 @@
       "route": { "kind": "filter", "value": "all" },
       "menuOwned": true
     },
-    "goArchived": {
-      "id": "go-archived",
-      "route": { "kind": "filter", "value": "archived" },
-      "menuOwned": true
-    },
     "goChanges": {
       "id": "go-changes",
       "route": { "kind": "filter", "value": "changes" },
-      "menuOwned": true
-    },
-    "goInbox": {
-      "id": "go-inbox",
-      "route": { "kind": "filter", "value": "inbox" },
-      "menuOwned": true
-    },
-    "noteToggleOrganized": {
-      "id": "note-toggle-organized",
-      "route": { "kind": "active-tab-handler", "handler": "onToggleOrganized" },
-      "menuOwned": true,
-      "shortcut": {
-        "combo": "command-or-ctrl",
-        "key": "e",
-        "code": "KeyE",
-        "display": "⌘E",
-        "accelerator": "CmdOrCtrl+E",
-        "requiresManualNativeAcceleratorQa": true
-      }
-    },
-    "noteToggleFavorite": {
-      "id": "note-toggle-favorite",
-      "route": { "kind": "active-tab-handler", "handler": "onToggleFavorite" },
-      "menuOwned": false,
-      "shortcut": {
-        "combo": "command-or-ctrl",
-        "key": "d",
-        "code": "KeyD",
-        "display": "⌘D",
-        "accelerator": "CmdOrCtrl+D",
-        "requiresManualNativeAcceleratorQa": true
-      }
-    },
-    "noteArchive": {
-      "id": "note-archive",
-      "route": { "kind": "active-tab-handler", "handler": "onArchiveNote" },
       "menuOwned": true
     },
     "noteDelete": {
@@ -428,7 +369,6 @@
       "label": "File",
       "items": [
         { "kind": "command", "command": "fileNewNote", "label": "New Note" },
-        { "kind": "command", "command": "fileNewType", "label": "New Type" },
         { "kind": "command", "command": "fileQuickOpen", "label": "Quick Open" },
         {
           "kind": "command",
@@ -469,13 +409,6 @@
         { "kind": "command", "command": "viewEditorList", "label": "Editor + Notes" },
         { "kind": "command", "command": "viewAll", "label": "All Panels" },
         { "kind": "separator" },
-        {
-          "kind": "command",
-          "command": "viewToggleProperties",
-          "label": "Toggle Properties Panel",
-          "accelerator": null
-        },
-        { "kind": "separator" },
         { "kind": "command", "command": "viewZoomIn", "label": "Zoom In" },
         { "kind": "command", "command": "viewZoomOut", "label": "Zoom Out" },
         { "kind": "command", "command": "viewZoomReset", "label": "Actual Size" },
@@ -487,9 +420,7 @@
       "label": "Go",
       "items": [
         { "kind": "command", "command": "goAllNotes", "label": "All Notes" },
-        { "kind": "command", "command": "goArchived", "label": "Archived" },
         { "kind": "command", "command": "goChanges", "label": "Changes" },
-        { "kind": "command", "command": "goInbox", "label": "Inbox" },
         { "kind": "separator" },
         { "kind": "command", "command": "viewGoBack", "label": "Go Back" },
         { "kind": "command", "command": "viewGoForward", "label": "Go Forward" }
@@ -498,8 +429,6 @@
     {
       "label": "Note",
       "items": [
-        { "kind": "command", "command": "noteToggleOrganized", "label": "Toggle Organized" },
-        { "kind": "command", "command": "noteArchive", "label": "Archive Note" },
         { "kind": "command", "command": "noteDelete", "label": "Delete Note" },
         { "kind": "command", "command": "noteRestoreDeleted", "label": "Restore Deleted Note", "enabled": false },
         { "kind": "separator" },
@@ -535,10 +464,8 @@
     { "kind": "command", "command": "appSettings", "label": "Settings..." }
   ],
   "menuStateGroups": {
-    "noteDependent": [
+      "noteDependent": [
       { "command": "fileSave" },
-      { "command": "noteToggleOrganized" },
-      { "command": "noteArchive" },
       { "command": "noteDelete" },
       { "command": "editToggleRawEditor" },
       { "command": "editToggleDiff" },

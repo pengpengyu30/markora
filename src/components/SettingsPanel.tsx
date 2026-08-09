@@ -67,8 +67,6 @@ interface SettingsPanelProps {
   onUpdateWorkspaceIdentity?: (path: string, patch: Partial<VaultOption>) => void
   isGitVault?: boolean
   vaultPath?: string
-  explicitOrganizationEnabled?: boolean
-  onSaveExplicitOrganization?: (enabled: boolean) => void
   onClose: () => void
 }
 
@@ -80,21 +78,18 @@ interface SettingsDraft {
   autoGitEnabled: boolean
   autoGitIdleThresholdSeconds: number
   autoGitInactiveThresholdSeconds: number
-  autoAdvanceInboxAfterOrganize: boolean
   releaseChannel: ReleaseChannel
   automaticUpdateChecksEnabled: boolean
   themeMode: ThemeMode
   uiLanguage: UiLanguagePreference
   dateDisplayFormat: DateDisplayFormat
   defaultNoteWidth: NoteWidthMode
-  sidebarTypePluralizationEnabled: boolean
   initialH1AutoRename: boolean
   hideGitignoredFiles: boolean
   allNotesFileVisibility: AllNotesFileVisibility
   multiWorkspaceEnabled: boolean
   crashReporting: boolean
   analytics: boolean
-  explicitOrganization: boolean
 }
 
 interface SettingsBodyProps {
@@ -115,8 +110,6 @@ interface SettingsBodyProps {
   setAutoGitIdleThresholdSeconds: (value: number) => void
   autoGitInactiveThresholdSeconds: number
   setAutoGitInactiveThresholdSeconds: (value: number) => void
-  autoAdvanceInboxAfterOrganize: boolean
-  setAutoAdvanceInboxAfterOrganize: (value: boolean) => void
   releaseChannel: ReleaseChannel
   setReleaseChannel: (value: ReleaseChannel) => void
   automaticUpdateChecksEnabled: boolean
@@ -129,8 +122,6 @@ interface SettingsBodyProps {
   setDateDisplayFormat: (value: DateDisplayFormat) => void
   defaultNoteWidth: NoteWidthMode
   setDefaultNoteWidth: (value: NoteWidthMode) => void
-  sidebarTypePluralizationEnabled: boolean
-  setSidebarTypePluralizationEnabled: (value: boolean) => void
   locale: AppLocale
   systemLocale: AppLocale
   initialH1AutoRename: boolean
@@ -147,8 +138,6 @@ interface SettingsBodyProps {
   onReorderVaults?: (orderedPaths: string[]) => void
   onSetDefaultWorkspace?: (path: string) => void
   onUpdateWorkspaceIdentity?: (path: string, patch: Partial<VaultOption>) => void
-  explicitOrganization: boolean
-  setExplicitOrganization: (value: boolean) => void
   crashReporting: boolean
   setCrashReporting: (value: boolean) => void
   analytics: boolean
@@ -164,7 +153,7 @@ function isSaveShortcut(event: { ctrlKey: boolean; key: string; metaKey: boolean
   return event.key === 'Enter' && (event.metaKey || event.ctrlKey)
 }
 
-function createSettingsDraft(settings: Settings, explicitOrganizationEnabled: boolean): SettingsDraft {
+function createSettingsDraft(settings: Settings): SettingsDraft {
   return {
     pullInterval: settings.auto_pull_interval_minutes ?? 5,
     gitFeaturesEnabled: areGitFeaturesEnabled(settings),
@@ -179,21 +168,18 @@ function createSettingsDraft(settings: Settings, explicitOrganizationEnabled: bo
       settings.autogit_inactive_threshold_seconds,
       DEFAULT_AUTOGIT_INACTIVE_THRESHOLD_SECONDS,
     ),
-    autoAdvanceInboxAfterOrganize: settings.auto_advance_inbox_after_organize ?? false,
     releaseChannel: normalizeReleaseChannel(settings.release_channel),
     automaticUpdateChecksEnabled: areAutomaticUpdateChecksEnabled(settings),
     themeMode: resolveSettingsDraftThemeMode(settings.theme_mode),
     uiLanguage: settings.ui_language ?? SYSTEM_UI_LANGUAGE,
     dateDisplayFormat: normalizeDateDisplayFormat(settings.date_display_format) ?? DEFAULT_DATE_DISPLAY_FORMAT,
     defaultNoteWidth: normalizeNoteWidthMode(settings.note_width_mode) ?? DEFAULT_NOTE_WIDTH_MODE,
-    sidebarTypePluralizationEnabled: settings.sidebar_type_pluralization_enabled ?? true,
     initialH1AutoRename: settings.initial_h1_auto_rename_enabled ?? true,
     hideGitignoredFiles: shouldHideGitignoredFiles(settings),
     allNotesFileVisibility: resolveAllNotesFileVisibility(settings),
     multiWorkspaceEnabled: settings.multi_workspace_enabled === true,
     crashReporting: settings.crash_reporting_enabled ?? false,
     analytics: settings.analytics_enabled ?? false,
-    explicitOrganization: explicitOrganizationEnabled,
   }
 }
 
@@ -225,7 +211,6 @@ function buildSettingsFromDraft(settings: Settings, draft: SettingsDraft): Setti
     autogit_enabled: draft.autoGitEnabled,
     autogit_idle_threshold_seconds: draft.autoGitIdleThresholdSeconds,
     autogit_inactive_threshold_seconds: draft.autoGitInactiveThresholdSeconds,
-    auto_advance_inbox_after_organize: draft.autoAdvanceInboxAfterOrganize,
     telemetry_consent: resolveTelemetryConsent(settings, draft),
     crash_reporting_enabled: draft.crashReporting,
     analytics_enabled: draft.analytics,
@@ -236,7 +221,6 @@ function buildSettingsFromDraft(settings: Settings, draft: SettingsDraft): Setti
     ui_language: serializeUiLanguagePreference(draft.uiLanguage),
     date_display_format: draft.dateDisplayFormat,
     note_width_mode: draft.defaultNoteWidth,
-    sidebar_type_pluralization_enabled: draft.sidebarTypePluralizationEnabled,
     initial_h1_auto_rename_enabled: draft.initialH1AutoRename,
     hide_gitignored_files: draft.hideGitignoredFiles,
     multi_workspace_enabled: draft.multiWorkspaceEnabled,
@@ -260,9 +244,9 @@ function applyThemeModeSelection(value: ThemeMode): void {
 }
 
 export function SettingsPanel(options: SettingsPanelProps) {
-  const { open, settings, initialSectionId = null, locale = 'en', systemLocale = locale, onSave, vaults = [], defaultWorkspacePath = null, onRemoveVault, onReorderVaults, onSetDefaultWorkspace, onUpdateWorkspaceIdentity, isGitVault = true, vaultPath = '', explicitOrganizationEnabled = true, onSaveExplicitOrganization, onClose } = options
+  const { open, settings, initialSectionId = null, locale = 'en', systemLocale = locale, onSave, vaults = [], defaultWorkspacePath = null, onRemoveVault, onReorderVaults, onSetDefaultWorkspace, onUpdateWorkspaceIdentity, isGitVault = true, vaultPath = '', onClose } = options
   if (!open) return null
-  const initialDraft = createSettingsDraft(settings, explicitOrganizationEnabled)
+  const initialDraft = createSettingsDraft(settings)
 
   return (
     <SettingsPanelInner
@@ -283,8 +267,6 @@ export function SettingsPanel(options: SettingsPanelProps) {
       }}
       isGitVault={isGitVault}
       vaultPath={vaultPath}
-      explicitOrganizationEnabled={explicitOrganizationEnabled}
-      onSaveExplicitOrganization={onSaveExplicitOrganization}
       onClose={onClose}
     />
   )
@@ -292,7 +274,7 @@ export function SettingsPanel(options: SettingsPanelProps) {
 
 type SettingsPanelInnerProps = Omit<
   SettingsPanelProps,
-  'open' | 'explicitOrganizationEnabled' | 'isGitVault' | 'vaultPath'
+  'open' | 'isGitVault' | 'vaultPath'
 > & {
   initialDraft: SettingsDraft
   initialSectionId: string | null
@@ -300,11 +282,10 @@ type SettingsPanelInnerProps = Omit<
   systemLocale: AppLocale
   isGitVault: boolean
   vaultPath: string
-  explicitOrganizationEnabled: boolean
 }
 
-function useSettingsDraftActions(options: Pick<SettingsPanelInnerProps, 'initialDraft' | 'onClose' | 'onSave' | 'onSaveExplicitOrganization' | 'settings'>) {
-  const { initialDraft, onClose, onSave, onSaveExplicitOrganization, settings } = options
+function useSettingsDraftActions(options: Pick<SettingsPanelInnerProps, 'initialDraft' | 'onClose' | 'onSave' | 'settings'>) {
+  const { initialDraft, onClose, onSave, settings } = options
   const [draft, setDraft] = useState(initialDraft)
   const updateDraft = useCallback(<Key extends keyof SettingsDraft>(key: Key, value: SettingsDraft[Key]) => {
     setDraft((current) => ({ ...current, [key]: value }))
@@ -327,9 +308,8 @@ function useSettingsDraftActions(options: Pick<SettingsPanelInnerProps, 'initial
     trackTelemetryConsentChange(settings.analytics_enabled === true, draft.analytics)
     trackSettingsPreferenceChanges(settings, draft)
     onSave(buildSettingsFromDraft(settings, draft))
-    onSaveExplicitOrganization?.(draft.explicitOrganization)
     onClose()
-  }, [draft, onClose, onSave, onSaveExplicitOrganization, settings])
+  }, [draft, onClose, onSave, settings])
   return { draft, updateDraft, handleGitignoredVisibilityChange, handleAllNotesFileVisibilityChange, handleThemeModeChange, handleSave }
 }
 
@@ -374,10 +354,10 @@ function useSettingsPanelInteractions(options: {
 }
 
 function SettingsPanelInner(options: SettingsPanelInnerProps) {
-  const { settings, initialDraft, initialSectionId, systemLocale, onSave, vaults, defaultWorkspacePath, onRemoveVault, onReorderVaults, onSetDefaultWorkspace, onUpdateWorkspaceIdentity, isGitVault, vaultPath, onSaveExplicitOrganization, onClose } = options
+  const { settings, initialDraft, initialSectionId, systemLocale, onSave, vaults, defaultWorkspacePath, onRemoveVault, onReorderVaults, onSetDefaultWorkspace, onUpdateWorkspaceIdentity, isGitVault, vaultPath, onClose } = options
   const backdropRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
-  const { draft, updateDraft, handleGitignoredVisibilityChange, handleAllNotesFileVisibilityChange, handleThemeModeChange, handleSave } = useSettingsDraftActions({ initialDraft, onClose, onSave, onSaveExplicitOrganization, settings })
+  const { draft, updateDraft, handleGitignoredVisibilityChange, handleAllNotesFileVisibilityChange, handleThemeModeChange, handleSave } = useSettingsDraftActions({ initialDraft, onClose, onSave, settings })
   const draftLocale = resolveEffectiveLocale(draft.uiLanguage, [systemLocale])
   const t = createTranslator(draftLocale)
   useSettingsPanelInteractions({ backdropRef, handleSave, initialSectionId, onClose, panelRef })
@@ -504,8 +484,6 @@ function SettingsBodyFromDraft(options: SettingsBodyFromDraftProps) {
       setAutoGitIdleThresholdSeconds={(value) => updateDraft('autoGitIdleThresholdSeconds', value)}
       autoGitInactiveThresholdSeconds={draft.autoGitInactiveThresholdSeconds}
       setAutoGitInactiveThresholdSeconds={(value) => updateDraft('autoGitInactiveThresholdSeconds', value)}
-      autoAdvanceInboxAfterOrganize={draft.autoAdvanceInboxAfterOrganize}
-      setAutoAdvanceInboxAfterOrganize={(value) => updateDraft('autoAdvanceInboxAfterOrganize', value)}
       releaseChannel={draft.releaseChannel}
       setReleaseChannel={(value) => updateDraft('releaseChannel', value)}
       automaticUpdateChecksEnabled={draft.automaticUpdateChecksEnabled}
@@ -518,8 +496,6 @@ function SettingsBodyFromDraft(options: SettingsBodyFromDraftProps) {
       setDateDisplayFormat={(value) => updateDraft('dateDisplayFormat', value)}
       defaultNoteWidth={draft.defaultNoteWidth}
       setDefaultNoteWidth={(value) => updateDraft('defaultNoteWidth', value)}
-      sidebarTypePluralizationEnabled={draft.sidebarTypePluralizationEnabled}
-      setSidebarTypePluralizationEnabled={(value) => updateDraft('sidebarTypePluralizationEnabled', value)}
       initialH1AutoRename={draft.initialH1AutoRename}
       setInitialH1AutoRename={(value) => updateDraft('initialH1AutoRename', value)}
       hideGitignoredFiles={draft.hideGitignoredFiles}
@@ -536,8 +512,6 @@ function SettingsBodyFromDraft(options: SettingsBodyFromDraftProps) {
         onSetDefaultWorkspace,
         onUpdateWorkspaceIdentity,
       }}
-      explicitOrganization={draft.explicitOrganization}
-      setExplicitOrganization={(value) => updateDraft('explicitOrganization', value)}
       crashReporting={draft.crashReporting}
       setCrashReporting={(value) => updateDraft('crashReporting', value)}
       analytics={draft.analytics}
@@ -553,7 +527,7 @@ function SettingsBody(props: SettingsBodyProps) {
       <div className="min-w-0 flex-1 overflow-auto px-6 py-4">
         <SettingsSyncAndAppearanceSections {...props} />
         <SettingsContentSections {...props} />
-        <SettingsWorkflowSections {...props} />
+        <SettingsPrivacySections {...props} />
       </div>
     </div>
   )
@@ -628,7 +602,7 @@ function SettingsSyncAndAppearanceSections(options: SettingsBodyProps) {
 }
 
 function SettingsContentSections(options: SettingsBodyProps) {
-  const { t, dateDisplayFormat, setDateDisplayFormat, defaultNoteWidth, setDefaultNoteWidth, sidebarTypePluralizationEnabled, setSidebarTypePluralizationEnabled, initialH1AutoRename, setInitialH1AutoRename, hideGitignoredFiles, setHideGitignoredFiles, allNotesFileVisibility, setAllNotesFileVisibility } = options
+  const { t, dateDisplayFormat, setDateDisplayFormat, defaultNoteWidth, setDefaultNoteWidth, initialH1AutoRename, setInitialH1AutoRename, hideGitignoredFiles, setHideGitignoredFiles, allNotesFileVisibility, setAllNotesFileVisibility } = options
   return (
     <SettingsSection id={SETTINGS_SECTION_IDS.content}>
       <VaultContentSettingsSection
@@ -637,8 +611,6 @@ function SettingsContentSections(options: SettingsBodyProps) {
         setDateDisplayFormat={setDateDisplayFormat}
         defaultNoteWidth={defaultNoteWidth}
         setDefaultNoteWidth={setDefaultNoteWidth}
-        sidebarTypePluralizationEnabled={sidebarTypePluralizationEnabled}
-        setSidebarTypePluralizationEnabled={setSidebarTypePluralizationEnabled}
         initialH1AutoRename={initialH1AutoRename}
         setInitialH1AutoRename={setInitialH1AutoRename}
         hideGitignoredFiles={hideGitignoredFiles}
@@ -650,20 +622,10 @@ function SettingsContentSections(options: SettingsBodyProps) {
   )
 }
 
-function SettingsWorkflowSections(options: SettingsBodyProps) {
-  const { t, autoAdvanceInboxAfterOrganize, setAutoAdvanceInboxAfterOrganize, explicitOrganization, setExplicitOrganization, crashReporting, setCrashReporting, analytics, setAnalytics } = options
+function SettingsPrivacySections(options: SettingsBodyProps) {
+  const { t, crashReporting, setCrashReporting, analytics, setAnalytics } = options
   return (
     <>
-      <SettingsSection id={SETTINGS_SECTION_IDS.workflow}>
-        <OrganizationWorkflowSection
-          t={t}
-          checked={explicitOrganization}
-          onChange={setExplicitOrganization}
-          autoAdvanceInboxAfterOrganize={autoAdvanceInboxAfterOrganize}
-          onChangeAutoAdvanceInboxAfterOrganize={setAutoAdvanceInboxAfterOrganize}
-        />
-      </SettingsSection>
-
       <SettingsSection id={SETTINGS_SECTION_IDS.privacy}>
         <PrivacySettingsSection
           t={t}
@@ -855,43 +817,5 @@ function LanguageSettingsSection({
         testId="settings-ui-language"
       />
     </SettingsRow>
-  )
-}
-
-function OrganizationWorkflowSection({
-  t,
-  checked,
-  onChange,
-  autoAdvanceInboxAfterOrganize,
-  onChangeAutoAdvanceInboxAfterOrganize,
-}: {
-  t: Translate
-  checked: boolean
-  onChange: (value: boolean) => void
-  autoAdvanceInboxAfterOrganize: boolean
-  onChangeAutoAdvanceInboxAfterOrganize: (value: boolean) => void
-}) {
-  return (
-    <>
-      <SectionHeading title={t('settings.workflow.title')} />
-
-      <SettingsGroup>
-        <SettingsSwitchRow
-          label={t('settings.workflow.explicit')}
-          description={t('settings.workflow.explicitDescription')}
-          checked={checked}
-          onChange={onChange}
-          testId="settings-explicit-organization"
-        />
-
-        <SettingsSwitchRow
-          label={t('settings.workflow.autoAdvance')}
-          description={t('settings.workflow.autoAdvanceDescription')}
-          checked={autoAdvanceInboxAfterOrganize}
-          onChange={onChangeAutoAdvanceInboxAfterOrganize}
-          testId="settings-auto-advance-inbox-after-organize"
-        />
-      </SettingsGroup>
-    </>
   )
 }

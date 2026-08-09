@@ -30,18 +30,14 @@ type SuppressedShortcutSource = Extract<AppCommandDispatchSource, 'renderer-keyb
 export interface AppCommandHandlers {
   onSetViewMode: (mode: ViewMode) => void
   onCreateNote: () => void
-  onCreateType?: () => void
   onQuickOpen: () => void
   onSave: () => void
   onOpenSettings: () => void
-  onToggleInspector: () => void
+  onToggleBacklinks: () => void
   onCommandPalette: () => void
   onZoomIn: () => void
   onZoomOut: () => void
   onZoomReset: () => void
-  onToggleOrganized?: (path: string) => void
-  onToggleFavorite?: (path: string) => void
-  onArchiveNote: (path: string) => void
   onDeleteNote: (path: string) => void
   onFindInNote?: () => void
   onUndo?: () => void
@@ -78,7 +74,6 @@ type SimpleHandlerKey = keyof Pick<
   | 'onOpenSettings'
   | 'onCheckForUpdates'
   | 'onCreateNote'
-  | 'onCreateType'
   | 'onQuickOpen'
   | 'onSave'
   | 'onFindInNote'
@@ -89,7 +84,7 @@ type SimpleHandlerKey = keyof Pick<
   | 'onSearch'
   | 'onToggleRawEditor'
   | 'onToggleDiff'
-  | 'onToggleInspector'
+  | 'onToggleBacklinks'
   | 'onToggleTableOfContents'
   | 'onExportNoteAsPdf'
   | 'onCommandPalette'
@@ -114,7 +109,7 @@ type SimpleHandlerKey = keyof Pick<
 
 type ActiveTabHandlerKey = keyof Pick<
   AppCommandHandlers,
-  'onToggleOrganized' | 'onToggleFavorite' | 'onArchiveNote' | 'onDeleteNote'
+  'onDeleteNote'
 >
 
 type SimpleHandlerExecutor = (handlers: AppCommandHandlers) => void
@@ -124,7 +119,6 @@ const SIMPLE_HANDLER_EXECUTORS: readonly [SimpleHandlerKey, SimpleHandlerExecuto
   ['onOpenSettings', (handlers) => handlers.onOpenSettings()],
   ['onCheckForUpdates', (handlers) => handlers.onCheckForUpdates?.()],
   ['onCreateNote', (handlers) => handlers.onCreateNote()],
-  ['onCreateType', (handlers) => handlers.onCreateType?.()],
   ['onQuickOpen', (handlers) => handlers.onQuickOpen()],
   ['onSave', (handlers) => handlers.onSave()],
   ['onFindInNote', (handlers) => handlers.onFindInNote?.()],
@@ -135,7 +129,7 @@ const SIMPLE_HANDLER_EXECUTORS: readonly [SimpleHandlerKey, SimpleHandlerExecuto
   ['onSearch', (handlers) => handlers.onSearch()],
   ['onToggleRawEditor', (handlers) => handlers.onToggleRawEditor?.()],
   ['onToggleDiff', (handlers) => handlers.onToggleDiff?.()],
-  ['onToggleInspector', (handlers) => handlers.onToggleInspector()],
+  ['onToggleBacklinks', (handlers) => handlers.onToggleBacklinks()],
   ['onToggleTableOfContents', (handlers) => handlers.onToggleTableOfContents?.()],
   ['onExportNoteAsPdf', (handlers) => handlers.onExportNoteAsPdf?.()],
   ['onCommandPalette', (handlers) => handlers.onCommandPalette()],
@@ -159,9 +153,6 @@ const SIMPLE_HANDLER_EXECUTORS: readonly [SimpleHandlerKey, SimpleHandlerExecuto
 ]
 
 const ACTIVE_TAB_HANDLER_EXECUTORS: readonly [ActiveTabHandlerKey, ActiveTabHandlerExecutor][] = [
-  ['onToggleOrganized', (handlers, path) => handlers.onToggleOrganized?.(path)],
-  ['onToggleFavorite', (handlers, path) => handlers.onToggleFavorite?.(path)],
-  ['onArchiveNote', (handlers, path) => handlers.onArchiveNote(path)],
   ['onDeleteNote', (handlers, path) => handlers.onDeleteNote(path)],
 ]
 
@@ -243,11 +234,6 @@ function dispatchMultiSelectionCommand(
   if (handler === 'onDeleteNote') {
     selection.deleteSelected?.()
     return !!selection.deleteSelected
-  }
-
-  if (handler === 'onToggleOrganized') {
-    selection.organizeSelected?.()
-    return !!selection.organizeSelected
   }
 
   return false

@@ -2,14 +2,14 @@ import { describe, it, expect } from 'vitest'
 import { preFilterWikilinks, deduplicateByPath, disambiguateTitles, MIN_QUERY_LENGTH, MAX_RESULTS, type WikilinkBaseItem } from './wikilinkSuggestions'
 
 let pathCounter = 0
-function makeItem(title: string, aliases: string[] = [], group = 'Note', path?: string): WikilinkBaseItem {
-  return { title, aliases, group, entryTitle: title, path: path ?? `/vault/${title.toLowerCase().replace(/\s/g, '-')}-${pathCounter++}.md` }
+function makeItem(title: string, aliases: string[] = [], path?: string): WikilinkBaseItem {
+  return { title, aliases, entryTitle: title, path: path ?? `/vault/${title.toLowerCase().replace(/\s/g, '-')}-${pathCounter++}.md` }
 }
 
 describe('preFilterWikilinks', () => {
   const items: WikilinkBaseItem[] = [
-    makeItem('Build Laputa App', ['laputa-app'], 'Project'),
-    makeItem('Quarterly Review', ['q1-review'], 'Responsibility'),
+    makeItem('Build Laputa App', ['laputa-app']),
+    makeItem('Quarterly Review', ['q1-review']),
     makeItem('TypeScript Tips', ['ts-tips']),
     makeItem('Café Notes', ['café']),
     makeItem('React Hooks Deep-Dive', ['react-hooks']),
@@ -38,10 +38,8 @@ describe('preFilterWikilinks', () => {
     expect(result[0].title).toBe('TypeScript Tips')
   })
 
-  it('matches on group', () => {
-    const result = preFilterWikilinks(items, 'Project')
-    expect(result).toHaveLength(1)
-    expect(result[0].title).toBe('Build Laputa App')
+  it('does not match on a removed type value', () => {
+    expect(preFilterWikilinks(items, 'Project')).toEqual([])
   })
 
   it('handles accented characters', () => {
@@ -61,10 +59,9 @@ describe('preFilterWikilinks', () => {
   })
 
   it('returns all matches when multiple items match', () => {
-    // Both "Build Laputa App" and "React Hooks Deep-Dive" contain 'e'
-    // but query must be >= 2 chars, so use a longer shared substring
-    const result = preFilterWikilinks(items, 'No') // "Note" group + "Café Notes"
-    expect(result.length).toBeGreaterThan(1)
+    const result = preFilterWikilinks(items, 'No')
+    expect(result).toHaveLength(1)
+    expect(result[0].title).toBe('Café Notes')
   })
 
   it('handles empty items array', () => {
@@ -84,7 +81,7 @@ describe('constants', () => {
 
 describe('preFilterWikilinks with large dataset', () => {
   const largeItems: WikilinkBaseItem[] = Array.from({ length: 10000 }, (_, i) =>
-    makeItem(`Note ${i}`, [`alias-${i}`], i % 3 === 0 ? 'Project' : 'Note', `/vault/note-${i}.md`)
+    makeItem(`Note ${i}`, [`alias-${i}`], `/vault/note-${i}.md`)
   )
 
   it('handles 10000+ items without throwing', () => {
@@ -101,9 +98,9 @@ describe('preFilterWikilinks with large dataset', () => {
 describe('deduplicateByPath', () => {
   it('removes items with duplicate paths, keeping the first occurrence', () => {
     const items = [
-      makeItem('Alpha', [], 'Note', '/vault/alpha.md'),
-      makeItem('Beta', [], 'Note', '/vault/beta.md'),
-      makeItem('Alpha Dup', [], 'Note', '/vault/alpha.md'),
+      makeItem('Alpha', [], '/vault/alpha.md'),
+      makeItem('Beta', [], '/vault/beta.md'),
+      makeItem('Alpha Dup', [], '/vault/alpha.md'),
     ]
     const result = deduplicateByPath(items)
     expect(result).toHaveLength(2)
@@ -113,9 +110,9 @@ describe('deduplicateByPath', () => {
 
   it('returns all items when paths are unique', () => {
     const items = [
-      makeItem('A', [], 'Note', '/vault/a.md'),
-      makeItem('B', [], 'Note', '/vault/b.md'),
-      makeItem('C', [], 'Note', '/vault/c.md'),
+      makeItem('A', [], '/vault/a.md'),
+      makeItem('B', [], '/vault/b.md'),
+      makeItem('C', [], '/vault/c.md'),
     ]
     expect(deduplicateByPath(items)).toHaveLength(3)
   })
@@ -128,8 +125,8 @@ describe('deduplicateByPath', () => {
 describe('disambiguateTitles', () => {
   it('appends parent folder when titles collide', () => {
     const items = [
-      makeItem('Meeting Notes', [], 'Note', '/vault/project/meeting-notes.md'),
-      makeItem('Meeting Notes', [], 'Note', '/vault/personal/meeting-notes.md'),
+      makeItem('Meeting Notes', [], '/vault/project/meeting-notes.md'),
+      makeItem('Meeting Notes', [], '/vault/personal/meeting-notes.md'),
     ]
     const result = disambiguateTitles(items)
     expect(result).toHaveLength(2)
@@ -139,8 +136,8 @@ describe('disambiguateTitles', () => {
 
   it('leaves unique titles unchanged', () => {
     const items = [
-      makeItem('Alpha', [], 'Note', '/vault/alpha.md'),
-      makeItem('Beta', [], 'Note', '/vault/beta.md'),
+      makeItem('Alpha', [], '/vault/alpha.md'),
+      makeItem('Beta', [], '/vault/beta.md'),
     ]
     const result = disambiguateTitles(items)
     expect(result[0].title).toBe('Alpha')
@@ -149,8 +146,8 @@ describe('disambiguateTitles', () => {
 
   it('preserves entryTitle even when title is disambiguated', () => {
     const items = [
-      makeItem('Standup', [], 'Note', '/vault/work/standup.md'),
-      makeItem('Standup', [], 'Note', '/vault/personal/standup.md'),
+      makeItem('Standup', [], '/vault/work/standup.md'),
+      makeItem('Standup', [], '/vault/personal/standup.md'),
     ]
     const result = disambiguateTitles(items)
     expect(result[0].entryTitle).toBe('Standup')
@@ -159,9 +156,9 @@ describe('disambiguateTitles', () => {
 
   it('handles three-way title collision', () => {
     const items = [
-      makeItem('TODO', [], 'Note', '/vault/work/todo.md'),
-      makeItem('TODO', [], 'Note', '/vault/personal/todo.md'),
-      makeItem('TODO', [], 'Note', '/vault/archive/todo.md'),
+      makeItem('TODO', [], '/vault/work/todo.md'),
+      makeItem('TODO', [], '/vault/personal/todo.md'),
+      makeItem('TODO', [], '/vault/archive/todo.md'),
     ]
     const result = disambiguateTitles(items)
     expect(new Set(result.map(r => r.title)).size).toBe(3)

@@ -95,33 +95,9 @@ describe('useNoteSearch', () => {
     expect(result.current.results).toHaveLength(2)
   })
 
-  it('includes noteType and light color for non-Note entries', () => {
-    const { result } = renderHook(() => useNoteSearch(entries, ''))
-    const project = result.current.results.find((r) => r.title === 'Alpha Project')
-    expect(project?.noteType).toBe('Project')
-    expect(project?.typeColor).toBeTruthy()
-    expect(project?.typeLightColor).toBeTruthy()
-  })
-
-  it('includes noteType and colors for Note entries', () => {
-    const { result } = renderHook(() => useNoteSearch(entries, ''))
-    const note = result.current.results.find((r) => r.title === 'Beta Notes')
-    expect(note?.noteType).toBe('Note')
-    expect(note?.typeColor).toBeTruthy()
-    expect(note?.typeLightColor).toBeTruthy()
-  })
-
   it('includes original VaultEntry in results', () => {
     const { result } = renderHook(() => useNoteSearch(entries, ''))
     expect(result.current.results[0].entry).toBe(entries[0])
-  })
-
-  it('keeps the plain title text and exposes the icon separately', () => {
-    const withIcon = [makeEntry({ path: '/vault/icon.md', title: 'Icon Note', icon: '🚀' })]
-    const { result } = renderHook(() => useNoteSearch(withIcon, ''))
-
-    expect(result.current.results[0].title).toBe('Icon Note')
-    expect(result.current.results[0].noteIcon).toBe('🚀')
   })
 
   it('keeps workspace identity separate from the title when multiple workspaces are searchable', () => {
@@ -305,22 +281,17 @@ describe('useNoteSearch', () => {
     expect(result.current.results).toHaveLength(2)
   })
 
-  it('resolves custom type color from Type entries', () => {
-    const withTypes: VaultEntry[] = [
-      makeEntry({ path: '/vault/t/recipe.md', title: 'Recipe', isA: 'Type', color: 'orange', icon: 'cooking-pot' }),
-      makeEntry({ path: '/vault/pasta.md', title: 'Pasta', isA: 'Recipe', modifiedAt: 1700000010 }),
-      makeEntry({ path: '/vault/proj.md', title: 'My Project', isA: 'Project', modifiedAt: 1700000009 }),
-    ]
-    const { result } = renderHook(() => useNoteSearch(withTypes, ''))
-    const pasta = result.current.results.find(r => r.title === 'Pasta')
-    expect(pasta?.noteType).toBe('Recipe')
-    expect(pasta?.typeColor).toBe('var(--accent-orange)')
-    expect(pasta?.typeLightColor).toBe('var(--accent-orange-light)')
-    expect(pasta?.TypeIcon).toBeDefined()
-    // Built-in type still works
-    const project = result.current.results.find(r => r.title === 'My Project')
-    expect(project?.typeColor).toBe('var(--accent-red)')
-    expect(project?.typeLightColor).toBe('var(--accent-red-light)')
-    expect(project?.TypeIcon).toBeDefined()
+  it('does not exclude notes based on legacy type metadata', () => {
+    const configNote = makeEntry({
+      path: '/vault/config.md',
+      filename: 'config.md',
+      title: 'Configuration Note',
+      isA: 'Config',
+    })
+
+    const { result } = renderHook(() => useNoteSearch([configNote], ''))
+
+    expect(result.current.results.map((item) => item.entry)).toEqual([configNote])
   })
+
 })

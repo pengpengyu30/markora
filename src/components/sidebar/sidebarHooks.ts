@@ -1,17 +1,14 @@
 import {
-  useState, useMemo, useEffect, useCallback, useRef,
+  useState, useEffect, useCallback, useMemo, useRef,
   type KeyboardEvent as ReactKeyboardEvent,
   type RefObject,
 } from 'react'
 import type { VaultEntry } from '../../types'
 import { APP_STORAGE_KEYS, LEGACY_APP_STORAGE_KEYS, getAppStorageItem } from '../../constants/appStorage'
-import { buildTypeEntryMap } from '../../utils/typeColors'
-import { countAllNotesByFilter } from '../../utils/noteListHelpers'
-import { buildDynamicSections, sortSections } from '../../utils/sidebarSections'
+import { isAllNotesEntry } from '../../utils/noteListHelpers'
 import type { AllNotesFileVisibility } from '../../utils/allNotesFileVisibility'
-import { buildTypeVisibilityLookup, isTypeSectionVisible } from '../../utils/typeVisibility'
 
-export type SidebarGroupKey = 'favorites' | 'views' | 'sections' | 'folders'
+export type SidebarGroupKey = 'folders'
 
 export interface SidebarMenuPosition {
   x: number
@@ -37,19 +34,8 @@ interface SidebarInlineRenameInputOptions {
   selectTextOnFocus?: boolean
 }
 
-const KEYBOARD_MENU_FALLBACK: SidebarMenuPosition = { x: 20, y: 100 }
-
 export function getPointerMenuPosition(event: PointerMenuEvent): SidebarMenuPosition {
   return { x: event.clientX, y: event.clientY }
-}
-
-export function getElementMenuPosition(
-  element: HTMLElement | null,
-  fallback: SidebarMenuPosition = KEYBOARD_MENU_FALLBACK,
-): SidebarMenuPosition {
-  const bounds = element?.getBoundingClientRect()
-  if (!bounds) return fallback
-  return { x: bounds.left + 16, y: bounds.top + bounds.height }
 }
 
 export function useOutsideClick<T extends HTMLElement>(
@@ -158,29 +144,17 @@ export function useSidebarInlineRenameInput({
   }
 }
 
-export function useSidebarSections(entries: VaultEntry[], pluralizeTypeLabels = true) {
-  const typeEntryMap = useMemo(() => buildTypeEntryMap(entries), [entries])
-  const typeVisibility = useMemo(() => buildTypeVisibilityLookup(entries), [entries])
-  const allSectionGroups = useMemo(() => {
-    const sections = buildDynamicSections(entries, typeEntryMap, pluralizeTypeLabels)
-    return sortSections(sections, typeEntryMap)
-  }, [entries, pluralizeTypeLabels, typeEntryMap])
-  const visibleSections = useMemo(
-    () => allSectionGroups.filter((group) => isTypeSectionVisible(entries, group.type, typeVisibility)),
-    [allSectionGroups, entries, typeVisibility],
-  )
-  const sectionIds = useMemo(() => visibleSections.map((group) => group.type), [visibleSections])
-  return { typeEntryMap, typeVisibility, allSectionGroups, visibleSections, sectionIds }
-}
-
 function loadCollapsedState(): Record<SidebarGroupKey, boolean> {
   try {
     const raw = getAppStorageItem('sidebarCollapsed')
-    if (raw) return JSON.parse(raw)
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<Record<SidebarGroupKey, boolean>>
+      return { folders: parsed.folders === true }
+    }
   } catch {
     // Ignore localStorage failures and fall back to defaults.
   }
-  return { favorites: false, views: false, sections: false, folders: false }
+  return { folders: false }
 }
 
 export function useSidebarCollapsed() {
@@ -188,8 +162,7 @@ export function useSidebarCollapsed() {
 
   const toggle = useCallback((key: SidebarGroupKey) => {
     setCollapsed((prev) => {
-      const next = { ...prev }
-      Reflect.set(next, key, !(Reflect.get(prev, key) as boolean))
+      const next = { ...prev, [key]: !prev[key] }
       localStorage.setItem(APP_STORAGE_KEYS.sidebarCollapsed, JSON.stringify(next))
       localStorage.removeItem(LEGACY_APP_STORAGE_KEYS.sidebarCollapsed)
       return next
@@ -204,39 +177,7 @@ export function useEntryCounts(
   allNotesFileVisibility?: AllNotesFileVisibility,
 ) {
   return useMemo(() => {
-    const counts = countAllNotesByFilter(entries, allNotesFileVisibility)
-    return { activeCount: counts.open, archivedCount: counts.archived }
+    const activeCount = entries.filter((entry) => isAllNotesEntry(entry, allNotesFileVisibility)).length
+    return { activeCount }
   }, [allNotesFileVisibility, entries])
-}
-
-export function computeReorder(sectionIds: string[], activeId: string, overId: string): string[] | null {
-  const oldIndex = sectionIds.indexOf(activeId)
-  const newIndex = sectionIds.indexOf(overId)
-  if (oldIndex === -1 || newIndex === -1) return null
-  const reordered = [...sectionIds]
-  reordered.splice(oldIndex, 1)
-  reordered.splice(newIndex, 0, activeId)
-  return reordered
-}
-
-function buildCustomizeArgs(typeEntry: VaultEntry, prop: 'icon' | 'color', value: string): [string, string] {
-  return [
-    prop === 'icon' ? value : (typeEntry.icon ?? 'file-text'),
-    prop === 'color' ? value : (typeEntry.color ?? 'blue'),
-  ]
-}
-
-export function applyCustomization(
-  target: string | null,
-  typeEntryMap: Record<string, VaultEntry>,
-  onCustomizeType: ((typeName: string, icon: string, color: string) => void) | undefined,
-  prop: 'icon' | 'color',
-  value: string,
-): void {
-  if (!target || !onCustomizeType) return
-  const typeEntry = Reflect.get(typeEntryMap, target) as VaultEntry | undefined
-  const [icon, color] = typeEntry
-    ? buildCustomizeArgs(typeEntry, prop, value)
-    : [prop === 'icon' ? value : 'file-text', prop === 'color' ? value : 'blue']
-  onCustomizeType(target, icon, color)
 }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type MutableRefObject, type SetStateAction } from 'react'
-import type { VaultEntry, FolderNode, GitCommit, ModifiedFile, NoteStatus, GitPushResult, ViewFile } from '../types'
+import type { VaultEntry, FolderNode, GitCommit, ModifiedFile, NoteStatus, GitPushResult } from '../types'
 import type { VaultOption } from '../components/status-bar/types'
 import {
   GITIGNORED_VISIBILITY_CHANGED_EVENT,
@@ -14,9 +14,7 @@ import {
   loadVaultChrome,
   loadStartupVaultData,
   loadMountedVaultFolders,
-  loadMountedVaultViews,
   loadVaultFolders,
-  loadVaultViews,
   reloadVaultEntries,
   tauriCall,
 } from './vaultLoaderCommands'
@@ -53,13 +51,12 @@ interface InitialVaultLoadStateOptions {
   setFolders: (folders: FolderNode[]) => void
   setHasCompletedInitialLoad: (hasCompleted: boolean) => void
   setIsLoading: (isLoading: boolean) => void
-  setViews: (views: ViewFile[]) => void
   vaults?: VaultOption[]
 }
 
 interface InitialVaultChromeOptions extends Pick<
   InitialVaultLoadStateOptions,
-  'defaultWorkspacePath' | 'folderVaults' | 'handleVaultUnavailable' | 'isCurrentVaultPath' | 'path' | 'setFolders' | 'setViews'
+  'defaultWorkspacePath' | 'folderVaults' | 'handleVaultUnavailable' | 'isCurrentVaultPath' | 'path' | 'setFolders'
 > {
   shouldApplyChrome: () => boolean
 }
@@ -78,18 +75,16 @@ async function loadInitialVaultChromeState(options: InitialVaultChromeOptions): 
     isCurrentVaultPath,
     path,
     setFolders,
-    setViews,
     shouldApplyChrome,
   } = options
   try {
-    const { folders, views } = await loadVaultChrome({
+    const { folders } = await loadVaultChrome({
       defaultWorkspacePath,
       vaultPath: path,
       vaults: folderVaults,
     })
     if (shouldApplyChrome()) {
       setFolders(folders)
-      setViews(views)
     }
   } catch (err) {
     const unavailable = await handleUnavailableVaultPath({ handleVaultUnavailable, isCurrentVaultPath, path })
@@ -334,7 +329,6 @@ interface InitialVaultLoadOptions {
   setIsLoading: (isLoading: boolean) => void
   setModifiedFiles: (files: ModifiedFile[]) => void
   setModifiedFilesError: (message: string | null) => void
-  setViews: (views: ViewFile[]) => void
 }
 
 interface InitialVaultLoadSnapshot {
@@ -371,7 +365,6 @@ function shouldReuseLoadedWorkspaceEntries(
 
 function resetInitialVaultLoadState(options: InitialVaultLoadEffectOptions, preserveWorkspaceEntries: boolean) {
   clearPrefetchCache()
-  options.setViews([])
   resetVaultState({
     clearNewPaths: options.clearNewPaths,
     clearUnsaved: options.clearUnsaved,
@@ -380,7 +373,6 @@ function resetInitialVaultLoadState(options: InitialVaultLoadEffectOptions, pres
     setIsLoading: options.setIsLoading,
     setModifiedFiles: options.setModifiedFiles,
     setModifiedFilesError: options.setModifiedFilesError,
-    setViews: preserveWorkspaceEntries ? () => {} : options.setViews,
   })
   options.resetReloading()
 }
@@ -397,7 +389,6 @@ function startReusableWorkspaceChromeLoad(
     defaultWorkspacePath: options.defaultWorkspacePath,
     folderVaults: options.folderVaults,
     setFolders: options.setFolders,
-    setViews: options.setViews,
     shouldApplyChrome: () => isActivePath(path),
   })
 }
@@ -420,7 +411,6 @@ function startFreshInitialVaultLoad(
     setFolders: options.setFolders,
     setHasCompletedInitialLoad: options.setHasCompletedInitialLoad,
     setIsLoading: options.setIsLoading,
-    setViews: options.setViews,
   })
 }
 
@@ -440,7 +430,6 @@ function useInitialVaultLoad(options: InitialVaultLoadOptions) {
     setIsLoading,
     setModifiedFiles,
     setModifiedFilesError,
-    setViews,
     vaults,
     defaultWorkspacePath,
     folderVaults,
@@ -462,7 +451,7 @@ function useInitialVaultLoad(options: InitialVaultLoadOptions) {
       resetReloading,
       clearNewPaths: tracker.clear,
       clearUnsaved: unsaved.clearAll,
-      setEntries, setFolders, setHasCompletedInitialLoad, setIsLoading, setModifiedFiles, setModifiedFilesError, setViews,
+      setEntries, setFolders, setHasCompletedInitialLoad, setIsLoading, setModifiedFiles, setModifiedFilesError,
       vaultPath, folderVaults,
     }
     const reuseLoadedWorkspaceEntries = shouldReuseLoadedWorkspaceEntries(path, loadOptions, isWorkspacePathLoaded)
@@ -489,7 +478,7 @@ function useInitialVaultLoad(options: InitialVaultLoadOptions) {
     isCurrentVaultPath,
     isWorkspacePathLoaded,
     resetReloading,
-    setEntries, setFolders, setHasCompletedInitialLoad, setIsLoading, setModifiedFiles, setModifiedFilesError, setViews,
+    setEntries, setFolders, setHasCompletedInitialLoad, setIsLoading, setModifiedFiles, setModifiedFilesError,
     loadOptionsRef,
     loadOptionsKey,
     folderVaults,
@@ -655,7 +644,6 @@ interface VaultReloadOptions {
   loadModifiedFiles: () => Promise<void>
   setEntries: (entries: VaultEntry[]) => void
   setFolders: (folders: FolderNode[]) => void
-  setViews: (views: ViewFile[]) => void
   vaults?: VaultOption[]
 }
 
@@ -742,31 +730,6 @@ function useEntryReload(options: EntryReloadOptions) {
   return useCoalescedAsyncTask(runEntryReload)
 }
 
-function useViewReload({
-  defaultWorkspacePath,
-  folderVaults,
-  handleVaultUnavailable,
-  isCurrentVaultPath,
-  setViews,
-  vaultPath,
-}: Pick<VaultReloadOptions, 'defaultWorkspacePath' | 'folderVaults' | 'handleVaultUnavailable' | 'isCurrentVaultPath' | 'setViews' | 'vaultPath'>) {
-  const defaultWorkspacePathRef = useRef(defaultWorkspacePath)
-
-  useEffect(() => {
-    defaultWorkspacePathRef.current = defaultWorkspacePath
-  }, [defaultWorkspacePath])
-
-  return useCallback(() => reloadVaultCollection({
-    handleVaultUnavailable,
-    isCurrentVaultPath,
-    loadCollection: folderVaults?.length
-      ? (options) => loadMountedVaultViews({ ...options, defaultWorkspacePath: defaultWorkspacePathRef.current, vaults: folderVaults })
-      : loadVaultViews,
-    path: vaultPath,
-    setCollection: setViews,
-  }), [folderVaults, handleVaultUnavailable, vaultPath, isCurrentVaultPath, setViews])
-}
-
 function useVaultReloads(options: VaultReloadOptions) {
   const [activeReloads, setActiveReloads] = useState(0)
   const isReloading = activeReloads > 0
@@ -775,15 +738,14 @@ function useVaultReloads(options: VaultReloadOptions) {
   const resetReloading = useCallback(() => setActiveReloads(0), [])
   const reloadFolders = useFolderReload(options)
   const reloadVault = useEntryReload({ ...options, beginReload, finishReload })
-  const reloadViews = useViewReload(options)
 
-  return { isReloading, reloadFolders, reloadVault, reloadViews, resetReloading }
+  return { isReloading, reloadFolders, reloadVault, resetReloading }
 }
 
 function useGitignoredVisibilityReloads(
-  reloads: Pick<ReturnType<typeof useVaultReloads>, 'reloadFolders' | 'reloadVault' | 'reloadViews'>,
+  reloads: Pick<ReturnType<typeof useVaultReloads>, 'reloadFolders' | 'reloadVault'>,
 ) {
-  const { reloadFolders, reloadVault, reloadViews } = reloads
+  const { reloadFolders, reloadVault } = reloads
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -793,7 +755,6 @@ function useGitignoredVisibilityReloads(
       void Promise.all([
         reloadVault(),
         reloadFolders(),
-        reloadViews(),
       ]).then(([entries]) => {
         notifyGitignoredVisibilityApplied(hide, entries)
       })
@@ -803,7 +764,7 @@ function useGitignoredVisibilityReloads(
     return () => {
       window.removeEventListener(GITIGNORED_VISIBILITY_CHANGED_EVENT, handleVisibilityChanged)
     }
-  }, [reloadFolders, reloadVault, reloadViews])
+  }, [reloadFolders, reloadVault])
 }
 
 function useVaultState(vaultPath: string, loadModifiedFiles: boolean) {
@@ -811,7 +772,6 @@ function useVaultState(vaultPath: string, loadModifiedFiles: boolean) {
   const [folders, setFolders] = useState<FolderNode[]>([])
   const [hasCompletedInitialLoad, setHasCompletedInitialLoad] = useState(false)
   const [isLoading, setIsLoading] = useState(() => hasVaultPath({ vaultPath }))
-  const [views, setViews] = useState<ViewFile[]>([])
   const tracker = useNewNoteTracker()
   const pendingSave = usePendingSaveTracker()
   const unsaved = useUnsavedTracker()
@@ -830,10 +790,8 @@ function useVaultState(vaultPath: string, loadModifiedFiles: boolean) {
     setFolders,
     setHasCompletedInitialLoad,
     setIsLoading,
-    setViews,
     tracker,
     unsaved,
-    views,
   }
 }
 
@@ -844,7 +802,6 @@ function useVaultUnavailable(vaultPath: string, state: ReturnType<typeof useVaul
       setEntries,
       setFolders,
       setIsLoading,
-      setViews,
       tracker,
       unsaved,
     } = state
@@ -858,7 +815,6 @@ function useVaultUnavailable(vaultPath: string, state: ReturnType<typeof useVaul
       setIsLoading,
       setModifiedFiles: modified.setModifiedFiles,
       setModifiedFilesError: modified.setModifiedFilesError,
-      setViews,
       vaultPath,
     })
   }
@@ -918,7 +874,6 @@ function useVaultUnavailable(vaultPath: string, state: ReturnType<typeof useVaul
     setIsLoading: state.setIsLoading,
     setModifiedFiles: state.modified.setModifiedFiles,
     setModifiedFilesError: state.modified.setModifiedFilesError,
-    setViews: state.setViews,
   })
 }
 
@@ -937,15 +892,11 @@ function useInitialFolderSetter(folderVaults: VaultOption[] | undefined, setFold
 function useVaultChromeReloadEffect(
   vaultPath: string,
   reloadFoldersForCurrentVault: () => Promise<FolderNode[]>,
-  reloadViewsForCurrentVault: () => Promise<ViewFile[]>,
 ) {
   useEffect(() => {
     if (!hasVaultPath({ vaultPath })) return
-    void Promise.all([
-      reloadFoldersForCurrentVault(),
-      reloadViewsForCurrentVault(),
-    ])
-  }, [vaultPath, reloadFoldersForCurrentVault, reloadViewsForCurrentVault])
+    void reloadFoldersForCurrentVault()
+  }, [vaultPath, reloadFoldersForCurrentVault])
 }
 
 interface WorkspaceLoadRefs {
@@ -1200,7 +1151,6 @@ function useVaultLoaderResult({
     hasCompletedInitialLoad: state.hasCompletedInitialLoad,
     isLoading: state.isLoading,
     isReloading: vaultReloads.isReloading,
-    views: state.views,
     modifiedFiles: modified.modifiedFiles,
     modifiedFilesError: modified.modifiedFilesError,
     unavailableVaultPath: unavailableVault.unavailableVaultPath,
@@ -1210,7 +1160,6 @@ function useVaultLoaderResult({
     getNoteStatus,
     reloadVault: vaultReloads.reloadVault,
     reloadFolders: vaultReloads.reloadFolders,
-    reloadViews: vaultReloads.reloadViews,
     markVaultUnavailable: unavailableVault.markVaultUnavailable,
     addPendingSave: pendingSave.addPendingSave,
     removePendingSave: pendingSave.removePendingSave,
@@ -1243,11 +1192,10 @@ export function useVaultLoader(
     loadModifiedFiles: state.modified.loadModifiedFiles,
     setEntries: state.setEntries,
     setFolders: state.setFolders,
-    setViews: state.setViews,
   })
 
   useGitignoredVisibilityReloads(vaultReloads)
-  useVaultChromeReloadEffect(vaultPath, vaultReloads.reloadFolders, vaultReloads.reloadViews)
+  useVaultChromeReloadEffect(vaultPath, vaultReloads.reloadFolders)
 
   useVaultLoaderStartup({
     defaultWorkspacePath,

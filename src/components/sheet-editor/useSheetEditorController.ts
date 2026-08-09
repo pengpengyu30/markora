@@ -5,7 +5,6 @@ import type { AppLocale } from '../../lib/i18n'
 import { buildRawEditorBaseItems } from '../../utils/rawEditorUtils'
 import type { SheetContextMenuState } from '../../utils/sheetContextMenuState'
 import { SHEET_INDEX } from '../../utils/sheetWorkbook'
-import { buildTypeEntryMap } from '../../utils/typeColors'
 import type { VaultEntry } from '../../types'
 import {
   sheetCellFromPointer,
@@ -49,7 +48,6 @@ function useSheetEditorState(entries: VaultEntry[]) {
   const wikilinkInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null)
   const pendingExternalFormulaCommitRef = useRef(0)
   const sheetElementRef = useRef<HTMLDivElement | null>(null)
-  const typeEntryMap = useMemo(() => buildTypeEntryMap(entries), [entries])
   const wikilinkBaseItems = useMemo(() => buildRawEditorBaseItems(entries), [entries])
 
   return {
@@ -61,7 +59,6 @@ function useSheetEditorState(entries: VaultEntry[]) {
     setWikilinkAutocomplete,
     sheetContextMenu,
     sheetElementRef,
-    typeEntryMap,
     wikilinkAutocomplete,
     wikilinkBaseItems,
     wikilinkInputRef,
@@ -255,7 +252,6 @@ function useSheetEditorAutocompleteRuntime(
       | 'setFormulaAutocomplete'
       | 'setWikilinkAutocomplete'
       | 'sheetElementRef'
-      | 'typeEntryMap'
       | 'wikilinkAutocomplete'
       | 'wikilinkBaseItems'
       | 'wikilinkInputRef'
@@ -273,7 +269,6 @@ function useSheetEditorAutocompleteRuntime(
     setWikilinkAutocomplete,
     sheetElementRef,
     sourceEntry,
-    typeEntryMap,
     vaultPath,
     wikilinkAutocomplete,
     wikilinkBaseItems,
@@ -292,7 +287,6 @@ function useSheetEditorAutocompleteRuntime(
     setWikilinkAutocomplete,
     sheetElementRef,
     sourceEntry,
-    typeEntryMap,
     vaultPath,
     wikilinkAutocomplete,
     wikilinkBaseItems,

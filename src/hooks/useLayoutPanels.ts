@@ -5,20 +5,22 @@ export const COLUMN_MIN_WIDTHS = {
   sidebar: 220,
   noteList: 220,
   editor: 800,
-  inspector: 240,
+  rightPanel: 240,
 } as const
 
 const COLUMN_MAX_WIDTHS = {
   sidebar: 400,
   noteList: 500,
-  inspector: 500,
+  rightPanel: 500,
 } as const
 
 const DEFAULT_PANEL_WIDTHS = {
   sidebar: 250,
   noteList: 300,
-  inspector: 280,
+  rightPanel: 280,
 } as const
+
+const LEGACY_RIGHT_PANEL_WIDTH_KEY = 'inspector'
 
 type PanelWidthKey = keyof typeof DEFAULT_PANEL_WIDTHS
 type PanelWidths = Record<PanelWidthKey, number>
@@ -38,7 +40,10 @@ function isPanelWidthRecord(value: unknown): value is Partial<Record<PanelWidthK
 }
 
 function readPanelWidth(source: Partial<Record<PanelWidthKey, unknown>>, key: PanelWidthKey): number {
-  const value = Reflect.get(source, key)
+  const storedValue = Reflect.get(source, key)
+  const value = storedValue === undefined && key === 'rightPanel'
+    ? Reflect.get(source, LEGACY_RIGHT_PANEL_WIDTH_KEY)
+    : storedValue
   return typeof value === 'number' && Number.isFinite(value)
     ? clampPanelWidth(key, value)
     : Reflect.get(DEFAULT_PANEL_WIDTHS, key) as number
@@ -49,7 +54,7 @@ function normalizePanelWidths(value: unknown): PanelWidths {
   return {
     sidebar: readPanelWidth(value, 'sidebar'),
     noteList: readPanelWidth(value, 'noteList'),
-    inspector: readPanelWidth(value, 'inspector'),
+    rightPanel: readPanelWidth(value, 'rightPanel'),
   }
 }
 
@@ -73,7 +78,7 @@ function savePanelWidths(widths: PanelWidths): void {
   }
 }
 
-function loadInspectorCollapsed(): boolean {
+function loadRightPanelCollapsed(): boolean {
   try {
     return localStorage.getItem(APP_STORAGE_KEYS.rightPanelCollapsed) !== 'false'
   } catch {
@@ -81,7 +86,7 @@ function loadInspectorCollapsed(): boolean {
   }
 }
 
-function saveInspectorCollapsed(collapsed: boolean): void {
+function saveRightPanelCollapsed(collapsed: boolean): void {
   try {
     localStorage.setItem(APP_STORAGE_KEYS.rightPanelCollapsed, String(collapsed))
   } catch {
@@ -89,20 +94,20 @@ function saveInspectorCollapsed(collapsed: boolean): void {
   }
 }
 
-export function useLayoutPanels(options?: { initialInspectorCollapsed?: boolean }) {
+export function useLayoutPanels(options?: { initialRightPanelCollapsed?: boolean }) {
   const [panelWidths, setPanelWidths] = useState(loadPanelWidths)
-  const [inspectorCollapsed, setInspectorCollapsed] = useState(
-    () => options?.initialInspectorCollapsed ?? loadInspectorCollapsed(),
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(
+    () => options?.initialRightPanelCollapsed ?? loadRightPanelCollapsed(),
   )
-  const persistInspectorCollapsed = options?.initialInspectorCollapsed === undefined
+  const persistRightPanelCollapsed = options?.initialRightPanelCollapsed === undefined
 
   useEffect(() => {
     savePanelWidths(panelWidths)
   }, [panelWidths])
 
   useEffect(() => {
-    if (persistInspectorCollapsed) saveInspectorCollapsed(inspectorCollapsed)
-  }, [inspectorCollapsed, persistInspectorCollapsed])
+    if (persistRightPanelCollapsed) saveRightPanelCollapsed(rightPanelCollapsed)
+  }, [persistRightPanelCollapsed, rightPanelCollapsed])
 
   const resizePanel = useCallback((key: PanelWidthKey, delta: number) => {
     setPanelWidths((widths) => {
@@ -115,16 +120,16 @@ export function useLayoutPanels(options?: { initialInspectorCollapsed?: boolean 
 
   const handleSidebarResize = useCallback((delta: number) => resizePanel('sidebar', delta), [resizePanel])
   const handleNoteListResize = useCallback((delta: number) => resizePanel('noteList', delta), [resizePanel])
-  const handleInspectorResize = useCallback((delta: number) => resizePanel('inspector', -delta), [resizePanel])
+  const handleRightPanelResize = useCallback((delta: number) => resizePanel('rightPanel', -delta), [resizePanel])
 
   return {
     sidebarWidth: panelWidths.sidebar,
     noteListWidth: panelWidths.noteList,
-    inspectorWidth: panelWidths.inspector,
-    inspectorCollapsed,
-    setInspectorCollapsed,
+    rightPanelWidth: panelWidths.rightPanel,
+    rightPanelCollapsed,
+    setRightPanelCollapsed,
     handleSidebarResize,
     handleNoteListResize,
-    handleInspectorResize,
+    handleRightPanelResize,
   }
 }

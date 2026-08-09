@@ -611,13 +611,6 @@ mod tests {
     }
 
     #[test]
-    fn view_toggle_properties_keeps_renderer_owned_accelerator() {
-        let item = menu_item_by_id("view-toggle-properties");
-
-        assert_eq!(item.accelerator(manifest()), None);
-    }
-
-    #[test]
     fn no_duplicate_custom_ids() {
         let mut seen = HashSet::new();
         for id in manifest_menu_items().filter_map(|item| item.menu_item_id(manifest())) {

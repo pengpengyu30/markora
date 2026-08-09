@@ -22,11 +22,10 @@ function makeHandlers(): MenuEventHandlers {
   return {
     onSetViewMode: vi.fn(),
     onCreateNote: vi.fn(),
-    onCreateType: vi.fn(),
     onQuickOpen: vi.fn(),
     onSave: vi.fn(),
     onOpenSettings: vi.fn(),
-    onToggleInspector: vi.fn(),
+    onToggleBacklinks: vi.fn(),
     onCommandPalette: vi.fn(),
     onZoomIn: vi.fn(),
     onZoomOut: vi.fn(),
@@ -160,12 +159,6 @@ describe('dispatchMenuEvent', () => {
     expect(h.onOpenSettings).toHaveBeenCalled()
   })
 
-  it('view-toggle-properties triggers toggle inspector', () => {
-    const h = makeHandlers()
-    dispatchMenuEvent('view-toggle-properties', h)
-    expect(h.onToggleInspector).toHaveBeenCalled()
-  })
-
   it('view-command-palette triggers command palette', () => {
     const h = makeHandlers()
     dispatchMenuEvent('view-command-palette', h)
@@ -203,46 +196,6 @@ describe('dispatchMenuEvent', () => {
   })
 
   // Active tab-dependent events
-  it('note-archive triggers archive on active tab', () => {
-    const h = makeHandlers()
-    dispatchMenuEvent('note-archive', h)
-    expect(h.onArchiveNote).toHaveBeenCalledWith('/vault/test.md')
-  })
-
-  it('note-archive does nothing when no active tab', () => {
-    const h = makeHandlers()
-    h.activeTabPathRef = { current: null }
-    dispatchMenuEvent('note-archive', h)
-    expect(h.onArchiveNote).not.toHaveBeenCalled()
-  })
-
-  it('note-toggle-organized triggers organized toggle on active tab', () => {
-    const h = makeHandlers()
-    dispatchMenuEvent('note-toggle-organized', h)
-    expect(h.onToggleOrganized).toHaveBeenCalledWith('/vault/test.md')
-  })
-
-  it('note-toggle-organized uses the current multi-selection when available', () => {
-    const h = makeHandlers()
-    const organizeSelected = vi.fn()
-    h.multiSelectionCommandRef.current = {
-      selectedPaths: ['/vault/a.md', '/vault/b.md'],
-      organizeSelected,
-    }
-
-    dispatchMenuEvent('note-toggle-organized', h)
-
-    expect(organizeSelected).toHaveBeenCalledTimes(1)
-    expect(h.onToggleOrganized).not.toHaveBeenCalled()
-  })
-
-  it('note-toggle-organized does nothing when no active tab', () => {
-    const h = makeHandlers()
-    h.activeTabPathRef = { current: null }
-    dispatchMenuEvent('note-toggle-organized', h)
-    expect(h.onToggleOrganized).not.toHaveBeenCalled()
-  })
-
   it('note-delete triggers delete on active tab', () => {
     const h = makeHandlers()
     dispatchMenuEvent('note-delete', h)
@@ -289,13 +242,6 @@ describe('dispatchMenuEvent', () => {
     expect(h.onCheckForUpdates).toHaveBeenCalled()
   })
 
-  // New File menu items
-  it('file-new-type triggers create type', () => {
-    const h = makeHandlers()
-    dispatchMenuEvent('file-new-type', h)
-    expect(h.onCreateType).toHaveBeenCalled()
-  })
-
   // New Edit menu items
   it('edit-toggle-raw-editor triggers toggle raw editor', () => {
     const h = makeHandlers()
@@ -321,10 +267,10 @@ describe('dispatchMenuEvent', () => {
     expect(h.onRestoreDeletedNote).toHaveBeenCalled()
   })
 
-  it('view-toggle-backlinks triggers toggle inspector', () => {
+  it('view-toggle-backlinks triggers the backlinks panel', () => {
     const h = makeHandlers()
     dispatchMenuEvent('view-toggle-backlinks', h)
-    expect(h.onToggleInspector).toHaveBeenCalled()
+    expect(h.onToggleBacklinks).toHaveBeenCalled()
   })
 
   // Go menu events
@@ -334,22 +280,10 @@ describe('dispatchMenuEvent', () => {
     expect(h.onSelectFilter).toHaveBeenCalledWith('all')
   })
 
-  it('go-archived selects archived filter', () => {
-    const h = makeHandlers()
-    dispatchMenuEvent('go-archived', h)
-    expect(h.onSelectFilter).toHaveBeenCalledWith('archived')
-  })
-
   it('go-changes selects changes filter', () => {
     const h = makeHandlers()
     dispatchMenuEvent('go-changes', h)
     expect(h.onSelectFilter).toHaveBeenCalledWith('changes')
-  })
-
-  it('go-inbox selects inbox filter', () => {
-    const h = makeHandlers()
-    dispatchMenuEvent('go-inbox', h)
-    expect(h.onSelectFilter).toHaveBeenCalledWith('inbox')
   })
 
   // Vault menu events

@@ -1,10 +1,10 @@
-import { act, render as testingLibraryRender, screen, fireEvent, waitFor, within } from '@testing-library/react'
+import { act, render as testingLibraryRender, screen, fireEvent, waitFor } from '@testing-library/react'
 import type { ReactElement, ReactNode } from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { DEFAULT_VAULTS } from './hooks/useVaultSwitcher'
 import { formatShortcutDisplay } from './hooks/appCommandCatalog'
 import { invoke } from '@tauri-apps/api/core'
-import type { Settings, ViewDefinition, ViewFile } from './types'
+import type { Settings } from './types'
 
 // Provide a localStorage mock that supports all methods (jsdom's may be incomplete)
 const localStorageMock = (() => {
@@ -152,7 +152,6 @@ const mockCommandResults: Record<string, unknown> = {
   load_vault_list: mockVaultList,
   list_vault: mockEntries,
   list_vault_folders: [],
-  list_views: [],
   get_all_content: mockAllContent,
   get_modified_files: [],
   get_note_content: mockAllContent['/vault/project/test.md'] || '',
@@ -171,131 +170,11 @@ const mockCommandResults: Record<string, unknown> = {
   get_vault_settings: { theme: null },
 }
 
-function buildNeighborhoodEntry({
-  path,
-  title,
-  relatedRefs,
-  outgoingLinks,
-  modifiedAt,
-}: {
-  path: string
-  title: string
-  relatedRefs: string[]
-  outgoingLinks: string[]
-  modifiedAt: number
-}) {
-  return {
-    path,
-    filename: path.split('/').pop() ?? `${title.toLowerCase()}.md`,
-    title,
-    isA: 'Note',
-    aliases: [],
-    belongsTo: [],
-    relatedTo: relatedRefs,
-    status: null,
-    modifiedAt,
-    createdAt: null,
-    fileSize: 128,
-    archived: false,
-    snippet: '',
-    wordCount: 12,
-    relationships: relatedRefs.length > 0 ? { 'Related to': relatedRefs } : {},
-    icon: null,
-    color: null,
-    order: null,
-    sidebarLabel: null,
-    template: null,
-    sort: null,
-    view: null,
-    visible: true,
-    organized: false,
-    favorite: false,
-    favoriteIndex: null,
-    listPropertiesDisplay: [],
-    outgoingLinks,
-    properties: {},
-    hasH1: true,
-    fileKind: 'markdown',
-  }
-}
-
-const neighborhoodEntries = [
-  buildNeighborhoodEntry({
-    path: '/vault/alpha.md',
-    title: 'Alpha',
-    relatedRefs: ['[[Beta]]'],
-    outgoingLinks: ['Beta'],
-    modifiedAt: 1700000003,
-  }),
-  buildNeighborhoodEntry({
-    path: '/vault/beta.md',
-    title: 'Beta',
-    relatedRefs: ['[[Gamma]]'],
-    outgoingLinks: ['Gamma'],
-    modifiedAt: 1700000002,
-  }),
-  buildNeighborhoodEntry({
-    path: '/vault/gamma.md',
-    title: 'Gamma',
-    relatedRefs: [],
-    outgoingLinks: [],
-    modifiedAt: 1700000001,
-  }),
-]
-
-const neighborhoodContent: Record<string, string> = {
-  '/vault/alpha.md': '# Alpha\n\n[[Beta]]',
-  '/vault/beta.md': '# Beta\n\n[[Gamma]]',
-  '/vault/gamma.md': '# Gamma',
-}
-
-function configureNeighborhoodVault() {
-  mockCommandResults.list_vault = neighborhoodEntries
-  mockCommandResults.get_all_content = neighborhoodContent
-  mockCommandResults.get_note_content = ({ path }: { path: string }) => neighborhoodContent[path] ?? ''
-}
-
-function configureNeighborhoodFavoritesVault() {
-  mockCommandResults.list_vault = neighborhoodEntries.map((entry) =>
-    entry.path === '/vault/alpha.md'
-      ? { ...entry, favorite: true, favoriteIndex: 0 }
-      : entry,
-  )
-  mockCommandResults.get_all_content = neighborhoodContent
-  mockCommandResults.get_note_content = ({ path }: { path: string }) => neighborhoodContent[path] ?? ''
-}
-
-function getHeaderForNoteList(noteListContainer: HTMLElement) {
-  return within(noteListContainer.parentElement as HTMLElement).getByRole('heading', { level: 3 })
-}
-
-async function clickNoteListItem(noteListContainer: HTMLElement, title: string, options?: MouseEventInit) {
-  await waitFor(() => {
-    expect(within(noteListContainer).getByText(title)).toBeInTheDocument()
-  })
-  await act(async () => {
-    fireEvent.click(within(noteListContainer).getByText(title), options)
-    await Promise.resolve()
-  })
-}
-
-async function enterNeighborhood(noteListContainer: HTMLElement, title: string) {
-  await clickNoteListItem(noteListContainer, title, { metaKey: true })
-}
-
-async function pressEscape() {
-  await act(async () => {
-    fireEvent.keyDown(window, { key: 'Escape' })
-    await Promise.resolve()
-  })
-}
-
 function resetMockCommandResults() {
   Object.assign(mockCommandResults, {
     load_vault_list: mockVaultList,
     list_vault: mockEntries,
     list_vault_folders: [],
-    list_views: [],
     get_all_content: mockAllContent,
     get_modified_files: [],
     get_note_content: mockAllContent['/vault/project/test.md'] || '',
@@ -303,7 +182,6 @@ function resetMockCommandResults() {
     reload_vault_entry: ({ path }: { path: string }) => mockEntries.find((entry) => entry.path === path) ?? null,
     sync_vault_asset_scope_for_window: null,
     get_file_history: [],
-    get_settings: createSettings({ auto_advance_inbox_after_organize: null }),
     is_git_repo: true,
     init_git_repo: null,
     save_settings: null,
@@ -478,35 +356,6 @@ describe('App', () => {
     expect(await screen.findByText('All Notes', {}, { timeout: 5000 })).toBeInTheDocument()
   })
 
-  it('creates custom views with a portable fallback filename for symbol-only names', async () => {
-    const savedViews: ViewFile[] = []
-    const saveView = vi.fn(({ filename, definition }: { filename: string; definition: ViewDefinition }) => {
-      if (filename === '.yml') throw new Error('Invalid view filename')
-      savedViews.push({ filename, definition })
-      return null
-    })
-    mockCommandResults.save_view_cmd = saveView
-    mockCommandResults.list_views = () => savedViews
-    mockCommandResults.reload_vault = mockEntries
-
-    render(<App />)
-
-    await screen.findByText('All Notes')
-    fireEvent.click(screen.getByRole('button', { name: 'Create view' }))
-    const dialog = await screen.findByRole('dialog')
-    fireEvent.change(within(dialog).getByPlaceholderText(/Active Projects|Reading List/i), {
-      target: { value: '🚀' },
-    })
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Create' }))
-
-    await waitFor(() => {
-      expect(saveView).toHaveBeenCalledWith(expect.objectContaining({
-        filename: 'view.yml',
-        definition: expect.objectContaining({ name: '🚀' }),
-      }))
-    })
-  }, 10000)
-
   it('loads and displays vault entries in sidebar', async () => {
     render(<App />)
     await waitFor(() => {
@@ -526,7 +375,6 @@ describe('App', () => {
     render(<App />)
 
     expect(await screen.findByTestId('startup-shell-fallback', {}, { timeout: 5000 })).toBeInTheDocument()
-    expect(screen.queryByTestId('sidebar-loading-favorites')).not.toBeInTheDocument()
     expect(screen.queryByTestId('note-list-loading-skeleton')).not.toBeInTheDocument()
     expect(screen.queryByTestId('status-vault-reloading')).not.toBeInTheDocument()
 
@@ -884,179 +732,8 @@ describe('App', () => {
     await waitFor(() => {
       // "All Notes" should be rendered as the selected nav item
       expect(screen.getByText('All Notes')).toBeInTheDocument()
-      expect(screen.getByText('Archive')).toBeInTheDocument()
     })
   })
-
-  it('pressing Escape in Neighborhood mode blurs the editor before unwinding note-list history', async () => {
-    configureNeighborhoodVault()
-
-    render(<App />)
-
-    const noteListContainer = await screen.findByTestId('note-list-container', {}, { timeout: 5000 })
-    const getHeader = () => getHeaderForNoteList(noteListContainer)
-
-    await waitFor(() => {
-      expect(getHeader()).toHaveTextContent('Inbox')
-    })
-
-    await enterNeighborhood(noteListContainer, 'Alpha')
-
-    await waitFor(() => {
-      expect(getHeader()).toHaveTextContent('Alpha')
-    })
-
-    const editor = screen.getByTestId('mock-editor')
-    editor.focus()
-    expect(editor).toHaveFocus()
-
-    await pressEscape()
-
-    await waitFor(() => {
-      expect(noteListContainer).toHaveFocus()
-      expect(getHeader()).toHaveTextContent('Alpha')
-    })
-
-    await enterNeighborhood(noteListContainer, 'Beta')
-
-    await waitFor(() => {
-      expect(getHeader()).toHaveTextContent('Beta')
-    })
-
-    await pressEscape()
-
-    await waitFor(() => {
-      expect(getHeader()).toHaveTextContent('Alpha')
-    })
-
-    await pressEscape()
-
-    await waitFor(() => {
-      expect(getHeader()).toHaveTextContent('Inbox')
-    })
-  }, 10_000)
-
-  it('opens favorites directly into Neighborhood mode', async () => {
-    configureNeighborhoodFavoritesVault()
-
-    render(<App />)
-
-    let favoritesSection: HTMLElement | undefined
-    await waitFor(() => {
-      const sidebar = screen.getByText('FAVORITES')
-      const currentFavoritesSection = sidebar.closest('div')?.parentElement as HTMLElement
-      expect(within(currentFavoritesSection).getByText('Alpha')).toBeInTheDocument()
-      favoritesSection = currentFavoritesSection
-    })
-    fireEvent.click(within(favoritesSection!).getByText('Alpha'))
-
-    const noteListContainer = await screen.findByTestId('note-list-container')
-    await waitFor(() => {
-      expect(getHeaderForNoteList(noteListContainer)).toHaveTextContent('Alpha')
-    })
-
-    expect(screen.getByText('Related to')).toBeInTheDocument()
-    expect(screen.getByText('Beta')).toBeInTheDocument()
-  })
-
-  it('defaults to All Notes when explicit organization is disabled in vault config', async () => {
-    const workVaultPath = '/Users/mock/Documents/Work'
-    mockCommandResults.load_vault_list = {
-      vaults: [{ label: 'Work Vault', path: workVaultPath }],
-      active_vault: workVaultPath,
-      hidden_defaults: [],
-    }
-    const disabledWorkflowConfig = JSON.stringify({
-      zoom: null,
-      view_mode: null,
-      editor_mode: null,
-      tag_colors: null,
-      status_colors: null,
-      property_display_modes: null,
-      inbox: { noteListProperties: null, explicitOrganization: false },
-    })
-    localStorage.setItem(`laputa:vault-config:${workVaultPath}`, disabledWorkflowConfig)
-
-    render(<App />)
-
-    await waitFor(() => {
-      expect(within(screen.getByTestId('sidebar-top-nav')).queryByText('Inbox')).not.toBeInTheDocument()
-      expect(screen.getByText('All Notes')).toBeInTheDocument()
-    })
-  })
-
-  it('auto-advances to the next inbox item after organizing when the setting is enabled', async () => {
-    configureNeighborhoodVault()
-    mockCommandResults.get_settings = createSettings({ auto_advance_inbox_after_organize: true })
-
-    render(<App />)
-
-    const noteListContainer = await screen.findByTestId('note-list-container')
-    await waitFor(() => {
-      expect(getHeaderForNoteList(noteListContainer)).toHaveTextContent('Inbox')
-    })
-
-    await clickNoteListItem(noteListContainer, 'Alpha')
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Set note as organized' })).toBeInTheDocument()
-    })
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Set note as organized' }))
-      await Promise.resolve()
-    })
-
-    await waitFor(() => {
-      expect(window.__laputaTest?.activeTabPath).toBe('/vault/beta.md')
-    })
-  }, 10_000)
-
-  it('keeps the manually selected note after organizing finishes later', async () => {
-    configureNeighborhoodVault()
-    mockCommandResults.get_settings = createSettings({ auto_advance_inbox_after_organize: true })
-
-    let resolveOrganizeSave!: () => void
-    const organizeSave = new Promise<void>((resolve) => {
-      resolveOrganizeSave = resolve
-    })
-    mockCommandResults.save_note_content = vi.fn(() => organizeSave)
-
-    render(<App />)
-
-    const noteListContainer = await screen.findByTestId('note-list-container')
-    await waitFor(() => {
-      expect(getHeaderForNoteList(noteListContainer)).toHaveTextContent('Inbox')
-    })
-
-    await clickNoteListItem(noteListContainer, 'Alpha')
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Set note as organized' })).toBeInTheDocument()
-    })
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Set note as organized' }))
-      await Promise.resolve()
-    })
-
-    await act(async () => {
-      fireEvent.click(within(noteListContainer).getByText('Gamma'))
-      await Promise.resolve()
-    })
-    await waitFor(() => {
-      expect(window.__laputaTest?.activeTabPath).toBe('/vault/gamma.md')
-    })
-
-    await act(async () => {
-      resolveOrganizeSave()
-      await organizeSave
-      await Promise.resolve()
-      await Promise.resolve()
-    })
-
-    expect(window.__laputaTest?.activeTabPath).toBe('/vault/gamma.md')
-  }, 10_000)
 
   it('renders status bar', async () => {
     render(<App />)
@@ -1094,7 +771,6 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Switch vault' }))
     fireEvent.click(screen.getByTestId('vault-menu-item-Work Vault'))
 
-    expect(await screen.findByTestId('sidebar-loading-favorites')).toBeInTheDocument()
     expect(screen.queryByTestId('startup-shell-fallback')).not.toBeInTheDocument()
     expect(screen.getByTestId('note-list-loading-skeleton')).toBeInTheDocument()
 
@@ -1218,33 +894,4 @@ describe('App', () => {
     })
   })
 
-  it('does not ask Windows to grow the native window when toggling Properties', async () => {
-    const { invoke } = await import('@tauri-apps/api/core') as { invoke: ReturnType<typeof vi.fn> }
-    const originalUserAgent = navigator.userAgent
-    Object.defineProperty(window.navigator, 'userAgent', {
-      configurable: true,
-      value: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-    })
-
-    try {
-      render(<App />)
-      await waitFor(() => {
-        expect(screen.getByText('All Notes')).toBeInTheDocument()
-      })
-
-      invoke.mockClear()
-
-      fireEvent.keyDown(window, { key: 'I', metaKey: true, shiftKey: true })
-      await waitFor(() => {
-        expect(invoke).toHaveBeenCalledWith('update_current_window_min_size', expect.objectContaining({
-          growToFit: false,
-        }))
-      })
-    } finally {
-      Object.defineProperty(window.navigator, 'userAgent', {
-        configurable: true,
-        value: originalUserAgent,
-      })
-    }
-  })
 })

@@ -31,14 +31,12 @@ fn test_created_at_from_filesystem() {
 }
 
 #[test]
-fn test_type_relationship_added_for_regular_entries() {
+fn test_type_metadata_does_not_create_synthetic_relationship() {
     let dir = TempDir::new().unwrap();
     let content = "---\nIs A: Project\n---\n# My Project\n";
     let entry = parse_test_entry(&dir, "project/my-project.md", content);
-    assert_eq!(
-        entry.relationships.get("Type").unwrap(),
-        &vec!["[[project]]".to_string()]
-    );
+    assert_eq!(entry.is_a, Some("Project".to_string()));
+    assert!(!entry.relationships.contains_key("Type"));
 }
 
 #[test]
@@ -59,14 +57,12 @@ fn test_no_type_relationship_without_frontmatter() {
 }
 
 #[test]
-fn test_type_relationship_handles_wikilink_is_a() {
+fn test_wikilink_type_metadata_does_not_create_synthetic_relationship() {
     let dir = TempDir::new().unwrap();
     let content = "---\nIs A: \"[[experiment]]\"\n---\n# Test\n";
     let entry = parse_test_entry(&dir, "test.md", content);
-    assert_eq!(
-        entry.relationships.get("Type").unwrap(),
-        &vec!["[[experiment]]".to_string()]
-    );
+    assert_eq!(entry.is_a, Some("[[experiment]]".to_string()));
+    assert!(!entry.relationships.contains_key("Type"));
 }
 
 #[test]
@@ -96,14 +92,12 @@ fn test_parse_type_key_case_insensitive() {
 }
 
 #[test]
-fn test_type_key_generates_type_relationship() {
+fn test_type_key_does_not_generate_type_relationship() {
     let dir = TempDir::new().unwrap();
     let content = "---\ntype: Person\n---\n# Alice\n";
     let entry = parse_test_entry(&dir, "person/alice.md", content);
-    assert_eq!(
-        entry.relationships.get("Type").unwrap(),
-        &vec!["[[person]]".to_string()]
-    );
+    assert_eq!(entry.is_a, Some("Person".to_string()));
+    assert!(!entry.relationships.contains_key("Type"));
 }
 
 #[test]
@@ -111,9 +105,9 @@ fn test_type_key_not_in_relationships_as_generic() {
     let dir = TempDir::new().unwrap();
     let content = "---\ntype: Note\nHas:\n  - \"[[task/foo]]\"\n---\n# Test\n";
     let entry = parse_test_entry(&dir, "note/test.md", content);
-    assert_eq!(entry.relationships.len(), 2);
+    assert_eq!(entry.relationships.len(), 1);
     assert!(entry.relationships.contains_key("Has"));
-    assert!(entry.relationships.contains_key("Type"));
+    assert!(!entry.relationships.contains_key("Type"));
 }
 
 #[test]

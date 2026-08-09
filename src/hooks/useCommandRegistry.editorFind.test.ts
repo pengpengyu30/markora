@@ -19,7 +19,7 @@ function makeConfig(overrides: Record<string, unknown> = {}) {
     onSave: vi.fn(),
     onSelect: vi.fn(),
     onSetViewMode: vi.fn(),
-    onToggleInspector: vi.fn(),
+    onToggleBacklinks: vi.fn(),
     onUnarchiveNote: vi.fn(),
     onZoomIn: vi.fn(),
     onZoomOut: vi.fn(),

@@ -146,17 +146,6 @@ describe('NoteList virtualized datasets', () => {
     expect(screen.getAllByText(/^Alpha$|^Beta$/)[0].textContent).toBe('Alpha')
   })
 
-  it('filters section groups inside large mixed datasets', () => {
-    const entries = [
-      ...Array.from({ length: 100 }, (_, index) => makeIndexedEntry(index, { isA: 'Project', title: `Project ${index}` })),
-      ...Array.from({ length: 200 }, (_, index) => makeIndexedEntry(100 + index, { isA: 'Note', title: `Note ${index}` })),
-    ]
-
-    renderNoteList({ entries, selection: { kind: 'sectionGroup', type: 'Project' } })
-    expect(screen.getByText('Project 0')).toBeInTheDocument()
-    expect(screen.queryByText('Note 0')).not.toBeInTheDocument()
-  })
-
   it('keeps selection highlighting in virtualized lists', () => {
     const entries = Array.from({ length: 100 }, (_, index) => makeIndexedEntry(index))
     renderNoteList({ entries, selectedNote: entries[5] })
@@ -197,19 +186,6 @@ describe('NoteList multi-select', () => {
     expect(onReplaceActiveTab).toHaveBeenCalledWith(mockEntries[2])
   })
 
-  it('clears multi-select and enters Neighborhood on Cmd+Click', async () => {
-    const { onEnterNeighborhood, onReplaceActiveTab } = renderNoteList()
-    fireEvent.click(screen.getByText('Build Laputa App'))
-    fireEvent.click(screen.getByText('Facebook Ads Strategy'), { shiftKey: true })
-    fireEvent.click(screen.getByText('Matteo Cellini'), { metaKey: true })
-
-    expect(screen.queryByTestId('multi-selected-item')).not.toBeInTheDocument()
-    await waitFor(() => {
-      expect(onReplaceActiveTab).toHaveBeenCalledWith(mockEntries[2])
-      expect(onEnterNeighborhood).toHaveBeenCalledWith(mockEntries[2])
-    })
-  })
-
   it('shows the bulk action bar with the selected count', () => {
     selectTwoNotes()
     expect(screen.getByTestId('bulk-action-bar')).toBeInTheDocument()
@@ -217,10 +193,7 @@ describe('NoteList multi-select', () => {
   })
 
   it.each([
-    { label: 'organizes via button', prop: 'onBulkOrganize', trigger: () => fireEvent.click(screen.getByTestId('bulk-organize-btn')) },
-    { label: 'archives via button', prop: 'onBulkArchive', trigger: () => fireEvent.click(screen.getByTestId('bulk-archive-btn')) },
     { label: 'deletes via button', prop: 'onBulkDeletePermanently', trigger: () => fireEvent.click(screen.getByTestId('bulk-delete-btn')) },
-    { label: 'organizes via Cmd+E', prop: 'onBulkOrganize', trigger: () => fireEvent.keyDown(window, { key: 'e', metaKey: true }) },
     { label: 'deletes via Cmd+Backspace', prop: 'onBulkDeletePermanently', trigger: () => fireEvent.keyDown(window, { key: 'Backspace', metaKey: true }) },
     { label: 'deletes via Cmd+Delete', prop: 'onBulkDeletePermanently', trigger: () => fireEvent.keyDown(window, { key: 'Delete', metaKey: true }) },
   ])('bulk-select $label and clears the selection', ({ prop, trigger }) => {
@@ -241,95 +214,5 @@ describe('NoteList multi-select', () => {
   it('does not show a bulk action bar when nothing is selected', () => {
     renderNoteList()
     expect(screen.queryByTestId('bulk-action-bar')).not.toBeInTheDocument()
-  })
-})
-
-describe('NoteList filter pills', () => {
-  const projectEntries = [
-    makeEntry({ path: '/p1.md', title: 'Open Project 1', isA: 'Project' }),
-    makeEntry({ path: '/p2.md', title: 'Open Project 2', isA: 'Project' }),
-    makeEntry({ path: '/p3.md', title: 'Archived Project', isA: 'Project', archived: true }),
-    makeEntry({ path: '/n1.md', title: 'Some Note', isA: 'Note' }),
-  ]
-
-  it('shows filter pills for type sections', () => {
-    renderNoteList({ entries: projectEntries, selection: { kind: 'sectionGroup', type: 'Project' } })
-    expect(screen.getByTestId('filter-pills')).toBeInTheDocument()
-    expect(screen.getByTestId('filter-pill-open')).toBeInTheDocument()
-    expect(screen.getByTestId('filter-pill-archived')).toBeInTheDocument()
-  })
-
-  it('does not show filter pills in all-notes view', () => {
-    renderNoteList({ entries: projectEntries })
-    expect(screen.queryByTestId('filter-pills')).not.toBeInTheDocument()
-  })
-
-  it('ignores the archived sub-filter in all-notes view', () => {
-    renderNoteList({ entries: projectEntries, noteListFilter: 'archived' })
-    expect(screen.queryByTestId('filter-pills')).not.toBeInTheDocument()
-    expect(screen.getByText('Open Project 1')).toBeInTheDocument()
-    expect(screen.getByText('Some Note')).toBeInTheDocument()
-    expect(screen.queryByText('Archived Project')).not.toBeInTheDocument()
-  })
-
-  it('shows the correct counts for a type filter', () => {
-    renderNoteList({ entries: projectEntries, selection: { kind: 'sectionGroup', type: 'Project' } })
-    const openPill = screen.getByTestId('filter-pill-open')
-    const archivedPill = screen.getByTestId('filter-pill-archived')
-
-    expect(openPill).toHaveTextContent('Open')
-    expect(openPill).toHaveTextContent('2')
-    expect(archivedPill).toHaveTextContent('Archived')
-    expect(archivedPill).toHaveTextContent('1')
-  })
-
-  it('calls onNoteListFilterChange when a filter pill is clicked', () => {
-    const onNoteListFilterChange = vi.fn()
-    renderNoteList({
-      entries: projectEntries,
-      selection: { kind: 'sectionGroup', type: 'Project' },
-      onNoteListFilterChange,
-    })
-
-    fireEvent.click(screen.getByTestId('filter-pill-archived'))
-    expect(onNoteListFilterChange).toHaveBeenCalledWith('archived')
-  })
-
-  it('shows archived notes when the type filter switches to archived', () => {
-    renderNoteList({
-      entries: projectEntries,
-      selection: { kind: 'sectionGroup', type: 'Project' },
-      noteListFilter: 'archived',
-    })
-
-    expect(screen.getByText('Archived Project')).toBeInTheDocument()
-    expect(screen.queryByText('Open Project 1')).not.toBeInTheDocument()
-  })
-
-  it('shows only explicit Note entries for the Notes type filter', () => {
-    const noteEntries = [
-      makeEntry({ title: 'Note Type', isA: 'Type', path: '/types/note.md', filename: 'note.md' }),
-      makeEntry({ title: 'Explicit Note', isA: 'Note', path: '/explicit-note.md', filename: 'explicit-note.md' }),
-      makeEntry({ title: 'Untyped Note', isA: null, path: '/untyped-note.md', filename: 'untyped-note.md' }),
-      makeEntry({ title: 'Archived Explicit Note', isA: 'Note', archived: true, path: '/archived-note.md', filename: 'archived-note.md' }),
-    ]
-
-    renderNoteList({ entries: noteEntries, selection: { kind: 'sectionGroup', type: 'Note' } })
-
-    expect(screen.getByText('Explicit Note')).toBeInTheDocument()
-    expect(screen.queryByText('Untyped Note')).not.toBeInTheDocument()
-    expect(screen.queryByText('Archived Explicit Note')).not.toBeInTheDocument()
-    expect(screen.getByTestId('filter-pill-open')).toHaveTextContent('1')
-    expect(screen.getByTestId('filter-pill-archived')).toHaveTextContent('1')
-  })
-
-  it('shows the archived empty state when a section has no archived notes', () => {
-    renderNoteList({
-      entries: projectEntries.filter((entry) => !entry.archived),
-      selection: { kind: 'sectionGroup', type: 'Project' },
-      noteListFilter: 'archived',
-    })
-
-    expect(screen.getByText('No archived notes')).toBeInTheDocument()
   })
 })

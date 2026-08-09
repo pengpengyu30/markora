@@ -78,7 +78,6 @@ pub struct Settings {
     pub autogit_enabled: Option<bool>,
     pub autogit_idle_threshold_seconds: Option<u32>,
     pub autogit_inactive_threshold_seconds: Option<u32>,
-    pub auto_advance_inbox_after_organize: Option<bool>,
     pub telemetry_consent: Option<bool>,
     pub crash_reporting_enabled: Option<bool>,
     pub analytics_enabled: Option<bool>,
@@ -89,7 +88,6 @@ pub struct Settings {
     pub ui_language: Option<String>,
     pub date_display_format: Option<String>,
     pub note_width_mode: Option<String>,
-    pub sidebar_type_pluralization_enabled: Option<bool>,
     pub initial_h1_auto_rename_enabled: Option<bool>,
     pub hide_gitignored_files: Option<bool>,
     pub all_notes_show_pdfs: Option<bool>,
@@ -193,7 +191,6 @@ fn normalize_settings(settings: Settings) -> Settings {
         autogit_inactive_threshold_seconds: normalize_optional_positive_u32(
             settings.autogit_inactive_threshold_seconds,
         ),
-        auto_advance_inbox_after_organize: settings.auto_advance_inbox_after_organize,
         telemetry_consent: settings.telemetry_consent,
         crash_reporting_enabled: settings.crash_reporting_enabled,
         analytics_enabled: settings.analytics_enabled,
@@ -204,7 +201,6 @@ fn normalize_settings(settings: Settings) -> Settings {
         ui_language: normalize_ui_language(settings.ui_language.as_deref()),
         date_display_format: normalize_date_display_format(settings.date_display_format.as_deref()),
         note_width_mode: normalize_note_width_mode(settings.note_width_mode.as_deref()),
-        sidebar_type_pluralization_enabled: settings.sidebar_type_pluralization_enabled,
         initial_h1_auto_rename_enabled: settings.initial_h1_auto_rename_enabled,
         hide_gitignored_files: settings.hide_gitignored_files,
         all_notes_show_pdfs: settings.all_notes_show_pdfs,
@@ -331,7 +327,6 @@ mod tests {
             autogit_enabled: Some(true),
             autogit_idle_threshold_seconds: Some(90),
             autogit_inactive_threshold_seconds: Some(30),
-            auto_advance_inbox_after_organize: Some(true),
             telemetry_consent: Some(true),
             crash_reporting_enabled: Some(true),
             analytics_enabled: Some(false),
@@ -342,7 +337,6 @@ mod tests {
             ui_language: Some("zh-Hans".to_string()),
             date_display_format: Some("iso".to_string()),
             note_width_mode: Some("wide".to_string()),
-            sidebar_type_pluralization_enabled: Some(false),
             initial_h1_auto_rename_enabled: Some(false),
             hide_gitignored_files: Some(false),
             multi_workspace_enabled: Some(true),
@@ -371,14 +365,12 @@ mod tests {
             autogit_enabled: Some(true),
             autogit_idle_threshold_seconds: Some(90),
             autogit_inactive_threshold_seconds: Some(30),
-            auto_advance_inbox_after_organize: Some(true),
             release_channel: Some("alpha".to_string()),
             automatic_update_checks_enabled: Some(false),
             theme_mode: Some("dark".to_string()),
             ui_language: Some("zh-Hans".to_string()),
             date_display_format: Some("european".to_string()),
             note_width_mode: Some("wide".to_string()),
-            sidebar_type_pluralization_enabled: Some(false),
             initial_h1_auto_rename_enabled: Some(false),
             hide_gitignored_files: Some(false),
             multi_workspace_enabled: Some(true),
@@ -392,14 +384,12 @@ mod tests {
         assert_eq!(loaded.autogit_enabled, Some(true));
         assert_eq!(loaded.autogit_idle_threshold_seconds, Some(90));
         assert_eq!(loaded.autogit_inactive_threshold_seconds, Some(30));
-        assert_eq!(loaded.auto_advance_inbox_after_organize, Some(true));
         assert_eq!(loaded.release_channel.as_deref(), Some("alpha"));
         assert_eq!(loaded.automatic_update_checks_enabled, Some(false));
         assert_eq!(loaded.theme_mode.as_deref(), Some("dark"));
         assert_eq!(loaded.ui_language.as_deref(), Some("zh-CN"));
         assert_eq!(loaded.date_display_format.as_deref(), Some("european"));
         assert_eq!(loaded.note_width_mode.as_deref(), Some("wide"));
-        assert_eq!(loaded.sidebar_type_pluralization_enabled, Some(false));
         assert_eq!(loaded.initial_h1_auto_rename_enabled, Some(false));
         assert_eq!(loaded.hide_gitignored_files, Some(false));
         assert_eq!(loaded.multi_workspace_enabled, Some(true));

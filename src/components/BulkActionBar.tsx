@@ -1,12 +1,12 @@
 import { memo } from 'react'
-import { Archive, ArrowCounterClockwise, CheckCircle, Trash, X } from '@phosphor-icons/react'
+import { Trash, X } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 
 interface BulkActionBarProps {
   count: number
   isArchivedView?: boolean
   onOrganize?: () => void
-  onArchive: () => void
+  onArchive?: () => void
   onDelete: () => void
   onUnarchive?: () => void
   onClear: () => void
@@ -43,24 +43,10 @@ function BulkActionButton({ ariaLabel, children, destructive = false, onClick, t
 }
 
 function renderPrimaryActions(
-  isArchivedView: boolean,
-  onOrganize: (() => void) | undefined,
-  onArchive: () => void,
   onDelete: () => void,
-  onUnarchive: (() => void) | undefined,
 ) {
-  const archiveLabel = isArchivedView ? 'Unarchive selected notes' : 'Archive selected notes'
-  const archiveIcon = isArchivedView ? <ArrowCounterClockwise size={16} /> : <Archive size={16} />
-  const archiveHandler = isArchivedView ? onUnarchive : onArchive
-
   return (
     <>
-      <BulkActionButton ariaLabel="Organize selected notes" onClick={onOrganize} testId="bulk-organize-btn">
-        <CheckCircle size={16} weight="fill" />
-      </BulkActionButton>
-      <BulkActionButton ariaLabel={archiveLabel} onClick={archiveHandler} testId={isArchivedView ? 'bulk-unarchive-btn' : 'bulk-archive-btn'}>
-        {archiveIcon}
-      </BulkActionButton>
       <BulkActionButton ariaLabel="Permanently delete selected notes" destructive onClick={onDelete} testId="bulk-delete-btn">
         <Trash size={16} />
       </BulkActionButton>
@@ -68,7 +54,7 @@ function renderPrimaryActions(
   )
 }
 
-function BulkActionBarInner({ count, isArchivedView, onOrganize, onArchive, onDelete, onUnarchive, onClear }: BulkActionBarProps) {
+function BulkActionBarInner({ count, onDelete, onClear }: BulkActionBarProps) {
   return (
     <div
       className="flex shrink-0 items-center justify-between"
@@ -84,7 +70,7 @@ function BulkActionBarInner({ count, isArchivedView, onOrganize, onArchive, onDe
         {count} selected
       </span>
       <div className="flex items-center gap-1.5">
-        {renderPrimaryActions(Boolean(isArchivedView), onOrganize, onArchive, onDelete, onUnarchive)}
+        {renderPrimaryActions(onDelete)}
         <Button
           type="button"
           size="icon-sm"

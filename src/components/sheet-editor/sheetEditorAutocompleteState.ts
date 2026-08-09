@@ -15,7 +15,7 @@ export interface SheetWikilinkAutocompleteState {
 }
 
 function wikilinkSuggestionKey(item: WikilinkSuggestionItem): string {
-  return item.path ?? `${item.title}\n${item.noteType ?? ''}`
+  return item.path ?? item.title
 }
 
 export function nextWikilinkAutocompleteState(

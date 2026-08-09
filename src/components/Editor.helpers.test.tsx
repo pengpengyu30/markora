@@ -87,9 +87,6 @@ type SuggestionItem = {
   title?: string
   path?: string
   workspace?: unknown
-  noteType?: string
-  typeColor?: unknown
-  TypeIcon?: unknown
   onItemClick: () => void
 }
 type SuggestionControllerProps = {
@@ -256,13 +253,12 @@ export const defaultProps = {
   activeTabPath: null as string | null,
   entries: [mockEntry],
   onNavigateWikilink: vi.fn(),
-  inspectorCollapsed: true,
-  onToggleInspector: vi.fn(),
-  inspectorWidth: 280,
-  onInspectorResize: vi.fn(),
-  inspectorEntry: null as VaultEntry | null,
-  inspectorContent: null as string | null,
-  gitHistory: [],
+  rightPanelCollapsed: true,
+  onToggleRightPanel: vi.fn(),
+  rightPanelWidth: 280,
+  onRightPanelResize: vi.fn(),
+  rightPanelEntry: null as VaultEntry | null,
+  rightPanelContent: null as string | null,
   onCreateNote: vi.fn(),
 }
 

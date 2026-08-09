@@ -33,7 +33,7 @@ Status: Active
     create_test_file(dir.path(), "publish-essays.md", content);
 
     let entry = parse_md_file(&dir.path().join("publish-essays.md"), None).unwrap();
-    assert_eq!(entry.relationships.len(), 3);
+    assert_eq!(entry.relationships.len(), 2);
     assert_relationship_values(
         &entry.relationships,
         &[
@@ -42,7 +42,6 @@ Status: Active
                 &["[[essay/foo|Foo Essay]]", "[[essay/bar|Bar Essay]]"],
             ),
             ("Topics", &["[[topic/rust]]", "[[topic/wasm]]"]),
-            ("Type", &["[[responsibility]]"]),
         ],
     );
 }
@@ -86,8 +85,7 @@ Custom Field: just a plain string
     create_test_file(dir.path(), "plain-note.md", content);
 
     let entry = parse_md_file(&dir.path().join("plain-note.md"), None).unwrap();
-    assert_eq!(entry.relationships.len(), 1);
-    assert_relationship_values(&entry.relationships, &[("Type", &["[[note]]"])]);
+    assert!(entry.relationships.is_empty());
 }
 
 const BIG_PROJECT_CONTENT: &str = "---\nIs A: Project\nHas:\n  - \"[[deliverable/mvp]]\"\n  - \"[[deliverable/v2]]\"\nTopics:\n  - \"[[topic/ai]]\"\n  - \"[[topic/compilers]]\"\nEvents:\n  - \"[[event/launch-day]]\"\nNotes:\n  - \"[[note/design-rationale]]\"\n  - \"[[note/meeting-2024-01]]\"\n  - \"[[note/meeting-2024-02]]\"\nOwner: \"[[person/alice]]\"\nRelated to:\n  - \"[[project/sibling-project]]\"\nBelongs to:\n  - \"[[area/engineering]]\"\nStatus: Active\n---\n# Big Project\n";
@@ -180,13 +178,10 @@ fn test_skip_keys_temporal_fields_excluded() {
 #[test]
 fn test_skip_keys_real_relation_included() {
     let (relationships, relationship_count) = parse_skip_key_relationships();
-    assert_eq!(relationship_count, 5);
+    assert_eq!(relationship_count, 4);
     assert_relationship_values(
         &relationships,
-        &[
-            ("Real Relation", &["[[note/important]]"]),
-            ("Type", &["[[project]]"]),
-        ],
+        &[("Real Relation", &["[[note/important]]"])],
     );
     for key in ["Cadence", "Created at", "Created time"] {
         assert!(relationships.contains_key(key), "missing {key}");

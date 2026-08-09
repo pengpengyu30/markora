@@ -8,9 +8,6 @@ function makeConfig(overrides: Partial<VaultConfig> = {}): VaultConfig {
     zoom: null,
     view_mode: null,
     editor_mode: null,
-    tag_colors: null,
-    status_colors: null,
-    property_display_modes: null,
     ...overrides,
   }
 }
@@ -78,70 +75,22 @@ describe('migrateLocalStorageToVaultConfig', () => {
     expect(result.view_mode).toBeNull()
   })
 
-  // 5. Tag colors migration
-  it('migrates populated tag colors', () => {
-    store[APP_STORAGE_KEYS.tagColors] = JSON.stringify({ project: '#ff0000' })
-    const result = migrateLocalStorageToVaultConfig(makeConfig())
-    expect(result.tag_colors).toEqual({ project: '#ff0000' })
-  })
-
-  it('ignores empty tag colors object', () => {
-    store[APP_STORAGE_KEYS.tagColors] = JSON.stringify({})
-    const result = migrateLocalStorageToVaultConfig(makeConfig())
-    expect(result.tag_colors).toBeNull()
-  })
-
-  // 6. Status colors migration
-  it('migrates populated status colors', () => {
-    store[APP_STORAGE_KEYS.statusColors] = JSON.stringify({ done: '#00ff00', wip: '#ffaa00' })
-    const result = migrateLocalStorageToVaultConfig(makeConfig())
-    expect(result.status_colors).toEqual({ done: '#00ff00', wip: '#ffaa00' })
-  })
-
-  it('ignores empty status colors object', () => {
-    store[APP_STORAGE_KEYS.statusColors] = JSON.stringify({})
-    const result = migrateLocalStorageToVaultConfig(makeConfig())
-    expect(result.status_colors).toBeNull()
-  })
-
-  // 7. Property display modes migration
-  it('migrates populated property display modes', () => {
-    store[APP_STORAGE_KEYS.propertyModes] = JSON.stringify({ tags: 'inline' })
-    const result = migrateLocalStorageToVaultConfig(makeConfig())
-    expect(result.property_display_modes).toEqual({ tags: 'inline' })
-  })
-
-  it('ignores empty property display modes object', () => {
-    store[APP_STORAGE_KEYS.propertyModes] = JSON.stringify({})
-    const result = migrateLocalStorageToVaultConfig(makeConfig())
-    expect(result.property_display_modes).toBeNull()
-  })
-
-  // 8. Existing config values are NOT overwritten
+  // 5. Existing config values are NOT overwritten
   it('does not overwrite existing config values with localStorage data', () => {
     store[APP_STORAGE_KEYS.zoom] = '120'
     store[APP_STORAGE_KEYS.viewMode] = 'all'
-    store[APP_STORAGE_KEYS.tagColors] = JSON.stringify({ x: '#fff' })
-    store[APP_STORAGE_KEYS.statusColors] = JSON.stringify({ y: '#000' })
-    store[APP_STORAGE_KEYS.propertyModes] = JSON.stringify({ z: 'compact' })
 
     const existing = makeConfig({
       zoom: 0.9,
       view_mode: 'editor-only',
-      tag_colors: { existing: '#aaa' },
-      status_colors: { existing: '#bbb' },
-      property_display_modes: { existing: 'full' },
     })
 
     const result = migrateLocalStorageToVaultConfig(existing)
     expect(result.zoom).toBe(0.9)
     expect(result.view_mode).toBe('editor-only')
-    expect(result.tag_colors).toEqual({ existing: '#aaa' })
-    expect(result.status_colors).toEqual({ existing: '#bbb' })
-    expect(result.property_display_modes).toEqual({ existing: 'full' })
   })
 
-  // 10. loaded=null (no vault config file yet) — uses defaults then migrates
+  // 6. loaded=null (no vault config file yet) — uses defaults then migrates
   it('migrates from localStorage when loaded is null', () => {
     store[APP_STORAGE_KEYS.zoom] = '110'
     store[APP_STORAGE_KEYS.viewMode] = 'editor-list'
@@ -150,7 +99,7 @@ describe('migrateLocalStorageToVaultConfig', () => {
     expect(result.view_mode).toBe('editor-list')
   })
 
-  // 11. Migration flag is set after migration
+  // 7. Migration flag is set after migration
   it('sets migration flag so next call returns unchanged', () => {
     store[APP_STORAGE_KEYS.zoom] = '80'
     const first = migrateLocalStorageToVaultConfig(makeConfig())
@@ -161,7 +110,7 @@ describe('migrateLocalStorageToVaultConfig', () => {
     expect(second.zoom).toBeNull()
   })
 
-  // 12. localStorage.getItem throws — handles gracefully
+  // 8. localStorage.getItem throws — handles gracefully
   it('returns base config when localStorage.getItem throws', () => {
     vi.stubGlobal('localStorage', {
       getItem: vi.fn(() => { throw new Error('SecurityError') }),
@@ -169,15 +118,6 @@ describe('migrateLocalStorageToVaultConfig', () => {
     })
     const result = migrateLocalStorageToVaultConfig(makeConfig())
     expect(result).toEqual(makeConfig())
-  })
-
-  // 13. JSON parse error in colors — skips that field
-  it('skips fields with invalid JSON without affecting other migrations', () => {
-    store[APP_STORAGE_KEYS.tagColors] = '{bad json'
-    store[APP_STORAGE_KEYS.zoom] = '90'
-    const result = migrateLocalStorageToVaultConfig(makeConfig())
-    expect(result.tag_colors).toBeNull()
-    expect(result.zoom).toBe(0.9)
   })
 
   it('still migrates legacy Laputa storage keys when Tolaria keys are absent', () => {

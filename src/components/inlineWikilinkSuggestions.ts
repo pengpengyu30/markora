@@ -21,13 +21,11 @@ interface SuggestionItem extends WikilinkBaseItem {
 
 function toSuggestionItems(entries: VaultEntry[]): SuggestionItem[] {
   return entries
-    .filter((entry) => !entry.archived)
     .map((entry) => ({
       entry,
       target: toInlineWikilinkTarget(entry),
       title: entry.title,
       aliases: entry.aliases,
-      group: entry.isA ?? 'Note',
       entryTitle: entry.title,
       path: entry.path,
     }))
@@ -49,7 +47,6 @@ function matchSingleCharacterQuery(
   return items.filter((item) =>
     item.title.toLowerCase().includes(lowerQuery) ||
     item.aliases.some((alias) => alias.toLowerCase().includes(lowerQuery)) ||
-    item.group.toLowerCase().includes(lowerQuery) ||
     item.path.toLowerCase().includes(lowerQuery),
   )
 }

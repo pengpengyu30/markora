@@ -1621,8 +1621,8 @@ mod tests {
         let entries = scan_vault_cached(vault).unwrap();
         assert_eq!(entries.len(), 1);
 
-        // Create a new .yml view file (untracked, like save_view does)
-        create_test_file(vault, "views/my-view.yml", "name: My View\nfilters: []\n");
+        // Create a new untracked YAML text file.
+        create_test_file(vault, "data/metadata.yml", "name: Metadata\nsource: test\n");
 
         // Same commit — new .yml file must appear in entries
         let entries2 = scan_vault_cached(vault).unwrap();
@@ -1632,7 +1632,7 @@ mod tests {
             entries2.len()
         );
         assert!(
-            entries2.iter().any(|e| e.path.contains("my-view.yml")),
+            entries2.iter().any(|e| e.path.contains("metadata.yml")),
             "entries must include the new .yml file"
         );
     }
@@ -1649,14 +1649,14 @@ mod tests {
         let entries = scan_vault_cached(vault).unwrap();
         assert_eq!(entries.len(), 1);
 
-        // Add a .yml file and commit
-        create_test_file(vault, "views/my-view.yml", "name: My View\nfilters: []\n");
-        git_add_commit(vault, "add view");
+        // Add a YAML text file and commit.
+        create_test_file(vault, "data/metadata.yml", "name: Metadata\nsource: test\n");
+        git_add_commit(vault, "add metadata");
 
         // Different commit — .yml file must appear in entries
         let entries2 = scan_vault_cached(vault).unwrap();
         assert!(
-            entries2.iter().any(|e| e.path.contains("my-view.yml")),
+            entries2.iter().any(|e| e.path.contains("metadata.yml")),
             "committed .yml file must be picked up by incremental cache update"
         );
     }

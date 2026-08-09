@@ -7,7 +7,7 @@ import { useVaultLoader } from './useVaultLoader'
 const backendInvokeFn = vi.fn()
 let mockIsTauri = true
 const ACTIVE_VAULT_PATH = '/laputa'
-const EMPTY_ARRAY_COMMANDS = new Set(['get_modified_files', 'list_vault_folders', 'list_views'])
+const EMPTY_ARRAY_COMMANDS = new Set(['get_modified_files', 'list_vault_folders'])
 
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: (...args: unknown[]) => backendInvokeFn(...args),

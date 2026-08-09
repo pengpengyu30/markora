@@ -19,11 +19,9 @@ export interface UseSheetInlineAutocompletesOptions {
   setWikilinkAutocomplete: Dispatch<SetStateAction<SheetWikilinkAutocompleteState | null>>
   sheetElementRef: MutableRefObject<HTMLDivElement | null>
   sourceEntry: VaultEntry | null
-  typeEntryMap: Record<string, VaultEntry>
   vaultPath: string
   wikilinkAutocomplete: SheetWikilinkAutocompleteState | null
   wikilinkBaseItems: RawEditorBaseItems
   wikilinkInputRef: MutableRefObject<HTMLInputElement | HTMLTextAreaElement | null>
   workbookRef: MutableRefObject<SheetWorkbookState | null>
 }
-

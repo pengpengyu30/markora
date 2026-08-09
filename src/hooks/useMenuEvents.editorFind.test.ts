@@ -37,7 +37,7 @@ function makeHandlers(): MenuEventHandlers {
     onSave: vi.fn(),
     onSearch: vi.fn(),
     onSetViewMode: vi.fn(),
-    onToggleInspector: vi.fn(),
+    onToggleBacklinks: vi.fn(),
     onZoomIn: vi.fn(),
     onZoomOut: vi.fn(),
     onZoomReset: vi.fn(),

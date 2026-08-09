@@ -12,9 +12,7 @@ import {
 } from '../hooks/useImageDrop'
 import { translate, type AppLocale } from '../lib/i18n'
 import { RUNTIME_STYLE_NONCE } from '../lib/runtimeStyleNonce'
-import type { VaultEntry, GitCommit, NoteWidthMode, NoteStatus, WorkspaceIdentity } from '../types'
-import type { FrontmatterValue } from './Inspector'
-import type { FrontmatterOpOptions } from '../hooks/frontmatterOps'
+import type { VaultEntry, NoteWidthMode, NoteStatus } from '../types'
 import { ResizeHandle } from './ResizeHandle'
 import { useDiffMode, type CommitDiffRequest } from '../hooks/useDiffMode'
 import { useEditorFocus } from '../hooks/useEditorFocus'
@@ -78,37 +76,19 @@ export interface EditorProps {
   onPendingCommitDiffHandled?: (requestId: number) => void
   getNoteStatus?: (path: string) => NoteStatus
   onCreateNote?: () => void
-  inspectorCollapsed: boolean
-  onToggleInspector: () => void
-  inspectorWidth: number
-  onInspectorResize: (delta: number) => void
-  inspectorEntry: VaultEntry | null
-  inspectorContent: string | null
-  gitHistory: GitCommit[]
-  onUpdateFrontmatter?: (
-    path: string,
-    key: string,
-    value: FrontmatterValue,
-    options?: FrontmatterOpOptions,
-  ) => Promise<void>
-  onDeleteProperty?: (path: string, key: string, options?: FrontmatterOpOptions) => Promise<void>
-  onAddProperty?: (path: string, key: string, value: FrontmatterValue, options?: FrontmatterOpOptions) => Promise<void>
-  onCreateMissingType?: (path: string, missingType: string, nextTypeName: string) => Promise<boolean | undefined>
-  onCreateAndOpenNote?: (title: string) => Promise<boolean>
-  onChangeWorkspace?: (entry: VaultEntry, workspace: WorkspaceIdentity) => Promise<void> | void
-  onInitializeProperties?: (path: string) => void
+  rightPanelCollapsed: boolean
+  onToggleRightPanel: () => void
+  rightPanelWidth: number
+  onRightPanelResize: (delta: number) => void
+  rightPanelEntry: VaultEntry | null
+  rightPanelContent: string | null
   vaultPath?: string
-  onToggleFavorite?: (path: string) => void
-  onToggleOrganized?: (path: string) => void
-  onEnterNeighborhood?: (entry: VaultEntry) => void
   onRevealFile?: (path: string) => void
   onCopyFilePath?: (path: string) => void
   onCopyDeepLink?: (entry: VaultEntry) => void
   onCopyGitUrl?: (entry: VaultEntry) => void
   onOpenExternalFile?: (path: string) => void
   onDeleteNote?: (path: string) => void
-  onArchiveNote?: (path: string) => void
-  onUnarchiveNote?: (path: string) => void
   onContentChange?: (path: string, content: string) => void
   onSave?: () => void
   /** Called when the user explicitly renames the filename from the breadcrumb. */
@@ -128,13 +108,14 @@ export interface EditorProps {
   diffToggleRef?: React.MutableRefObject<() => void>
   /** Mutable ref that Editor registers its table-of-contents toggle into, for app shortcuts and menus. */
   tableOfContentsToggleRef?: React.MutableRefObject<() => void>
+  /** Mutable ref that Editor registers its backlinks toggle into, for app commands and menus. */
+  backlinksToggleRef?: React.MutableRefObject<() => void>
   /** Mutable ref that Editor registers the PDF export command into, for command palette and native menu access. */
   pdfExportRef?: React.MutableRefObject<((source?: NotePdfExportSource) => void) | null>
   /** Mutable ref that Editor registers focused-block type changes into, for command palette access. */
   turnCurrentBlockIntoRef?: React.MutableRefObject<((target: RichEditorBlockTypeDefinition) => void) | null>
   /** Emits short user-visible messages for editor actions. */
   onToast?: (message: string | null) => void
-  workspaces?: WorkspaceIdentity[]
   /** Whether the active note has a merge conflict. */
   isConflicted?: boolean
   /** Resolve conflict by keeping the local version. */
@@ -396,7 +377,7 @@ function useEditorSetup(options: EditorSetupParams) {
       }, [flushPendingEditorChange])
       useEditorFocus(editor, editorMountedRef)
 
-      const { diffMode, diffContent, diffLoading, handleToggleDiff, handleViewCommitDiff } = useDiffMode({
+      const { diffMode, diffContent, diffLoading, handleToggleDiff } = useDiffMode({
         activeTabPath,
         onLoadDiff,
         onLoadDiffAtCommit,
@@ -430,7 +411,6 @@ function useEditorSetup(options: EditorSetupParams) {
         handleToggleRawExclusive,
         handleEditorChange,
         flushPendingEditorChange,
-        handleViewCommitDiff,
         isLoadingNewTab,
         activeStatus,
         showDiffToggle,
@@ -499,22 +479,17 @@ function useEditorSetup(options: EditorSetupParams) {
       activeStatus: NoteStatus
       showDiffToggle: boolean
       showTableOfContents?: boolean
+      showBacklinks?: boolean
       onToggleTableOfContents?: () => void
-      inspectorCollapsed: boolean
-      onToggleInspector: () => void
+      rightPanelCollapsed: boolean
       onNavigateWikilink: (target: string) => void
       handleEditorChange: () => void
-      onToggleFavorite?: (path: string) => void
-      onToggleOrganized?: (path: string) => void
-      onEnterNeighborhood?: (entry: VaultEntry) => void
       onRevealFile?: (path: string) => void
       onCopyFilePath?: (path: string) => void
       onCopyDeepLink?: (entry: VaultEntry) => void
       onCopyGitUrl?: (entry: VaultEntry) => void
       onOpenExternalFile?: (path: string) => void
       onDeleteNote?: (path: string) => void
-      onArchiveNote?: (path: string) => void
-      onUnarchiveNote?: (path: string) => void
       vaultPath?: string
       rawModeContent: string | null
       findRequest?: RawEditorFindRequest | null
@@ -526,25 +501,11 @@ function useEditorSetup(options: EditorSetupParams) {
       isConflicted?: boolean
       onKeepMine?: (path: string) => void
       onKeepTheirs?: (path: string) => void
-      onInspectorResize: (delta: number) => void
-      inspectorWidth: number
-      inspectorEntry: VaultEntry | null
-      inspectorContent: string | null
-      gitHistory: GitCommit[]
-      handleViewCommitDiff: (commitHash: string) => Promise<void>
-      onUpdateFrontmatter?: (
-        path: string,
-        key: string,
-        value: FrontmatterValue,
-        options?: FrontmatterOpOptions,
-      ) => Promise<void>
-      onDeleteProperty?: (path: string, key: string, options?: FrontmatterOpOptions) => Promise<void>
-      onAddProperty?: (path: string, key: string, value: FrontmatterValue, options?: FrontmatterOpOptions) => Promise<void>
-      onCreateMissingType?: (path: string, missingType: string, nextTypeName: string) => Promise<boolean | undefined>
-      onCreateAndOpenNote?: (title: string) => Promise<boolean>
-      onChangeWorkspace?: (entry: VaultEntry, workspace: WorkspaceIdentity) => Promise<void> | void
-      onInitializeProperties?: (path: string) => void
-      workspaces?: WorkspaceIdentity[]
+      onRightPanelResize: (delta: number) => void
+      rightPanelWidth: number
+      rightPanelEntry: VaultEntry | null
+      rightPanelContent: string | null
+      onToggleBacklinks?: () => void
       onImageImportError?: ImageImportErrorHandler
       locale?: AppLocale
       onExportPdf?: (source?: NotePdfExportSource) => void
@@ -569,14 +530,11 @@ function useEditorSetup(options: EditorSetupParams) {
       activeStatus,
       showDiffToggle,
       showTableOfContents,
+      showBacklinks,
       onToggleTableOfContents,
-      inspectorCollapsed,
-      onToggleInspector,
+      rightPanelCollapsed,
       onNavigateWikilink,
       handleEditorChange,
-      onToggleFavorite,
-      onToggleOrganized,
-      onEnterNeighborhood,
       onRevealFile,
       onCopyFilePath,
       onCopyDeepLink,
@@ -584,8 +542,6 @@ function useEditorSetup(options: EditorSetupParams) {
       onExportPdf,
       onOpenExternalFile,
       onDeleteNote,
-      onArchiveNote,
-      onUnarchiveNote,
       vaultPath,
       rawModeContent,
       findRequest,
@@ -597,20 +553,11 @@ function useEditorSetup(options: EditorSetupParams) {
       isConflicted,
       onKeepMine,
       onKeepTheirs,
-      onInspectorResize,
-      inspectorWidth,
-      inspectorEntry,
-      inspectorContent,
-      gitHistory,
-      handleViewCommitDiff,
-      onUpdateFrontmatter,
-      onDeleteProperty,
-      onAddProperty,
-      onCreateMissingType,
-      onCreateAndOpenNote,
-      onChangeWorkspace,
-      onInitializeProperties,
-      workspaces,
+      onRightPanelResize,
+      rightPanelWidth,
+      rightPanelEntry,
+      rightPanelContent,
+      onToggleBacklinks,
       onImageImportError,
       locale,
   } = options
@@ -653,21 +600,14 @@ function useEditorSetup(options: EditorSetupParams) {
               showDiffToggle={showDiffToggle}
               showTableOfContents={showTableOfContents}
               onToggleTableOfContents={onToggleTableOfContents}
-              inspectorCollapsed={inspectorCollapsed}
-              onToggleInspector={onToggleInspector}
               onNavigateWikilink={onNavigateWikilink}
               onEditorChange={handleEditorChange}
-              onToggleFavorite={onToggleFavorite}
-              onToggleOrganized={onToggleOrganized}
-              onEnterNeighborhood={onEnterNeighborhood}
               onRevealFile={onRevealFile}
               onCopyFilePath={onCopyFilePath}
               onCopyDeepLink={onCopyDeepLink}
               onCopyGitUrl={onCopyGitUrl}
               onExportPdf={() => onExportPdf?.('breadcrumb')}
               onDeleteNote={onDeleteNote}
-              onArchiveNote={onArchiveNote}
-              onUnarchiveNote={onUnarchiveNote}
               vaultPath={vaultPath}
               rawModeContent={rawModeContent}
               findRequest={findRequest}
@@ -683,30 +623,19 @@ function useEditorSetup(options: EditorSetupParams) {
               locale={locale}
             />
         )}
-        {(showTableOfContents || !inspectorCollapsed) && <ResizeHandle onResize={onInspectorResize} />}
+        {(showTableOfContents || showBacklinks || !rightPanelCollapsed) && <ResizeHandle onResize={onRightPanelResize} />}
         <EditorRightPanel
           showTableOfContents={showTableOfContents}
-          inspectorCollapsed={inspectorCollapsed}
-          inspectorWidth={inspectorWidth}
+          showBacklinks={showBacklinks}
+          rightPanelCollapsed={rightPanelCollapsed}
+          rightPanelWidth={rightPanelWidth}
           editor={editor}
-          inspectorEntry={inspectorEntry}
-          inspectorContent={inspectorContent}
+          entry={rightPanelEntry}
+          content={rightPanelContent}
           entries={entries}
-          gitHistory={gitHistory}
-          vaultPath={vaultPath ?? ''}
-          onToggleInspector={onToggleInspector}
           onToggleTableOfContents={onToggleTableOfContents}
           onNavigateWikilink={onNavigateWikilink}
-          onViewCommitDiff={handleViewCommitDiff}
-          onUpdateFrontmatter={onUpdateFrontmatter}
-          onDeleteProperty={onDeleteProperty}
-          onAddProperty={onAddProperty}
-          onCreateMissingType={onCreateMissingType}
-          onCreateAndOpenNote={onCreateAndOpenNote}
-          onChangeWorkspace={onChangeWorkspace}
-          onInitializeProperties={onInitializeProperties}
-          onToggleRawEditor={handleToggleRawExclusive}
-          workspaces={workspaces}
+          onToggleBacklinks={onToggleBacklinks}
           locale={locale}
         />
       </div>
@@ -787,20 +716,26 @@ export const Editor = memo(function Editor(props: EditorProps) {
     flushPendingRawContentRef: props.flushPendingRawContentRef,
   })
   const rightPanel = useRightPanelExclusion(props)
-  const { tableOfContentsToggleRef } = props
+  const { backlinksToggleRef, tableOfContentsToggleRef } = props
   useEffect(() => {
     if (tableOfContentsToggleRef) {
       tableOfContentsToggleRef.current = rightPanel.handleToggleTableOfContents
     }
   }, [tableOfContentsToggleRef, rightPanel.handleToggleTableOfContents])
+  useEffect(() => {
+    if (backlinksToggleRef) {
+      backlinksToggleRef.current = rightPanel.handleToggleBacklinks
+    }
+  }, [backlinksToggleRef, rightPanel.handleToggleBacklinks])
 
   return (
     <EditorLayout
       {...buildEditorLayoutProps(props, runtime, findRequest)}
       onImageImportError={handleImageImportError}
-      onToggleInspector={rightPanel.handleToggleInspectorPanel}
       showTableOfContents={rightPanel.showTableOfContents}
+      showBacklinks={rightPanel.showBacklinks}
       onToggleTableOfContents={rightPanel.handleToggleTableOfContents}
+      onToggleBacklinks={rightPanel.handleToggleBacklinks}
       onExportPdf={handleExportPdf}
     />
   )

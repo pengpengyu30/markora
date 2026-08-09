@@ -321,12 +321,9 @@ fn is_broad_personal_folder(path: &std::path::Path) -> bool {
 
 #[cfg(desktop)]
 fn has_tolaria_vault_marker(path: &std::path::Path) -> bool {
-    ["type.md", "note.md"]
+    ["attachments", "views"]
         .iter()
-        .any(|file| path.join(file).is_file())
-        || ["attachments", "type", "views"]
-            .iter()
-            .any(|dir| path.join(dir).is_dir())
+        .any(|dir| path.join(dir).is_dir())
 }
 
 #[cfg(desktop)]

@@ -17,10 +17,7 @@ interface NoteCommandsConfig {
   hasActiveNote: boolean
   activeTabPath: string | null
   activeFileKind?: 'markdown' | 'text' | 'binary'
-  isArchived: boolean
-  activeNoteHasIcon?: boolean
-  onCreateNote: (type?: string, options?: ImmediateCreateOptions) => void
-  onCreateType?: () => void
+  onCreateNote: (options?: ImmediateCreateOptions) => void
   currentFolderCreateOptions?: ImmediateCreateOptions
   onSave: () => void
   onUndo?: () => void
@@ -33,23 +30,14 @@ interface NoteCommandsConfig {
   onReplaceInNote?: () => void
   onPastePlainText: () => void
   onDeleteNote: (path: string) => void
-  onArchiveNote: (path: string) => void
-  onUnarchiveNote: (path: string) => void
-  onChangeNoteType?: () => void
   onMoveNoteToFolder?: () => void
   canMoveNoteToFolder?: boolean
   onTurnCurrentBlockInto?: (target: RichEditorBlockTypeDefinition) => void
-  onSetNoteIcon?: () => void
-  onRemoveNoteIcon?: () => void
   onOpenInNewWindow?: () => void
   onRevealActiveFile?: (path: string) => void
   onCopyActiveFilePath?: (path: string) => void
   onCopyActiveDeepLink?: (path: string) => void
   onOpenActiveFileExternal?: (path: string) => void
-  onToggleFavorite?: (path: string) => void
-  isFavorite?: boolean
-  onToggleOrganized?: (path: string) => void
-  isOrganized?: boolean
   onRestoreDeletedNote?: () => void
   canRestoreDeletedNote?: boolean
   locale?: AppLocale
@@ -91,7 +79,7 @@ function buildCurrentFolderNoteCommand(config: NoteCommandsConfig): CommandActio
     label: 'Create New Note in Current Folder',
     keywords: ['new', 'create', 'add', 'folder', 'current'],
     enabled: config.currentFolderCreateOptions !== undefined,
-    execute: () => config.onCreateNote(undefined, config.currentFolderCreateOptions),
+    execute: () => config.onCreateNote(config.currentFolderCreateOptions),
   })
 }
 
@@ -110,16 +98,9 @@ function buildCoreNoteCommands(config: NoteCommandsConfig): CommandAction[] {
       label: 'New Sheet',
       keywords: ['new', 'create', 'add', 'sheet', 'spreadsheet', 'table', 'csv'],
       enabled: true,
-      execute: () => config.onCreateNote(undefined, { creationPath: 'cmd_sheet', format: 'sheet' }),
+      execute: () => config.onCreateNote({ creationPath: 'cmd_sheet', format: 'sheet' }),
     }),
     buildCurrentFolderNoteCommand(config),
-    createNoteCommand({
-      id: 'create-type',
-      label: 'New Type',
-      keywords: ['new', 'create', 'type', 'template'],
-      enabled: !!config.onCreateType,
-      execute: () => config.onCreateType?.(),
-    }),
     createNoteCommand({
       id: 'save-note',
       label: 'Save Note',
@@ -167,10 +148,7 @@ function buildHistoryNoteCommands(config: NoteCommandsConfig): CommandAction[] {
 }
 
 function buildPathNoteCommands(config: NoteCommandsConfig): CommandAction[] {
-  return [
-    ...buildDestructiveNoteCommands(config),
-    ...buildPinnedNoteCommands(config),
-  ]
+  return buildDestructiveNoteCommands(config)
 }
 
 function buildDestructiveNoteCommands(config: NoteCommandsConfig): CommandAction[] {
@@ -183,37 +161,6 @@ function buildDestructiveNoteCommands(config: NoteCommandsConfig): CommandAction
       enabled: config.hasActiveNote,
       path: config.activeTabPath,
       run: config.onDeleteNote,
-    }),
-    createNoteCommand({
-      id: 'archive-note',
-      label: config.isArchived ? 'Unarchive Note' : 'Archive Note',
-      keywords: ['archive'],
-      enabled: config.hasActiveNote,
-      path: config.activeTabPath,
-      run: config.isArchived ? config.onUnarchiveNote : config.onArchiveNote,
-    }),
-  ]
-}
-
-function buildPinnedNoteCommands(config: NoteCommandsConfig): CommandAction[] {
-  return [
-    createNoteCommand({
-      id: 'toggle-favorite',
-      label: config.isFavorite ? 'Remove from Favorites' : 'Add to Favorites',
-      shortcut: getAppCommandShortcutDisplay(APP_COMMAND_IDS.noteToggleFavorite),
-      keywords: ['favorite', 'star', 'bookmark', 'pin'],
-      enabled: config.hasActiveNote && !!config.onToggleFavorite,
-      path: config.activeTabPath,
-      run: (path) => config.onToggleFavorite?.(path),
-    }),
-    createNoteCommand({
-      id: 'toggle-organized',
-      label: config.isOrganized ? 'Mark as Unorganized' : 'Mark as Organized',
-      shortcut: getAppCommandShortcutDisplay(APP_COMMAND_IDS.noteToggleOrganized),
-      keywords: ['organized', 'inbox', 'triage', 'done'],
-      enabled: config.hasActiveNote && !!config.onToggleOrganized,
-      path: config.activeTabPath,
-      run: (path) => config.onToggleOrganized?.(path),
     }),
   ]
 }
@@ -241,20 +188,6 @@ function buildRecoveryCommands(config: NoteCommandsConfig): CommandAction[] {
 
 function buildRetargetingCommands(config: NoteCommandsConfig): CommandAction[] {
   return [
-    createNoteCommand({
-      id: 'set-note-icon',
-      label: 'Set Note Icon',
-      keywords: ['icon', 'emoji', 'set', 'add', 'change', 'picker'],
-      enabled: config.hasActiveNote && !!config.onSetNoteIcon,
-      execute: () => config.onSetNoteIcon?.(),
-    }),
-    createNoteCommand({
-      id: 'change-note-type',
-      label: 'Change Note Type…',
-      keywords: ['type', 'change', 'retarget', 'section', 'move'],
-      enabled: config.hasActiveNote && !!config.onChangeNoteType,
-      execute: () => config.onChangeNoteType?.(),
-    }),
     createNoteCommand({
       id: 'move-note-to-folder',
       label: 'Move Note to Folder…',
@@ -347,7 +280,7 @@ function buildExportNotePdfCommand(config: NoteCommandsConfig): CommandAction {
   return createNoteCommand({
     id: 'export-note-pdf',
     label: translate(config.locale ?? 'en', 'editor.toolbar.exportPdf'),
-    keywords: ['export', 'pdf', 'print', 'share', 'archive'],
+    keywords: ['export', 'pdf', 'print', 'share'],
     enabled: config.hasActiveNote && (config.activeFileKind ?? 'markdown') === 'markdown' && !!config.onExportNoteAsPdf,
     execute: () => config.onExportNoteAsPdf?.(),
   })
@@ -375,13 +308,6 @@ function buildFileActionCommands(config: NoteCommandsConfig): CommandAction[] {
 
 function buildPresentationCommands(config: NoteCommandsConfig): CommandAction[] {
   return [
-    createNoteCommand({
-      id: 'remove-note-icon',
-      label: 'Remove Note Icon',
-      keywords: ['icon', 'emoji', 'remove', 'delete', 'clear'],
-      enabled: config.hasActiveNote && !!config.activeNoteHasIcon && !!config.onRemoveNoteIcon,
-      execute: () => config.onRemoveNoteIcon?.(),
-    }),
     createNoteCommand({
       id: 'open-in-new-window',
       label: 'Open in New Window',

@@ -15,7 +15,6 @@ fn documents_dir() -> Option<PathBuf> {
     dirs::document_dir().or_else(|| dirs::home_dir().map(|home| home.join("Documents")))
 }
 
-const GETTING_STARTED_REQUIRED_CONFIG_FILES: [&str; 2] = ["type.md", "note.md"];
 const GETTING_STARTED_TEMPLATE_MARKERS: [&str; 2] = ["welcome.md", "views/active-projects.yml"];
 
 /// Check whether a vault path exists on disk.
@@ -41,13 +40,7 @@ fn is_canonical_getting_started_path(path: &Path, default_path: Option<&Path>) -
 }
 
 fn canonical_getting_started_vault_exists(path: &Path) -> bool {
-    has_getting_started_config_files(path) && has_getting_started_template_marker(path)
-}
-
-fn has_getting_started_config_files(path: &Path) -> bool {
-    GETTING_STARTED_REQUIRED_CONFIG_FILES
-        .iter()
-        .all(|file| path.join(file).is_file())
+    has_getting_started_template_marker(path)
 }
 
 fn has_getting_started_template_marker(path: &Path) -> bool {
@@ -77,7 +70,6 @@ fn create_getting_started_vault_from_repo(
     crate::git::clone_repo(repo_url, &target_path_str)?;
     let vault_path = canonical_vault_path(target_path)?;
     crate::git::disconnect_all_remotes(path_to_utf8(&vault_path, "Vault path")?)?;
-    refresh_cloned_vault_config_files(&vault_path)?;
     Ok(vault_path)
 }
 
@@ -99,38 +91,6 @@ fn canonical_vault_path(target_path: &Path) -> Result<PathBuf, String> {
 fn path_to_utf8<'a>(path: &'a Path, context: &str) -> Result<&'a str, String> {
     path.to_str()
         .ok_or_else(|| format!("{context} '{}' is not valid UTF-8", path.display()))
-}
-
-fn refresh_cloned_vault_config_files(vault_path: &Path) -> Result<(), String> {
-    crate::vault::repair_config_files(path_to_utf8(vault_path, "Vault path")?)?;
-
-    if !vault_has_pending_changes(vault_path)? {
-        return Ok(());
-    }
-
-    crate::git::ensure_author_config(vault_path)?;
-    crate::git::git_commit(
-        path_to_utf8(vault_path, "Vault path")?,
-        "Initialize Tolaria config files",
-    )?;
-    Ok(())
-}
-
-fn vault_has_pending_changes(vault_path: &Path) -> Result<bool, String> {
-    let output = crate::hidden_command("git")
-        .args(["status", "--porcelain"])
-        .current_dir(vault_path)
-        .output()
-        .map_err(|error| format!("Failed to inspect cloned vault status: {error}"))?;
-
-    if output.status.success() {
-        return Ok(!String::from_utf8_lossy(&output.stdout).trim().is_empty());
-    }
-
-    Err(format!(
-        "git status failed: {}",
-        String::from_utf8_lossy(&output.stderr).trim()
-    ))
 }
 
 #[cfg(test)]
@@ -233,8 +193,6 @@ mod tests {
         assert!(dest.join("welcome.md").exists());
         assert!(dest.join("views").join("active-projects.yml").exists());
         assert!(dest.join(".git").exists());
-        assert!(dest.join("type.md").exists());
-        assert!(dest.join("note.md").exists());
         assert!(!dest.join("AGENTS.md").exists());
         assert!(!dest.join("CLAUDE.md").exists());
         assert!(!dest.join("GEMINI.md").exists());

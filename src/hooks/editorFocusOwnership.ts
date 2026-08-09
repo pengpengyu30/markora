@@ -39,18 +39,3 @@ export function useEditorFocusScope(scopeRef: RefObject<HTMLElement | null>): vo
     }
   }, [scopeRef])
 }
-
-export function useInspectorFocusBoundary(boundaryRef: RefObject<HTMLElement | null>): void {
-  useLayoutEffect(() => {
-    const boundary = boundaryRef.current
-    if (!boundary) return
-
-    const suspendFromBoundary = (event: Event) => suspendEditorFocus(event.target)
-    boundary.addEventListener('focusin', suspendFromBoundary, true)
-    boundary.addEventListener('pointerdown', suspendFromBoundary, true)
-    return () => {
-      boundary.removeEventListener('focusin', suspendFromBoundary, true)
-      boundary.removeEventListener('pointerdown', suspendFromBoundary, true)
-    }
-  }, [boundaryRef])
-}

@@ -2,7 +2,6 @@ import { useRef, useState, useCallback, useEffect, useMemo } from 'react'
 import { trackEvent } from '../lib/telemetry'
 import type { EditorView } from '@codemirror/view'
 import { MIN_QUERY_LENGTH } from '../utils/wikilinkSuggestions'
-import { buildTypeEntryMap } from '../utils/typeColors'
 import { NoteSearchList } from './NoteSearchList'
 import {
   buildRawEditorAutocompleteState,
@@ -222,8 +221,6 @@ function useRawEditorPendingChanges({
 
 type RawEditorAutocompleteDirection = 'next' | 'previous'
 type RawEditorSetAutocomplete = React.Dispatch<React.SetStateAction<RawEditorAutocompleteState | null>>
-type RawEditorTypeEntryMap = ReturnType<typeof buildTypeEntryMap>
-
 function getRawEditorAutocompleteDirection(key: string): RawEditorAutocompleteDirection | null {
   if (key === 'ArrowDown') return 'next'
   if (key === 'ArrowUp') return 'previous'
@@ -234,14 +231,12 @@ function buildNextRawEditorAutocomplete({
   baseItems,
   insertWikilinkRef,
   sourceEntry,
-  typeEntryMap,
   vaultPath,
   view,
 }: {
   baseItems: ReturnType<typeof buildRawEditorBaseItems>
   insertWikilinkRef: React.MutableRefObject<(target: string) => void>
   sourceEntry?: VaultEntry
-  typeEntryMap: RawEditorTypeEntryMap
   vaultPath?: string
   view: EditorView
 }): RawEditorAutocompleteState | null {
@@ -254,7 +249,6 @@ function buildNextRawEditorAutocomplete({
     view,
     baseItems,
     query,
-    typeEntryMap,
     onInsertTarget: (target: string) => insertWikilinkRef.current(target),
     sourceEntry,
     vaultPath: vaultPath ?? '',
@@ -304,7 +298,6 @@ function useRawEditorAutocompleteController({
   vaultPath,
 }: Pick<RawEditorViewProps, 'entries' | 'sourceEntry' | 'vaultPath'>) {
   const [autocomplete, setAutocomplete] = useState<RawEditorAutocompleteState | null>(null)
-  const typeEntryMap = useMemo(() => buildTypeEntryMap(entries), [entries])
   const baseItems = useMemo(() => buildRawEditorBaseItems(entries), [entries])
   const insertWikilinkRef = useRef<(target: string) => void>(() => {})
 
@@ -315,13 +308,12 @@ function useRawEditorAutocompleteController({
       baseItems,
       insertWikilinkRef,
       sourceEntry,
-      typeEntryMap,
       vaultPath,
       view,
         }),
       )
     },
-    [baseItems, sourceEntry, typeEntryMap, vaultPath],
+    [baseItems, sourceEntry, vaultPath],
   )
 
   const handleItemHover = useCallback((index: number) => {

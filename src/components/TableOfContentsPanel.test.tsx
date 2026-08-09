@@ -192,19 +192,4 @@ describe('TableOfContentsPanel', () => {
     expect(setTextCursorPosition).toHaveBeenCalledWith('h2', 'start')
   })
 
-  it('shows note info at the bottom of the table of contents', () => {
-    render(
-      <TableOfContentsPanel
-        editor={{ document: blocks, setTextCursorPosition: vi.fn() }}
-        entry={entry}
-        sourceContent="One two three"
-        onClose={vi.fn()}
-      />,
-    )
-
-    expect(screen.getByText('Info')).toBeInTheDocument()
-    expect(screen.getByText('Words')).toBeInTheDocument()
-    expect(screen.getByText('3')).toBeInTheDocument()
-    expect(screen.getByText('2.0 KB')).toBeInTheDocument()
-  })
 })

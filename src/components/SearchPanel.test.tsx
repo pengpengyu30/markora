@@ -458,14 +458,6 @@ describe('SearchPanel', () => {
     })
   })
 
-  it('displays note type badge from vault entries', async () => {
-    await renderSingleResultSearch()
-
-    await waitFor(() => {
-      expect(screen.getByText('Essay')).toBeInTheDocument()
-    })
-  })
-
   it('shows workspace initials at the far right instead of prefixing result titles', async () => {
     const personalWorkspace = {
       id: 'personal',
@@ -514,7 +506,7 @@ describe('SearchPanel', () => {
     expect(screen.queryByText(/Team \//)).not.toBeInTheDocument()
     const workspaceBadge = screen.getByTestId('search-result-workspace-badge')
     expect(workspaceBadge).toHaveTextContent('TE')
-    expect(screen.getByText('Essay').compareDocumentPosition(workspaceBadge) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.getByText('How to Design AI-first APIs').compareDocumentPosition(workspaceBadge) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('shows metadata subtitle with word count and links', async () => {

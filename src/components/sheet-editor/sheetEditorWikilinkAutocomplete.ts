@@ -22,19 +22,17 @@ export function sheetWikilinkAutocompleteItems({
   insertWikilink,
   query,
   sourceEntry,
-  typeEntryMap,
   vaultPath,
 }: {
   baseItems: RawEditorBaseItems
   insertWikilink: (target: string) => void
   query: string
   sourceEntry?: VaultEntry
-  typeEntryMap: Record<string, VaultEntry>
   vaultPath: string
 }): WikilinkSuggestionItem[] {
   const candidates = sheetWikilinkCandidates(baseItems, query)
   const withHandlers = attachClickHandlers(candidates, insertWikilink, vaultPath, sourceEntry)
-  return enrichSuggestionItems(withHandlers, query, typeEntryMap, {
+  return enrichSuggestionItems(withHandlers, query, {
     showWorkspace: hasMultipleSuggestionWorkspaces(baseItems),
   })
 }

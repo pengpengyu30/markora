@@ -14,32 +14,25 @@ const GROUP_LABEL_KEYS = {
 const STATIC_LABEL_KEYS: Partial<Record<string, TranslationKey>> = {
   'search-notes': 'command.navigation.searchNotes',
   'go-all': 'command.navigation.goAllNotes',
-  'go-archived': 'command.navigation.goArchived',
   'go-changes': 'command.navigation.goChanges',
   'go-pulse': 'command.navigation.goHistory',
   'go-back': 'command.navigation.goBack',
   'go-forward': 'command.navigation.goForward',
-  'go-inbox': 'command.navigation.goInbox',
   'rename-folder': 'command.navigation.renameFolder',
   'delete-folder': 'command.navigation.deleteFolder',
   'filter-open': 'command.navigation.showOpenNotes',
-  'filter-archived': 'command.navigation.showArchivedNotes',
   'create-note': 'command.note.newNote',
   'create-sheet': 'command.note.newSheet',
   'create-note-current-folder': 'command.note.newNoteInCurrentFolder',
-  'create-type': 'command.note.newType',
   'save-note': 'command.note.saveNote',
   'paste-plain-text': 'command.note.pastePlainText',
   'find-in-note': 'command.note.findInNote',
   'replace-in-note': 'command.note.replaceInNote',
   'delete-note': 'command.note.deleteNote',
   'restore-deleted-note': 'command.note.restoreDeleted',
-  'set-note-icon': 'command.note.setIcon',
-  'change-note-type': 'command.note.changeType',
   'move-note-to-folder': 'command.note.moveToFolder',
   'copy-active-deep-link': 'command.note.copyDeepLink',
   'export-note-pdf': 'command.note.exportPdf',
-  'remove-note-icon': 'command.note.removeIcon',
   'open-in-new-window': 'command.note.openNewWindow',
   'initialize-git': 'command.git.initialize',
   'commit-push': 'command.git.commitPush',
@@ -50,7 +43,6 @@ const STATIC_LABEL_KEYS: Partial<Record<string, TranslationKey>> = {
   'view-editor': 'command.view.editorOnly',
   'view-editor-list': 'command.view.editorNoteList',
   'view-all': 'command.view.fullLayout',
-  'toggle-inspector': 'command.view.toggleProperties',
   'toggle-diff': 'command.view.toggleDiff',
   'toggle-raw-editor': 'command.view.toggleRaw',
   'set-note-width-normal': 'command.view.noteWidthNormal',
@@ -97,50 +89,8 @@ function localizeUndoRedoCommand(command: CommandAction, t: Translate): string |
   return null
 }
 
-function noteToggleLabelKey(command: CommandAction): TranslationKey | null {
-  switch (command.id) {
-    case 'archive-note':
-      return command.label === 'Unarchive Note' ? 'command.note.unarchiveNote' : 'command.note.archiveNote'
-    case 'toggle-favorite':
-      return command.label === 'Remove from Favorites' ? 'command.note.removeFavorite' : 'command.note.addFavorite'
-    case 'toggle-organized':
-      return command.label === 'Mark as Unorganized' ? 'command.note.markUnorganized' : 'command.note.markOrganized'
-    default:
-      return null
-  }
-}
-
 function localizeNoteStateCommand(command: CommandAction, t: Translate): string | null {
-  const undoRedoLabel = localizeUndoRedoCommand(command, t)
-  if (undoRedoLabel) return undoRedoLabel
-
-  const toggleKey = noteToggleLabelKey(command)
-  return toggleKey ? t(toggleKey) : null
-}
-
-function localizeColumnsCommand(command: CommandAction, t: Translate): string {
-  if (command.label === 'Customize All Notes columns') return t('noteList.properties.customizeAllColumns')
-  if (command.label === 'Customize Inbox columns') return t('noteList.properties.customizeInboxColumns')
-  const viewName = wrappedLabelValue(command.label, 'Customize ', ' columns')
-  if (viewName) return t('noteList.properties.customizeViewColumns', { name: viewName })
-  return t('noteList.properties.customizeColumns')
-}
-
-function wrappedLabelValue(label: string, prefix: string, suffix: string): string | null {
-  return label.startsWith(prefix) && label.endsWith(suffix)
-    ? label.slice(prefix.length, -suffix.length)
-    : null
-}
-
-function localizeMoveSavedViewCommand(command: CommandAction, t: Translate, direction: 'Up' | 'Down'): string {
-  const viewName = wrappedLabelValue(command.label, 'Move ', ` ${direction}`)
-  if (!viewName || viewName === 'View') {
-    return t(direction === 'Up' ? 'command.view.moveViewUp' : 'command.view.moveViewDown')
-  }
-
-  return t(direction === 'Up' ? 'command.view.moveNamedViewUp' : 'command.view.moveNamedViewDown', {
-    name: viewName,
-  })
+  return localizeUndoRedoCommand(command, t)
 }
 
 type CommandLocalizer = (command: CommandAction, t: Translate) => string
@@ -151,9 +101,6 @@ const VIEW_STATE_LOCALIZERS: readonly [string, CommandLocalizer][] = [
     t('command.view.zoomIn', { zoom: parenthesizedSuffix(command.label)?.replace('%', '') ?? '' })],
   ['zoom-out', (command, t) =>
     t('command.view.zoomOut', { zoom: parenthesizedSuffix(command.label)?.replace('%', '') ?? '' })],
-  ['customize-note-list-columns', localizeColumnsCommand],
-  ['move-view-up', (command, t) => localizeMoveSavedViewCommand(command, t, 'Up')],
-  ['move-view-down', (command, t) => localizeMoveSavedViewCommand(command, t, 'Down')],
 ]
 
 function localizeViewStateCommand(command: CommandAction, t: Translate): string | null {
@@ -170,18 +117,6 @@ function localizeGitStateCommand(command: CommandAction, t: Translate): string |
   return null
 }
 
-function localizeTypeCommand(command: CommandAction, t: Translate): string | null {
-  if (command.id.startsWith('new-') && command.group === 'Note') {
-    return t('command.note.newTypedNote', { type: stripKnownPrefix(command.label, 'New ') })
-  }
-
-  if (command.id.startsWith('list-') && command.group === 'Navigation') {
-    return t('command.navigation.listType', { type: stripKnownPrefix(command.label, 'List ') })
-  }
-
-  return null
-}
-
 export function localizeCommandGroup(group: CommandGroup, locale: AppLocale = 'en'): string {
   return createTranslator(locale)(Reflect.get(GROUP_LABEL_KEYS, group) as keyof ReturnType<typeof createTranslator> extends never ? never : Parameters<ReturnType<typeof createTranslator>>[0])
 }
@@ -190,7 +125,6 @@ const DYNAMIC_COMMAND_LOCALIZERS: readonly NullableCommandLocalizer[] = [
   localizeNoteStateCommand,
   localizeViewStateCommand,
   localizeGitStateCommand,
-  localizeTypeCommand,
 ]
 
 function localizeDynamicCommand(command: CommandAction, t: Translate): string | null {

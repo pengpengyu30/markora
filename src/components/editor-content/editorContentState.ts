@@ -42,7 +42,6 @@ function getEntryLookup(entries: VaultEntry[]): Map<string, VaultEntry> {
 
 export interface EditorContentState {
   freshEntry: VaultEntry | undefined
-  isArchived: boolean
   hasH1: boolean
   isDeletedPreview: boolean
   isHtmlPreview: boolean
@@ -114,7 +113,6 @@ export function deriveEditorContentState(input: EditorContentStateInput): Editor
 
   return {
     freshEntry,
-    isArchived: freshEntry?.archived ?? activeTab?.entry.archived ?? false,
     hasH1,
     ...visibilityState,
     path: activeTab?.entry.path ?? '',

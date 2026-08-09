@@ -3,7 +3,7 @@ import { renderHook, act } from '@testing-library/react'
 import { useZoom } from './useZoom'
 import { bindVaultConfigStore, getVaultConfig, resetVaultConfigStore } from '../utils/vaultConfigStore'
 
-const DEFAULT_VC = { zoom: null, view_mode: null, editor_mode: null, tag_colors: null, status_colors: null, property_display_modes: null }
+const DEFAULT_VC = { zoom: null, view_mode: null, editor_mode: null }
 const ZOOM_CHANGE_CASES = [
   ['zoomIn', (zoom) => zoom.zoomIn(), undefined],
   ['zoomOut', (zoom) => zoom.zoomOut(), undefined],

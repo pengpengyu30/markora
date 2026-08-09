@@ -6,18 +6,13 @@ import {
   useEffect,
   type ChangeEvent,
   type CSSProperties,
-  type ComponentType,
   type Dispatch,
   type KeyboardEvent,
   type SetStateAction,
-  type SVGAttributes,
 } from 'react'
 import { Input } from '@/components/ui/input'
 import type { VaultEntry, WorkspaceIdentity } from '../types'
-import { getTypeColor, getTypeLightColor } from '../utils/typeColors'
 import { scrollSelectedHTMLChildIntoView } from '../utils/domScroll'
-import { getTypeIcon } from './NoteItem'
-import { NoteTitleIcon } from './NoteTitleIcon'
 import { WorkspaceInitialsBadge } from './WorkspaceInitialsBadge'
 import './WikilinkSuggestionMenu.css'
 
@@ -35,7 +30,6 @@ type AutocompleteKeyAction = 'next' | 'previous' | 'select' | 'close'
 
 interface NoteAutocompleteProps {
   entries: VaultEntry[]
-  typeEntryMap: Record<string, VaultEntry>
   value: string
   onChange: (value: string) => void
   onSelect: (noteTitle: string) => void
@@ -47,11 +41,6 @@ interface NoteAutocompleteProps {
 
 interface MatchedEntry {
   title: string
-  noteIcon: string | null
-  noteType?: string
-  typeColor?: string
-  typeLightColor?: string
-  TypeIcon?: ComponentType<SVGAttributes<SVGSVGElement>>
   workspace?: WorkspaceIdentity | null
 }
 
@@ -79,40 +68,22 @@ function shouldShowWorkspaceBadge(entries: VaultEntry[]): boolean {
 
 function buildMatchedEntry(
   entry: VaultEntry,
-  typeEntryMap: Record<string, VaultEntry>,
   showWorkspace: boolean,
 ): MatchedEntry {
   return {
     title: entry.title,
-    noteIcon: entry.icon,
-    ...matchedEntryType(entry, typeEntryMap),
     workspace: showWorkspace ? (entry.workspace ?? null) : null,
   }
 }
 
-function matchedEntryType(
-  entry: VaultEntry,
-  typeEntryMap: Record<string, VaultEntry>,
-): Pick<MatchedEntry, 'noteType' | 'typeColor' | 'typeLightColor' | 'TypeIcon'> {
-  const noteType = entry.isA || undefined
-  if (!noteType) return {}
-  const typeEntry = Reflect.get(typeEntryMap, noteType) as VaultEntry | undefined
-  return {
-    noteType,
-    typeColor: getTypeColor(noteType, typeEntry?.color),
-    typeLightColor: getTypeLightColor(noteType, typeEntry?.color),
-    TypeIcon: getTypeIcon(noteType, typeEntry?.icon),
-  }
-}
-
-function matchEntries(entries: VaultEntry[], typeEntryMap: Record<string, VaultEntry>, query: string): MatchedEntry[] {
+function matchEntries(entries: VaultEntry[], query: string): MatchedEntry[] {
   if (query.length < MIN_QUERY_LENGTH) return []
   const lowerQuery = query.toLowerCase()
   const showWorkspace = shouldShowWorkspaceBadge(entries)
   return entries
     .filter((entry) => entryMatchesQuery(entry, lowerQuery))
     .slice(0, MAX_RESULTS)
-    .map((entry) => buildMatchedEntry(entry, typeEntryMap, showWorkspace))
+    .map((entry) => buildMatchedEntry(entry, showWorkspace))
 }
 
 function resolveOpenAutocompleteKeyAction(key: string): AutocompleteKeyAction | null {
@@ -234,23 +205,8 @@ function NoteAutocompleteMenuItem({ item, selected, onSelect, onHover }: NoteAut
           minWidth: 0,
         }}
       >
-        {item.TypeIcon && <item.TypeIcon width={14} height={14} style={{ color: item.typeColor, flexShrink: 0 }} />}
-        <NoteTitleIcon icon={item.noteIcon} size={14} />
         {item.title}
       </span>
-      {item.noteType && (
-        <span
-          className="wikilink-menu__type"
-          style={{
-            color: item.typeColor,
-            backgroundColor: item.typeLightColor,
-            borderRadius: 9999,
-            padding: '1px 8px',
-          }}
-        >
-          {item.noteType}
-        </span>
-      )}
       <WorkspaceInitialsBadge workspace={item.workspace} testId="note-autocomplete-workspace-badge" />
     </button>
   )
@@ -323,15 +279,15 @@ function useCloseAutocompleteOnOutsideClick(
 }
 
 export function NoteAutocomplete(options: NoteAutocompleteProps) {
-  const { entries, typeEntryMap, value, onChange, onSelect, onEscape, placeholder, autoFocus, testId } = options
+  const { entries, value, onChange, onSelect, onEscape, placeholder, autoFocus, testId } = options
   const [selectedIndex, setSelectedIndex] = useState(-1)
   const [open, setOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
   const matches = useMemo(
-    () => (open ? matchEntries(entries, typeEntryMap, value) : []),
-    [entries, typeEntryMap, value, open],
+    () => (open ? matchEntries(entries, value) : []),
+    [entries, value, open],
   )
 
   useSelectedAutocompleteItemScroll(selectedIndex, menuRef)

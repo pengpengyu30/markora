@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { renderHook } from '@testing-library/react'
-import { useCommandRegistry, buildTypeCommands, extractVaultTypes, pluralizeType, groupSortKey } from './useCommandRegistry'
+import { useCommandRegistry, groupSortKey } from './useCommandRegistry'
 import type { CommandAction } from './useCommandRegistry'
 import { formatShortcutDisplay } from './appCommandCatalog'
 
@@ -11,7 +11,6 @@ function makeConfig(overrides: Record<string, unknown> = {}) {
     modifiedCount: 0,
     onQuickOpen: vi.fn(),
     onCreateNote: vi.fn(),
-    onCreateNoteOfType: vi.fn(),
     onSave: vi.fn(),
     onPastePlainText: vi.fn(),
     onOpenSettings: vi.fn(),
@@ -22,7 +21,7 @@ function makeConfig(overrides: Record<string, unknown> = {}) {
     onCommitPush: vi.fn(),
     onResolveConflicts: vi.fn(),
     onSetViewMode: vi.fn(),
-    onToggleInspector: vi.fn(),
+    onToggleBacklinks: vi.fn(),
     onToggleDiff: vi.fn(),
     onToggleRawEditor: vi.fn(),
     noteWidth: 'normal',
@@ -42,7 +41,6 @@ function makeConfig(overrides: Record<string, unknown> = {}) {
     canGoBack: false,
     canGoForward: false,
     onCheckForUpdates: vi.fn(),
-    onCreateType: vi.fn(),
     ...overrides,
   }
 }
@@ -184,64 +182,6 @@ describe('useCommandRegistry', () => {
     expect(findCommand(result.current, 'resolve-conflicts')!.enabled).toBe(true)
   })
 
-  it('includes set-note-icon command in Note group', () => {
-    const config = makeConfig({ onSetNoteIcon: vi.fn() })
-    const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'set-note-icon')
-    expect(cmd).toBeDefined()
-    expect(cmd!.group).toBe('Note')
-    expect(cmd!.label).toBe('Set Note Icon')
-  })
-
-  it('set-note-icon is enabled when active note and callback exist', () => {
-    const config = makeConfig({ onSetNoteIcon: vi.fn() })
-    const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'set-note-icon')
-    expect(cmd!.enabled).toBe(true)
-  })
-
-  it('set-note-icon is disabled when no active note', () => {
-    const config = makeConfig({ activeTabPath: null, onSetNoteIcon: vi.fn() })
-    const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'set-note-icon')
-    expect(cmd!.enabled).toBe(false)
-  })
-
-  it('remove-note-icon is enabled when active note has icon', () => {
-    const config = makeConfig({ onRemoveNoteIcon: vi.fn(), activeNoteHasIcon: true })
-    const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'remove-note-icon')
-    expect(cmd!.enabled).toBe(true)
-  })
-
-  it('remove-note-icon is disabled when active note has no icon', () => {
-    const config = makeConfig({ onRemoveNoteIcon: vi.fn(), activeNoteHasIcon: false })
-    const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'remove-note-icon')
-    expect(cmd!.enabled).toBe(false)
-  })
-
-  it('set-note-icon executes callback', () => {
-    const onSetNoteIcon = vi.fn()
-    const config = makeConfig({ onSetNoteIcon })
-    const { result } = renderHook(() => useCommandRegistry(config))
-    findCommand(result.current, 'set-note-icon')!.execute()
-    expect(onSetNoteIcon).toHaveBeenCalled()
-  })
-
-  it('includes Change Note Type when the active note can be retargeted', () => {
-    const onChangeNoteType = vi.fn()
-    const config = makeConfig({ onChangeNoteType })
-    const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'change-note-type')
-
-    expect(cmd).toBeDefined()
-    expect(cmd!.enabled).toBe(true)
-
-    cmd!.execute()
-    expect(onChangeNoteType).toHaveBeenCalledOnce()
-  })
-
   it('exposes command palette actions for changing the focused editor block type', () => {
     const onTurnCurrentBlockInto = vi.fn()
     const config = makeConfig({ onTurnCurrentBlockInto })
@@ -319,56 +259,6 @@ describe('useCommandRegistry', () => {
     const { result } = renderHook(() => useCommandRegistry(config))
     const cmd = findCommand(result.current, 'restore-deleted-note')
     expect(cmd!.enabled).toBe(false)
-  })
-
-  it('includes Customize Inbox columns when the Inbox action is available', () => {
-    const onCustomizeNoteListColumns = vi.fn()
-    const config = makeConfig({
-      selection: { kind: 'filter', filter: 'inbox' },
-      onCustomizeNoteListColumns,
-      canCustomizeNoteListColumns: true,
-    })
-    const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'customize-note-list-columns')
-    expect(cmd).toBeDefined()
-    expect(cmd!.enabled).toBe(true)
-    expect(cmd!.label).toBe('Customize Inbox columns')
-
-    cmd!.execute()
-    expect(onCustomizeNoteListColumns).toHaveBeenCalled()
-  })
-
-  it('includes Customize All Notes columns in the all-notes view', () => {
-    const config = makeConfig({
-      selection: { kind: 'filter', filter: 'all' },
-      onCustomizeNoteListColumns: vi.fn(),
-      canCustomizeNoteListColumns: true,
-    })
-    const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'customize-note-list-columns')
-    expect(cmd).toBeDefined()
-    expect(cmd!.enabled).toBe(true)
-    expect(cmd!.label).toBe('Customize All Notes columns')
-  })
-
-  it('disables note-list column customization outside supported views', () => {
-    const config = makeConfig({
-      selection: { kind: 'sectionGroup', type: 'Book' },
-      onCustomizeNoteListColumns: vi.fn(),
-      canCustomizeNoteListColumns: false,
-    })
-    const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'customize-note-list-columns')
-    expect(cmd!.enabled).toBe(false)
-  })
-
-  it('shows Cmd+E on toggle organized and removes it from archive note', () => {
-    const config = makeConfig()
-    const { result } = renderHook(() => useCommandRegistry(config))
-    expect(findCommand(result.current, 'toggle-organized')?.shortcut).toBe(
-      formatShortcutDisplay({ display: '⌘E' }),
-    )
-    expect(findCommand(result.current, 'archive-note')?.shortcut).toBeUndefined()
   })
 
   it('exposes undo and redo commands only when action history has entries', () => {
@@ -517,53 +407,6 @@ describe('useCommandRegistry', () => {
     cmd!.execute()
 
     expect(onSetNoteWidth).toHaveBeenCalledWith('wide')
-  })
-
-  it('exposes command palette actions for moving the selected saved view', () => {
-    const onMoveSelectedViewUp = vi.fn()
-    const onMoveSelectedViewDown = vi.fn()
-    const config = makeConfig({
-      selectedViewName: 'Active Projects',
-      onMoveSelectedViewUp,
-      onMoveSelectedViewDown,
-      canMoveSelectedViewUp: true,
-      canMoveSelectedViewDown: true,
-    })
-    const { result } = renderHook(() => useCommandRegistry(config))
-
-    const moveUp = findCommand(result.current, 'move-view-up')
-    const moveDown = findCommand(result.current, 'move-view-down')
-
-    expect(moveUp).toMatchObject({
-      label: 'Move Active Projects Up',
-      group: 'View',
-      enabled: true,
-    })
-    expect(moveDown).toMatchObject({
-      label: 'Move Active Projects Down',
-      group: 'View',
-      enabled: true,
-    })
-
-    moveUp!.execute()
-    moveDown!.execute()
-
-    expect(onMoveSelectedViewUp).toHaveBeenCalledOnce()
-    expect(onMoveSelectedViewDown).toHaveBeenCalledOnce()
-  })
-
-  it('disables saved view move commands at list boundaries', () => {
-    const config = makeConfig({
-      selectedViewName: 'Top View',
-      onMoveSelectedViewUp: vi.fn(),
-      onMoveSelectedViewDown: vi.fn(),
-      canMoveSelectedViewUp: false,
-      canMoveSelectedViewDown: true,
-    })
-    const { result } = renderHook(() => useCommandRegistry(config))
-
-    expect(findCommand(result.current, 'move-view-up')?.enabled).toBe(false)
-    expect(findCommand(result.current, 'move-view-down')?.enabled).toBe(true)
   })
 
   it('disables the command for the active note width mode', () => {
@@ -737,7 +580,7 @@ describe('useCommandRegistry', () => {
     })
 
     command!.execute()
-    expect(onCreateNote).toHaveBeenCalledWith(undefined, {
+    expect(onCreateNote).toHaveBeenCalledWith({
       creationPath: 'folder_command_palette',
       folderPath: 'Projects/2026 Planning',
       vaultPath: '/vault',
@@ -756,7 +599,7 @@ describe('useCommandRegistry', () => {
     })
 
     command!.execute()
-    expect(onCreateNote).toHaveBeenCalledWith(undefined, {
+    expect(onCreateNote).toHaveBeenCalledWith({
       creationPath: 'cmd_sheet',
       format: 'sheet',
     })
@@ -786,128 +629,6 @@ describe('useCommandRegistry', () => {
     expect(onPastePlainText).toHaveBeenCalledOnce()
   })
 
-  it('keeps a single canonical New Type command when the Type definition exists', () => {
-    const onCreateType = vi.fn()
-    const onCreateNoteOfType = vi.fn()
-    const config = makeConfig({
-      onCreateType,
-      onCreateNoteOfType,
-      entries: [
-        { path: '/type-definition.md', title: 'Type', isA: 'Type' },
-        { path: '/recipe-definition.md', title: 'Recipe', isA: 'Type' },
-      ],
-    })
-    const { result } = renderHook(() => useCommandRegistry(config))
-
-    const newTypeCommands = result.current.filter(command => command.label === 'New Type')
-
-    expect(newTypeCommands).toHaveLength(1)
-    expect(newTypeCommands[0]).toMatchObject({
-      id: 'create-type',
-      group: 'Note',
-    })
-    expect(findCommand(result.current, 'list-type')).toMatchObject({
-      label: 'List Types',
-      group: 'Navigation',
-    })
-
-    newTypeCommands[0].execute()
-    expect(onCreateType).toHaveBeenCalledOnce()
-    expect(onCreateNoteOfType).not.toHaveBeenCalled()
-  })
-})
-
-describe('pluralizeType', () => {
-  it('pluralizes regular types', () => {
-    expect(pluralizeType('Project')).toBe('Projects')
-    expect(pluralizeType('Note')).toBe('Notes')
-  })
-
-  it('uses overrides for irregular plurals', () => {
-    expect(pluralizeType('Person')).toBe('People')
-    expect(pluralizeType('Responsibility')).toBe('Responsibilities')
-  })
-
-  it('handles sibilant endings', () => {
-    expect(pluralizeType('Address')).toBe('Addresses')
-  })
-})
-
-describe('extractVaultTypes', () => {
-  it('returns default types when no entries', () => {
-    expect(extractVaultTypes([])).toEqual(['Event', 'Person', 'Project', 'Note'])
-  })
-
-  it('extracts unique types from entries', () => {
-    const entries = [
-      { path: '/a', title: 'A', isA: 'Project' },
-      { path: '/b', title: 'B', isA: 'Project' },
-      { path: '/c', title: 'C', isA: 'Event' },
-    ] as never[]
-    const types = extractVaultTypes(entries)
-    expect(types).toContain('Project')
-    expect(types).toContain('Event')
-    expect(types).toHaveLength(2)
-  })
-
-  it('includes types from Type definition entries', () => {
-    const entries = [
-      { path: '/book.md', title: 'Book', isA: 'Type' },
-    ] as never[]
-    const types = extractVaultTypes(entries)
-    expect(types).toContain('Book')
-  })
-
-  it('includes types from both definitions and instances', () => {
-    const entries = [
-      { path: '/book.md', title: 'Book', isA: 'Type' },
-      { path: '/hp.md', title: 'Harry Potter', isA: 'Book' },
-      { path: '/person.md', title: 'Person', isA: 'Type' },
-    ] as never[]
-    const types = extractVaultTypes(entries)
-    expect(types).toContain('Book')
-    expect(types).toContain('Person')
-    expect(types).toHaveLength(2)
-  })
-
-  it('deduplicates default types case-insensitively and keeps canonical casing', () => {
-    const entries = [
-      { path: '/note-type.md', title: 'note', isA: 'Type' },
-      { path: '/note-instance.md', title: 'Example', isA: 'Note' },
-      { path: '/project-instance.md', title: 'Project Plan', isA: 'project' },
-    ] as never[]
-
-    expect(extractVaultTypes(entries)).toEqual(['Note', 'Project'])
-  })
-
-  it('omits the legacy Journal type when no Type document defines it', () => {
-    const entries = [
-      { path: '/2026-03-11.md', title: 'March 11', isA: 'Journal' },
-      { path: '/note.md', title: 'General Note', isA: 'Note' },
-    ] as never[]
-
-    expect(extractVaultTypes(entries)).toEqual(['Note'])
-  })
-
-  it('includes Journal when a real Type document defines it', () => {
-    const entries = [
-      { path: '/journal.md', title: 'Journal', isA: 'Type' },
-      { path: '/2026-03-11.md', title: 'March 11', isA: 'Journal' },
-      { path: '/note.md', title: 'General Note', isA: 'Note' },
-    ] as never[]
-
-    expect(extractVaultTypes(entries)).toEqual(['Journal', 'Note'])
-  })
-
-  it('omits hidden types from extracted command-palette types', () => {
-    const entries = [
-      { path: '/recipe.md', title: 'Recipe', isA: 'Type', visible: false },
-      { path: '/dinner.md', title: 'Dinner', isA: 'Recipe' },
-      { path: '/project.md', title: 'Project', isA: 'Type' },
-    ] as never[]
-
-    expect(extractVaultTypes(entries)).toEqual(['Project'])
-  })
 })
 
 describe('groupSortKey', () => {
@@ -960,29 +681,4 @@ describe('reload-vault command', () => {
     expect(cmd!.keywords).toContain('rescan')
   })
 
-})
-
-describe('buildTypeCommands', () => {
-  it('creates new and list commands for each type', () => {
-    const onCreateNoteOfType = vi.fn()
-    const onSelect = vi.fn()
-    const commands = buildTypeCommands(['Project', 'Event'], onCreateNoteOfType, onSelect)
-    expect(commands).toHaveLength(4)
-    expect(commands[0].id).toBe('new-project')
-    expect(commands[1].id).toBe('list-project')
-    expect(commands[2].id).toBe('new-event')
-    expect(commands[3].id).toBe('list-event')
-  })
-
-  it('omits the generic Note create command while keeping navigation for notes', () => {
-    const onCreateNoteOfType = vi.fn()
-    const onSelect = vi.fn()
-    const commands = buildTypeCommands(['Note', 'Project'], onCreateNoteOfType, onSelect)
-
-    expect(commands.map(command => command.id)).toEqual([
-      'list-note',
-      'new-project',
-      'list-project',
-    ])
-  })
 })

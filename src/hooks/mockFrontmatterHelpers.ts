@@ -1,4 +1,4 @@
-import type { FrontmatterValue } from '../components/Inspector'
+import type { FrontmatterValue } from '../types'
 import { canonicalFrontmatterWriteKey, frontmatterKeysMatch } from '../utils/systemMetadata'
 
 type VaultPath = string

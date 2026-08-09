@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core'
 import { isTauri, mockInvoke } from '../mock-tauri'
 import type { VaultEntry, VaultPropertyValue } from '../types'
-import type { FrontmatterValue } from '../components/Inspector'
+import type { FrontmatterValue } from '../types'
 import { updateMockFrontmatter, deleteMockFrontmatterProperty } from './mockFrontmatterHelpers'
 import { updateMockContent, trackMockChange } from '../mock-tauri'
 import { parseFrontmatter } from '../utils/frontmatter'
@@ -295,6 +295,13 @@ export interface FrontmatterRunRequest {
   options?: FrontmatterOpOptions
 }
 
+const WRITABLE_FRONTMATTER_KEYS = new Set(['title', '_width'])
+
+/** Return whether the current product still owns a frontmatter write key. */
+export function isWritableFrontmatterKey(key: FrontmatterKey): boolean {
+  return WRITABLE_FRONTMATTER_KEYS.has(canonicalFrontmatterKey(key))
+}
+
 /** Apply a properties patch by merging into the existing properties map. */
 export function applyPropertiesPatch(
   existing: Record<FrontmatterKey, VaultPropertyValue>, propPatch: PropertiesPatch,
@@ -403,6 +410,7 @@ async function handleFrontmatterFailure({
  *  Returns the new file content on success, or undefined on failure. */
 export async function runFrontmatterAndApply(request: FrontmatterRunRequest): Promise<MarkdownContent | undefined> {
   const { op, path, key, value, callbacks, options } = request
+  if (!isWritableFrontmatterKey(key)) return undefined
   try {
     const newContent = await executeFrontmatterOp(op, path, key, value)
     callbacks.cacheContent?.(path, newContent)

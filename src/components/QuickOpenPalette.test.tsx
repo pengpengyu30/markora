@@ -128,12 +128,6 @@ describe('QuickOpenPalette', () => {
     expect(onClose).not.toHaveBeenCalled()
   })
 
-  it('shows type badge for entries with isA', () => {
-    render(<QuickOpenPalette open={true} entries={entries} onSelect={onSelect} onClose={onClose} />)
-    expect(screen.getByText('Project')).toBeInTheDocument()
-    expect(screen.getByText('Experiment')).toBeInTheDocument()
-  })
-
   it('calls onSelect and onClose when clicking an entry', () => {
     render(<QuickOpenPalette open={true} entries={entries} onSelect={onSelect} onClose={onClose} />)
     fireEvent.click(screen.getByText('Beta Notes'))

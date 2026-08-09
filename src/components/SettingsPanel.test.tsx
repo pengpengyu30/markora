@@ -28,7 +28,6 @@ const emptySettings: Settings = {
   autogit_enabled: null,
   autogit_idle_threshold_seconds: null,
   autogit_inactive_threshold_seconds: null,
-  auto_advance_inbox_after_organize: null,
   telemetry_consent: null,
   crash_reporting_enabled: null,
   analytics_enabled: null,
@@ -193,7 +192,6 @@ describe('SettingsPanel', () => {
       theme_mode: 'light',
       date_display_format: 'friendly',
       note_width_mode: 'normal',
-      sidebar_type_pluralization_enabled: true,
       hide_gitignored_files: true,
       all_notes_show_pdfs: false,
       all_notes_show_images: false,
@@ -408,19 +406,16 @@ describe('SettingsPanel', () => {
     expect(screen.getByText('系统（简体中文）')).toBeInTheDocument()
   })
 
-  it('defaults date display to friendly, note width to normal, and sidebar type pluralization to enabled', () => {
+  it('defaults date display to friendly and note width to normal', () => {
     render(
       <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
     )
 
     expect(screen.getByTestId('settings-date-display-format')).toHaveAttribute('data-value', 'friendly')
     expect(screen.getByTestId('settings-default-note-width')).toHaveAttribute('data-value', 'normal')
-    expect(
-      within(screen.getByTestId('settings-sidebar-type-pluralization')).getByRole('switch')
-    ).toHaveAttribute('aria-checked', 'true')
   })
 
-  it('preserves saved date display, default note width, and sidebar type pluralization preferences', () => {
+  it('preserves saved date display and default note width preferences', () => {
     render(
       <SettingsPanel
         open={true}
@@ -428,7 +423,6 @@ describe('SettingsPanel', () => {
           ...emptySettings,
           date_display_format: 'iso',
           note_width_mode: 'wide',
-          sidebar_type_pluralization_enabled: false,
         }}
         onSave={onSave}
         onClose={onClose}
@@ -437,12 +431,9 @@ describe('SettingsPanel', () => {
 
     expect(screen.getByTestId('settings-date-display-format')).toHaveAttribute('data-value', 'iso')
     expect(screen.getByTestId('settings-default-note-width')).toHaveAttribute('data-value', 'wide')
-    expect(
-      within(screen.getByTestId('settings-sidebar-type-pluralization')).getByRole('switch')
-    ).toHaveAttribute('aria-checked', 'false')
   })
 
-  it('saves date display, default note width, and sidebar type pluralization preferences', () => {
+  it('saves date display and default note width preferences', () => {
     render(
       <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
     )
@@ -451,13 +442,11 @@ describe('SettingsPanel', () => {
     fireEvent.click(screen.getByRole('option', { name: 'ISO (2026-05-11)' }))
     fireEvent.pointerDown(screen.getByTestId('settings-default-note-width'), { button: 0, pointerType: 'mouse' })
     fireEvent.click(screen.getByRole('option', { name: 'Wide' }))
-    fireEvent.click(within(screen.getByTestId('settings-sidebar-type-pluralization')).getByRole('switch'))
     fireEvent.click(screen.getByTestId('settings-save'))
 
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
       date_display_format: 'iso',
       note_width_mode: 'wide',
-      sidebar_type_pluralization_enabled: false,
     }))
     expect(trackEventMock).toHaveBeenCalledWith('date_display_format_changed', { format: 'iso' })
   })
@@ -620,20 +609,6 @@ describe('SettingsPanel', () => {
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
       release_channel: 'alpha',
     }))
-  })
-
-  it('defaults the organization workflow switch to on', () => {
-    render(
-      <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
-    )
-    expect(screen.getByRole('switch', { name: 'Organize notes explicitly' })).toHaveAttribute('aria-checked', 'true')
-  })
-
-  it('defaults auto-advance to the next inbox item to off', () => {
-    render(
-      <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
-    )
-    expect(screen.getByRole('switch', { name: 'Auto-advance to next Inbox item' })).toHaveAttribute('aria-checked', 'false')
   })
 
   it('defaults the initial H1 auto-rename switch to on', () => {
@@ -822,38 +797,6 @@ describe('SettingsPanel', () => {
 
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
       initial_h1_auto_rename_enabled: false,
-    }))
-  })
-
-  it('saves the organization workflow preference when toggled off', () => {
-    const onSaveExplicitOrganization = vi.fn()
-    render(
-      <SettingsPanel
-        open={true}
-        settings={emptySettings}
-        onSave={onSave}
-        explicitOrganizationEnabled={true}
-        onSaveExplicitOrganization={onSaveExplicitOrganization}
-        onClose={onClose}
-      />
-    )
-
-    fireEvent.click(screen.getByRole('switch', { name: 'Organize notes explicitly' }))
-    fireEvent.click(screen.getByTestId('settings-save'))
-
-    expect(onSaveExplicitOrganization).toHaveBeenCalledWith(false)
-  })
-
-  it('saves the auto-advance inbox preference when toggled on', () => {
-    render(
-      <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
-    )
-
-    fireEvent.click(screen.getByRole('switch', { name: 'Auto-advance to next Inbox item' }))
-    fireEvent.click(screen.getByTestId('settings-save'))
-
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
-      auto_advance_inbox_after_organize: true,
     }))
   })
 

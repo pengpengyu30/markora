@@ -13,14 +13,10 @@ export type NoteListContextMenuState = {
 
 interface NoteListContextMenuParams {
   locale?: AppLocale
-  onEnterNeighborhood?: (entry: VaultEntry) => void
   onOpenInNewWindow?: (entry: VaultEntry) => void
   onRenameFilename?: (path: string, newFilenameStem: string) => void
-  onArchivePaths?: (paths: string[]) => void
   onDeletePaths?: (paths: string[]) => void
   onExportPdf?: (entry: VaultEntry) => void
-  onToggleFavorite?: (path: string) => void
-  onToggleOrganized?: (path: string) => void
   onRevealFile?: (path: string) => void
   onCopyFilePath?: (path: string) => void
   canCopyGitUrl?: (entry: VaultEntry) => boolean
@@ -30,14 +26,10 @@ interface NoteListContextMenuParams {
 function hasNoteListContextActions(options: NoteListContextMenuParams & { entry: VaultEntry }) {
   const {
     entry,
-    onEnterNeighborhood,
     onOpenInNewWindow,
     onRenameFilename,
-    onArchivePaths,
     onDeletePaths,
     onExportPdf,
-    onToggleFavorite,
-    onToggleOrganized,
     onRevealFile,
     onCopyFilePath,
     canCopyGitUrl,
@@ -46,12 +38,8 @@ function hasNoteListContextActions(options: NoteListContextMenuParams & { entry:
   return [
     onOpenInNewWindow,
     onRenameFilename && isMarkdownEntry(entry),
-    onEnterNeighborhood && entry.fileKind !== 'binary',
     onExportPdf && isMarkdownEntry(entry),
-    onArchivePaths && !entry.archived,
     onDeletePaths,
-    onToggleFavorite,
-    onToggleOrganized && isMarkdownEntry(entry),
     onRevealFile,
     onCopyFilePath,
     onCopyGitUrl && canCopyGitUrl?.(entry),
@@ -61,14 +49,10 @@ function hasNoteListContextActions(options: NoteListContextMenuParams & { entry:
 export function useNoteListContextMenu(options: NoteListContextMenuParams) {
   const {
     locale = 'en',
-    onEnterNeighborhood,
     onOpenInNewWindow,
     onRenameFilename,
-    onArchivePaths,
     onDeletePaths,
     onExportPdf,
-    onToggleFavorite,
-    onToggleOrganized,
     onRevealFile,
     onCopyFilePath,
     canCopyGitUrl,
@@ -117,40 +101,32 @@ export function useNoteListContextMenu(options: NoteListContextMenuParams) {
     (entry: VaultEntry, event: ReactMouseEvent) => {
       if (
         !hasNoteListContextActions({
-      entry,
-      onEnterNeighborhood,
-      onOpenInNewWindow,
-      onRenameFilename,
-      onArchivePaths,
-      onDeletePaths,
-      onExportPdf,
-      onToggleFavorite,
-      onToggleOrganized,
-      onRevealFile,
-      onCopyFilePath,
-      canCopyGitUrl,
-      onCopyGitUrl,
+          entry,
+          onOpenInNewWindow,
+          onRenameFilename,
+          onDeletePaths,
+          onExportPdf,
+          onRevealFile,
+          onCopyFilePath,
+          canCopyGitUrl,
+          onCopyGitUrl,
         })
       )
         return
-    event.preventDefault()
-    event.stopPropagation()
-    trackEvent('note_item_context_menu_opened')
-    setCtxMenu({ x: event.clientX, y: event.clientY, entry })
+      event.preventDefault()
+      event.stopPropagation()
+      trackEvent('note_item_context_menu_opened')
+      setCtxMenu({ x: event.clientX, y: event.clientY, entry })
     },
     [
-    onArchivePaths,
-    onCopyFilePath,
-    canCopyGitUrl,
-    onDeletePaths,
-    onEnterNeighborhood,
-    onExportPdf,
-    onRenameFilename,
-    onOpenInNewWindow,
-    onCopyGitUrl,
-    onRevealFile,
-    onToggleFavorite,
-    onToggleOrganized,
+      onCopyFilePath,
+      canCopyGitUrl,
+      onDeletePaths,
+      onExportPdf,
+      onRenameFilename,
+      onOpenInNewWindow,
+      onCopyGitUrl,
+      onRevealFile,
     ],
   )
 
@@ -160,14 +136,10 @@ export function useNoteListContextMenu(options: NoteListContextMenuParams) {
         ctxMenu={ctxMenu}
         ctxMenuRef={ctxMenuRef}
         locale={locale}
-        onEnterNeighborhood={onEnterNeighborhood}
         onOpenInNewWindow={onOpenInNewWindow}
         onRequestRename={onRenameFilename ? requestRename : undefined}
-        onArchivePaths={onArchivePaths}
         onDeletePaths={onDeletePaths}
         onExportPdf={onExportPdf}
-        onToggleFavorite={onToggleFavorite}
-        onToggleOrganized={onToggleOrganized}
         onRevealFile={onRevealFile}
         onCopyFilePath={onCopyFilePath}
         canCopyGitUrl={canCopyGitUrl}

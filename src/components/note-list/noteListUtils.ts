@@ -1,5 +1,4 @@
-import type { VaultEntry, SidebarSelection, SidebarFilter, ModifiedFile, NoteStatus, ViewFile } from '../../types'
-import type { RelationshipGroup } from '../../utils/noteListHelpers'
+import type { VaultEntry, SidebarSelection, SidebarFilter, ModifiedFile, NoteStatus } from '../../types'
 import { translate, type AppLocale } from '../../lib/i18n'
 import { filenameStemToTitle } from '../../utils/noteTitle'
 import { vaultRelativePathLabel } from '../../utils/notePathIdentity'
@@ -13,9 +12,7 @@ export interface DeletedNoteEntry extends VaultEntry {
 }
 
 const FILTER_TITLE_KEYS = {
-  archived: 'noteList.title.archive',
   changes: 'noteList.title.changes',
-  inbox: 'noteList.title.inbox',
   pulse: 'noteList.title.history',
 } as const
 
@@ -31,22 +28,15 @@ function resolveSelectionFilterTitle(selection: SidebarSelection, locale: AppLoc
   return translate(locale, FILTER_TITLE_KEYS[selection.filter])
 }
 
-export function resolveHeaderTitle(selection: SidebarSelection, typeDocument: VaultEntry | null, views?: ViewFile[], locale: AppLocale = 'en'): string {
-  if (selection.kind === 'view') {
-    const view = views?.find((v) => v.filename === selection.filename)
-    return view?.definition.name ?? translate(locale, 'noteList.title.view')
-  }
-  if (selection.kind === 'entity') return selection.entry.title
-  return resolveNonEntityHeaderTitle(selection, typeDocument, locale)
+export function resolveHeaderTitle(selection: SidebarSelection, locale: AppLocale = 'en'): string {
+  return resolveNonEntityHeaderTitle(selection, locale)
 }
 
 function resolveNonEntityHeaderTitle(
   selection: SidebarSelection,
-  typeDocument: VaultEntry | null,
   locale: AppLocale,
 ): string {
   return resolveFolderTitle(selection)
-    ?? typeDocument?.title
     ?? resolveSelectionFilterTitle(selection, locale)
     ?? translate(locale, 'noteList.title.notes')
 }
@@ -59,14 +49,8 @@ export function filterByQuery<T extends { title?: unknown }>(items: T[], query: 
   return query ? items.filter((e) => searchableTitle(e).toLowerCase().includes(query)) : items
 }
 
-export function filterGroupsByQuery(groups: RelationshipGroup[], query: string): RelationshipGroup[] {
-  if (!query) return groups
-  return groups.map((g) => ({ ...g, entries: filterByQuery(g.entries, query) })).filter((g) => g.entries.length > 0)
-}
-
 export interface ClickActions {
   onReplace: (entry: VaultEntry) => void
-  onEnterNeighborhood?: (entry: VaultEntry) => void
   onOpenInNewWindow?: (entry: VaultEntry) => void
   multiSelect: { selectRange: (path: string) => void; clear: () => void; setAnchor: (path: string) => void }
 }
@@ -83,13 +67,6 @@ function isRangeSelectionClick(event: Pick<React.MouseEvent, 'shiftKey'>): boole
   return event.shiftKey
 }
 
-function isNeighborhoodClick(
-  event: Pick<React.MouseEvent, 'metaKey' | 'ctrlKey'>,
-  actions: ClickActions,
-): boolean {
-  return usesCommandModifier(event) && Boolean(actions.onEnterNeighborhood)
-}
-
 export function routeNoteClick(entry: VaultEntry, e: React.MouseEvent, actions: ClickActions) {
   if (isOpenInNewWindowClick(e)) {
     actions.onOpenInNewWindow?.(entry)
@@ -102,11 +79,6 @@ export function routeNoteClick(entry: VaultEntry, e: React.MouseEvent, actions: 
   }
 
   actions.multiSelect.clear()
-  if (isNeighborhoodClick(e, actions)) {
-    actions.onEnterNeighborhood?.(entry)
-    return
-  }
-
   actions.multiSelect.setAnchor(entry.path)
   actions.onReplace(entry)
 }

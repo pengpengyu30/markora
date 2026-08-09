@@ -66,7 +66,6 @@ async function installMissingVaultMock(page: Page): Promise<void> {
         handlers.get_default_vault_path = () => '/vault'
         handlers.get_settings = () => ({
           auto_pull_interval_minutes: null,
-          auto_advance_inbox_after_organize: null,
           telemetry_consent: true,
           crash_reporting_enabled: null,
           analytics_enabled: null,

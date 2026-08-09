@@ -1,6 +1,6 @@
 /**
  * Maps note types to their accent color CSS variables.
- * Single source of truth for type→color mapping used across Sidebar, NoteList, and Inspector.
+ * Single source of truth for type→color mapping used by legacy wikilink rendering.
  */
 
 import type { VaultEntry } from '../types'

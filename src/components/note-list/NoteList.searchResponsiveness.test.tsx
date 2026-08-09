@@ -6,13 +6,14 @@ const { listViewRenderSpy } = vi.hoisted(() => ({
   listViewRenderSpy: vi.fn(),
 }))
 
-vi.mock('./NoteListViews', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./NoteListViews')>()
+vi.mock('./useNoteListModel', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./useNoteListModel')>()
   return {
     ...actual,
-    ListView: (props: Parameters<typeof actual.ListView>[0]) => {
-      listViewRenderSpy(props.searched.length)
-      return <div data-testid="responsive-search-results" />
+    useNoteListModel: (props: Parameters<typeof actual.useNoteListModel>[0]) => {
+      const model = actual.useNoteListModel(props)
+      listViewRenderSpy(model.searched.length)
+      return model
     },
   }
 })

@@ -7,7 +7,7 @@ describe('useNoteLayout', () => {
   beforeEach(() => {
     resetVaultConfigStore()
     bindVaultConfigStore(
-      { zoom: null, view_mode: null, editor_mode: null, note_layout: null, tag_colors: null, status_colors: null, property_display_modes: null },
+      { zoom: null, view_mode: null, editor_mode: null, note_layout: null },
       vi.fn(),
     )
   })
@@ -21,7 +21,7 @@ describe('useNoteLayout', () => {
   it('loads persisted left note layout from vault config', () => {
     resetVaultConfigStore()
     bindVaultConfigStore(
-      { zoom: null, view_mode: null, editor_mode: null, note_layout: 'left', tag_colors: null, status_colors: null, property_display_modes: null },
+      { zoom: null, view_mode: null, editor_mode: null, note_layout: 'left' },
       vi.fn(),
     )
 

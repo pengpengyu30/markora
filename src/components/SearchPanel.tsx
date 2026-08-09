@@ -1,13 +1,10 @@
-import { createElement, forwardRef, useRef, useEffect, useCallback, useLayoutEffect, useMemo } from 'react'
+import { forwardRef, useRef, useEffect, useCallback, useLayoutEffect, useMemo } from 'react'
 import { cn } from '@/lib/utils'
 import type { SearchResult, VaultEntry } from '../types'
 import { useUnifiedSearch } from '../hooks/useUnifiedSearch'
-import { getTypeColor, buildTypeEntryMap } from '../utils/typeColors'
 import { formatSearchSubtitle } from '../utils/noteListHelpers'
 import type { DateDisplayFormat } from '../utils/dateDisplay'
 import { scrollSelectedHTMLChildIntoView } from '../utils/domScroll'
-import { getTypeIcon } from './NoteItem'
-import { NoteTitleIcon } from './NoteTitleIcon'
 import { WorkspaceInitialsBadge } from './WorkspaceInitialsBadge'
 import { useDateDisplayFormat } from '../hooks/useAppPreferences'
 
@@ -201,7 +198,6 @@ function useSearchSelectionRefs(results: SearchResult[], selectedIndex: number) 
 }
 
 function useSearchEntryData(entries: VaultEntry[]) {
-  const typeEntryMap = useMemo(() => buildTypeEntryMap(entries), [entries])
   const entryLookup = useMemo(() => {
     const map = new Map<string, VaultEntry>()
     for (const e of entries) map.set(e.path, e)
@@ -209,7 +205,7 @@ function useSearchEntryData(entries: VaultEntry[]) {
   }, [entries])
   const showWorkspace = useMemo(() => shouldShowWorkspace(entries), [entries])
 
-  return { entryLookup, showWorkspace, typeEntryMap }
+  return { entryLookup, showWorkspace }
 }
 
 function useSearchKeyboard({
@@ -333,7 +329,6 @@ export function SearchPanel({ open, vaultPath, entries, onSelectNote, onClose }:
         setQuery,
         setSelectedIndex,
         showWorkspace,
-        typeEntryMap,
       } = useSearchPanelController({
         open,
         vaultPath,
@@ -380,7 +375,6 @@ export function SearchPanel({ open, vaultPath, entries, onSelectNote, onClose }:
               loading={loading}
               elapsedMs={elapsedMs}
               entryLookup={entryLookup}
-              typeEntryMap={typeEntryMap}
               showWorkspace={showWorkspace}
               dateDisplayFormat={dateDisplayFormat}
               listRef={listRef}
@@ -446,7 +440,6 @@ export function SearchPanel({ open, vaultPath, entries, onSelectNote, onClose }:
       loading: boolean
       elapsedMs: number | null
       entryLookup: Map<string, VaultEntry>
-      typeEntryMap: Record<string, VaultEntry>
       showWorkspace: boolean
       dateDisplayFormat: DateDisplayFormat
       listRef: React.RefObject<HTMLDivElement | null>
@@ -459,7 +452,6 @@ export function SearchPanel({ open, vaultPath, entries, onSelectNote, onClose }:
       entry: VaultEntry | undefined
       selected: boolean
       index: number
-      typeEntryMap: Record<string, VaultEntry>
       showWorkspace: boolean
       dateDisplayFormat: DateDisplayFormat
       onSelect: (result: SearchResult) => void
@@ -467,46 +459,25 @@ export function SearchPanel({ open, vaultPath, entries, onSelectNote, onClose }:
     }
 
     interface SearchResultPresentation {
-      TypeIcon: ReturnType<typeof getTypeIcon>
-      icon?: string | null
-      noteType: string | null
       subtitle: string | null
       title: string
-      typeColor?: string
       workspace: VaultEntry['workspace'] | null
     }
 
     function resolveSearchResultPresentation({
       result,
       entry,
-      typeEntryMap,
       showWorkspace,
       dateDisplayFormat,
     }: Pick<
       SearchResultRowProps,
-      'result' | 'entry' | 'typeEntryMap' | 'showWorkspace' | 'dateDisplayFormat'
+      'result' | 'entry' | 'showWorkspace' | 'dateDisplayFormat'
     >): SearchResultPresentation {
-      const isA = entry?.isA ?? result.noteType
-      const noteType = isA || null
-      const typeEntry = typeEntryMap[isA ?? '']
-
       return {
-        TypeIcon: getTypeIcon(isA ?? null, typeEntry?.icon),
-        icon: entry?.icon,
-        noteType,
         subtitle: entry ? formatSearchSubtitle(entry, dateDisplayFormat) : null,
         title: entry?.title ?? result.title,
-        typeColor: resolveSearchResultTypeColor(noteType, isA, typeEntry),
         workspace: resolveSearchResultWorkspace(showWorkspace, entry),
       }
-    }
-
-    function resolveSearchResultTypeColor(
-      noteType: string | null,
-      isA: string | null,
-      typeEntry: VaultEntry | undefined,
-    ): string | undefined {
-      return noteType ? getTypeColor(isA, typeEntry?.color) : undefined
     }
 
     function resolveSearchResultWorkspace(
@@ -517,11 +488,10 @@ export function SearchPanel({ open, vaultPath, entries, onSelectNote, onClose }:
     }
 
     function SearchResultRow(options: SearchResultRowProps) {
-      const { result, entry, selected, index, typeEntryMap, showWorkspace, dateDisplayFormat, onSelect, onHover } = options
+      const { result, entry, selected, index, showWorkspace, dateDisplayFormat, onSelect, onHover } = options
       const presentation = resolveSearchResultPresentation({
         result,
         entry,
-        typeEntryMap,
         showWorkspace,
         dateDisplayFormat,
       })
@@ -542,14 +512,7 @@ export function SearchPanel({ open, vaultPath, entries, onSelectNote, onClose }:
           onMouseMove={(event) => onHover(index, event)}
         >
           <div className="flex items-center gap-2">
-            {createElement(presentation.TypeIcon, {
-              width: 14,
-              height: 14,
-              className: 'shrink-0',
-              style: { color: presentation.typeColor ?? 'var(--muted-foreground)' },
-            })}
-            <SearchResultTitle icon={presentation.icon} title={presentation.title} />
-            <SearchResultTypeLabel noteType={presentation.noteType} />
+            <SearchResultTitle title={presentation.title} />
             <WorkspaceInitialsBadge workspace={presentation.workspace} testId="search-result-workspace-badge" />
           </div>
           <SearchResultSubtitle subtitle={presentation.subtitle} />
@@ -557,17 +520,12 @@ export function SearchPanel({ open, vaultPath, entries, onSelectNote, onClose }:
       )
     }
 
-    function SearchResultTitle({ icon, title }: { icon?: string | null; title: string }) {
+    function SearchResultTitle({ title }: { title: string }) {
       return (
         <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground">
-          <NoteTitleIcon icon={icon} size={14} className="mr-1" />
           {title}
         </span>
       )
-    }
-
-    function SearchResultTypeLabel({ noteType }: { noteType: string | null }) {
-      return noteType ? <span className="shrink-0 text-[11px] text-muted-foreground/70">{noteType}</span> : null
     }
 
     function SearchResultSubtitle({ subtitle }: { subtitle: string | null }) {
@@ -614,7 +572,6 @@ export function SearchPanel({ open, vaultPath, entries, onSelectNote, onClose }:
         loading,
         elapsedMs,
         entryLookup,
-        typeEntryMap,
         showWorkspace,
         dateDisplayFormat,
         listRef,
@@ -639,7 +596,6 @@ export function SearchPanel({ open, vaultPath, entries, onSelectNote, onClose }:
                 entry={entryLookup.get(result.path)}
                 selected={i === selectedIndex}
                 index={i}
-                typeEntryMap={typeEntryMap}
                 showWorkspace={showWorkspace}
                 dateDisplayFormat={dateDisplayFormat}
                 onSelect={onSelect}

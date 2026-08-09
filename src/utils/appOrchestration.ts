@@ -1,4 +1,4 @@
-import type { ModifiedFile, SidebarSelection } from '../types'
+import type { ModifiedFile } from '../types'
 
 export const ACTIVE_EDITOR_SURFACE_SELECTOR = '.editor__blocknote-container, .raw-editor-codemirror'
 
@@ -60,14 +60,4 @@ export function shouldPreferOnboardingVaultPath(
     && typeof onboardingState.vaultPath === 'string'
     && onboardingState.vaultPath.length > 0
     && !vaults.some((vault) => vault.path === onboardingState.vaultPath)
-}
-
-export function canCustomizeColumnsForSelection(
-  selection: SidebarSelection,
-  explicitOrganizationEnabled: boolean,
-): boolean {
-  if (selection.kind === 'view') return true
-  if (selection.kind !== 'filter') return false
-  if (selection.filter === 'all') return true
-  return explicitOrganizationEnabled && selection.filter === 'inbox'
 }

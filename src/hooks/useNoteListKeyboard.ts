@@ -8,7 +8,6 @@ interface NoteListKeyboardOptions {
   items: VaultEntry[]
   selectedNotePath: string | null
   onOpen: (entry: VaultEntry) => void
-  onEnterNeighborhood?: (entry: VaultEntry) => void | Promise<void>
   onPrefetch?: (entry: VaultEntry) => void
   searchVisible?: boolean
   toggleSearch?: () => void
@@ -128,10 +127,6 @@ function isToggleSearchShortcut(
 ): boolean {
   if (!usesPlatformCommandModifier(event) || event.altKey || event.shiftKey) return false
   return event.code === 'KeyF' || event.key.toLowerCase() === 'f'
-}
-
-function isNeighborhoodKey(event: Pick<KeyboardEvent, 'key' | 'metaKey' | 'ctrlKey' | 'altKey'>): boolean {
-  return event.key === 'Enter' && usesPlatformCommandModifier(event) && !event.altKey
 }
 
 function useKeyboardItemRefs(items: VaultEntry[], selectedNotePath: string | null) {
@@ -285,24 +280,6 @@ function resolveEntryForActivation(
   return resolveHighlightedEntry(items, highlightedPathRef.current)
 }
 
-function handleNeighborhoodActivation(options: {
-  event: Pick<KeyboardEvent, 'preventDefault'>
-  items: VaultEntry[]
-  highlightedPathRef: React.RefObject<string | null>
-  cancelOpen: () => void
-  onEnterNeighborhood?: (entry: VaultEntry) => void | Promise<void>
-}): boolean {
-  const { event, items, highlightedPathRef, cancelOpen, onEnterNeighborhood } = options
-
-  const highlightedItem = resolveEntryForActivation(items, highlightedPathRef)
-  if (!highlightedItem) return false
-
-  event.preventDefault()
-  cancelOpen()
-  void onEnterNeighborhood?.(highlightedItem)
-  return true
-}
-
 function handleArrowNavigation(
   event: Pick<KeyboardEvent, 'key' | 'preventDefault'>,
   moveHighlight: (direction: 1 | -1) => void,
@@ -344,40 +321,26 @@ function useProcessKeyDown(options: {
   highlightedPathRef: React.RefObject<string | null>
   moveHighlight: (direction: 1 | -1) => void
   flushOpen: (entry?: VaultEntry) => void
-  cancelOpen: () => void
-  onEnterNeighborhood?: (entry: VaultEntry) => void | Promise<void>
   onToggleSearchShortcut?: () => void
 }) {
-  const { enabled, items, highlightedPathRef, moveHighlight, flushOpen, cancelOpen, onEnterNeighborhood, onToggleSearchShortcut } = options
+  const { enabled, items, highlightedPathRef, moveHighlight, flushOpen, onToggleSearchShortcut } = options
   return useCallback(
     (event: Pick<KeyboardEvent, 'key' | 'code' | 'metaKey' | 'ctrlKey' | 'altKey' | 'shiftKey' | 'preventDefault'>) => {
     if (!enabled) return
 
     if (handleSearchShortcutEvent(event, onToggleSearchShortcut)) return
     if (items.length === 0) return
-      if (
-        handleNeighborhoodShortcutEvent({
-      event,
-      items,
-      highlightedPathRef,
-      cancelOpen,
-      onEnterNeighborhood,
-        })
-      )
-        return
     if (shouldIgnoreListKeyboardEvent(event)) return
     if (handleArrowNavigation(event, moveHighlight)) return
 
     handleEnterShortcutEvent(event, items, highlightedPathRef, flushOpen)
     },
     [
-      cancelOpen,
       enabled,
       flushOpen,
       highlightedPathRef,
       items,
       moveHighlight,
-      onEnterNeighborhood,
       onToggleSearchShortcut,
     ],
   )
@@ -512,26 +475,6 @@ function handleSearchShortcutEvent(
   return true
 }
 
-function handleNeighborhoodShortcutEvent(options: {
-  event: Pick<KeyboardEvent, 'key' | 'metaKey' | 'ctrlKey' | 'altKey' | 'preventDefault'>
-  items: VaultEntry[]
-  highlightedPathRef: React.RefObject<string | null>
-  cancelOpen: () => void
-  onEnterNeighborhood?: (entry: VaultEntry) => void | Promise<void>
-}): boolean {
-  const { event, items, highlightedPathRef, cancelOpen, onEnterNeighborhood } = options
-
-  if (!isNeighborhoodKey(event)) return false
-  handleNeighborhoodActivation({
-    event,
-    items,
-    highlightedPathRef,
-    cancelOpen,
-    onEnterNeighborhood,
-  })
-  return true
-}
-
 function shouldIgnoreListKeyboardEvent(event: Pick<KeyboardEvent, 'metaKey' | 'ctrlKey' | 'altKey'>): boolean {
   return hasCommandLikeModifier(event) || event.altKey
 }
@@ -575,7 +518,7 @@ function useCancelScheduledOpenOnSelectionChange(selectedNotePath: string | null
 }
 
 export function useNoteListKeyboard(options: NoteListKeyboardOptions) {
-  const { items, selectedNotePath, onOpen, onEnterNeighborhood, onPrefetch, searchVisible = false, toggleSearch, enabled } = options
+  const { items, selectedNotePath, onOpen, onPrefetch, searchVisible = false, toggleSearch, enabled } = options
   const virtuosoRef = useRef<VirtuosoHandle>(null)
   const panelRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -613,8 +556,6 @@ export function useNoteListKeyboard(options: NoteListKeyboardOptions) {
     highlightedPathRef,
     moveHighlight,
     flushOpen,
-    cancelOpen,
-    onEnterNeighborhood,
     onToggleSearchShortcut: handleToggleSearchShortcut,
   })
   const handleKeyDown = useDirectKeyDownHandler(processKeyDown)

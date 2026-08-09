@@ -32,44 +32,18 @@ describe('useNoteActions frontmatter persistence', () => {
     vi.clearAllMocks()
   })
 
-  it.each([
-    {
-      label: 'update',
-      run: async (result: ReturnType<typeof renderHook<typeof useNoteActions>>['result']) => {
-        await result.current.handleUpdateFrontmatter('/vault/note.md', '_list_properties_display', ['Owner', 'Status'])
-      },
-    },
-    {
-      label: 'delete',
-      run: async (result: ReturnType<typeof renderHook<typeof useNoteActions>>['result']) => {
-        await result.current.handleDeleteProperty('/vault/note.md', 'status')
-      },
-    },
-  ])('notifies after a frontmatter $label completes', async ({ run }) => {
+  it('notifies after a writable frontmatter update completes', async () => {
     const onFrontmatterPersisted = vi.fn()
     const { result } = renderHook(() => useNoteActions(makeConfig(onFrontmatterPersisted)))
 
     await act(async () => {
-      await run(result)
+      await result.current.handleUpdateFrontmatter('/vault/note.md', '_width', 'wide')
     })
 
     expect(onFrontmatterPersisted).toHaveBeenCalledTimes(1)
   })
 
-  it.each([
-    {
-      label: 'update',
-      run: async (result: ReturnType<typeof renderHook<typeof useNoteActions>>['result']) => {
-        await result.current.handleUpdateFrontmatter('/vault/note.md', 'status', 'Done')
-      },
-    },
-    {
-      label: 'delete',
-      run: async (result: ReturnType<typeof renderHook<typeof useNoteActions>>['result']) => {
-        await result.current.handleDeleteProperty('/vault/note.md', 'status')
-      },
-    },
-  ])('flushes pending raw content before a frontmatter $label', async ({ run }) => {
+  it('flushes pending raw content before a writable frontmatter update', async () => {
     const flushBeforeNoteMutation = vi.fn().mockResolvedValue(undefined)
     const { result } = renderHook(() => useNoteActions({
       ...makeConfig(vi.fn()),
@@ -77,7 +51,7 @@ describe('useNoteActions frontmatter persistence', () => {
     }))
 
     await act(async () => {
-      await run(result)
+      await result.current.handleUpdateFrontmatter('/vault/note.md', '_width', 'wide')
     })
 
     expect(flushBeforeNoteMutation).toHaveBeenCalledWith('/vault/note.md')

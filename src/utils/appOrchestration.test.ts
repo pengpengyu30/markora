@@ -1,8 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { ModifiedFile, SidebarSelection } from '../types'
+import type { ModifiedFile } from '../types'
 import {
   activeVaultModifiedFiles,
-  canCustomizeColumnsForSelection,
   mergeModifiedFiles,
   runNativeTextHistoryCommand,
   shouldPreferOnboardingVaultPath,
@@ -68,19 +67,6 @@ describe('app orchestration helpers', () => {
     expect(shouldPreferOnboardingVaultPath({ status: 'ready', vaultPath: '/new' }, [{ path: '/old' }])).toBe(true)
     expect(shouldPreferOnboardingVaultPath({ status: 'ready', vaultPath: '/new' }, [{ path: '/new' }])).toBe(false)
     expect(shouldPreferOnboardingVaultPath({ status: 'loading', vaultPath: '/new' }, [])).toBe(false)
-  })
-
-  it('limits note-list column customization to supported selections', () => {
-    const allSelection: SidebarSelection = { kind: 'filter', filter: 'all' }
-    const inboxSelection: SidebarSelection = { kind: 'filter', filter: 'inbox' }
-    const typeSelection: SidebarSelection = { kind: 'sectionGroup', type: 'Project' }
-    const viewSelection: SidebarSelection = { kind: 'view', filename: 'focus.yml' }
-
-    expect(canCustomizeColumnsForSelection(allSelection, false)).toBe(true)
-    expect(canCustomizeColumnsForSelection(inboxSelection, false)).toBe(false)
-    expect(canCustomizeColumnsForSelection(inboxSelection, true)).toBe(true)
-    expect(canCustomizeColumnsForSelection(typeSelection, true)).toBe(false)
-    expect(canCustomizeColumnsForSelection(viewSelection, false)).toBe(true)
   })
 
   it('uses native history commands for focused text fields', () => {

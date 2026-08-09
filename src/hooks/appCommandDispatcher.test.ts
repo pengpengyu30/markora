@@ -32,13 +32,12 @@ function makeHandlers(): AppCommandHandlers {
   return {
     onSetViewMode: vi.fn(),
     onCreateNote: vi.fn(),
-    onCreateType: vi.fn(),
     onQuickOpen: vi.fn(),
     onSave: vi.fn(),
     onUndo: vi.fn(),
     onRedo: vi.fn(),
     onOpenSettings: vi.fn(),
-    onToggleInspector: vi.fn(),
+    onToggleBacklinks: vi.fn(),
     onCommandPalette: vi.fn(),
     onZoomIn: vi.fn(),
     onZoomOut: vi.fn(),
@@ -104,7 +103,6 @@ describe('appCommandDispatcher', () => {
 
   it('distinguishes native menu ids from keyboard-only ids', () => {
     expect(isNativeMenuCommandId(APP_COMMAND_IDS.fileNewNote)).toBe(true)
-    expect(isNativeMenuCommandId(APP_COMMAND_IDS.noteToggleFavorite)).toBe(false)
   })
 
   it('derives native menu command IDs from the shared command menu manifest', () => {
@@ -115,7 +113,6 @@ describe('appCommandDispatcher', () => {
     expect(menuCommandIds).toContain(APP_COMMAND_IDS.fileNewNote)
     expect(menuCommandIds).toContain(APP_COMMAND_IDS.editPastePlainText)
     expect(menuCommandIds).toContain(APP_COMMAND_IDS.viewGoBack)
-    expect(menuCommandIds).not.toContain(APP_COMMAND_IDS.noteToggleFavorite)
   })
 
   it('keeps native menu state groups inside the shared command menu manifest', () => {
@@ -159,18 +156,6 @@ describe('appCommandDispatcher', () => {
       supportsNativeMenuCommand: true,
       requiresManualNativeAcceleratorQa: true,
     })
-    expect(getDeterministicShortcutQaDefinition(APP_COMMAND_IDS.viewToggleProperties)).toMatchObject({
-      preferredMode: 'renderer-shortcut-event',
-      supportsRendererShortcutEvent: true,
-      supportsNativeMenuCommand: true,
-      requiresManualNativeAcceleratorQa: false,
-    })
-    expect(getDeterministicShortcutQaDefinition(APP_COMMAND_IDS.noteToggleFavorite)).toMatchObject({
-      preferredMode: 'renderer-shortcut-event',
-      supportsRendererShortcutEvent: true,
-      supportsNativeMenuCommand: false,
-      requiresManualNativeAcceleratorQa: true,
-    })
     expect(getDeterministicShortcutQaDefinition(APP_COMMAND_IDS.editPastePlainText)).toMatchObject({
       preferredMode: 'native-menu-command',
       supportsRendererShortcutEvent: true,
@@ -193,18 +178,12 @@ describe('appCommandDispatcher', () => {
   it('resolves event modifiers through the shared shortcut catalog', () => {
     expectShortcutEventCommand({ key: 'o', code: 'KeyO', metaKey: true }, APP_COMMAND_IDS.fileQuickOpen)
     expectShortcutEventCommand({ key: '§', code: 'Backslash', metaKey: true }, APP_COMMAND_IDS.editToggleRawEditor)
-    expectShortcutEventCommand({ key: 'I', code: 'KeyI', metaKey: true, shiftKey: true }, APP_COMMAND_IDS.viewToggleProperties)
     expectShortcutEventCommand({ key: 'ArrowLeft', code: 'ArrowLeft', metaKey: true }, APP_COMMAND_IDS.viewGoBack)
     expectShortcutEventCommand({ key: 'ArrowRight', code: 'ArrowRight', metaKey: true }, APP_COMMAND_IDS.viewGoForward)
     expectShortcutEventCommand({ key: 'T', code: 'KeyT', metaKey: true, shiftKey: true }, APP_COMMAND_IDS.viewToggleTableOfContents)
     expectShortcutEventCommand({ key: 'V', code: 'KeyV', metaKey: true, shiftKey: true }, APP_COMMAND_IDS.editPastePlainText)
     expectShortcutEventCommand({ key: 'z', code: 'KeyZ', metaKey: true }, APP_COMMAND_IDS.editUndo)
     expectShortcutEventCommand({ key: 'z', code: 'KeyZ', metaKey: true, shiftKey: true }, APP_COMMAND_IDS.editRedo)
-  })
-
-  it('prefers the active keyboard layout over physical letter keys', () => {
-    expectShortcutEventCommand({ key: 'e', code: 'KeyD', metaKey: true }, APP_COMMAND_IDS.noteToggleOrganized)
-    expectShortcutEventCommand({ key: 'd', code: 'KeyE', metaKey: true }, APP_COMMAND_IDS.noteToggleFavorite)
   })
 
   it('maps Ctrl+Y to redo only off macOS', () => {
@@ -222,19 +201,12 @@ describe('appCommandDispatcher', () => {
     expectShortcutEventCommand({ key: 'n', code: 'KeyN', ctrlKey: true }, null)
     expectShortcutEventCommand({ key: 'p', code: 'KeyP', ctrlKey: true }, null)
     expectShortcutEventCommand({ key: 'd', code: 'KeyD', ctrlKey: true }, null)
-    expectShortcutEventCommand({ key: 'e', code: 'KeyE', metaKey: true }, APP_COMMAND_IDS.noteToggleOrganized)
   })
 
   it('dispatches create note through the shared command path', () => {
     const handlers = makeHandlers()
     expect(dispatchAppCommand(APP_COMMAND_IDS.fileNewNote, handlers)).toBe(true)
     expect(handlers.onCreateNote).toHaveBeenCalled()
-  })
-
-  it('dispatches inspector toggle through the shared command path', () => {
-    const handlers = makeHandlers()
-    expect(dispatchAppCommand(APP_COMMAND_IDS.viewToggleProperties, handlers)).toBe(true)
-    expect(handlers.onToggleInspector).toHaveBeenCalled()
   })
 
   it('dispatches table of contents toggle through the shared command path', () => {
@@ -259,51 +231,28 @@ describe('appCommandDispatcher', () => {
 
   it('uses the active note for note-scoped commands', () => {
     const handlers = makeHandlers()
-    expect(dispatchAppCommand(APP_COMMAND_IDS.noteToggleFavorite, handlers)).toBe(true)
-    expect(dispatchAppCommand(APP_COMMAND_IDS.noteToggleOrganized, handlers)).toBe(true)
     expect(dispatchAppCommand(APP_COMMAND_IDS.noteDelete, handlers)).toBe(true)
-    expect(handlers.onToggleFavorite).toHaveBeenCalledWith('/vault/test.md')
-    expect(handlers.onToggleOrganized).toHaveBeenCalledWith('/vault/test.md')
     expect(handlers.onDeleteNote).toHaveBeenCalledWith('/vault/test.md')
   })
 
-  it('uses the current multi-selection for delete and organize commands', () => {
+  it('uses the current multi-selection for delete commands', () => {
     const handlers = makeHandlers()
     const deleteSelected = vi.fn()
-    const organizeSelected = vi.fn()
     handlers.multiSelectionCommandRef.current = {
       selectedPaths: ['/vault/a.md', '/vault/b.md'],
       deleteSelected,
-      organizeSelected,
     }
 
-    expect(dispatchAppCommand(APP_COMMAND_IDS.noteToggleOrganized, handlers)).toBe(true)
     expect(dispatchAppCommand(APP_COMMAND_IDS.noteDelete, handlers)).toBe(true)
 
-    expect(organizeSelected).toHaveBeenCalledTimes(1)
     expect(deleteSelected).toHaveBeenCalledTimes(1)
-    expect(handlers.onToggleOrganized).not.toHaveBeenCalled()
     expect(handlers.onDeleteNote).not.toHaveBeenCalled()
-  })
-
-  it('does not fall back to the active note when multi-selection cannot handle the command', () => {
-    const handlers = makeHandlers()
-    handlers.multiSelectionCommandRef.current = {
-      selectedPaths: ['/vault/a.md', '/vault/b.md'],
-    }
-
-    expect(dispatchAppCommand(APP_COMMAND_IDS.noteToggleOrganized, handlers)).toBe(false)
-    expect(handlers.onToggleOrganized).not.toHaveBeenCalled()
   })
 
   it('no-ops note-scoped commands when there is no active note', () => {
     const handlers = makeHandlers()
     handlers.activeTabPathRef.current = null
-    expect(dispatchAppCommand(APP_COMMAND_IDS.noteToggleFavorite, handlers)).toBe(false)
-    expect(dispatchAppCommand(APP_COMMAND_IDS.noteToggleOrganized, handlers)).toBe(false)
     expect(dispatchAppCommand(APP_COMMAND_IDS.noteDelete, handlers)).toBe(false)
-    expect(handlers.onToggleFavorite).not.toHaveBeenCalled()
-    expect(handlers.onToggleOrganized).not.toHaveBeenCalled()
     expect(handlers.onDeleteNote).not.toHaveBeenCalled()
   })
 
@@ -316,9 +265,9 @@ describe('appCommandDispatcher', () => {
   it('suppresses a native-menu echo after renderer keyboard dispatch', () => {
     const handlers = makeHandlers()
 
-    expect(executeAppCommand(APP_COMMAND_IDS.viewToggleProperties, handlers, 'renderer-keyboard')).toBe(true)
-    expect(executeAppCommand(APP_COMMAND_IDS.viewToggleProperties, handlers, 'native-menu')).toBe(false)
-    expect(handlers.onToggleInspector).toHaveBeenCalledTimes(1)
+    expect(executeAppCommand(APP_COMMAND_IDS.viewToggleTableOfContents, handlers, 'renderer-keyboard')).toBe(true)
+    expect(executeAppCommand(APP_COMMAND_IDS.viewToggleTableOfContents, handlers, 'native-menu')).toBe(false)
+    expect(handlers.onToggleTableOfContents).toHaveBeenCalledTimes(1)
   })
 
   it('suppresses a native-menu history echo after renderer keyboard yields to text editing', () => {

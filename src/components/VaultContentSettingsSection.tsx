@@ -13,8 +13,6 @@ interface VaultContentSettingsSectionProps {
   setDateDisplayFormat: (value: DateDisplayFormat) => void
   defaultNoteWidth: NoteWidthMode
   setDefaultNoteWidth: (value: NoteWidthMode) => void
-  sidebarTypePluralizationEnabled: boolean
-  setSidebarTypePluralizationEnabled: (value: boolean) => void
   initialH1AutoRename: boolean
   setInitialH1AutoRename: (value: boolean) => void
   hideGitignoredFiles: boolean
@@ -56,8 +54,6 @@ export function VaultContentSettingsSection(functionOptions: VaultContentSetting
     setDateDisplayFormat,
     defaultNoteWidth,
     setDefaultNoteWidth,
-    sidebarTypePluralizationEnabled,
-    setSidebarTypePluralizationEnabled,
     initialH1AutoRename,
     setInitialH1AutoRename,
     hideGitignoredFiles,
@@ -96,14 +92,6 @@ export function VaultContentSettingsSection(functionOptions: VaultContentSetting
             testId="settings-default-note-width"
           />
         </SettingsRow>
-
-        <SettingsSwitchRow
-          label={t('settings.sidebarTypePluralization.label')}
-          description={t('settings.sidebarTypePluralization.description')}
-          checked={sidebarTypePluralizationEnabled}
-          onChange={setSidebarTypePluralizationEnabled}
-          testId="settings-sidebar-type-pluralization"
-        />
 
         <SettingsSwitchRow
           label={t('settings.titles.autoRename')}

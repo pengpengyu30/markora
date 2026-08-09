@@ -115,11 +115,11 @@ describe('useNoteActions hook', () => {
     return typeof value.path === 'string'
   }
 
-  async function createImmediateEntry(type?: string) {
+  async function createImmediateEntry() {
     vi.spyOn(Date, 'now').mockReturnValue(1700000000000)
     const { result } = renderActions()
     await act(async () => {
-      result.current.handleCreateNoteImmediate(type)
+      result.current.handleCreateNoteImmediate()
       await flushAsyncWork()
     })
     const [createdEntry] = addEntry.mock.calls[0]
@@ -127,33 +127,19 @@ describe('useNoteActions hook', () => {
     return createdEntry as VaultEntry
   }
 
-  it.each([
-    {
-      name: 'handleCreateNote',
-      run: (result: ReturnType<typeof renderActions>['result']) => result.current.handleCreateNote('Test Note', 'Note'),
-      expectedTitle: 'Test Note',
-      expectedType: 'Note',
-      expectedPathFragment: 'test-note.md',
-    },
-    {
-      name: 'handleCreateType',
-      run: (result: ReturnType<typeof renderActions>['result']) => result.current.handleCreateType('Recipe'),
-      expectedTitle: 'Recipe',
-      expectedType: 'Type',
-      expectedPathFragment: 'recipe.md',
-    },
-  ])('$name creates the expected entry', async ({ run, expectedTitle, expectedType, expectedPathFragment }) => {
+  it('handleCreateNote creates the expected plain entry', async () => {
     const { result } = renderActions()
 
     await act(async () => {
-      await run(result)
+      await result.current.handleCreateNote('Test Note')
     })
 
     expect(addEntry).toHaveBeenCalledTimes(1)
     const [createdEntry] = addEntry.mock.calls[0]
-    expect(createdEntry.title).toBe(expectedTitle)
-    expect(createdEntry.isA).toBe(expectedType)
-    expect(createdEntry.path).toContain(expectedPathFragment)
+    expect(createdEntry.title).toBe('Test Note')
+    expect(createdEntry.isA).toBeNull()
+    expect(createdEntry.status).toBeNull()
+    expect(createdEntry.path).toContain('test-note.md')
   })
 
   it('handleCreateNote opens tab immediately (before addEntry resolves)', () => {
@@ -165,7 +151,7 @@ describe('useNoteActions hook', () => {
     const { result } = renderHook(() => useNoteActions(config))
 
     act(() => {
-      result.current.handleCreateNote('Fast Note', 'Note')
+      result.current.handleCreateNote('Fast Note')
     })
 
     // Tab should be open with the new note
@@ -246,14 +232,14 @@ describe('useNoteActions hook', () => {
     expect(result.current.tabs).toHaveLength(1)
   })
 
-  it('handleUpdateFrontmatter calls updateEntry with mapped patch', async () => {
+  it('handleUpdateFrontmatter calls updateEntry with the note-width patch', async () => {
     const { result } = renderHook(() => useNoteActions(makeConfig()))
 
     await act(async () => {
-      await result.current.handleUpdateFrontmatter('/vault/note.md', 'status', 'Done')
+      await result.current.handleUpdateFrontmatter('/vault/note.md', '_width', 'wide')
     })
 
-    expect(updateEntry).toHaveBeenCalledWith('/vault/note.md', { status: 'Done' })
+    expect(updateEntry).toHaveBeenCalledWith('/vault/note.md', { noteWidth: 'wide' })
     expect(setToastMessage).toHaveBeenCalledWith('Property updated')
   })
 
@@ -266,12 +252,12 @@ describe('useNoteActions hook', () => {
     const initialRenders = renders
 
     await act(async () => {
-      await result.current.handleUpdateFrontmatter('/vault/unopened.md', 'status', 'Done', { silent: true })
+      await result.current.handleUpdateFrontmatter('/vault/unopened.md', '_width', 'wide', { silent: true })
     })
 
     expect(result.current.tabs).toEqual([])
     expect(renders).toBe(initialRenders)
-    expect(updateEntry).toHaveBeenCalledWith('/vault/unopened.md', { status: 'Done' })
+    expect(updateEntry).toHaveBeenCalledWith('/vault/unopened.md', { noteWidth: 'wide' })
   })
 
   it('marks Tauri frontmatter writes as internal before invoking the command', async () => {
@@ -282,7 +268,7 @@ describe('useNoteActions hook', () => {
     })
     vi.mocked(invoke).mockImplementation(async (command) => {
       order.push(`invoke:${String(command)}`)
-      return '---\nstatus: Done\n---\nBody'
+      return '---\n_width: wide\n---\nBody'
     })
 
     const { result } = renderHook(() => useNoteActions({
@@ -291,38 +277,23 @@ describe('useNoteActions hook', () => {
     }))
 
     await act(async () => {
-      await result.current.handleUpdateFrontmatter('/vault/note.md', 'status', 'Done')
+      await result.current.handleUpdateFrontmatter('/vault/note.md', '_width', 'wide')
     })
 
     expect(onInternalVaultWrite).toHaveBeenCalledWith('/vault/note.md')
     expect(order).toEqual(['mark:/vault/note.md', 'invoke:update_frontmatter'])
   })
 
-  it('handleUpdateFrontmatter syncs is_a and color changes to entries', async () => {
-    const { result } = renderHook(() => useNoteActions(makeConfig()))
-
-    await act(async () => {
-      await result.current.handleUpdateFrontmatter('/vault/note.md', 'is_a', 'Project')
-    })
-    expect(updateEntry).toHaveBeenCalledWith('/vault/note.md', { isA: 'Project' })
-
-    vi.clearAllMocks()
-    await act(async () => {
-      await result.current.handleUpdateFrontmatter('/vault/note.md', 'color', 'blue')
-    })
-    expect(updateEntry).toHaveBeenCalledWith('/vault/note.md', { color: 'blue' })
-  })
-
   it('records successful frontmatter updates for undo and redo', async () => {
-    const entry = makeEntry({ path: '/vault/note.md', status: 'Active' })
+    const entry = makeEntry({ path: '/vault/note.md', noteWidth: 'normal' })
     const { result } = renderHook(() => useNoteActions(makeConfig([entry])))
 
     await act(async () => {
-      await result.current.handleUpdateFrontmatter('/vault/note.md', 'status', 'Done')
+      await result.current.handleUpdateFrontmatter('/vault/note.md', '_width', 'wide')
     })
 
     expect(result.current.canUndo).toBe(true)
-    expect(result.current.undoLabel).toBe('Update status')
+    expect(result.current.undoLabel).toBe('Update _width')
 
     await act(async () => {
       await result.current.handleUndo()
@@ -331,18 +302,18 @@ describe('useNoteActions hook', () => {
       await result.current.handleRedo()
     })
 
-    expect(updateEntry).toHaveBeenCalledWith('/vault/note.md', { status: 'Done' })
-    expect(updateEntry).toHaveBeenCalledWith('/vault/note.md', { status: 'Active' })
-    expect(updateEntry).toHaveBeenLastCalledWith('/vault/note.md', { status: 'Done' })
+    expect(updateEntry).toHaveBeenCalledWith('/vault/note.md', { noteWidth: 'normal' })
+    expect(updateEntry).toHaveBeenCalledWith('/vault/note.md', { noteWidth: 'wide' })
+    expect(updateEntry).toHaveBeenLastCalledWith('/vault/note.md', { noteWidth: 'wide' })
   })
 
   it('does not record silent or failed frontmatter updates', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-    const entry = makeEntry({ path: '/vault/note.md', status: 'Active' })
+    const entry = makeEntry({ path: '/vault/note.md', noteWidth: 'normal' })
     const { result } = renderHook(() => useNoteActions(makeConfig([entry])))
 
     await act(async () => {
-      await result.current.handleUpdateFrontmatter('/vault/note.md', 'status', 'Done', { silent: true })
+      await result.current.handleUpdateFrontmatter('/vault/note.md', '_width', 'wide', { silent: true })
     })
     expect(result.current.canUndo).toBe(false)
 
@@ -350,45 +321,18 @@ describe('useNoteActions hook', () => {
       throw new Error('disk full')
     })
     await act(async () => {
-      await result.current.handleUpdateFrontmatter('/vault/note.md', 'status', 'Blocked')
+      await result.current.handleUpdateFrontmatter('/vault/note.md', '_width', 'wide')
     })
 
     expect(result.current.canUndo).toBe(false)
     errorSpy.mockRestore()
   })
 
-  it('handleDeleteProperty calls updateEntry with null/default values', async () => {
-    const { result } = renderHook(() => useNoteActions(makeConfig()))
-
-    await act(async () => {
-      await result.current.handleDeleteProperty('/vault/note.md', 'status')
-    })
-
-    expect(updateEntry).toHaveBeenCalledWith('/vault/note.md', { status: null })
-    expect(setToastMessage).toHaveBeenCalledWith('Property deleted')
-  })
-
-  it('ignores guarded inspector property deletes after the active note changes', async () => {
-    const noteA = makeEntry({ path: '/vault/note-a.md', filename: 'note-a.md', title: 'Note A' })
-    const noteB = makeEntry({ path: '/vault/note-b.md', filename: 'note-b.md', title: 'Note B' })
-    const { result } = renderHook(() => useNoteActions(makeConfig([noteA, noteB])))
-
-    act(() => {
-      result.current.handleSwitchTab(noteB.path)
-    })
-    await act(async () => {
-      await result.current.handleDeleteProperty(noteA.path, 'status', { requireActivePath: noteA.path })
-    })
-
-    expect(updateEntry).not.toHaveBeenCalled()
-    expect(setToastMessage).not.toHaveBeenCalled()
-  })
-
-  it('keeps property-only frontmatter writes in the note cache after a note switch wins the apply guard', async () => {
+  it('keeps a frontmatter write in the note cache after a note switch wins the apply guard', async () => {
     vi.mocked(isTauri).mockReturnValue(true)
     const noteA = makeEntry({ path: '/vault/note-a.md', filename: 'note-a.md', title: 'Note A' })
     const noteB = makeEntry({ path: '/vault/note-b.md', filename: 'note-b.md', title: 'Note B' })
-    const updatedContent = '---\nStatus: Done\n---\nBody'
+    const updatedContent = '---\n_width: wide\n---\nBody'
     let resolveFrontmatterWrite: ((content: string) => void) | null = null
     vi.mocked(invoke).mockImplementation(() => new Promise((resolve) => {
       resolveFrontmatterWrite = (content) => { resolve(content) }
@@ -403,8 +347,8 @@ describe('useNoteActions hook', () => {
     await act(async () => {
       updatePromise = result.current.handleUpdateFrontmatter(
         noteA.path,
-        'Status',
-        'Done',
+        '_WIDTH',
+        'wide',
         { requireActivePath: noteA.path },
       )
       await Promise.resolve()
@@ -426,7 +370,7 @@ describe('useNoteActions hook', () => {
     const createdEntry = await createImmediateEntry()
     expect(createdEntry.title).toBe('Untitled Note 1700000000')
     expect(createdEntry.filename).toBe('untitled-note-1700000000.md')
-    expect(createdEntry.isA).toBe('Note')
+    expect(createdEntry.isA).toBeNull()
   })
 
   it('handleCreateNoteImmediate generates unique names on rapid calls via timestamp', async () => {
@@ -460,74 +404,26 @@ describe('useNoteActions hook', () => {
     vi.restoreAllMocks()
   })
 
-  it('handleCreateNoteImmediate accepts custom type', async () => {
-    const createdEntry = await createImmediateEntry('Project')
-    expect(createdEntry.filename).toMatch(/^untitled-project-\d+\.md$/)
-    expect(createdEntry.isA).toBe('Project')
-  })
-
-  it('handleCreateNote leaves Project body empty without an explicit type template', () => {
+  it('handleCreateNote leaves the new note body empty', () => {
     const { result } = renderHook(() => useNoteActions(makeConfig()))
 
     act(() => {
-      result.current.handleCreateNote('My Project', 'Project')
+      result.current.handleCreateNote('My Project')
     })
 
     const tabContent = result.current.tabs[0].content
-    expect(tabContent).toBe('---\ntitle: My Project\ntype: Project\n---\n')
+    expect(tabContent).toBe('')
   })
 
-  it('handleCreateNote uses custom template from type entry', () => {
-    const typeEntry = makeEntry({ isA: 'Type', title: 'Recipe', template: '## Ingredients\n\n## Steps\n\n' })
-    const { result } = renderHook(() => useNoteActions(makeConfig([typeEntry])))
-
-    act(() => {
-      result.current.handleCreateNote('Pasta', 'Recipe')
-    })
-
-    const tabContent = result.current.tabs[0].content
-    expect(tabContent).toContain('## Ingredients')
-    expect(tabContent).toContain('## Steps')
-  })
-
-  it.each([
-    ['Q&A', (entry: VaultEntry) => { expect(entry.isA).toBe('Q&A') }],
-    ['+++', (entry: VaultEntry) => { expect(entry.filename).not.toBe('.md') }],
-  ])('handleCreateNoteImmediate handles custom type "%s"', async (typeName, assertEntry) => {
+  it.each(['custom_field', 'status', 'type', '_archived'])('ignores removed or unknown frontmatter key %s', async (key) => {
     const { result } = renderHook(() => useNoteActions(makeConfig()))
 
     await act(async () => {
-      expect(() => { result.current.handleCreateNoteImmediate(typeName) }).not.toThrow()
-      await flushAsyncWork()
-    })
-
-    const [entry] = addEntry.mock.calls[0]
-    expect(entry.path).not.toContain('//')
-    assertEntry(entry)
-  })
-
-  it('handleCreateNoteImmediate uses template for typed notes', async () => {
-    const typeEntry = makeEntry({ isA: 'Type', title: 'Project', template: '## Custom Template\n\n' })
-    const { result } = renderHook(() => useNoteActions(makeConfig([typeEntry])))
-
-    await act(async () => {
-      result.current.handleCreateNoteImmediate('Project')
-      await flushAsyncWork()
-    })
-
-    const tabContent = result.current.tabs[0].content
-    expect(tabContent).toContain('## Custom Template')
-  })
-
-  it('handleUpdateFrontmatter does not call updateEntry for unknown keys', async () => {
-    const { result } = renderHook(() => useNoteActions(makeConfig()))
-
-    await act(async () => {
-      await result.current.handleUpdateFrontmatter('/vault/note.md', 'custom_field', 'value')
+      await result.current.handleUpdateFrontmatter('/vault/note.md', key, 'value')
     })
 
     expect(updateEntry).not.toHaveBeenCalled()
-    expect(setToastMessage).toHaveBeenCalledWith('Property updated')
+    expect(setToastMessage).not.toHaveBeenCalled()
   })
 
   describe('pending save lifecycle', () => {
@@ -549,7 +445,7 @@ describe('useNoteActions hook', () => {
       const { result } = renderHook(() => useNoteActions(config))
 
       await act(async () => {
-        result.current.handleCreateNote(title, 'Note')
+        result.current.handleCreateNote(title)
         await flushAsyncWork()
       })
 
@@ -569,7 +465,7 @@ describe('useNoteActions hook', () => {
       const { result } = renderHook(() => useNoteActions(config))
 
       await act(async () => {
-        result.current.handleCreateNote('Fail Save', 'Note')
+        result.current.handleCreateNote('Fail Save')
         await new Promise((r) => setTimeout(r, 0))
       })
 
@@ -600,7 +496,7 @@ describe('useNoteActions hook', () => {
       const createdPath = expect.stringMatching(/untitled-note-\d+\.md$/)
       expect(vi.mocked(invoke)).toHaveBeenCalledWith('create_note_content', {
         path: createdPath,
-        content: expect.stringContaining('type: Note'),
+        content: '\n# \n\n',
         vaultPath: '/test/vault',
       })
       expect(addPendingSave).toHaveBeenCalledWith(createdPath)
@@ -619,7 +515,7 @@ describe('useNoteActions hook', () => {
       const { result } = renderHook(() => useNoteActions(config))
 
       await act(async () => {
-        result.current.handleCreateNote('Persist Callback', 'Note')
+        result.current.handleCreateNote('Persist Callback')
         await new Promise((r) => setTimeout(r, 0))
       })
 
@@ -637,7 +533,7 @@ describe('useNoteActions hook', () => {
       const { result } = renderHook(() => useNoteActions(config))
 
       await act(async () => {
-        result.current.handleCreateNote('Fail Persist', 'Note')
+        result.current.handleCreateNote('Fail Persist')
         await new Promise((r) => setTimeout(r, 0))
       })
 
@@ -650,26 +546,18 @@ describe('useNoteActions hook', () => {
       vi.mocked(isTauri).mockReturnValue(true)
     })
 
-    it.each([
-      ['handleCreateNote', 'Failing Note', 'Note', 'failing-note.md'],
-      ['handleCreateType', 'Recipe', 'Type', 'recipe.md'],
-    ])('reverts optimistic creation via %s when disk write fails', async (method, title, type, pathFragment) => {
+    it('reverts optimistic note creation when disk write fails', async () => {
       vi.mocked(invoke).mockRejectedValueOnce(new Error('disk full'))
       const { result } = renderHook(() => useNoteActions(makeConfig()))
 
       await act(async () => {
-        if (method === 'handleCreateNote') result.current.handleCreateNote(title, type)
-        else result.current.handleCreateType(title)
+        result.current.handleCreateNote('Failing Note')
         await new Promise((r) => setTimeout(r, 0))
       })
 
       expect(addEntry).toHaveBeenCalledTimes(1)
-      expect(removeEntry).toHaveBeenCalledWith(expect.stringContaining(pathFragment))
-      expect(setToastMessage).toHaveBeenCalledWith(
-        type === 'Type'
-          ? 'Failed to create type — disk write error'
-          : 'Failed to create note — disk write error',
-      )
+      expect(removeEntry).toHaveBeenCalledWith(expect.stringContaining('failing-note.md'))
+      expect(setToastMessage).toHaveBeenCalledWith('Failed to create note — disk write error')
     })
 
     it('does not revert when disk write succeeds', async () => {
@@ -677,7 +565,7 @@ describe('useNoteActions hook', () => {
       const { result } = renderHook(() => useNoteActions(makeConfig()))
 
       await act(async () => {
-        result.current.handleCreateNote('Good Note', 'Note')
+        result.current.handleCreateNote('Good Note')
         await new Promise((r) => setTimeout(r, 0))
       })
 
@@ -710,22 +598,6 @@ describe('useNoteActions hook', () => {
       expect(removeEntry).not.toHaveBeenCalled()
     })
 
-  })
-
-  describe('type change does not move file', () => {
-    it('changing type only updates frontmatter, does not move file', async () => {
-      const entry = makeEntry({ path: '/test/vault/my-note.md', filename: 'my-note.md', title: 'My Note', isA: 'Note' })
-      const config = makeConfig([entry])
-      vi.mocked(mockInvoke).mockResolvedValue('')
-
-      const { result } = renderHook(() => useNoteActions(config))
-
-      await act(async () => {
-        await result.current.handleUpdateFrontmatter('/test/vault/my-note.md', 'type', 'Quarter')
-      })
-
-      expect(setToastMessage).toHaveBeenCalledWith('Property updated')
-    })
   })
 
   describe('note open is read-only', () => {
@@ -890,7 +762,7 @@ describe('useNoteActions hook', () => {
           sourceWorkspace.path,
           replaceEntry,
         )
-        await result.current.handleUpdateFrontmatter(sourcePath, 'status', 'Done')
+        await result.current.handleUpdateFrontmatter(sourcePath, '_width', 'wide')
       })
 
       const savePaths = savedNoteContentPaths()
@@ -898,7 +770,7 @@ describe('useNoteActions hook', () => {
       expect(onPathRenamed).toHaveBeenCalledWith(sourcePath, destinationPath)
       expect(savePaths).toContain(destinationPath)
       expect(savePaths).not.toContain(sourcePath)
-      expect(updateEntry).toHaveBeenCalledWith(destinationPath, expect.objectContaining({ status: 'Done' }))
+      expect(updateEntry).toHaveBeenCalledWith(destinationPath, expect.objectContaining({ noteWidth: 'wide' }))
     })
 
     it('handleUpdateFrontmatter triggers rename when title key is changed', async () => {
@@ -947,7 +819,7 @@ describe('useNoteActions hook', () => {
         path: oldPath,
         filename: 'old-name.md',
         title: 'Old Name',
-        status: 'Active',
+        noteWidth: 'normal',
       })
       const config = makeConfig([entry])
       config.onPathRenamed = vi.fn()
@@ -955,7 +827,7 @@ describe('useNoteActions hook', () => {
 
       vi.mocked(mockInvoke).mockImplementation(async (cmd: string) => {
         if (cmd === 'rename_note') return { new_path: newPath, updated_files: 1 }
-        if (cmd === 'get_note_content') return '---\ntitle: New Name\nstatus: Done\n---\n# New Name\n'
+        if (cmd === 'get_note_content') return '---\ntitle: New Name\n_width: wide\n---\n# New Name\n'
         if (cmd === 'save_note_content') return undefined
         return ''
       })
@@ -964,7 +836,7 @@ describe('useNoteActions hook', () => {
 
       await act(async () => { result.current.handleSelectNote(entry) })
       await act(async () => {
-        await result.current.handleUpdateFrontmatter(oldPath, 'status', 'Done')
+        await result.current.handleUpdateFrontmatter(oldPath, '_width', 'wide')
       })
       await act(async () => {
         await result.current.handleRenameNote(oldPath, 'New Name', '/test/vault', config.replaceEntry!)
@@ -979,7 +851,7 @@ describe('useNoteActions hook', () => {
 
       expect(savePathsAfterUndo).toContain(newPath)
       expect(savePathsAfterUndo).not.toContain(oldPath)
-      expect(updateEntry).toHaveBeenCalledWith(newPath, expect.objectContaining({ status: 'Active' }))
+      expect(updateEntry).toHaveBeenCalledWith(newPath, expect.objectContaining({ noteWidth: 'normal' }))
 
       vi.mocked(mockInvoke).mockClear()
       vi.mocked(updateEntry).mockClear()
@@ -992,7 +864,7 @@ describe('useNoteActions hook', () => {
 
       expect(savePathsAfterRedo).toContain(newPath)
       expect(savePathsAfterRedo).not.toContain(oldPath)
-      expect(updateEntry).toHaveBeenCalledWith(newPath, expect.objectContaining({ status: 'Done' }))
+      expect(updateEntry).toHaveBeenCalledWith(newPath, expect.objectContaining({ noteWidth: 'wide' }))
     })
 
     it('handleUpdateFrontmatter does not trigger rename for non-title keys', async () => {
@@ -1002,7 +874,7 @@ describe('useNoteActions hook', () => {
       const { result } = renderHook(() => useNoteActions(config))
 
       await act(async () => {
-        await result.current.handleUpdateFrontmatter('/vault/note.md', 'status', 'Done')
+        await result.current.handleUpdateFrontmatter('/vault/note.md', '_width', 'wide')
       })
 
       expect(mockInvoke).not.toHaveBeenCalledWith('rename_note', expect.anything())

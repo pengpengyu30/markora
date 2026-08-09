@@ -871,17 +871,17 @@ describe('useAppSave', () => {
   it('does not run markdown title-sync renames for non-markdown text files', async () => {
     vi.mocked(isTauri).mockReturnValue(true)
 
-    const viewPath = '/vault/views/active-projects.yml'
-    const viewContent = 'name: Active Projects\nicon: rocket\ncolor: blue\n'
-    const viewEntry = {
-      ...makeEntry(viewPath, 'Active Projects', 'active-projects.yml'),
+    const yamlPath = '/vault/data/active-projects.yml'
+    const yamlContent = 'name: Active Projects\nicon: rocket\ncolor: blue\n'
+    const yamlEntry = {
+      ...makeEntry(yamlPath, 'Active Projects', 'active-projects.yml'),
       fileKind: 'text' as const,
     }
 
     const { result } = renderSave({
-      tabs: [{ entry: viewEntry, content: viewContent }],
-      activeTabPath: viewPath,
-      unsavedPaths: new Set([viewPath]),
+      tabs: [{ entry: yamlEntry, content: yamlContent }],
+      activeTabPath: yamlPath,
+      unsavedPaths: new Set([yamlPath]),
     })
 
     await act(async () => {
@@ -889,8 +889,8 @@ describe('useAppSave', () => {
     })
 
     expect(vi.mocked(invoke)).toHaveBeenCalledWith('save_note_content', {
-      path: viewPath,
-      content: viewContent,
+      path: yamlPath,
+      content: yamlContent,
     })
     expect(deps.handleRenameNote).not.toHaveBeenCalled()
   })

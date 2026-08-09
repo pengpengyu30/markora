@@ -3,8 +3,6 @@ mod app_icon;
 pub mod app_updater;
 mod asset_scope;
 mod commands;
-#[cfg(desktop)]
-mod desktop_runtime;
 pub mod frontmatter;
 pub mod git;
 #[cfg(any(test, all(desktop, target_os = "linux")))]
@@ -210,11 +208,6 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         log::info!("Sentry initialized (crash reporting enabled)");
     }
 
-    #[cfg(desktop)]
-    {
-        desktop_runtime::spawn_startup_tasks();
-    }
-
     Ok(())
 }
 
@@ -276,11 +269,9 @@ macro_rules! app_invoke_handler {
             commands::delete_note,
             commands::batch_delete_notes,
             commands::batch_delete_notes_async,
-            commands::migrate_is_a_to_type,
             commands::create_vault_folder,
             commands::rename_vault_folder,
             commands::delete_vault_folder,
-            commands::batch_archive_notes,
             commands::get_settings,
             macos_fullscreen_escape::set_macos_dismissable_escape_surface_open,
             commands::check_for_app_update,
@@ -310,9 +301,6 @@ macro_rules! app_invoke_handler {
             commands::can_export_current_webview_pdf,
             commands::export_current_webview_pdf,
             commands::resolve_sheet_external_formula_inputs,
-            commands::list_views,
-            commands::save_view_cmd,
-            commands::delete_view_cmd,
             vault_watcher::start_vault_watcher,
             vault_watcher::stop_vault_watcher
         ]

@@ -31,8 +31,5 @@ fn test_scan_vault_preserves_explicit_journal_type_definition() {
         .find(|entry| entry.filename == "2026-03-11.md")
         .expect("expected the Journal note to be scanned");
     assert_eq!(journal_note.is_a.as_deref(), Some("Journal"));
-    assert_eq!(
-        journal_note.relationships.get("Type"),
-        Some(&vec!["[[journal]]".to_string()]),
-    );
+    assert!(!journal_note.relationships.contains_key("Type"));
 }

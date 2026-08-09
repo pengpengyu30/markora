@@ -92,10 +92,6 @@ vi.mock('@blocknote/react', () => ({
     state.capturedSuggestionProps[String(props.triggerCharacter)] = props
     return <div data-testid={`suggestion-${String(props.triggerCharacter)}`} />
   },
-  GridSuggestionMenuController: (props: Record<string, unknown>) => {
-    state.capturedSuggestionProps[String(props.triggerCharacter)] = props
-    return <div data-testid={`grid-suggestion-${String(props.triggerCharacter)}`} />
-  },
   useComponentsContext: () => ({
     LinkToolbar: {
       Button: ({
@@ -163,11 +159,6 @@ vi.mock('../utils/url', () => ({
   )),
   openExternalUrl: vi.fn().mockResolvedValue(undefined),
   openLocalFile: vi.fn().mockResolvedValue(undefined),
-}))
-
-vi.mock('../utils/typeColors', () => ({
-  ACCENT_COLOR_PICKER_KEYS: ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink', 'gray'],
-  buildTypeEntryMap: () => ({}),
 }))
 
 vi.mock('../utils/wikilinkSuggestions', () => ({

@@ -102,7 +102,7 @@ function WorkspaceRowLabel({ locale }: { locale: AppLocale }) {
       >
         <Cube size={14} className="shrink-0" data-testid="workspace-row-icon" />
       </span>
-      <span className="min-w-0 truncate">{translate(locale, 'inspector.properties.workspace')}</span>
+      <span className="min-w-0 truncate">{translate(locale, 'workspace.selector.workspace')}</span>
     </span>
   )
 }
@@ -115,7 +115,7 @@ function WorkspaceSelectorValue({
   locale: AppLocale
 }) {
   if (!currentWorkspace) {
-    return <span className="truncate text-muted-foreground">{translate(locale, 'inspector.properties.none')}</span>
+    return <span className="truncate text-muted-foreground">{translate(locale, 'workspace.selector.none')}</span>
   }
   return <span className="min-w-0 truncate">{currentWorkspace.label}</span>
 }
@@ -344,9 +344,9 @@ function EditableWorkspaceSelector({
               <Input
                 ref={inputRef}
                 value={query}
-                placeholder={translate(locale, 'inspector.properties.searchWorkspaces')}
+                placeholder={translate(locale, 'workspace.selector.search')}
                 autoComplete="off"
-                aria-label={translate(locale, 'inspector.properties.searchWorkspaces')}
+                aria-label={translate(locale, 'workspace.selector.search')}
                 className="h-8 text-sm"
                 data-testid="workspace-selector-search-input"
                 onChange={(event) => handleSearchChange(event.target.value)}
@@ -356,7 +356,7 @@ function EditableWorkspaceSelector({
             <div ref={listRef} className="max-h-60 overflow-y-auto p-1">
               {options.length === 0 ? (
                 <div className="px-2 py-6 text-center text-sm text-muted-foreground">
-                  {translate(locale, 'inspector.properties.noMatchingWorkspaces')}
+                  {translate(locale, 'workspace.selector.noMatches')}
                 </div>
               ) : (
                 <div id={listboxId} role="listbox">

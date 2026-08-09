@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react'
+import { useCallback } from 'react'
 import type { AppLocale, UiLanguagePreference } from '../lib/i18n'
 import type { ThemeMode } from '../lib/themeMode'
 import { useAppKeyboard } from './useAppKeyboard'
@@ -8,7 +8,6 @@ import { useKeyboardNavigation } from './useKeyboardNavigation'
 import { useMenuEvents } from './useMenuEvents'
 import type { NoteWidthMode, SidebarSelection, SidebarFilter, VaultEntry } from '../types'
 import { requestAddRemote } from '../utils/addRemoteEvents'
-import type { NoteListFilter } from '../utils/noteListHelpers'
 import type { ViewMode } from './useViewMode'
 import type { ImmediateCreateOptions } from './useNoteCreation'
 import type { NoteListMultiSelectionCommands } from '../components/note-list/multiSelectionCommands'
@@ -35,27 +34,19 @@ interface AppCommandsConfig {
   redoLabel?: string | null
   onReplaceInNote?: () => void
   onPastePlainText: () => void
-  onCreateNote: (type?: string, options?: ImmediateCreateOptions) => void
-  onCreateNoteOfType: (type: string) => void
+  onCreateNote: (options?: ImmediateCreateOptions) => void
   onSave: () => void
   onOpenSettings: () => void
   onOpenFeedback?: () => void
   onDeleteNote: (path: string) => void
-  onArchiveNote: (path: string) => void
-  onUnarchiveNote: (path: string) => void
   onCommitPush: () => void
   onPull?: () => void
   onPullRepository?: (path: string) => void
   onResolveConflicts?: () => void
   onSetViewMode: (mode: ViewMode) => void
-  onToggleInspector: () => void
+  onToggleBacklinks: () => void
   onToggleDiff?: () => void
   onToggleRawEditor?: () => void
-  selectedViewName?: string
-  onMoveSelectedViewUp?: () => void
-  onMoveSelectedViewDown?: () => void
-  canMoveSelectedViewUp?: boolean
-  canMoveSelectedViewDown?: boolean
   noteWidth?: NoteWidthMode
   defaultNoteWidth?: NoteWidthMode
   onSetNoteWidth?: (mode: NoteWidthMode) => void
@@ -68,7 +59,6 @@ interface AppCommandsConfig {
   onSelect: (sel: SidebarSelection) => void
   onRenameFolder?: () => void
   onDeleteFolder?: () => void
-  showInbox?: boolean
   onReplaceActiveTab: (entry: VaultEntry) => void
   onSelectNote: (entry: VaultEntry) => void
   onGoBack?: () => void
@@ -83,7 +73,6 @@ interface AppCommandsConfig {
   isGitVault?: boolean
   gitRepositories?: GitRepositoryOption[]
   onInitializeGit?: () => void
-  onCreateType?: () => void
   onToggleTableOfContents?: () => void
   onCheckForUpdates?: () => void
   onRemoveActiveVault?: () => void
@@ -97,15 +86,9 @@ interface AppCommandsConfig {
   onSetThemeMode?: (mode: ThemeMode) => void
   onReloadVault?: () => void
   onRepairVault?: () => void
-  onSetNoteIcon?: () => void
-  onRemoveNoteIcon?: () => void
-  onChangeNoteType?: () => void
   onMoveNoteToFolder?: () => void
   canMoveNoteToFolder?: boolean
   onTurnCurrentBlockInto?: (target: RichEditorBlockTypeDefinition) => void
-  activeNoteHasIcon?: boolean
-  noteListFilter?: NoteListFilter
-  onSetNoteListFilter?: (filter: NoteListFilter) => void
   onOpenInNewWindow?: () => void
   onRevealActiveFile?: (path: string) => void
   onCopyActiveFilePath?: (path: string) => void
@@ -114,11 +97,6 @@ interface AppCommandsConfig {
   onExportNoteAsPdf?: () => void
   onRevealSelectedFolder?: () => void
   onCopySelectedFolderPath?: () => void
-  onToggleFavorite?: (path: string) => void
-  onToggleOrganized?: (path: string) => void
-  onCustomizeNoteListColumns?: () => void
-  canCustomizeNoteListColumns?: boolean
-  noteListColumnsLabel?: string
   onRestoreDeletedNote?: () => void
   canRestoreDeletedNote?: boolean
 }
@@ -136,7 +114,6 @@ type CommandRegistrySelectionState = Pick<
   | 'onDeleteFolder'
   | 'onRevealSelectedFolder'
   | 'onCopySelectedFolderPath'
-  | 'showInbox'
   | 'onGoBack'
   | 'onGoForward'
   | 'canGoBack'
@@ -150,7 +127,6 @@ type CommandRegistryCoreActions = Pick<
   | 'modifiedCount'
   | 'onQuickOpen'
   | 'onCreateNote'
-  | 'onCreateNoteOfType'
   | 'onSave'
   | 'onUndo'
   | 'onRedo'
@@ -165,21 +141,14 @@ type CommandRegistryCoreActions = Pick<
   | 'onOpenSettings'
   | 'onOpenFeedback'
   | 'onDeleteNote'
-  | 'onArchiveNote'
-  | 'onUnarchiveNote'
   | 'onCommitPush'
   | 'onPull'
   | 'onPullRepository'
   | 'onResolveConflicts'
   | 'onSetViewMode'
-  | 'onToggleInspector'
+  | 'onToggleBacklinks'
   | 'onToggleDiff'
   | 'onToggleRawEditor'
-  | 'selectedViewName'
-  | 'onMoveSelectedViewUp'
-  | 'onMoveSelectedViewDown'
-  | 'canMoveSelectedViewUp'
-  | 'canMoveSelectedViewDown'
   | 'noteWidth'
   | 'defaultNoteWidth'
   | 'onSetNoteWidth'
@@ -197,7 +166,6 @@ type CommandRegistryVaultActions = Pick<
   | 'gitRepositories'
   | 'onInitializeGit'
   | 'onCheckForUpdates'
-  | 'onCreateType'
   | 'locale'
   | 'systemLocale'
   | 'selectedUiLanguage'
@@ -219,26 +187,15 @@ type CommandRegistryVaultActions = Pick<
 >
 type CommandRegistryNoteActions = Pick<
   CommandRegistryConfig,
-  | 'onSetNoteIcon'
-  | 'onRemoveNoteIcon'
-  | 'onChangeNoteType'
   | 'onMoveNoteToFolder'
   | 'canMoveNoteToFolder'
   | 'onTurnCurrentBlockInto'
-  | 'activeNoteHasIcon'
-  | 'noteListFilter'
-  | 'onSetNoteListFilter'
-  | 'onToggleFavorite'
-  | 'onToggleOrganized'
-  | 'onCustomizeNoteListColumns'
-  | 'canCustomizeNoteListColumns'
-  | 'noteListColumnsLabel'
   | 'onExportNoteAsPdf'
 >
 
 function createKeyboardActions(
   config: AppCommandsConfig,
-): Omit<Parameters<typeof useAppKeyboard>[0], 'onArchiveNote'> {
+): Parameters<typeof useAppKeyboard>[0] {
   return {
     onQuickOpen: config.onQuickOpen,
     onCommandPalette: config.onCommandPalette,
@@ -262,9 +219,7 @@ function createKeyboardActions(
     onGoForward: config.onGoForward,
     onToggleTableOfContents: config.onToggleTableOfContents,
     onToggleRawEditor: config.onToggleRawEditor,
-    onToggleInspector: config.onToggleInspector,
-    onToggleFavorite: config.onToggleFavorite,
-    onToggleOrganized: config.onToggleOrganized,
+    onToggleBacklinks: config.onToggleBacklinks,
     onOpenInNewWindow: config.onOpenInNewWindow,
     activeTabPathRef: config.activeTabPathRef,
     multiSelectionCommandRef: config.multiSelectionCommandRef,
@@ -275,7 +230,7 @@ function createMenuEventHandlers(
   config: AppCommandsConfig,
   selectFilter: (filter: SidebarFilter) => void,
   viewChanges: () => void,
-): Omit<Parameters<typeof useMenuEvents>[0], 'onArchiveNote'> {
+): Parameters<typeof useMenuEvents>[0] {
   return {
     ...createMenuEventActionHandlers(config, selectFilter),
     ...createMenuEventVaultHandlers(config, viewChanges),
@@ -287,14 +242,13 @@ function createMenuEventActionHandlers(
   config: AppCommandsConfig,
   selectFilter: (filter: SidebarFilter) => void,
 ): Pick<
-  Omit<Parameters<typeof useMenuEvents>[0], 'onArchiveNote'>,
+  Parameters<typeof useMenuEvents>[0],
   | 'onSetViewMode'
   | 'onCreateNote'
-  | 'onCreateType'
   | 'onQuickOpen'
   | 'onSave'
   | 'onOpenSettings'
-  | 'onToggleInspector'
+  | 'onToggleBacklinks'
   | 'onCommandPalette'
   | 'onZoomIn'
   | 'onZoomOut'
@@ -310,7 +264,6 @@ function createMenuEventActionHandlers(
   | 'onToggleDiff'
   | 'onToggleTableOfContents'
   | 'onExportNoteAsPdf'
-  | 'onToggleOrganized'
   | 'onGoBack'
   | 'onGoForward'
   | 'onCheckForUpdates'
@@ -319,11 +272,10 @@ function createMenuEventActionHandlers(
   return {
     onSetViewMode: config.onSetViewMode,
     onCreateNote: config.onCreateNote,
-    onCreateType: config.onCreateType,
     onQuickOpen: config.onQuickOpen,
     onSave: config.onSave,
     onOpenSettings: config.onOpenSettings,
-    onToggleInspector: config.onToggleInspector,
+    onToggleBacklinks: config.onToggleBacklinks,
     onCommandPalette: config.onCommandPalette,
     onZoomIn: config.onZoomIn,
     onZoomOut: config.onZoomOut,
@@ -339,7 +291,6 @@ function createMenuEventActionHandlers(
     onToggleDiff: config.onToggleDiff,
     onToggleTableOfContents: config.onToggleTableOfContents,
     onExportNoteAsPdf: config.onExportNoteAsPdf,
-    onToggleOrganized: config.onToggleOrganized,
     onGoBack: config.onGoBack,
     onGoForward: config.onGoForward,
     onCheckForUpdates: config.onCheckForUpdates,
@@ -351,7 +302,7 @@ function createMenuEventVaultHandlers(
   config: AppCommandsConfig,
   viewChanges: () => void,
 ): Pick<
-  Omit<Parameters<typeof useMenuEvents>[0], 'onArchiveNote'>,
+  Parameters<typeof useMenuEvents>[0],
   | 'onOpenVault'
   | 'onRemoveActiveVault'
   | 'onRestoreGettingStarted'
@@ -384,7 +335,7 @@ function createMenuEventVaultHandlers(
 function createMenuEventState(
   config: AppCommandsConfig,
 ): Pick<
-  Omit<Parameters<typeof useMenuEvents>[0], 'onArchiveNote'>,
+  Parameters<typeof useMenuEvents>[0],
   | 'activeTabPathRef'
   | 'multiSelectionCommandRef'
   | 'activeTabPath'
@@ -416,7 +367,6 @@ function createCommandRegistrySelectionConfig(
     onDeleteFolder: config.onDeleteFolder,
     onRevealSelectedFolder: config.onRevealSelectedFolder,
     onCopySelectedFolderPath: config.onCopySelectedFolderPath,
-    showInbox: config.showInbox,
     onGoBack: config.onGoBack,
     onGoForward: config.onGoForward,
     canGoBack: config.canGoBack,
@@ -434,7 +384,6 @@ function createCommandRegistryCoreConfig(
     modifiedCount: config.modifiedCount,
     onQuickOpen: config.onQuickOpen,
     onCreateNote: config.onCreateNote,
-    onCreateNoteOfType: config.onCreateNoteOfType,
     onSave: config.onSave,
     onUndo: config.onUndo,
     onRedo: config.onRedo,
@@ -445,21 +394,14 @@ function createCommandRegistryCoreConfig(
     onOpenSettings: config.onOpenSettings,
     onOpenFeedback: config.onOpenFeedback,
     onDeleteNote: config.onDeleteNote,
-    onArchiveNote: config.onArchiveNote,
-    onUnarchiveNote: config.onUnarchiveNote,
     onCommitPush: config.onCommitPush,
     onPull: config.onPull,
     onPullRepository: config.onPullRepository,
     onResolveConflicts: config.onResolveConflicts,
     onSetViewMode: config.onSetViewMode,
-    onToggleInspector: config.onToggleInspector,
+    onToggleBacklinks: config.onToggleBacklinks,
     onToggleDiff: config.onToggleDiff,
     onToggleRawEditor: config.onToggleRawEditor,
-    selectedViewName: config.selectedViewName,
-    onMoveSelectedViewUp: config.onMoveSelectedViewUp,
-    onMoveSelectedViewDown: config.onMoveSelectedViewDown,
-    canMoveSelectedViewUp: config.canMoveSelectedViewUp,
-    canMoveSelectedViewDown: config.canMoveSelectedViewDown,
     onFindInNote: config.onFindInNote,
     onReplaceInNote: config.onReplaceInNote,
     onPastePlainText: config.onPastePlainText,
@@ -485,7 +427,6 @@ function createCommandRegistryVaultConfig(
     gitRepositories: config.gitRepositories,
     onInitializeGit: config.onInitializeGit,
     onCheckForUpdates: config.onCheckForUpdates,
-    onCreateType: config.onCreateType,
     locale: config.locale,
     systemLocale: config.systemLocale,
     selectedUiLanguage: config.selectedUiLanguage,
@@ -511,19 +452,8 @@ function createCommandRegistryNoteConfig(
   config: AppCommandsConfig,
 ): CommandRegistryNoteActions {
   return {
-    onSetNoteIcon: config.onSetNoteIcon,
-    onRemoveNoteIcon: config.onRemoveNoteIcon,
-    onChangeNoteType: config.onChangeNoteType,
     onMoveNoteToFolder: config.onMoveNoteToFolder,
     canMoveNoteToFolder: config.canMoveNoteToFolder,
-    activeNoteHasIcon: config.activeNoteHasIcon,
-    noteListFilter: config.noteListFilter,
-    onSetNoteListFilter: config.onSetNoteListFilter,
-    onToggleFavorite: config.onToggleFavorite,
-    onToggleOrganized: config.onToggleOrganized,
-    onCustomizeNoteListColumns: config.onCustomizeNoteListColumns,
-    canCustomizeNoteListColumns: config.canCustomizeNoteListColumns,
-    noteListColumnsLabel: config.noteListColumnsLabel,
     onExportNoteAsPdf: config.onExportNoteAsPdf,
   }
 }
@@ -539,22 +469,11 @@ function createCommandRegistryConfig(config: AppCommandsConfig): CommandRegistry
 
 /** Sets up keyboard shortcuts, command registry, menu events, and keyboard navigation. */
 export function useAppCommands(config: AppCommandsConfig): CommandAction[] {
-  const entriesRef = useRef(config.entries)
-  // eslint-disable-next-line react-hooks/refs
-  entriesRef.current = config.entries
-
-  const toggleArchive = useCallback((path: string) => {
-    const entry = entriesRef.current.find(e => e.path === path)
-    ;(entry?.archived ? config.onUnarchiveNote : config.onArchiveNote)(path)
-  }, [config.onArchiveNote, config.onUnarchiveNote])
-
-
   const { onSelect } = config
 
   const selectFilter = useCallback((filter: SidebarFilter) => {
-    const safeFilter = !config.showInbox && filter === 'inbox' ? 'all' : filter
-    onSelect({ kind: 'filter', filter: safeFilter })
-  }, [config.showInbox, onSelect])
+    onSelect({ kind: 'filter', filter })
+  }, [onSelect])
 
   const viewChanges = useCallback(() => {
     onSelect({ kind: 'filter', filter: 'changes' })
@@ -563,9 +482,9 @@ export function useAppCommands(config: AppCommandsConfig): CommandAction[] {
   const keyboardActions = createKeyboardActions(config)
   const menuEventHandlers = createMenuEventHandlers(config, selectFilter, viewChanges)
 
-  useAppKeyboard({ ...keyboardActions, onArchiveNote: toggleArchive })
+  useAppKeyboard(keyboardActions)
 
-  useMenuEvents({ ...menuEventHandlers, onArchiveNote: toggleArchive })
+  useMenuEvents(menuEventHandlers)
 
   const commands = useCommandRegistry(createCommandRegistryConfig(config))
 

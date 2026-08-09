@@ -1,4 +1,4 @@
-import type { FilterGroup, FilterNode, VaultEntry, ViewDefinition, ViewFile, WorkspaceIdentity } from '../types'
+import type { VaultEntry, WorkspaceIdentity } from '../types'
 
 type UnknownRecord = Record<string, unknown>
 
@@ -13,17 +13,6 @@ interface EntryPathArgs {
   explicitPath: string
   filename: string
   vaultPath: string
-}
-
-interface ViewNormalizationArgs {
-  rawView: unknown
-  index: number
-}
-
-interface ViewDefinitionArgs {
-  rawDefinition: unknown
-  filename: string
-  index: number
 }
 
 function isRecord(value: unknown): value is UnknownRecord {
@@ -136,18 +125,6 @@ function normalizeWorkspaceIdentity(value: unknown): WorkspaceIdentity | undefin
   }
 }
 
-function normalizeFilterGroup(value: unknown): FilterGroup {
-  const source = recordFrom(value)
-  if (Array.isArray(source.all)) return { all: source.all as FilterNode[] }
-  if (Array.isArray(source.any)) return { any: source.any as FilterNode[] }
-  return { all: [] }
-}
-
-function fallbackViewName(filename: string, index: number): string {
-  const stem = stripExtension(filename).trim()
-  return stem && stem !== `view-${index + 1}` ? stem : `View ${index + 1}`
-}
-
 function normalizeVaultEntryRecord({ rawEntry, vaultPath, index, workspace }: EntryNormalizationArgs): VaultEntry {
   const source = recordFrom(rawEntry)
   const filename = fallbackEntryFilename(source, index)
@@ -198,40 +175,6 @@ function normalizeVaultEntryRecord({ rawEntry, vaultPath, index, workspace }: En
   return entry
 }
 
-function normalizeViewDefinition({ rawDefinition, filename, index }: ViewDefinitionArgs): ViewDefinition {
-  const definition = recordFrom(rawDefinition)
-  const name = stringFrom(definition.name).trim() || fallbackViewName(filename, index)
-
-  const normalized = {
-    ...(definition as Partial<ViewDefinition>),
-    name,
-    icon: nullableStringFrom(definition.icon),
-    color: nullableStringFrom(definition.color),
-    sort: nullableStringFrom(definition.sort),
-    filters: normalizeFilterGroup(definition.filters),
-  } as ViewDefinition
-
-  if ('order' in definition) normalized.order = nullableNumberFrom(definition.order)
-  if ('listPropertiesDisplay' in definition) {
-    normalized.listPropertiesDisplay = stringArrayFrom(definition.listPropertiesDisplay)
-  }
-  return normalized
-}
-
-function normalizeViewFile({ rawView, index }: ViewNormalizationArgs): ViewFile {
-  const source = recordFrom(rawView)
-  const filename = stringFrom(source.filename) || `view-${index + 1}.yml`
-
-  return {
-    filename,
-    definition: normalizeViewDefinition({
-      rawDefinition: source.definition,
-      filename,
-      index,
-    }),
-  }
-}
-
 export function normalizeVaultEntries(rawEntries: unknown, vaultPath: string, workspace?: WorkspaceIdentity): VaultEntry[] {
   if (!Array.isArray(rawEntries)) return []
   return rawEntries
@@ -241,11 +184,6 @@ export function normalizeVaultEntries(rawEntries: unknown, vaultPath: string, wo
 
 export function normalizeVaultEntry(rawEntry: unknown, vaultPath = '', index = 0, workspace?: WorkspaceIdentity): VaultEntry {
   return normalizeVaultEntryRecord({ rawEntry, vaultPath, index, workspace })
-}
-
-export function normalizeViewFiles(rawViews: unknown): ViewFile[] {
-  if (!Array.isArray(rawViews)) return []
-  return rawViews.map((rawView, index) => normalizeViewFile({ rawView, index }))
 }
 
 function resolveEntryPath({ explicitPath, filename, vaultPath }: EntryPathArgs): string {

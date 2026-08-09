@@ -33,21 +33,14 @@ export interface EditorContentProps {
   showDiffToggle: boolean
   showTableOfContents?: boolean
   onToggleTableOfContents?: () => void
-  inspectorCollapsed: boolean
-  onToggleInspector: () => void
   onNavigateWikilink: (target: string) => void
   onEditorChange?: () => void
-  onToggleFavorite?: (path: string) => void
-  onToggleOrganized?: (path: string) => void
-  onEnterNeighborhood?: (entry: VaultEntry) => void
   onRevealFile?: (path: string) => void
   onCopyFilePath?: (path: string) => void
   onCopyDeepLink?: (entry: VaultEntry) => void
   onCopyGitUrl?: (entry: VaultEntry) => void
   onExportPdf?: () => void
   onDeleteNote?: (path: string) => void
-  onArchiveNote?: (path: string) => void
-  onUnarchiveNote?: (path: string) => void
   vaultPath?: string
   rawModeContent?: string | null
   findRequest?: RawEditorFindRequest | null
@@ -74,7 +67,6 @@ export function useEditorContentModel(props: EditorContentProps) {
 
   const { cssVars } = useEditorTheme()
   const {
-    isArchived,
     isDeletedPreview,
     isHtmlPreview,
     isSheet,
@@ -100,7 +92,6 @@ export function useEditorContentModel(props: EditorContentProps) {
   return {
     ...props,
     cssVars,
-    isArchived,
     isDeletedPreview,
     isHtmlPreview,
     isSheet,

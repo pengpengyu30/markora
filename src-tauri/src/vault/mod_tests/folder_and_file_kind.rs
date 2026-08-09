@@ -44,7 +44,7 @@ fn test_scan_vault_folders_keeps_default_vault_folders_visible() {
     let folders = scan_vault_folders(dir.path()).unwrap();
     let names: Vec<&str> = folders.iter().map(|folder| folder.name.as_str()).collect();
 
-    assert_eq!(names, vec!["attachments", "projects", "views"]);
+    assert_eq!(names, vec!["attachments", "projects", "type", "views"]);
 }
 
 #[test]
@@ -96,18 +96,18 @@ fn test_non_markdown_files_use_expected_titles_and_kinds() {
 
     create_test_file(
         dir.path(),
-        "views/my-view.yml",
-        "name: My View\nicon: rocket\n",
+        "data/metadata.yml",
+        "name: Metadata\nsource: test\n",
     );
-    let text_entry = super::parse_non_md_file(&dir.path().join("views/my-view.yml"), None).unwrap();
+    let text_entry = super::parse_non_md_file(&dir.path().join("data/metadata.yml"), None).unwrap();
     assert_eq!(text_entry.file_kind, "text");
-    assert_eq!(text_entry.title, "My View");
+    assert_eq!(text_entry.title, "Metadata");
 }
 
 #[test]
 fn test_classify_file_kind_by_extension() {
     for (path, expected_kind) in [
-        ("views/active-projects.yml", "text"),
+        ("data/metadata.yml", "text"),
         ("config.yaml", "text"),
         ("data.json", "text"),
         ("script.py", "text"),

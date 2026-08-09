@@ -18,7 +18,7 @@ Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock, wri
 type ExpectedPanelWidths = {
   sidebar: number
   noteList: number
-  inspector: number
+  rightPanel: number
 }
 
 function storePanelWidths(key: string, widths: ExpectedPanelWidths): void {
@@ -31,7 +31,7 @@ function expectPanelWidths(
 ): void {
   expect(result.current.sidebarWidth).toBe(widths.sidebar)
   expect(result.current.noteListWidth).toBe(widths.noteList)
-  expect(result.current.inspectorWidth).toBe(widths.inspector)
+  expect(result.current.rightPanelWidth).toBe(widths.rightPanel)
 }
 
 describe('useLayoutPanels', () => {
@@ -43,12 +43,12 @@ describe('useLayoutPanels', () => {
     expect(COLUMN_MIN_WIDTHS.sidebar).toBe(220)
     expect(COLUMN_MIN_WIDTHS.noteList).toBe(220)
     expect(COLUMN_MIN_WIDTHS.editor).toBe(800)
-    expect(COLUMN_MIN_WIDTHS.inspector).toBe(240)
+    expect(COLUMN_MIN_WIDTHS.rightPanel).toBe(240)
   })
 
   it('returns default widths', () => {
     const { result } = renderHook(() => useLayoutPanels())
-    expectPanelWidths(result, { sidebar: 250, noteList: 300, inspector: 280 })
+    expectPanelWidths(result, { sidebar: 250, noteList: 300, rightPanel: 280 })
   })
 
   it('clamps sidebar resize to minimum', () => {
@@ -63,10 +63,10 @@ describe('useLayoutPanels', () => {
     expect(result.current.noteListWidth).toBe(COLUMN_MIN_WIDTHS.noteList)
   })
 
-  it('clamps inspector resize to minimum', () => {
+  it('clamps right panel resize to minimum', () => {
     const { result } = renderHook(() => useLayoutPanels())
-    act(() => result.current.handleInspectorResize(500))
-    expect(result.current.inspectorWidth).toBe(COLUMN_MIN_WIDTHS.inspector)
+    act(() => result.current.handleRightPanelResize(500))
+    expect(result.current.rightPanelWidth).toBe(COLUMN_MIN_WIDTHS.rightPanel)
   })
 
   it('clamps sidebar resize to maximum', () => {
@@ -81,75 +81,75 @@ describe('useLayoutPanels', () => {
     expect(result.current.noteListWidth).toBe(500)
   })
 
-  it('clamps inspector resize to maximum', () => {
+  it('clamps right panel resize to maximum', () => {
     const { result } = renderHook(() => useLayoutPanels())
-    act(() => result.current.handleInspectorResize(-500))
-    expect(result.current.inspectorWidth).toBe(500)
+    act(() => result.current.handleRightPanelResize(-500))
+    expect(result.current.rightPanelWidth).toBe(500)
   })
 
-  it('defaults inspector to collapsed', () => {
+  it('defaults right panel to collapsed', () => {
     const { result } = renderHook(() => useLayoutPanels())
-    expect(result.current.inspectorCollapsed).toBe(true)
+    expect(result.current.rightPanelCollapsed).toBe(true)
   })
 
-  it('restores the last persisted inspector visibility', () => {
+  it('restores the last persisted right panel visibility', () => {
     localStorage.setItem(APP_STORAGE_KEYS.rightPanelCollapsed, 'false')
 
     const { result } = renderHook(() => useLayoutPanels())
 
-    expect(result.current.inspectorCollapsed).toBe(false)
+    expect(result.current.rightPanelCollapsed).toBe(false)
   })
 
-  it('persists inspector visibility changes for the next main-window launch', () => {
+  it('persists right panel visibility changes for the next main-window launch', () => {
     const { result, unmount } = renderHook(() => useLayoutPanels())
 
-    act(() => result.current.setInspectorCollapsed(false))
+    act(() => result.current.setRightPanelCollapsed(false))
     expect(localStorage.getItem(APP_STORAGE_KEYS.rightPanelCollapsed)).toBe('false')
 
     unmount()
     const restored = renderHook(() => useLayoutPanels())
-    expect(restored.result.current.inspectorCollapsed).toBe(false)
+    expect(restored.result.current.rightPanelCollapsed).toBe(false)
   })
 
   it('keeps auxiliary-window overrides from replacing the persisted main-window state', () => {
     localStorage.setItem(APP_STORAGE_KEYS.rightPanelCollapsed, 'false')
 
-    const { result } = renderHook(() => useLayoutPanels({ initialInspectorCollapsed: true }))
+    const { result } = renderHook(() => useLayoutPanels({ initialRightPanelCollapsed: true }))
 
-    expect(result.current.inspectorCollapsed).toBe(true)
+    expect(result.current.rightPanelCollapsed).toBe(true)
     expect(localStorage.getItem(APP_STORAGE_KEYS.rightPanelCollapsed)).toBe('false')
   })
 
-  it('defaults inspector to collapsed when persisted visibility is invalid', () => {
+  it('defaults right panel to collapsed when persisted visibility is invalid', () => {
     localStorage.setItem(APP_STORAGE_KEYS.rightPanelCollapsed, 'sometimes')
 
     const { result } = renderHook(() => useLayoutPanels())
 
-    expect(result.current.inspectorCollapsed).toBe(true)
+    expect(result.current.rightPanelCollapsed).toBe(true)
   })
 
-  it('accepts initial inspector collapsed override', () => {
-    const { result } = renderHook(() => useLayoutPanels({ initialInspectorCollapsed: false }))
-    expect(result.current.inspectorCollapsed).toBe(false)
+  it('accepts initial right panel collapsed override', () => {
+    const { result } = renderHook(() => useLayoutPanels({ initialRightPanelCollapsed: false }))
+    expect(result.current.rightPanelCollapsed).toBe(false)
   })
 
   it('restores persisted panel widths', () => {
     storePanelWidths(APP_STORAGE_KEYS.layoutPanels, {
       sidebar: 280,
       noteList: 360,
-      inspector: 320,
+      rightPanel: 320,
     })
 
     const { result } = renderHook(() => useLayoutPanels())
 
-    expectPanelWidths(result, { sidebar: 280, noteList: 360, inspector: 320 })
+    expectPanelWidths(result, { sidebar: 280, noteList: 360, rightPanel: 320 })
   })
 
   it('clamps persisted panel widths to supported ranges', () => {
     storePanelWidths(APP_STORAGE_KEYS.layoutPanels, {
       sidebar: 120,
       noteList: 700,
-      inspector: 90,
+      rightPanel: 90,
     })
 
     const { result } = renderHook(() => useLayoutPanels())
@@ -157,7 +157,7 @@ describe('useLayoutPanels', () => {
     expectPanelWidths(result, {
       sidebar: COLUMN_MIN_WIDTHS.sidebar,
       noteList: 500,
-      inspector: COLUMN_MIN_WIDTHS.inspector,
+      rightPanel: COLUMN_MIN_WIDTHS.rightPanel,
     })
   })
 
@@ -166,14 +166,14 @@ describe('useLayoutPanels', () => {
 
     const { result } = renderHook(() => useLayoutPanels())
 
-    expectPanelWidths(result, { sidebar: 250, noteList: 300, inspector: 280 })
+    expectPanelWidths(result, { sidebar: 250, noteList: 300, rightPanel: 280 })
   })
 
   it('persists resized panel widths with the Tolaria storage key', () => {
     storePanelWidths(LEGACY_APP_STORAGE_KEYS.layoutPanels, {
       sidebar: 260,
       noteList: 340,
-      inspector: 300,
+      rightPanel: 300,
     })
 
     const { result } = renderHook(() => useLayoutPanels())
@@ -182,20 +182,20 @@ describe('useLayoutPanels', () => {
     expect(JSON.parse(localStorage.getItem(APP_STORAGE_KEYS.layoutPanels) ?? '{}')).toEqual({
       sidebar: 284,
       noteList: 340,
-      inspector: 300,
+      rightPanel: 300,
     })
     expect(localStorage.getItem(LEGACY_APP_STORAGE_KEYS.layoutPanels)).toBeNull()
   })
 
-  it('keeps the resized inspector width across close and reopen toggles', () => {
-    const { result } = renderHook(() => useLayoutPanels({ initialInspectorCollapsed: false }))
+  it('keeps the resized right panel width across close and reopen toggles', () => {
+    const { result } = renderHook(() => useLayoutPanels({ initialRightPanelCollapsed: false }))
 
-    act(() => result.current.handleInspectorResize(-70))
-    expect(result.current.inspectorWidth).toBe(350)
+    act(() => result.current.handleRightPanelResize(-70))
+    expect(result.current.rightPanelWidth).toBe(350)
 
-    act(() => result.current.setInspectorCollapsed(true))
-    act(() => result.current.setInspectorCollapsed(false))
+    act(() => result.current.setRightPanelCollapsed(true))
+    act(() => result.current.setRightPanelCollapsed(false))
 
-    expect(result.current.inspectorWidth).toBe(350)
+    expect(result.current.rightPanelWidth).toBe(350)
   })
 })

@@ -11,17 +11,13 @@ function setViewportSize(width: number, height: number) {
 function renderNoteListWithFullActionMenu() {
   renderNoteList({
     canCopyGitUrl: vi.fn(() => true),
-    onBulkArchive: vi.fn(),
     onBulkDeletePermanently: vi.fn(),
     onCopyFilePath: vi.fn(),
     onCopyGitUrl: vi.fn(),
-    onEnterNeighborhood: vi.fn(),
     onExportPdf: vi.fn(),
     onOpenInNewWindow: vi.fn(),
     onRenameFilename: vi.fn(),
     onRevealFile: vi.fn(),
-    onToggleFavorite: vi.fn(),
-    onToggleOrganized: vi.fn(),
   })
 }
 
@@ -37,12 +33,8 @@ function clickBuildLaputaAction(label: string) {
 describe('NoteList context menu', () => {
   it('opens note actions from a right-clicked note item', () => {
     const onOpenInNewWindow = vi.fn()
-    const onEnterNeighborhood = vi.fn()
-    const onBulkArchive = vi.fn()
     const onBulkDeletePermanently = vi.fn()
     const onExportPdf = vi.fn()
-    const onToggleFavorite = vi.fn()
-    const onToggleOrganized = vi.fn()
     const onRenameFilename = vi.fn()
     const onRevealFile = vi.fn()
     const onCopyFilePath = vi.fn()
@@ -51,12 +43,8 @@ describe('NoteList context menu', () => {
 
     renderNoteList({
       onOpenInNewWindow,
-      onEnterNeighborhood,
-      onBulkArchive,
       onBulkDeletePermanently,
       onExportPdf,
-      onToggleFavorite,
-      onToggleOrganized,
       onRenameFilename,
       onRevealFile,
       onCopyFilePath,
@@ -70,18 +58,13 @@ describe('NoteList context menu', () => {
     expect(screen.getByTestId('note-list-context-menu')).toHaveClass('z-[12000]')
     expect(screen.getByTestId('note-list-context-menu').parentElement).toBe(document.body)
     expect(screen.getByText(getAppCommandShortcutDisplay(APP_COMMAND_IDS.noteOpenInNewWindow)!)).toBeInTheDocument()
-    expect(screen.getByText(getAppCommandShortcutDisplay(APP_COMMAND_IDS.noteToggleFavorite)!)).toBeInTheDocument()
-    expect(screen.getByText(getAppCommandShortcutDisplay(APP_COMMAND_IDS.noteToggleOrganized)!)).toBeInTheDocument()
     expect(screen.getByText(getAppCommandShortcutDisplay(APP_COMMAND_IDS.noteDelete)!)).toBeInTheDocument()
+    expect(screen.queryByText('Add to Favorites')).not.toBeInTheDocument()
+    expect(screen.queryByText('Mark as Organized')).not.toBeInTheDocument()
+    expect(screen.queryByText('Archive this note')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByText('Open in New Window'))
     expect(onOpenInNewWindow).toHaveBeenCalledWith(mockEntries[0])
-
-    clickBuildLaputaAction('Add to Favorites')
-    expect(onToggleFavorite).toHaveBeenCalledWith(mockEntries[0].path)
-
-    clickBuildLaputaAction('Mark as Organized')
-    expect(onToggleOrganized).toHaveBeenCalledWith(mockEntries[0].path)
 
     clickBuildLaputaAction('Rename filename')
     expect(screen.getByTestId('note-list-rename-dialog')).toBeInTheDocument()
@@ -89,9 +72,6 @@ describe('NoteList context menu', () => {
     fireEvent.change(screen.getByTestId('note-list-rename-input'), { target: { value: 'renamed-from-menu.md ' } })
     fireEvent.click(screen.getByText('Rename'))
     expect(onRenameFilename).toHaveBeenCalledWith(mockEntries[0].path, 'renamed-from-menu')
-
-    clickBuildLaputaAction("Open note's neighborhood")
-    expect(onEnterNeighborhood).toHaveBeenCalledWith(mockEntries[0])
 
     clickBuildLaputaAction('Reveal in Finder')
     expect(onRevealFile).toHaveBeenCalledWith(mockEntries[0].path)
@@ -106,34 +86,11 @@ describe('NoteList context menu', () => {
     clickBuildLaputaAction('Export note as PDF')
     expect(onExportPdf).toHaveBeenCalledWith(mockEntries[0])
 
-    clickBuildLaputaAction('Archive this note')
-    expect(onBulkArchive).toHaveBeenCalledWith([mockEntries[0].path])
-
     clickBuildLaputaAction('Delete this note')
     expect(onBulkDeletePermanently).toHaveBeenCalledWith([mockEntries[0].path])
   }, 20_000)
 
-  it('shows stateful favorite and organized labels for pinned notes', () => {
-    renderNoteList({
-      entries: [
-        makeEntry({
-          favorite: true,
-          organized: true,
-          path: '/vault/stateful.md',
-          title: 'Stateful Note',
-        }),
-      ],
-      onToggleFavorite: vi.fn(),
-      onToggleOrganized: vi.fn(),
-    })
-
-    fireEvent.contextMenu(screen.getByText('Stateful Note'))
-
-    expect(screen.getByText('Remove from Favorites')).toBeInTheDocument()
-    expect(screen.getByText('Mark as Unorganized')).toBeInTheDocument()
-  })
-
-  it('hides the organized action for PDF file rows while keeping file actions', () => {
+  it('keeps file actions for PDF rows without status actions', () => {
     const pdfEntry = makeEntry({
       fileKind: 'binary',
       filename: 'research.pdf',
@@ -143,7 +100,6 @@ describe('NoteList context menu', () => {
     const onCopyFilePath = vi.fn()
     const onRevealFile = vi.fn()
     const onRenameFilename = vi.fn()
-    const onToggleOrganized = vi.fn()
 
     renderNoteList({
       allNotesFileVisibility: { pdfs: true, images: false, unsupported: false },
@@ -151,19 +107,18 @@ describe('NoteList context menu', () => {
       onCopyFilePath,
       onRenameFilename,
       onRevealFile,
-      onToggleOrganized,
     })
 
     fireEvent.contextMenu(screen.getByTestId('pdf-file-item'))
 
     expect(screen.getByTestId('note-list-context-menu')).toBeInTheDocument()
     expect(screen.queryByText('Mark as Organized')).not.toBeInTheDocument()
+    expect(screen.queryByText('Archive this note')).not.toBeInTheDocument()
     expect(screen.queryByText('Rename filename')).not.toBeInTheDocument()
     expect(screen.getByText('Reveal in Finder')).toBeInTheDocument()
 
     fireEvent.click(screen.getByText('Copy file path'))
     expect(onCopyFilePath).toHaveBeenCalledWith(pdfEntry.path)
-    expect(onToggleOrganized).not.toHaveBeenCalled()
   })
 
   it('hides the git URL action for notes without a remote', () => {

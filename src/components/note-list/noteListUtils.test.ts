@@ -17,7 +17,6 @@ function makeEntry(path = '/test.md') {
 function makeActions() {
   return {
     onReplace: vi.fn(),
-    onEnterNeighborhood: vi.fn(),
     onOpenInNewWindow: vi.fn(),
     multiSelect: {
       selectRange: vi.fn(),
@@ -45,25 +44,6 @@ describe('resolveHeaderTitle', () => {
     expect(resolveHeaderTitle(selection, null)).toBe('History')
   })
 
-  it('localizes built-in note list titles', () => {
-    const selection = { kind: 'filter', filter: 'archived' }
-    expect(resolveHeaderTitle(selection, null, [], 'zh-CN')).toBe('归档')
-  })
-
-  it('keeps user-authored view names unchanged', () => {
-    const selection = { kind: 'view', filename: 'custom.yml' }
-
-    expect(resolveHeaderTitle(selection, null, [{
-      filename: 'custom.yml',
-      definition: {
-        name: '客户',
-        icon: null,
-        color: null,
-        sort: null,
-        filters: { all: [] },
-      },
-    }], 'en')).toBe('客户')
-  })
 })
 
 describe('routeNoteClick', () => {
@@ -74,15 +54,6 @@ describe('routeNoteClick', () => {
     expect(actions.onReplace).toHaveBeenCalledWith(entry)
     expect(actions.multiSelect.clear).toHaveBeenCalled()
     expect(actions.multiSelect.setAnchor).toHaveBeenCalledWith(entry.path)
-  })
-
-  it('Cmd+click enters Neighborhood mode', () => {
-    const entry = makeEntry()
-    const actions = makeActions()
-    routeNoteClick(entry, makeMouseEvent({ metaKey: true }), actions)
-    expect(actions.onEnterNeighborhood).toHaveBeenCalledWith(entry)
-    expect(actions.multiSelect.clear).toHaveBeenCalled()
-    expect(actions.onReplace).not.toHaveBeenCalled()
   })
 
   it('Shift+click selects range', () => {
@@ -98,7 +69,6 @@ describe('routeNoteClick', () => {
     routeNoteClick(entry, makeMouseEvent({ metaKey: true, shiftKey: true }), actions)
     expect(actions.onOpenInNewWindow).toHaveBeenCalledWith(entry)
     expect(actions.onReplace).not.toHaveBeenCalled()
-    expect(actions.onEnterNeighborhood).not.toHaveBeenCalled()
   })
 
   it('Cmd+Shift+click is a no-op when handler is undefined', () => {
@@ -107,7 +77,6 @@ describe('routeNoteClick', () => {
     actions.onOpenInNewWindow = undefined
     routeNoteClick(entry, makeMouseEvent({ metaKey: true, shiftKey: true }), actions)
     expect(actions.onReplace).not.toHaveBeenCalled()
-    expect(actions.onEnterNeighborhood).not.toHaveBeenCalled()
   })
 })
 

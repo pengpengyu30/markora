@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, type MutableRefObject } from 'react'
 import type { VaultEntry, VaultPropertyValue } from '../types'
-import type { FrontmatterValue } from '../components/Inspector'
+import type { FrontmatterValue } from '../types'
 import { cacheNoteContent, useTabManagement } from './useTabManagement'
 import {
   GITIGNORED_VISIBILITY_APPLIED_EVENT,
@@ -16,7 +16,7 @@ import {
   reloadTabsAfterRename,
   reloadVaultAfterRename,
 } from './useNoteRename'
-import { runFrontmatterAndApply, type FrontmatterOpOptions } from './frontmatterOps'
+import { isWritableFrontmatterKey, runFrontmatterAndApply, type FrontmatterOpOptions } from './frontmatterOps'
 import { findByNotePath, notePathFilename, notePathsMatch } from '../utils/notePathIdentity'
 import type { VaultOption } from '../components/status-bar/types'
 import { canonicalFrontmatterKey } from '../utils/systemMetadata'
@@ -51,8 +51,6 @@ export interface NoteActionsConfig {
   onFrontmatterPersisted?: () => void | Promise<void>
   /** Called for note-action owned disk writes so file watchers can ignore app-originated changes. */
   onInternalVaultWrite?: (path: string) => void
-  /** Called after type files or type assignments change, so derived type surfaces can reload. */
-  onTypeStateChanged?: () => void | Promise<void>
   /** Opens generated HTML in the system viewer without loading active content in Tolaria. */
   onOpenExternalFile?: (path: string) => void
 }
@@ -222,16 +220,8 @@ function shouldRenameOnTitleUpdate(key: string, value: FrontmatterValue): value 
   return isTitleKey(key) && typeof value === 'string' && value !== ''
 }
 
-function isTypeFieldKey(key: string): boolean {
-  const normalized = key.trim().toLowerCase().replace(/\s+/g, '_')
-  return normalized === 'type' || normalized === 'is_a'
-}
-
-async function notifyFrontmatterPersisted(config: NoteActionsConfig, key: string): Promise<void> {
+async function notifyFrontmatterPersisted(config: NoteActionsConfig): Promise<void> {
   await config.onFrontmatterPersisted?.()
-  if (isTypeFieldKey(key)) {
-    await config.onTypeStateChanged?.()
-  }
 }
 
 interface NavigateWikilinkParams {
@@ -329,7 +319,7 @@ async function updateFrontmatterAndMaybeRename({
   if (!applyFrontmatterCallbacks({ config, path, newContent })) return false
 
   await maybeRenameAfterFrontmatterUpdate({ path, key, value, deps })
-  await notifyFrontmatterPersisted(config, key)
+  await notifyFrontmatterPersisted(config)
   return true
 }
 
@@ -560,7 +550,7 @@ function useFrontmatterActionHandlers(functionOptions: {
     config.onInternalVaultWrite?.(currentPath)
     const newContent = await runFrontmatterOp('delete', currentPath, key, undefined, { ...options, silent: true })
     if (!applyFrontmatterCallbacks({ config, path: currentPath, newContent })) return
-    await notifyFrontmatterPersisted(config, key)
+    await notifyFrontmatterPersisted(config)
     },
     [
     activeTabPathRef,
@@ -597,6 +587,7 @@ function useFrontmatterActionHandlers(functionOptions: {
 
   const handleUpdateFrontmatter = useCallback(
     async (path: string, key: string, value: FrontmatterValue, options?: FrontmatterOpOptions) => {
+    if (!isWritableFrontmatterKey(key)) return
     const currentPath = resolvePath(path)
     const shouldRecordHistory = shouldRecordFrontmatterHistory(actionHistory, options)
     const before = shouldRecordHistory
@@ -647,64 +638,8 @@ function useFrontmatterActionHandlers(functionOptions: {
     ],
   )
 
-  const handleDeleteProperty = useCallback(
-    async (path: string, key: string, options?: FrontmatterOpOptions) => {
-    const currentPath = resolvePath(path)
-    const shouldRecordHistory = shouldRecordFrontmatterHistory(actionHistory, options)
-    const before = shouldRecordHistory
-        ? frontmatterSnapshotForMutation({
-            entries: config.entries,
-            path: currentPath,
-            key,
-          })
-      : ABSENT_FRONTMATTER
-    if (!activePathGuardAllowsMutation(currentPath, activeTabPathRef, options)) return
-    const canFlush = await flushBeforeNoteMutation(currentPath, config.flushBeforeNoteMutation)
-    if (!canFlush) return
-    if (!activePathGuardAllowsMutation(currentPath, activeTabPathRef, options)) return
-
-    config.onInternalVaultWrite?.(currentPath)
-    const newContent = await runFrontmatterOp('delete', currentPath, key, undefined, options)
-    if (!applyFrontmatterCallbacks({ config, path: currentPath, newContent })) return
-    await notifyFrontmatterPersisted(config, key)
-    if (shouldRecordHistory) {
-      recordFrontmatterHistory(currentPath, key, before, ABSENT_FRONTMATTER, `Delete ${key}`, options)
-    }
-    },
-    [actionHistory, activeTabPathRef, config, recordFrontmatterHistory, resolvePath, runFrontmatterOp],
-  )
-
-  const handleAddProperty = useCallback(
-    async (path: string, key: string, value: FrontmatterValue, options?: FrontmatterOpOptions) => {
-    const currentPath = resolvePath(path)
-    const shouldRecordHistory = shouldRecordFrontmatterHistory(actionHistory, options)
-    const before = shouldRecordHistory
-        ? frontmatterSnapshotForMutation({
-            entries: config.entries,
-            path: currentPath,
-            key,
-          })
-      : ABSENT_FRONTMATTER
-    if (!activePathGuardAllowsMutation(currentPath, activeTabPathRef, options)) return
-    const canFlush = await flushBeforeNoteMutation(currentPath, config.flushBeforeNoteMutation)
-    if (!canFlush) return
-    if (!activePathGuardAllowsMutation(currentPath, activeTabPathRef, options)) return
-
-    config.onInternalVaultWrite?.(currentPath)
-    const newContent = await runFrontmatterOp('update', currentPath, key, value, options)
-    if (!applyFrontmatterCallbacks({ config, path: currentPath, newContent })) return
-    await notifyFrontmatterPersisted(config, key)
-    if (shouldRecordHistory) {
-      recordFrontmatterHistory(currentPath, key, before, { exists: true, value }, `Update ${key}`, options)
-    }
-    },
-    [actionHistory, activeTabPathRef, config, recordFrontmatterHistory, resolvePath, runFrontmatterOp],
-  )
-
   return {
     handleUpdateFrontmatter,
-    handleDeleteProperty,
-    handleAddProperty,
   }
 }
 
@@ -805,12 +740,7 @@ function buildNoteActionsResult({
     handleNavigateWikilink,
     handleCreateNote: creation.handleCreateNote,
     handleCreateNoteImmediate: creation.handleCreateNoteImmediate,
-    handleCreateNoteForRelationship: creation.handleCreateNoteForRelationship,
-    handleCreateType: creation.handleCreateType,
-    createTypeEntrySilent: creation.createTypeEntrySilent,
     handleUpdateFrontmatter: frontmatterActions.handleUpdateFrontmatter,
-    handleDeleteProperty: frontmatterActions.handleDeleteProperty,
-    handleAddProperty: frontmatterActions.handleAddProperty,
     handleRenameNote: rename.handleRenameNote,
     handleRenameFilename: rename.handleRenameFilename,
     handleMoveNoteToFolder: rename.handleMoveNoteToFolder,

@@ -24,8 +24,8 @@ describe('attachClickHandlers', () => {
   it('inserts relative path stem as wikilink target', () => {
     const insertWikilink = vi.fn()
     const candidates = [
-      { title: 'Note A', aliases: [], group: 'Note', entryTitle: 'Note A', path: '/vault/a.md' },
-      { title: 'Note B', aliases: [], group: 'Project', entryTitle: 'Note B', path: '/vault/b.md' },
+      { title: 'Note A', aliases: [], entryTitle: 'Note A', path: '/vault/a.md' },
+      { title: 'Note B', aliases: [], entryTitle: 'Note B', path: '/vault/b.md' },
     ]
 
     const result = attachClickHandlers(candidates, insertWikilink, vaultPath)
@@ -39,17 +39,17 @@ describe('attachClickHandlers', () => {
 
   it('preserves all original properties', () => {
     const result = attachClickHandlers(
-      [{ title: 'X', aliases: ['y'], group: 'Topic', entryTitle: 'X', path: '/vault/x.md' }],
+      [{ title: 'X', aliases: ['y'], entryTitle: 'X', path: '/vault/x.md' }],
       vi.fn(),
       vaultPath,
     )
-    expect(result[0]).toMatchObject({ title: 'X', aliases: ['y'], group: 'Topic', path: '/vault/x.md' })
+    expect(result[0]).toMatchObject({ title: 'X', aliases: ['y'], path: '/vault/x.md' })
   })
 
   it('includes subfolder path in wikilink target', () => {
     const insertWikilink = vi.fn()
     const candidates = [
-      { title: 'ADR 001', aliases: [], group: 'Note', entryTitle: 'ADR 001', path: '/vault/docs/adr/0001-tauri-stack.md' },
+      { title: 'ADR 001', aliases: [], entryTitle: 'ADR 001', path: '/vault/docs/adr/0001-tauri-stack.md' },
     ]
 
     const result = attachClickHandlers(candidates, insertWikilink, vaultPath)
@@ -61,7 +61,7 @@ describe('attachClickHandlers', () => {
   it('omits any default alias even when the title differs from the path stem', () => {
     const insertWikilink = vi.fn()
     const candidates = [
-      { title: 'Roadmap', aliases: [], group: 'Note', entryTitle: 'Roadmap', path: '/vault/roadmap.md' },
+      { title: 'Roadmap', aliases: [], entryTitle: 'Roadmap', path: '/vault/roadmap.md' },
     ]
 
     const result = attachClickHandlers(candidates, insertWikilink, vaultPath)
@@ -85,7 +85,7 @@ describe('attachClickHandlers', () => {
       workspace: { id: 'team', label: 'Team', alias: 'team', path: '/team', shortLabel: 'TE', color: null, icon: null, mounted: true, available: true, defaultForNewNotes: false },
     })
     const candidates = [
-      { title: 'Alpha', aliases: [], group: 'Note', entryTitle: 'Alpha', path: target.path, entry: target },
+      { title: 'Alpha', aliases: [], entryTitle: 'Alpha', path: target.path, entry: target },
     ]
 
     const result = attachClickHandlers(candidates, insertWikilink, '/personal', source)
@@ -96,12 +96,8 @@ describe('attachClickHandlers', () => {
 })
 
 describe('enrichSuggestionItems', () => {
-  const typeEntryMap: Record<string, VaultEntry> = {
-    Project: makeEntry({ isA: 'Type', title: 'Project', color: 'blue', icon: 'wrench' }),
-  }
-
-  function makeItem(title: string, group: string, path: string, entryType?: string | null) {
-    return { title, aliases: [] as string[], group, entryType, entryTitle: title, path, onItemClick: vi.fn() }
+  function makeItem(title: string, path: string) {
+    return { title, aliases: [] as string[], entryTitle: title, path, onItemClick: vi.fn() }
   }
 
   const personalWorkspace = {
@@ -131,56 +127,32 @@ describe('enrichSuggestionItems', () => {
   }
 
   it('filters items by query', () => {
-    const items = [makeItem('Alpha', 'Note', '/a.md'), makeItem('Beta', 'Note', '/b.md')]
+    const items = [makeItem('Alpha', '/a.md'), makeItem('Beta', '/b.md')]
     const result = enrichSuggestionItems(items, 'alp', {})
     expect(result).toHaveLength(1)
     expect(result[0].title).toBe('Alpha')
   })
 
-  it('adds type metadata for non-Note groups', () => {
-    const items = [makeItem('My Project', 'Project', '/p.md', 'Project')]
-    const result = enrichSuggestionItems(items, '', typeEntryMap)
-    expect(result[0].noteType).toBe('Project')
-    expect(result[0].typeColor).toBeDefined()
-    expect(result[0].typeLightColor).toBeDefined()
-    expect(result[0].TypeIcon).toBeDefined()
-  })
-
-  it('preserves Note type metadata for explicit Note entries', () => {
-    const items = [makeItem('Explicit Note', 'Note', '/n.md', 'Note')]
-    const result = enrichSuggestionItems(items, '', {})
-    expect(result[0].noteType).toBe('Note')
-    expect(result[0].typeColor).toBeDefined()
-    expect(result[0].TypeIcon).toBeDefined()
-  })
-
-  it('keeps untyped Note-group entries neutral', () => {
-    const items = [makeItem('Plain Note', 'Note', '/n.md')]
-    const result = enrichSuggestionItems(items, '', {})
-    expect(result[0].noteType).toBeUndefined()
-    expect(result[0].typeColor).toBeUndefined()
-  })
-
   it('deduplicates items with the same path', () => {
     const items = [
-      makeItem('Note', 'Note', '/n.md'),
-      makeItem('Note Alias', 'Note', '/n.md'),
+      makeItem('Note', '/n.md'),
+      makeItem('Note Alias', '/n.md'),
     ]
     const result = enrichSuggestionItems(items, '', {})
     expect(result).toHaveLength(1)
   })
 
   it('limits results to 20', () => {
-    const items = Array.from({ length: 30 }, (_, i) => makeItem(`Note ${i}`, 'Note', `/n${i}.md`))
+    const items = Array.from({ length: 30 }, (_, i) => makeItem(`Note ${i}`, `/n${i}.md`))
     const result = enrichSuggestionItems(items, '', {})
     expect(result.length).toBeLessThanOrEqual(20)
   })
 
   it('ranks exact title match first among prefix competitors', () => {
     const items = [
-      makeItem('Refactoring Ideas', 'Note', '/ri.md'),
-      makeItem('Refactoring Key Ideas', 'Note', '/rk.md'),
-      makeItem('Refactoring', 'Area', '/r.md'),
+      makeItem('Refactoring Ideas', '/ri.md'),
+      makeItem('Refactoring Key Ideas', '/rk.md'),
+      makeItem('Refactoring', '/r.md'),
     ]
     const result = enrichSuggestionItems(items, 'Refactoring', {})
     expect(result[0].title).toBe('Refactoring')
@@ -188,11 +160,11 @@ describe('enrichSuggestionItems', () => {
 
   it('keeps workspace metadata visible when the filtered results contain one workspace', () => {
     const items = [
-      { ...makeItem('Alpha', 'Note', '/team/alpha.md'), entry: makeEntry({ path: '/team/alpha.md', workspace: teamWorkspace }) },
-      { ...makeItem('Beta', 'Note', '/personal/beta.md'), entry: makeEntry({ path: '/personal/beta.md', workspace: personalWorkspace }) },
+      { ...makeItem('Alpha', '/team/alpha.md'), entry: makeEntry({ path: '/team/alpha.md', workspace: teamWorkspace }) },
+      { ...makeItem('Beta', '/personal/beta.md'), entry: makeEntry({ path: '/personal/beta.md', workspace: personalWorkspace }) },
     ]
 
-    const result = enrichSuggestionItems(items, 'Alpha', {}, {
+    const result = enrichSuggestionItems(items, 'Alpha', {
       showWorkspace: hasMultipleSuggestionWorkspaces(items),
     })
 

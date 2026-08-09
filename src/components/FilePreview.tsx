@@ -17,7 +17,7 @@ import { translate, type AppLocale } from '../lib/i18n'
 import { trackFilePreviewAction, trackFilePreviewFailed, trackFilePreviewOpened } from '../lib/productAnalytics'
 import { filePreviewKind, previewFileTypeLabel, type FilePreviewKind } from '../utils/filePreview'
 import { useExternalMediaPreview } from '../utils/mediaPreviewRuntime'
-import { focusNoteListContainer } from '../utils/neighborhoodHistory'
+import { focusNoteListContainer } from '../utils/domScroll'
 import { openLocalFile } from '../utils/url'
 import { Button } from './ui/button'
 

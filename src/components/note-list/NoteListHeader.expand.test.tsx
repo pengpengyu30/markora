@@ -14,7 +14,6 @@ const baseProps = {
   isEntityView: false,
   listSort: 'modified' as const,
   listDirection: 'desc' as const,
-  customProperties: [],
   searchVisible: false,
   search: '',
   isSearching: false,

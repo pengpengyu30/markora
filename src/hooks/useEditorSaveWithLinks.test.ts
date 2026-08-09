@@ -268,7 +268,7 @@ describe('useEditorSaveWithLinks', () => {
     }))
   })
 
-  it('clears stale note-list and inspector metadata when raw frontmatter is removed', () => {
+  it('clears stale note-list and right-panel metadata when raw frontmatter is removed', () => {
     const { result } = renderHookWithLinks()
 
     act(() => {

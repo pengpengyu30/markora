@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { FolderNode, SidebarSelection, VaultEntry } from '../types'
+import type { FolderNode, VaultEntry } from '../types'
 import { trackNoteRetargeted } from '../lib/productAnalytics'
 import { useNoteRetargeting } from './useNoteRetargeting'
 
@@ -43,9 +43,6 @@ const folders: FolderNode[] = [
 ]
 
 describe('useNoteRetargeting', () => {
-  const setSelection = vi.fn()
-  const setToastMessage = vi.fn()
-  const updateFrontmatter = vi.fn()
   const moveNoteToFolder = vi.fn()
 
   beforeEach(() => {
@@ -53,70 +50,20 @@ describe('useNoteRetargeting', () => {
   })
 
   function renderUseNoteRetargeting(
-    selection: SidebarSelection,
-    entries: VaultEntry[] = [
-      makeEntry(),
-      makeEntry({ path: '/vault/type/project.md', filename: 'project.md', title: 'Project', isA: 'Type' }),
-    ],
+    entries: VaultEntry[] = [makeEntry()],
     vaultPath = '/vault',
   ) {
     return renderHook(() => useNoteRetargeting({
       entries,
       folders,
-      selection,
-      setSelection,
-      setToastMessage,
       vaultPath,
-      updateFrontmatter,
       moveNoteToFolder,
     }))
   }
 
-  it('rejects dropping a note onto its current type and allows other types', () => {
-    const { result } = renderUseNoteRetargeting({ kind: 'filter', filter: 'all' })
-
-    expect(result.current.canDropNoteOnType('/vault/notes/alpha.md', 'Note')).toBe(false)
-    expect(result.current.canDropNoteOnType('/vault/notes/alpha.md', 'Type')).toBe(true)
-  })
-
-  it('changes the note type, updates entity selection, and shows a toast', async () => {
-    updateFrontmatter.mockResolvedValue(undefined)
-    const selection: SidebarSelection = { kind: 'entity', entry: makeEntry() }
-    const { result } = renderUseNoteRetargeting(selection)
-
-    await act(async () => {
-      await result.current.changeNoteType('/vault/notes/alpha.md', 'Type')
-    })
-
-    expect(updateFrontmatter).toHaveBeenCalledWith(
-      '/vault/notes/alpha.md',
-      'type',
-      'Type',
-      { silent: true },
-    )
-    expect(setSelection).toHaveBeenCalledWith({
-      kind: 'entity',
-      entry: expect.objectContaining({
-        path: '/vault/notes/alpha.md',
-        isA: 'Type',
-      }),
-    })
-    expect(setToastMessage).toHaveBeenCalledWith('Type set to "Type"')
-    expect(trackNoteRetargeted).toHaveBeenCalledWith({ targetKind: 'type' })
-  })
-
-  it('moves the note into another folder and updates the selected entity path', async () => {
-    const selection: SidebarSelection = { kind: 'entity', entry: makeEntry() }
-    moveNoteToFolder.mockImplementation(async (
-      path: string,
-      _folderPath: string,
-      _vaultPath: string,
-      onEntryRenamed: (oldPath: string, newEntry: Partial<VaultEntry> & { path: string }) => void,
-    ) => {
-      onEntryRenamed(path, { path: '/vault/projects/alpha.md', filename: 'alpha.md' })
-      return { new_path: '/vault/projects/alpha.md' }
-    })
-    const { result } = renderUseNoteRetargeting(selection)
+  it('moves the note into another folder', async () => {
+    moveNoteToFolder.mockResolvedValue({ new_path: '/vault/projects/alpha.md' })
+    const { result } = renderUseNoteRetargeting()
 
     await act(async () => {
       await result.current.moveIntoFolder('/vault/notes/alpha.md', 'projects')
@@ -128,13 +75,6 @@ describe('useNoteRetargeting', () => {
       '/vault',
       expect.any(Function),
     )
-    expect(setSelection).toHaveBeenCalledWith({
-      kind: 'entity',
-      entry: expect.objectContaining({
-        path: '/vault/projects/alpha.md',
-        filename: 'alpha.md',
-      }),
-    })
     expect(trackNoteRetargeted).toHaveBeenCalledWith({
       targetKind: 'folder',
       folderDestination: 'folder',
@@ -145,7 +85,6 @@ describe('useNoteRetargeting', () => {
     const nestedEntry = makeEntry({ path: '/vault/notes/alpha.md' })
     moveNoteToFolder.mockResolvedValue({ new_path: '/vault/alpha.md' })
     const { result } = renderUseNoteRetargeting(
-      { kind: 'filter', filter: 'all' },
       [nestedEntry],
     )
 
@@ -174,7 +113,6 @@ describe('useNoteRetargeting', () => {
     })
     moveNoteToFolder.mockResolvedValue({ new_path: 'C:\\vault\\projects\\alpha.md' })
     const { result } = renderUseNoteRetargeting(
-      { kind: 'filter', filter: 'all' },
       [windowsEntry],
       'C:\\vault',
     )

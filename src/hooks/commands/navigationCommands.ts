@@ -10,7 +10,6 @@ interface NavigationCommandsConfig {
   onDeleteFolder?: () => void
   onRevealSelectedFolder?: () => void
   onCopySelectedFolderPath?: () => void
-  showInbox?: boolean
   onGoBack?: () => void
   onGoForward?: () => void
   canGoBack?: boolean
@@ -91,7 +90,6 @@ function buildBaseCommands(config: NavigationCommandsConfig): CommandAction[] {
   return [
     { id: 'search-notes', label: 'Search Notes', group: 'Navigation', shortcut: getAppCommandShortcutDisplay(APP_COMMAND_IDS.fileQuickOpen), keywords: ['find', 'open', 'quick'], enabled: true, execute: onQuickOpen },
     { id: 'go-all', label: 'Go to All Notes', group: 'Navigation', keywords: ['filter'], enabled: true, execute: () => onSelect({ kind: 'filter', filter: 'all' }) },
-    { id: 'go-archived', label: 'Go to Archived', group: 'Navigation', keywords: [], enabled: true, execute: () => onSelect({ kind: 'filter', filter: 'archived' }) },
     { id: 'go-changes', label: 'Go to Changes', group: 'Navigation', keywords: ['git', 'modified', 'pending'], enabled: true, execute: () => onSelect({ kind: 'filter', filter: 'changes' }) },
     { id: 'go-pulse', label: 'Go to History', group: 'Navigation', keywords: ['activity', 'history', 'commits', 'git', 'feed'], enabled: true, execute: () => onSelect({ kind: 'filter', filter: 'pulse' }) },
     { id: 'go-back', label: 'Go Back', group: 'Navigation', shortcut: getAppCommandShortcutDisplay(APP_COMMAND_IDS.viewGoBack), keywords: ['previous', 'history', 'back'], enabled: !!canGoBack, execute: () => onGoBack?.() },
@@ -99,29 +97,13 @@ function buildBaseCommands(config: NavigationCommandsConfig): CommandAction[] {
   ]
 }
 
-function insertInboxCommand(commands: CommandAction[], showInbox: boolean, onSelect: (sel: SidebarSelection) => void) {
-  if (!showInbox) return commands
-
-  commands.splice(5, 0, {
-    id: 'go-inbox',
-    label: 'Go to Inbox',
-    group: 'Navigation',
-    keywords: ['inbox', 'unlinked', 'orphan', 'unorganized', 'triage'],
-    enabled: true,
-    execute: () => onSelect({ kind: 'filter', filter: 'inbox' }),
-  })
-  return commands
-}
-
 export function buildNavigationCommands(config: NavigationCommandsConfig): CommandAction[] {
   const {
-    onSelect,
     selection,
     onRenameFolder,
     onDeleteFolder,
     onRevealSelectedFolder,
     onCopySelectedFolderPath,
-    showInbox = true,
   } = config
   const folderSelected = selection?.kind === 'folder'
   const canMutateFolder = folderSelected && selection.path.length > 0
@@ -136,5 +118,5 @@ export function buildNavigationCommands(config: NavigationCommandsConfig): Comma
       onCopySelectedFolderPath,
     }),
   ]
-  return insertInboxCommand(commands, showInbox, onSelect)
+  return commands
 }

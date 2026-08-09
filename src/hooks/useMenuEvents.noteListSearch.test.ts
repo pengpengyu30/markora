@@ -22,11 +22,10 @@ function makeHandlers(): MenuEventHandlers {
   return {
     onSetViewMode: vi.fn(),
     onCreateNote: vi.fn(),
-    onCreateType: vi.fn(),
     onQuickOpen: vi.fn(),
     onSave: vi.fn(),
     onOpenSettings: vi.fn(),
-    onToggleInspector: vi.fn(),
+    onToggleBacklinks: vi.fn(),
     onCommandPalette: vi.fn(),
     onZoomIn: vi.fn(),
     onZoomOut: vi.fn(),

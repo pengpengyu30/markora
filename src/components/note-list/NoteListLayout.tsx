@@ -1,12 +1,88 @@
+import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso'
 import { BulkActionBar } from '../BulkActionBar'
-import { FilterPills } from './FilterPills'
 import { NoteListHeader } from './NoteListHeader'
-import { EntityView, ListView } from './NoteListViews'
+import type { VaultEntry } from '../../types'
+import { translate, type AppLocale } from '../../lib/i18n'
+import { EmptyMessage } from './TrashWarningBanner'
 import type { useNoteListModel } from './useNoteListModel'
 
-type NoteListLayoutProps = ReturnType<typeof useNoteListModel> & {
-  handleBulkOrganize?: () => void
+function resolveEmptyText({
+  isChangesView,
+  changesError,
+  query,
+  locale,
+}: {
+  isChangesView: boolean
+  changesError: string | null | undefined
+  query: string
+  locale: AppLocale
+}): string {
+  if (isChangesView && changesError)
+    return translate(locale, 'noteList.empty.changesError', {
+      error: changesError,
+    })
+  if (isChangesView) return translate(locale, 'noteList.empty.noChanges')
+  return query ? translate(locale, 'noteList.empty.noMatching') : translate(locale, 'noteList.empty.noNotes')
 }
+
+function BottomOverlaySpacer() {
+  return <div aria-hidden="true" data-testid="note-list-bottom-overlay-spacer" className="h-14" />
+}
+
+const BOTTOM_OVERLAY_COMPONENTS = { Footer: BottomOverlaySpacer }
+const NO_EXTRA_COMPONENTS = {}
+
+interface ListViewProps {
+  isChangesView?: boolean
+  changesError?: string | null
+  searched: VaultEntry[]
+  query: string
+  renderItem: (entry: VaultEntry) => React.ReactNode
+  virtuosoRef?: React.RefObject<VirtuosoHandle | null>
+  locale?: AppLocale
+  hasBottomOverlay?: boolean
+}
+
+export function ListView(props: ListViewProps) {
+  const {
+    isChangesView,
+    changesError,
+    searched,
+    query,
+    renderItem,
+    virtuosoRef,
+    locale = 'en',
+    hasBottomOverlay,
+  } = props
+  const emptyText = resolveEmptyText({
+    isChangesView: !!isChangesView,
+    changesError: changesError ?? null,
+    query,
+    locale,
+  })
+
+  if (searched.length === 0) {
+    return (
+      <div className="h-full overflow-y-auto">
+        <EmptyMessage text={emptyText} />
+        {hasBottomOverlay && <BottomOverlaySpacer />}
+      </div>
+    )
+  }
+
+  return (
+    <Virtuoso
+      ref={virtuosoRef}
+      style={{ height: '100%' }}
+      data={searched}
+      overscan={200}
+      components={hasBottomOverlay ? BOTTOM_OVERLAY_COMPONENTS : NO_EXTRA_COMPONENTS}
+      itemContent={(_index, entry) => renderItem(entry)}
+    />
+  )
+}
+
+type NoteListLayoutProps = ReturnType<typeof useNoteListModel>
 
 const NOTE_LIST_LOADING_ROWS = [
   { id: 'wide', title: 184, line: 254, selected: false },
@@ -56,30 +132,18 @@ function NoteListLoadingSkeleton() {
 
 function MultiSelectBar({
   multiSelect,
-  isArchivedView,
-  handleBulkOrganize,
-  handleBulkArchive,
   handleBulkDeletePermanently,
-  handleBulkUnarchive,
 }: Pick<
   NoteListLayoutProps,
   | 'multiSelect'
-  | 'isArchivedView'
-  | 'handleBulkOrganize'
-  | 'handleBulkArchive'
   | 'handleBulkDeletePermanently'
-  | 'handleBulkUnarchive'
 >) {
   if (!multiSelect.isMultiSelecting) return null
 
   return (
     <BulkActionBar
       count={multiSelect.selectedPaths.size}
-      isArchivedView={isArchivedView}
-      onOrganize={handleBulkOrganize}
-      onArchive={handleBulkArchive}
       onDelete={handleBulkDeletePermanently}
-      onUnarchive={handleBulkUnarchive}
       onClear={multiSelect.clear}
     />
   )
@@ -87,73 +151,40 @@ function MultiSelectBar({
 
 function NoteListContent(
   options: Pick<
-  NoteListLayoutProps,
-  | 'entitySelection'
-  | 'searchedGroups'
+    NoteListLayoutProps,
   | 'query'
-  | 'collapsedGroups'
-  | 'sortPrefs'
-  | 'toggleGroup'
-  | 'handleSortChange'
   | 'renderItem'
-  | 'isArchivedView'
   | 'isChangesView'
-  | 'isInboxView'
   | 'modifiedFilesError'
   | 'searched'
   | 'noteListVirtuosoRef'
   | 'locale'
   | 'loading'
-  | 'showFilterPills'
-  >,
+>,
 ) {
   const {
-    entitySelection,
-    searchedGroups,
     query,
-    collapsedGroups,
-    sortPrefs,
-    toggleGroup,
-    handleSortChange,
     renderItem,
-    isArchivedView,
     isChangesView,
-    isInboxView,
     modifiedFilesError,
     searched,
     noteListVirtuosoRef,
     locale,
     loading,
-    showFilterPills,
   } = options
   return (
     <div className="flex-1 overflow-hidden" style={{ minHeight: 0 }}>
       {loading ? (
         <NoteListLoadingSkeleton />
-      ) : entitySelection ? (
-        <EntityView
-          entity={entitySelection.entry}
-          groups={searchedGroups}
-          query={query}
-          collapsedGroups={collapsedGroups}
-          sortPrefs={sortPrefs}
-          onToggleGroup={toggleGroup}
-          onSortChange={handleSortChange}
-          renderItem={renderItem}
-          locale={locale}
-        />
       ) : (
         <ListView
-          isArchivedView={isArchivedView}
           isChangesView={isChangesView}
-          isInboxView={isInboxView}
           changesError={modifiedFilesError}
           searched={searched}
           query={query}
           renderItem={renderItem}
           virtuosoRef={noteListVirtuosoRef}
           locale={locale}
-          hasBottomOverlay={showFilterPills}
         />
       )}
     </div>
@@ -162,31 +193,19 @@ function NoteListContent(
 
 function NoteListBody(
   options: Pick<
-  NoteListLayoutProps,
+    NoteListLayoutProps,
   | 'handleListKeyDown'
   | 'noteListContainerRef'
   | 'handleNoteListBlur'
   | 'handleNoteListFocus'
   | 'focusNoteList'
   | 'noteListVirtuosoRef'
-  | 'entitySelection'
-  | 'searchedGroups'
   | 'query'
-  | 'collapsedGroups'
-  | 'sortPrefs'
-  | 'toggleGroup'
-  | 'handleSortChange'
   | 'renderItem'
-  | 'isArchivedView'
   | 'isChangesView'
-  | 'isInboxView'
   | 'modifiedFilesError'
   | 'searched'
   | 'locale'
-  | 'showFilterPills'
-  | 'noteListFilter'
-  | 'filterCounts'
-  | 'onNoteListFilterChange'
   | 'loading'
   >,
 ) {
@@ -197,24 +216,12 @@ function NoteListBody(
     handleNoteListFocus,
     focusNoteList,
     noteListVirtuosoRef,
-    entitySelection,
-    searchedGroups,
     query,
-    collapsedGroups,
-    sortPrefs,
-    toggleGroup,
-    handleSortChange,
     renderItem,
-    isArchivedView,
     isChangesView,
-    isInboxView,
     modifiedFilesError,
     searched,
     locale,
-    showFilterPills,
-    noteListFilter,
-    filterCounts,
-    onNoteListFilterChange,
     loading,
   } = options
   return (
@@ -232,47 +239,26 @@ function NoteListBody(
       data-testid="note-list-container"
     >
       <NoteListContent
-        entitySelection={entitySelection}
-        searchedGroups={searchedGroups}
         query={query}
-        collapsedGroups={collapsedGroups}
-        sortPrefs={sortPrefs}
-        toggleGroup={toggleGroup}
-        handleSortChange={handleSortChange}
         renderItem={renderItem}
-        isArchivedView={isArchivedView}
         isChangesView={isChangesView}
-        isInboxView={isInboxView}
         modifiedFilesError={modifiedFilesError}
         searched={searched}
         noteListVirtuosoRef={noteListVirtuosoRef}
         locale={locale}
         loading={loading}
-        showFilterPills={showFilterPills}
       />
-      {showFilterPills && (
-        <FilterPills
-          active={noteListFilter}
-          counts={filterCounts}
-          onChange={onNoteListFilterChange}
-          position="bottom"
-          locale={locale}
-        />
-      )}
     </div>
   )
 }
 
 function NoteListLayoutHeader(
   options: Pick<
-  NoteListLayoutProps,
+    NoteListLayoutProps,
   | 'title'
-  | 'typeDocument'
-  | 'isEntityView'
   | 'isChangesView'
   | 'listSort'
   | 'listDirection'
-  | 'customProperties'
   | 'gitRepositories'
   | 'selectedGitRepositoryPath'
   | 'onGitRepositoryChange'
@@ -282,10 +268,8 @@ function NoteListLayoutHeader(
   | 'search'
   | 'isSearching'
   | 'searchInputRef'
-  | 'propertyPicker'
   | 'handleSortChange'
   | 'handleCreateNote'
-  | 'onOpenType'
   | 'toggleSearch'
   | 'setSearch'
   | 'handleSearchKeyDown'
@@ -293,12 +277,9 @@ function NoteListLayoutHeader(
 ) {
   const {
     title,
-    typeDocument,
-    isEntityView,
     isChangesView,
     listSort,
     listDirection,
-    customProperties,
     gitRepositories,
     selectedGitRepositoryPath,
     onGitRepositoryChange,
@@ -308,10 +289,8 @@ function NoteListLayoutHeader(
     search,
     isSearching,
     searchInputRef,
-    propertyPicker,
     handleSortChange,
     handleCreateNote,
-    onOpenType,
     toggleSearch,
     setSearch,
     handleSearchKeyDown,
@@ -319,12 +298,9 @@ function NoteListLayoutHeader(
   return (
     <NoteListHeader
       title={title}
-      typeDocument={typeDocument}
-      isEntityView={isEntityView}
       isChangesView={isChangesView}
       listSort={listSort}
       listDirection={listDirection}
-      customProperties={customProperties}
       gitRepositories={gitRepositories}
       selectedGitRepositoryPath={selectedGitRepositoryPath}
       onGitRepositoryChange={onGitRepositoryChange}
@@ -334,10 +310,8 @@ function NoteListLayoutHeader(
       search={search}
       isSearching={isSearching}
       searchInputRef={searchInputRef}
-      propertyPicker={propertyPicker}
       onSortChange={handleSortChange}
       onCreateNote={handleCreateNote}
-      onOpenType={onOpenType}
       onToggleSearch={toggleSearch}
       onSearchChange={setSearch}
       onSearchKeyDown={handleSearchKeyDown}
@@ -349,22 +323,14 @@ function NoteListFooter(
   options: Pick<
   NoteListLayoutProps,
   | 'multiSelect'
-  | 'isArchivedView'
-  | 'handleBulkOrganize'
-  | 'handleBulkArchive'
   | 'handleBulkDeletePermanently'
-  | 'handleBulkUnarchive'
   | 'contextMenuNode'
   | 'dialogNode'
   >,
 ) {
   const {
     multiSelect,
-    isArchivedView,
-    handleBulkOrganize,
-    handleBulkArchive,
     handleBulkDeletePermanently,
-    handleBulkUnarchive,
     contextMenuNode,
     dialogNode,
   } = options
@@ -372,11 +338,7 @@ function NoteListFooter(
     <>
       <MultiSelectBar
         multiSelect={multiSelect}
-        isArchivedView={isArchivedView}
-        handleBulkOrganize={handleBulkOrganize}
-        handleBulkArchive={handleBulkArchive}
         handleBulkDeletePermanently={handleBulkDeletePermanently}
-        handleBulkUnarchive={handleBulkUnarchive}
       />
       {contextMenuNode}
       {dialogNode}

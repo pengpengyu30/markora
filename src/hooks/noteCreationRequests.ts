@@ -8,7 +8,7 @@ interface CreateNoteInFolderDetail {
   rootPath?: string
 }
 
-type ImmediateCreate = (type?: string, options?: ImmediateCreateOptions) => void
+type ImmediateCreate = (options?: ImmediateCreateOptions) => void
 
 export function requestCreateNoteInFolder(folderPath: string, rootPath?: string): void {
   window.dispatchEvent(new CustomEvent<CreateNoteInFolderDetail>(CREATE_NOTE_IN_FOLDER_EVENT, {
@@ -20,7 +20,7 @@ export function useCreateNoteInFolderRequests(createNote: ImmediateCreate): void
   useEffect(() => {
     const handleCreateNoteInFolder = (event: Event) => {
       const { folderPath, rootPath } = (event as CustomEvent<CreateNoteInFolderDetail>).detail
-      createNote(undefined, {
+      createNote({
         creationPath: 'folder_context_menu',
         folderPath,
         vaultPath: rootPath,

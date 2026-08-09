@@ -21,7 +21,6 @@ function makeOptions(overrides: Partial<Parameters<typeof refreshPulledVaultStat
     hasUnsavedChanges: vi.fn(() => false),
     reloadFolders: vi.fn(),
     reloadVault: vi.fn().mockResolvedValue([activeEntry]),
-    reloadViews: vi.fn(),
     replaceActiveTab: vi.fn().mockResolvedValue(undefined),
     updatedFiles: ['active.md'],
     vaultPath: '/vault',
@@ -38,7 +37,6 @@ describe('refreshPulledVaultState', () => {
     expect(entries).toHaveLength(1)
     expect(options.reloadVault).toHaveBeenCalledOnce()
     expect(options.reloadFolders).toHaveBeenCalledOnce()
-    expect(options.reloadViews).toHaveBeenCalledOnce()
     expect(options.closeAllTabs).toHaveBeenCalledOnce()
     expect(options.replaceActiveTab).toHaveBeenCalledWith(entries[0])
   })
@@ -95,7 +93,6 @@ describe('refreshPulledVaultState', () => {
 
     expect(options.reloadVault).toHaveBeenCalledOnce()
     expect(options.reloadFolders).toHaveBeenCalledOnce()
-    expect(options.reloadViews).toHaveBeenCalledOnce()
     expect(options.closeAllTabs).toHaveBeenCalledOnce()
     expect(options.replaceActiveTab).toHaveBeenCalledWith(makeEntry('/vault/active.md', 'Active'))
   })

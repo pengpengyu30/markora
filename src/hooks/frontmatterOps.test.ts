@@ -1,6 +1,27 @@
 import { describe, it, expect } from 'vitest'
 import type { VaultEntry } from '../types'
-import { frontmatterToEntryPatch, applyRelationshipPatch, contentToEntryPatch } from './frontmatterOps'
+import {
+  applyRelationshipPatch,
+  contentToEntryPatch,
+  frontmatterToEntryPatch,
+  isWritableFrontmatterKey,
+} from './frontmatterOps'
+
+describe('isWritableFrontmatterKey', () => {
+  it.each([
+    ['title', true],
+    ['Title', true],
+    ['_width', true],
+    ['width', true],
+    ['status', false],
+    ['type', false],
+    ['color', false],
+    ['_archived', false],
+    ['custom_field', false],
+  ])('classifies %s as writable=%s', (key, expected) => {
+    expect(isWritableFrontmatterKey(key)).toBe(expected)
+  })
+})
 
 describe('frontmatterToEntryPatch', () => {
   it.each([

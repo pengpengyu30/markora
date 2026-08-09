@@ -44,11 +44,6 @@ const baseEntry: VaultEntry = {
   hasH1: false,
 }
 
-const archivedEntry: VaultEntry = {
-  ...baseEntry,
-  archived: true,
-}
-
 const defaultProps = {
   wordCount: 100,
   showDiffToggle: false,
@@ -113,42 +108,6 @@ async function expectTooltip(trigger: HTMLElement, ...parts: string[]) {
   }
   act(() => {
     fireEvent.blur(trigger)
-  })
-}
-
-function renderFavoriteAndOrganizedBreadcrumb() {
-  renderBreadcrumb({}, {
-    onToggleFavorite: vi.fn(),
-    onToggleOrganized: vi.fn(),
-  })
-
-  return {
-    favoriteButton: screen.getByRole('button', { name: 'Add to favorites' }),
-    organizedButton: screen.getByRole('button', { name: 'Set note as organized' }),
-  }
-}
-
-function enterBreadcrumbAction(button: HTMLElement) {
-  act(() => {
-    fireEvent.pointerEnter(button)
-  })
-}
-
-function movePointerBetweenBreadcrumbActions(from: HTMLElement, to: HTMLElement) {
-  act(() => {
-    fireEvent.pointerLeave(from)
-    fireEvent.pointerEnter(to)
-  })
-}
-
-async function expectOnlyBreadcrumbTooltip(label: string, previousLabel?: string) {
-  await waitFor(() => {
-    const visibleTooltips = screen.getAllByRole('tooltip')
-    expect(visibleTooltips).toHaveLength(1)
-    expect(visibleTooltips[0]).toHaveTextContent(label)
-    if (previousLabel) {
-      expect(visibleTooltips[0]).not.toHaveTextContent(previousLabel)
-    }
   })
 }
 
@@ -283,38 +242,6 @@ describe('BreadcrumbBar — delete', () => {
   })
 })
 
-describe('BreadcrumbBar — archive/unarchive', () => {
-  it('shows archive in the overflow menu for non-archived note', async () => {
-    render(<BreadcrumbBar entry={baseEntry} {...defaultProps} onArchive={vi.fn()} onUnarchive={vi.fn()} />)
-    const menu = await openOverflowMenu()
-    expect(within(menu).getByRole('menuitem', { name: 'Archive this note' })).toBeInTheDocument()
-    expect(within(menu).queryByRole('menuitem', { name: 'Restore this archived note' })).not.toBeInTheDocument()
-  })
-
-  it('shows unarchive in the overflow menu for archived note', async () => {
-    render(<BreadcrumbBar entry={archivedEntry} {...defaultProps} onArchive={vi.fn()} onUnarchive={vi.fn()} />)
-    const menu = await openOverflowMenu()
-    expect(within(menu).getByRole('menuitem', { name: 'Restore this archived note' })).toBeInTheDocument()
-    expect(within(menu).queryByRole('menuitem', { name: 'Archive this note' })).not.toBeInTheDocument()
-  })
-
-  it('calls onArchive from the overflow menu', async () => {
-    const onArchive = vi.fn()
-    render(<BreadcrumbBar entry={baseEntry} {...defaultProps} onArchive={onArchive} />)
-    const menu = await openOverflowMenu()
-    fireEvent.click(within(menu).getByRole('menuitem', { name: 'Archive this note' }))
-    expect(onArchive).toHaveBeenCalledOnce()
-  })
-
-  it('calls onUnarchive from the overflow menu', async () => {
-    const onUnarchive = vi.fn()
-    render(<BreadcrumbBar entry={archivedEntry} {...defaultProps} onUnarchive={onUnarchive} />)
-    const menu = await openOverflowMenu()
-    fireEvent.click(within(menu).getByRole('menuitem', { name: 'Restore this archived note' }))
-    expect(onUnarchive).toHaveBeenCalledOnce()
-  })
-})
-
 describe('BreadcrumbBar — file actions', () => {
   it('reveals the current file from the breadcrumb toolbar', () => {
     const onRevealFile = vi.fn()
@@ -382,15 +309,11 @@ describe('BreadcrumbBar — standalone HTML actions', () => {
       fileKind: 'text',
     }, {
       noteWidth: 'normal',
-      onArchive: vi.fn(),
       onCopyFilePath: vi.fn(),
       onDelete: vi.fn(),
-      onEnterNeighborhood: vi.fn(),
       onExportPdf: vi.fn(),
       onRevealFile: vi.fn(),
-      onToggleFavorite: vi.fn(),
       onToggleNoteWidth: vi.fn(),
-      onToggleOrganized: vi.fn(),
       onToggleRaw: vi.fn(),
       onToggleTableOfContents: vi.fn(),
     })
@@ -398,61 +321,22 @@ describe('BreadcrumbBar — standalone HTML actions', () => {
     expect(screen.getByRole('button', { name: 'Open the raw editor' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Reveal in Finder' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Copy file path' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Add to favorites' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Set note as organized' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: "Open note's neighborhood" })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Switch to wide note width' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Open table of contents' })).not.toBeInTheDocument()
 
     const menu = await openOverflowMenu()
     expect(within(menu).getByRole('menuitem', { name: 'Export note as PDF' })).toBeInTheDocument()
     expect(within(menu).getByRole('menuitem', { name: 'Delete this note' })).toBeInTheDocument()
-    expect(within(menu).queryByRole('menuitem', { name: 'Archive this note' })).not.toBeInTheDocument()
-  })
-})
-
-describe('BreadcrumbBar — organized shortcut hint', () => {
-  it('shows Cmd+E on the organized toggle tooltip', async () => {
-    render(<BreadcrumbBar entry={baseEntry} {...defaultProps} onToggleOrganized={vi.fn()} />)
-    await expectTooltip(
-      screen.getByRole('button', { name: 'Set note as organized' }),
-      'Set note as organized',
-      formatShortcutDisplay({ display: '⌘E' }),
-    )
-  })
-
-  it('hides the organized toggle when the workflow is disabled', () => {
-    render(<BreadcrumbBar entry={baseEntry} {...defaultProps} />)
-    expect(screen.queryByRole('button', { name: 'Set note as organized' })).not.toBeInTheDocument()
-  })
-})
-
-describe('BreadcrumbBar — neighborhood action', () => {
-  it("opens the current note's neighborhood from the map button", () => {
-    const onEnterNeighborhood = vi.fn()
-    render(<BreadcrumbBar entry={baseEntry} {...defaultProps} onEnterNeighborhood={onEnterNeighborhood} />)
-
-    fireEvent.click(screen.getByRole('button', { name: "Open note's neighborhood" }))
-
-    expect(onEnterNeighborhood).toHaveBeenCalledWith(baseEntry)
-  })
-
-  it('uses the requested neighborhood tooltip copy', async () => {
-    render(<BreadcrumbBar entry={baseEntry} {...defaultProps} onEnterNeighborhood={vi.fn()} />)
-
-    await expectTooltip(screen.getByRole('button', { name: "Open note's neighborhood" }), "Open note's neighborhood")
   })
 })
 
 describe('BreadcrumbBar — title in breadcrumb (always rendered, CSS-toggled)', () => {
   it('always renders title elements in the DOM', () => {
     render(<BreadcrumbBar entry={baseEntry} {...defaultProps} />)
-    expect(screen.getByText('Note')).toBeInTheDocument()
-    expect(screen.getByText('›')).toBeInTheDocument()
     expect(screen.getByText('test')).toBeInTheDocument()
   })
 
-  it('shows the workspace initials label before the note type when workspace metadata is present', () => {
+  it('shows the workspace initials label before the note filename when workspace metadata is present', () => {
     renderBreadcrumb({
       isA: 'Responsibility',
       workspace: {
@@ -470,10 +354,10 @@ describe('BreadcrumbBar — title in breadcrumb (always rendered, CSS-toggled)',
     })
 
     const workspaceLabel = screen.getByTestId('breadcrumb-workspace-label')
-    const typeLabel = screen.getByText('Responsibility')
+    const filename = screen.getByTestId('breadcrumb-filename-trigger')
     expect(workspaceLabel).toHaveTextContent('BR')
     expect(workspaceLabel).toHaveAttribute('title', 'Brian (brian)')
-    expect(workspaceLabel.compareDocumentPosition(typeLabel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(workspaceLabel.compareDocumentPosition(filename) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('does not render emoji note icons in the breadcrumb filename', () => {
@@ -488,12 +372,6 @@ describe('BreadcrumbBar — title in breadcrumb (always rendered, CSS-toggled)',
     render(<BreadcrumbBar entry={entryWithPhosphor} {...defaultProps} />)
     expect(screen.getByTestId('breadcrumb-filename-trigger')).toHaveTextContent('test')
     expect(screen.queryByTestId('breadcrumb-note-icon')).not.toBeInTheDocument()
-  })
-
-  it('falls back to "Note" when isA is null', () => {
-    const entryNoType = { ...baseEntry, isA: null }
-    render(<BreadcrumbBar entry={entryNoType} {...defaultProps} />)
-    expect(screen.getByText('Note')).toBeInTheDocument()
   })
 
   it('separator visibility is controlled by data-title-hidden while using the shared border chrome', () => {
@@ -699,31 +577,16 @@ describe('BreadcrumbBar — action buttons always right-aligned', () => {
       <BreadcrumbBar
         entry={baseEntry}
         {...defaultProps}
-        onToggleFavorite={vi.fn()}
       />,
     )
 
     act(() => {
-      fireEvent.focus(screen.getByRole('button', { name: 'Add to favorites' }))
+      fireEvent.focus(screen.getByRole('button', { name: 'Open the raw editor' }))
     })
 
     const tooltip = await screen.findByRole('tooltip')
     expect(document.querySelector('[data-slot="tooltip-content"]')).toHaveAttribute('data-align', 'end')
-    expect(tooltip).toHaveTextContent('Add to favorites')
-  })
-
-  it('updates the visible tooltip during a slide and ignores trailing moves from the previous icon', async () => {
-    const { favoriteButton, organizedButton } = renderFavoriteAndOrganizedBreadcrumb()
-
-    enterBreadcrumbAction(favoriteButton)
-    expect(await screen.findByRole('tooltip')).toHaveTextContent('Add to favorites')
-
-    movePointerBetweenBreadcrumbActions(favoriteButton, organizedButton)
-    act(() => {
-      fireEvent.pointerMove(favoriteButton)
-    })
-
-    await expectOnlyBreadcrumbTooltip('Set note as organized', 'Add to favorites')
+    expect(tooltip).toHaveTextContent('Open the raw editor')
   })
 
   it('lets the title use the free space before the fixed drag gap', () => {
@@ -740,7 +603,7 @@ describe('BreadcrumbBar — action buttons always right-aligned', () => {
     expect(screen.queryByRole('button', { name: 'More note actions are coming soon' })).not.toBeInTheDocument()
   })
 
-  it('keeps git diff first while placing archive and delete at the bottom', async () => {
+  it('keeps git diff first while placing file actions and delete at the bottom', async () => {
     const restoreMeasurement = mockCollapsedBreadcrumbOverflow()
 
     try {
@@ -753,7 +616,6 @@ describe('BreadcrumbBar — action buttons always right-aligned', () => {
           onToggleNoteWidth={vi.fn()}
           onRevealFile={vi.fn()}
           onCopyFilePath={vi.fn()}
-          onArchive={vi.fn()}
           onDelete={vi.fn()}
         />,
       )
@@ -765,7 +627,7 @@ describe('BreadcrumbBar — action buttons always right-aligned', () => {
       const menu = await openOverflowMenu()
       const menuLabels = within(menu).getAllByRole('menuitem').map((item) => item.textContent)
       expect(menuLabels[0]).toBe('Git diff')
-      expect(menuLabels.slice(-3)).toEqual(['Copy note deeplink', 'Archive this note', 'Delete this note'])
+      expect(menuLabels.slice(-2)).toEqual(['Copy note deeplink', 'Delete this note'])
     } finally {
       restoreMeasurement()
     }
@@ -780,7 +642,6 @@ describe('BreadcrumbBar — action buttons always right-aligned', () => {
         onToggleNoteWidth={vi.fn()}
         onRevealFile={vi.fn()}
         onCopyFilePath={vi.fn()}
-        onEnterNeighborhood={vi.fn()}
       />,
     )
 
@@ -788,7 +649,6 @@ describe('BreadcrumbBar — action buttons always right-aligned', () => {
     expect(within(menu).queryByRole('menuitem', { name: 'Switch to wide note width' })).not.toBeInTheDocument()
     expect(within(menu).queryByRole('menuitem', { name: 'Reveal in Finder' })).not.toBeInTheDocument()
     expect(within(menu).queryByRole('menuitem', { name: 'Copy file path' })).not.toBeInTheDocument()
-    expect(within(menu).queryByRole('menuitem', { name: "Open note's neighborhood" })).not.toBeInTheDocument()
     expect(within(menu).getByRole('menuitem', { name: 'Copy note deeplink' })).toBeInTheDocument()
   })
 
@@ -804,7 +664,6 @@ describe('BreadcrumbBar — action buttons always right-aligned', () => {
           onToggleNoteWidth={vi.fn()}
           onRevealFile={vi.fn()}
           onCopyFilePath={vi.fn()}
-          onEnterNeighborhood={vi.fn()}
         />,
       )
 
@@ -816,7 +675,6 @@ describe('BreadcrumbBar — action buttons always right-aligned', () => {
       expect(within(menu).getByRole('menuitem', { name: 'Switch to wide note width' })).toBeInTheDocument()
       expect(within(menu).getByRole('menuitem', { name: 'Reveal in Finder' })).toBeInTheDocument()
       expect(within(menu).getByRole('menuitem', { name: 'Copy file path' })).toBeInTheDocument()
-      expect(within(menu).getByRole('menuitem', { name: "Open note's neighborhood" })).toBeInTheDocument()
       expect(within(menu).getByRole('menuitem', { name: 'Copy note deeplink' })).toBeInTheDocument()
     } finally {
       restoreMeasurement()
@@ -837,7 +695,6 @@ describe('BreadcrumbBar — action buttons always right-aligned', () => {
             onToggleNoteWidth={vi.fn()}
             onRevealFile={vi.fn()}
             onCopyFilePath={vi.fn()}
-            onEnterNeighborhood={vi.fn()}
           />,
         )
       }).not.toThrow()

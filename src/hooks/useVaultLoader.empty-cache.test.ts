@@ -70,7 +70,6 @@ describe('useVaultLoader empty cache recovery', () => {
       ['list_vault:/refactoring', []],
       ['get_modified_files:', []],
       ['list_vault_folders:', []],
-      ['list_views:', []],
     ])
 
     backendInvokeFn.mockImplementation((command: string, args?: Record<string, unknown>) => {
@@ -103,7 +102,6 @@ describe('useVaultLoader empty cache recovery', () => {
       ['reload_vault:/laputa', [makeEntry('/laputa/note/hello.md', 'Laputa Hello')]],
       ['get_modified_files:', []],
       ['list_vault_folders:', []],
-      ['list_views:', []],
     ])
 
     backendInvokeFn.mockImplementation((command: string, args?: Record<string, unknown>) => {

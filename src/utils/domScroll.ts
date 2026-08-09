@@ -7,3 +7,7 @@ export function scrollSelectedHTMLChildIntoView(
     selectedHTMLElement.scrollIntoView({ block: 'nearest' })
   }
 }
+
+export function focusNoteListContainer(documentRef: Document): void {
+  documentRef.querySelector<HTMLElement>('[data-testid="note-list-container"]')?.focus()
+}

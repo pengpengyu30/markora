@@ -53,11 +53,9 @@ export function useFolderRename(options: UseFolderRenameInput) {
         vaultPath,
       })
       updateSelectionAfterFolderRename({
-        refreshedEntries,
         renameResult,
         selection,
         setSelection,
-        vaultPath,
       })
       setToastMessage(`Renamed folder to "${trimmedName}"`)
       return true

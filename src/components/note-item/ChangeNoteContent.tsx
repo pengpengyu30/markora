@@ -1,6 +1,5 @@
 import { cn } from '@/lib/utils'
 import type { VaultEntry } from '../../types'
-import { NoteTitleIcon } from '../NoteTitleIcon'
 
 type ChangeStatus = 'modified' | 'added' | 'deleted' | 'untracked' | 'renamed'
 
@@ -140,7 +139,6 @@ export function ChangeNoteContent({
             )}
             data-testid="change-note-title"
           >
-            <NoteTitleIcon icon={entry.icon} size={15} className="mr-1" testId="change-note-icon" />
             {entry.title}
           </div>
           <div

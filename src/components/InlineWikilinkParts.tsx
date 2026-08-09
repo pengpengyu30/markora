@@ -1,9 +1,5 @@
-import { Fragment, createElement, useEffect, useImperativeHandle, useRef } from 'react'
+import { Fragment, useEffect, useImperativeHandle, useRef } from 'react'
 import type { CSSProperties } from 'react'
-import type { VaultEntry } from '../types'
-import { getTypeColor, getTypeLightColor } from '../utils/typeColors'
-import { NoteTitleIcon } from './NoteTitleIcon'
-import { getTypeIcon } from './note-item/typeIcon'
 import type { InlineWikilinkChip, InlineWikilinkSegment } from './inlineWikilinkText'
 import type { InlineWikilinkSuggestion } from './inlineWikilinkSuggestions'
 import { cn } from '@/lib/utils'
@@ -21,41 +17,21 @@ function withNativeEvent<T extends Event>(event: T): T & { nativeEvent: T } {
 
 export function InlineWikilinkChipView({
   chip,
-  typeEntryMap,
 }: {
   chip: InlineWikilinkChip
-  typeEntryMap: Record<string, VaultEntry>
 }) {
-  const typeEntry = chip.entry.isA ? typeEntryMap[chip.entry.isA] : undefined
-  const color = getTypeColor(chip.entry.isA, typeEntry?.color)
-  const backgroundColor = getTypeLightColor(chip.entry.isA, typeEntry?.color)
-  const typeIcon = getTypeIcon(chip.entry.isA, typeEntry?.icon)
-
   return (
     <span
       contentEditable={false}
       data-chip-target={chip.target}
       data-testid="inline-wikilink-chip"
-      className="mx-[1px] inline-flex max-w-full items-center gap-1 rounded-full align-baseline"
+      className="mx-[1px] inline-flex max-w-full items-center rounded-full bg-accent px-2 py-px align-baseline text-accent-foreground"
       style={{
-        backgroundColor,
-        color,
-        padding: '1px 8px 1px 6px',
         fontSize: 12,
         fontWeight: 500,
         lineHeight: 1.5,
       }}
     >
-      {chip.entry.icon ? (
-        <NoteTitleIcon icon={chip.entry.icon} size={11} color={color} />
-      ) : (
-        createElement(typeIcon, {
-          'aria-hidden': true,
-          width: 11,
-          height: 11,
-          className: 'shrink-0',
-        })
-      )}
       <span className="truncate">{chip.entry.title}</span>
     </span>
   )
@@ -66,19 +42,12 @@ function InlineSuggestionRow({
   selected,
   onHover,
   onSelect,
-  typeEntryMap,
 }: {
   suggestion: InlineWikilinkSuggestion
   selected: boolean
   onHover: () => void
   onSelect: () => void
-  typeEntryMap: Record<string, VaultEntry>
 }) {
-  const typeEntry = suggestion.entry.isA ? typeEntryMap[suggestion.entry.isA] : undefined
-  const color = getTypeColor(suggestion.entry.isA, typeEntry?.color)
-  const backgroundColor = getTypeLightColor(suggestion.entry.isA, typeEntry?.color)
-  const typeIcon = getTypeIcon(suggestion.entry.isA, typeEntry?.icon)
-
   return (
     <button
       type="button"
@@ -91,24 +60,8 @@ function InlineSuggestionRow({
       onMouseEnter={onHover}
     >
       <span className="flex min-w-0 items-center gap-2">
-        <span
-          className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
-          style={{ backgroundColor, color }}
-        >
-          {suggestion.entry.icon ? (
-            <NoteTitleIcon icon={suggestion.entry.icon} size={11} color={color} />
-          ) : (
-            createElement(typeIcon, {
-              'aria-hidden': true,
-              width: 11,
-              height: 11,
-              className: 'shrink-0',
-            })
-          )}
-        </span>
         <span className="truncate text-sm text-foreground">{suggestion.title}</span>
       </span>
-      <span className="ml-3 shrink-0 text-[11px] text-muted-foreground">{suggestion.entry.isA ?? 'Note'}</span>
     </button>
   )
 }
@@ -118,7 +71,6 @@ export function InlineWikilinkSuggestionList({
   selectedIndex,
   onHover,
   onSelect,
-  typeEntryMap,
   variant = 'floating',
   emptyLabel = 'No matching notes',
 }: {
@@ -126,7 +78,6 @@ export function InlineWikilinkSuggestionList({
   selectedIndex: number
   onHover: (index: number) => void
   onSelect: (index: number) => void
-  typeEntryMap: Record<string, VaultEntry>
   variant?: 'floating' | 'palette'
   emptyLabel?: string
 }) {
@@ -150,7 +101,6 @@ export function InlineWikilinkSuggestionList({
           selected={index === selectedIndex}
           onHover={() => onHover(index)}
           onSelect={() => onSelect(index)}
-          typeEntryMap={typeEntryMap}
         />
       ))}
     </div>
@@ -176,7 +126,6 @@ export function InlineWikilinkEditorField(options: {
   onPaste: (event: React.ClipboardEvent<HTMLDivElement>) => void
   onSelectionChange: () => void
   segments: InlineWikilinkSegment[]
-  typeEntryMap: Record<string, VaultEntry>
 }) {
   const {
     value,
@@ -197,7 +146,6 @@ export function InlineWikilinkEditorField(options: {
     onPaste,
     onSelectionChange,
     segments,
-    typeEntryMap,
   } = options
   const editorRef = useRef<HTMLDivElement | null>(null)
   const needsTrailingCaretAnchor = segments[segments.length - 1]?.kind === 'chip'
@@ -245,7 +193,7 @@ export function InlineWikilinkEditorField(options: {
           wordBreak: 'break-word',
         }}
       >
-        {segments.map((segment) => renderInlineWikilinkSegment(segment, typeEntryMap))}
+        {segments.map((segment) => renderInlineWikilinkSegment(segment))}
         {needsTrailingCaretAnchor ? '\u200B' : null}
       </div>
     </div>
@@ -327,13 +275,12 @@ function inlineWikilinkEditorListenerMap(
   ]
 }
 
-function renderInlineWikilinkSegment(segment: InlineWikilinkSegment, typeEntryMap: Record<string, VaultEntry>) {
+function renderInlineWikilinkSegment(segment: InlineWikilinkSegment) {
   if (segment.kind === 'text') return <Fragment key={`text-${segment.text}`}>{segment.text}</Fragment>
   return (
     <InlineWikilinkChipView
       key={`chip-${segment.chip.entry.path}-${segment.chip.target}`}
       chip={segment.chip}
-      typeEntryMap={typeEntryMap}
     />
   )
 }

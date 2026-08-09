@@ -43,6 +43,7 @@ function makeActions() {
     onUndo: vi.fn(),
     onRedo: vi.fn(),
     onOpenSettings: vi.fn(),
+    onToggleBacklinks: vi.fn(),
     onDeleteNote: vi.fn(),
     onArchiveNote: vi.fn(),
     onToggleOrganized: vi.fn(),
@@ -141,40 +142,6 @@ describe('useAppKeyboard', () => {
     expect(actions.onToggleRawEditor).toHaveBeenCalled()
   })
 
-  it('Cmd+Shift+I still works in Tauri mode', () => {
-    const actions = makeActions()
-    const onToggleInspector = vi.fn()
-    ;(window as typeof window & { __TAURI__?: object }).__TAURI__ = {}
-    renderHook(() => useAppKeyboard({ ...actions, onToggleInspector }))
-    fireKey('i', { metaKey: true, shiftKey: true })
-    expect(onToggleInspector).toHaveBeenCalled()
-  })
-
-  it('Cmd+D triggers toggle favorite on active note', () => {
-    const actions = makeActions()
-    actions.onToggleFavorite = vi.fn()
-    renderHook(() => useAppKeyboard(actions))
-    fireKey('d', { metaKey: true })
-    expect(actions.onToggleFavorite).toHaveBeenCalledWith('/vault/test.md')
-  })
-
-  it('Cmd+D still works in Tauri mode', () => {
-    const actions = makeActions()
-    actions.onToggleFavorite = vi.fn()
-    ;(window as typeof window & { __TAURI__?: object }).__TAURI__ = {}
-    renderHook(() => useAppKeyboard(actions))
-    fireKey('d', { metaKey: true })
-    expect(actions.onToggleFavorite).toHaveBeenCalledWith('/vault/test.md')
-  })
-
-  it('Cmd+E triggers toggle organized on active note, not archive', () => {
-    const actions = makeActions()
-    renderHook(() => useAppKeyboard(actions))
-    fireKey('e', { metaKey: true })
-    expect(actions.onToggleOrganized).toHaveBeenCalledWith('/vault/test.md')
-    expect(actions.onArchiveNote).not.toHaveBeenCalled()
-  })
-
   it('Cmd+Z triggers app action undo outside text editing', () => {
     const actions = makeActions()
     renderHook(() => useAppKeyboard(actions))
@@ -224,25 +191,9 @@ describe('useAppKeyboard', () => {
     })
   })
 
-  it('Cmd+E uses the current multi-selection instead of the active note', () => {
-    const actions = makeActions()
-    const organizeSelected = vi.fn()
-    actions.multiSelectionCommandRef.current = {
-      selectedPaths: ['/vault/a.md', '/vault/b.md'],
-      organizeSelected,
-    }
-
-    renderHook(() => useAppKeyboard(actions))
-    fireKey('e', { metaKey: true })
-
-    expect(organizeSelected).toHaveBeenCalledTimes(1)
-    expect(actions.onToggleOrganized).not.toHaveBeenCalled()
-  })
-
   it('lets macOS Ctrl text-editing bindings pass through focused text inputs', () => {
     setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)')
     const actions = makeActions()
-    actions.onToggleFavorite = vi.fn()
     renderHook(() => useAppKeyboard(actions))
 
     withFocusedInput(() => {
@@ -255,60 +206,19 @@ describe('useAppKeyboard', () => {
       expect(nextLine.defaultPrevented).toBe(false)
       expect(previousLine.defaultPrevented).toBe(false)
       expect(deleteForward.defaultPrevented).toBe(false)
-      expect(actions.onToggleOrganized).not.toHaveBeenCalled()
       expect(actions.onCreateNote).not.toHaveBeenCalled()
       expect(actions.onQuickOpen).not.toHaveBeenCalled()
-      expect(actions.onToggleFavorite).not.toHaveBeenCalled()
     })
   })
 
   it('lets macOS Ctrl text-editing bindings pass through focused rich editors', () => {
     setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)')
     const actions = makeActions()
-    actions.onToggleFavorite = vi.fn()
     renderHook(() => useAppKeyboard(actions))
 
     withFocusedContentEditable((editable) => {
       expect(fireKeyOnTarget(editable, 'e', { ctrlKey: true, code: 'KeyE' }).defaultPrevented).toBe(false)
       expect(fireKeyOnTarget(editable, 'd', { ctrlKey: true, code: 'KeyD' }).defaultPrevented).toBe(false)
-      expect(actions.onToggleOrganized).not.toHaveBeenCalled()
-      expect(actions.onToggleFavorite).not.toHaveBeenCalled()
-    })
-  })
-
-  it('still runs Command shortcuts on macOS outside focused text inputs', () => {
-    setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)')
-    const actions = makeActions()
-    actions.onToggleFavorite = vi.fn()
-    renderHook(() => useAppKeyboard(actions))
-
-    fireKey('e', { metaKey: true, code: 'KeyE' })
-    fireKey('d', { metaKey: true, code: 'KeyD' })
-
-    expect(actions.onToggleOrganized).toHaveBeenCalledWith('/vault/test.md')
-    expect(actions.onToggleFavorite).toHaveBeenCalledWith('/vault/test.md')
-  })
-
-  it('uses active-layout letter shortcuts before physical key codes', () => {
-    const actions = makeActions()
-    actions.onToggleFavorite = vi.fn()
-    renderHook(() => useAppKeyboard(actions))
-
-    fireKey('e', { metaKey: true, code: 'KeyD' })
-
-    expect(actions.onToggleOrganized).toHaveBeenCalledWith('/vault/test.md')
-    expect(actions.onToggleFavorite).not.toHaveBeenCalled()
-  })
-
-  it('Cmd+E still works when editor focus stops propagation', () => {
-    const actions = makeActions()
-    const onToggleOrganized = vi.fn()
-    renderHook(() => useAppKeyboard({ ...actions, onToggleOrganized }))
-    withFocusedContentEditable((editable) => {
-      editable.addEventListener('keydown', (event) => event.stopPropagation())
-      fireKeyOnTarget(editable, 'e', { metaKey: true })
-      expect(onToggleOrganized).toHaveBeenCalledWith('/vault/test.md')
-      expect(actions.onArchiveNote).not.toHaveBeenCalled()
     })
   })
 
@@ -548,14 +458,6 @@ describe('useAppKeyboard', () => {
     renderHook(() => useAppKeyboard({ ...actions, onOpenInNewWindow }))
     fireKey('o', { metaKey: true, shiftKey: true })
     expect(onOpenInNewWindow).toHaveBeenCalled()
-  })
-
-  it('Cmd+Shift+I triggers toggle inspector', () => {
-    const actions = makeActions()
-    const onToggleInspector = vi.fn()
-    renderHook(() => useAppKeyboard({ ...actions, onToggleInspector }))
-    fireKey('i', { metaKey: true, shiftKey: true })
-    expect(onToggleInspector).toHaveBeenCalled()
   })
 
 })

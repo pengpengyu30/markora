@@ -4,14 +4,13 @@ export const MAX_RESULTS = 10
 export interface WikilinkBaseItem {
   title: string
   aliases: string[]
-  group: string
   entryTitle: string
   path: string
 }
 
 /**
  * Pre-filter wikilink suggestion candidates using case-insensitive substring
- * matching on title, aliases, and group. This avoids creating expensive
+ * matching on title, aliases, and path. This avoids creating expensive
  * onItemClick closures for thousands of entries that won't match anyway.
  *
  * Returns [] when query is shorter than MIN_QUERY_LENGTH.
@@ -25,7 +24,6 @@ export function preFilterWikilinks<T extends WikilinkBaseItem>(
   return items.filter(item =>
     item.title.toLowerCase().includes(lowerQuery) ||
     item.aliases.some(a => a.toLowerCase().includes(lowerQuery)) ||
-    item.group.toLowerCase().includes(lowerQuery) ||
     item.path.toLowerCase().includes(lowerQuery)
   )
 }

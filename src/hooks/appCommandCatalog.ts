@@ -34,7 +34,6 @@ type SimpleHandlerKey =
   | 'onOpenSettings'
   | 'onCheckForUpdates'
   | 'onCreateNote'
-  | 'onCreateType'
   | 'onQuickOpen'
   | 'onSave'
   | 'onFindInNote'
@@ -45,7 +44,7 @@ type SimpleHandlerKey =
   | 'onSearch'
   | 'onToggleRawEditor'
   | 'onToggleDiff'
-  | 'onToggleInspector'
+  | 'onToggleBacklinks'
   | 'onToggleTableOfContents'
   | 'onExportNoteAsPdf'
   | 'onCommandPalette'
@@ -68,9 +67,6 @@ type SimpleHandlerKey =
   | 'onRestoreDeletedNote'
 
 type ActiveTabHandlerKey =
-  | 'onToggleOrganized'
-  | 'onToggleFavorite'
-  | 'onArchiveNote'
   | 'onDeleteNote'
 
 type AppCommandRoute =
@@ -171,7 +167,6 @@ const MENU_LABEL_KEYS = {
   Vault: 'menu.vault',
   Window: 'menu.window',
   'New Note': 'command.note.newNote',
-  'New Type': 'command.note.newType',
   'Quick Open': 'menu.file.quickOpen',
   'Quick Open (Cmd+O)': 'menu.file.quickOpenCmdO',
   'Quick Open (Ctrl+O)': 'menu.file.quickOpenCtrlO',
@@ -187,19 +182,14 @@ const MENU_LABEL_KEYS = {
   'Editor Only': 'command.view.editorOnly',
   'Editor + Notes': 'command.view.editorNoteList',
   'All Panels': 'menu.view.allPanels',
-  'Toggle Properties Panel': 'command.view.toggleProperties',
   'Zoom In': 'menu.view.zoomIn',
   'Zoom Out': 'menu.view.zoomOut',
   'Actual Size': 'menu.view.actualSize',
   'Command Palette': 'menu.view.commandPalette',
   'All Notes': 'menu.go.allNotes',
-  Archived: 'menu.go.archived',
   Changes: 'menu.go.changes',
-  Inbox: 'menu.go.inbox',
   'Go Back': 'command.navigation.goBack',
   'Go Forward': 'command.navigation.goForward',
-  'Toggle Organized': 'menu.note.toggleOrganized',
-  'Archive Note': 'command.note.archiveNote',
   'Delete Note': 'command.note.deleteNote',
   'Restore Deleted Note': 'command.note.restoreDeleted',
   'Open in New Window': 'command.note.openNewWindow',

@@ -103,9 +103,7 @@ describe('buildRawEditorBaseItems', () => {
       {
         title: 'Project Alpha',
         aliases: ['project-alpha', 'Alpha'],
-        group: 'Project',
         entry,
-        entryType: 'Project',
         entryTitle: 'Project Alpha',
         path: 'projects/project-alpha.md',
       },
@@ -165,7 +163,6 @@ describe('buildRawEditorAutocompleteState', () => {
       view,
       baseItems: buildRawEditorBaseItems([source, target]),
       query: 'Alpha',
-      typeEntryMap: {},
       onInsertTarget: insertTarget,
       sourceEntry: source,
       vaultPath: '/personal',

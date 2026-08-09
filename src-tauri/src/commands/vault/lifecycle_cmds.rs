@@ -3,12 +3,6 @@ use crate::{git, vault};
 use std::path::Path;
 
 #[tauri::command]
-pub fn migrate_is_a_to_type(vault_path: String) -> Result<usize, String> {
-    let vault_path = expand_tilde(&vault_path);
-    vault::migrate_is_a_to_type(&vault_path)
-}
-
-#[tauri::command]
 pub fn create_empty_vault(target_path: String) -> Result<String, String> {
     let path = expand_tilde(&target_path).into_owned();
     let vault_dir = Path::new(&path);
@@ -22,7 +16,6 @@ fn initialize_empty_vault(vault_dir: &Path, vault_path: &str) -> Result<(), Stri
         .map_err(|e| format!("Failed to create vault directory: {}", e))?;
 
     git::init_repo(vault_path)?;
-    vault::seed_config_files(vault_path);
     Ok(())
 }
 
@@ -85,8 +78,6 @@ pub fn get_default_vault_path() -> Result<String, String> {
 #[tauri::command]
 pub fn repair_vault(vault_path: String) -> Result<String, String> {
     let vault_path = expand_tilde(&vault_path);
-    vault::migrate_is_a_to_type(&vault_path)?;
-    vault::repair_config_files(&vault_path)?;
     git::ensure_gitignore(std::path::Path::new(vault_path.as_ref()))?;
     Ok("Vault repaired".to_string())
 }

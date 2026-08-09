@@ -2,7 +2,6 @@ import type { ComponentProps } from 'react'
 import { render } from '@testing-library/react'
 import { vi } from 'vitest'
 import { NoteList } from '../components/NoteList'
-import type { NoteListFilter } from '../utils/noteListHelpers'
 import type { VaultEntry, SidebarSelection } from '../types'
 
 type NoteListProps = ComponentProps<typeof NoteList>
@@ -132,7 +131,6 @@ export function createNoteListSpies() {
   return {
     onSelectNote: vi.fn(),
     onReplaceActiveTab: vi.fn(),
-    onEnterNeighborhood: vi.fn(),
     onCreateNote: vi.fn(),
     onNoteListFilterChange: vi.fn(),
   }
@@ -144,11 +142,8 @@ export function buildNoteListProps(overrides: Partial<NoteListProps> = {}) {
     entries: mockEntries,
     selection: allSelection,
     selectedNote: null,
-    noteListFilter: 'open' as NoteListFilter,
-    onNoteListFilterChange: spies.onNoteListFilterChange,
     onSelectNote: spies.onSelectNote,
     onReplaceActiveTab: spies.onReplaceActiveTab,
-    onEnterNeighborhood: spies.onEnterNeighborhood,
     onCreateNote: spies.onCreateNote,
     ...overrides,
   }

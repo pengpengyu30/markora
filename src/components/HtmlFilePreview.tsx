@@ -2,7 +2,7 @@ import { convertFileSrc } from '@tauri-apps/api/core'
 import { useEffect, useMemo, useRef } from 'react'
 import { trackEvent } from '../lib/telemetry'
 import { htmlFilePreviewSrcDoc } from '../utils/htmlFilePreview'
-import { focusNoteListContainer } from '../utils/neighborhoodHistory'
+import { focusNoteListContainer } from '../utils/domScroll'
 import { Button } from './ui/button'
 
 interface HtmlFilePreviewProps {

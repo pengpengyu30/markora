@@ -6,8 +6,6 @@ type Listener = () => void
 const DEFAULT_CONFIG: VaultConfig = {
   zoom: null, view_mode: null, editor_mode: null, note_layout: null,
   git_setup_preference: 'prompt',
-  tag_colors: null, status_colors: null, property_display_modes: null,
-  inbox: null, allNotes: null,
 }
 
 let config: VaultConfig = DEFAULT_CONFIG

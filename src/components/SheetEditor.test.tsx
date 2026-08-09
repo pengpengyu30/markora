@@ -560,7 +560,6 @@ describe('SheetEditor', () => {
 
   it('renders wikilink cells as note titles while preserving raw cell content', async () => {
     const entry = makeEntry({
-      icon: '📈',
       path: '/vault/project-alpha.md',
       filename: 'project-alpha.md',
       title: 'Project Alpha',
@@ -579,7 +578,7 @@ describe('SheetEditor', () => {
     await screen.findByTestId('ironcalc-workbook')
 
     expect(ironCalcMock.state.lastModel?.getCellContent(0, 1, 1)).toBe('[[project-alpha]]')
-    expect(ironCalcMock.state.lastModel?.getFormattedCellValue(0, 1, 1)).toBe('📈 Project Alpha')
+    expect(ironCalcMock.state.lastModel?.getFormattedCellValue(0, 1, 1)).toBe('Project Alpha')
   })
 
   it('opens a wikilink target on command-click without changing raw cell content', async () => {

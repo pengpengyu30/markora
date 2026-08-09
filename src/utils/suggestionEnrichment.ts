@@ -1,6 +1,4 @@
 import type { VaultEntry } from '../types'
-import { getTypeColor, getTypeLightColor } from './typeColors'
-import { getTypeIcon } from '../components/NoteItem'
 import { deduplicateByPath, disambiguateTitles } from './wikilinkSuggestions'
 import { bestSearchRank } from './fuzzyMatch'
 import { filterSuggestionItems } from '@blocknote/core/extensions'
@@ -12,8 +10,6 @@ const MAX_RESULTS = 20
 interface BaseSuggestionItem {
   title: string
   aliases: string[]
-  group: string
-  entryType?: string | null
   entryTitle: string
   path: string
   entry?: VaultEntry
@@ -21,13 +17,6 @@ interface BaseSuggestionItem {
 
 interface EnrichSuggestionOptions {
   showWorkspace?: boolean
-}
-
-interface SuggestionTypeMetadata {
-  noteType: string | undefined
-  typeColor: string | undefined
-  typeLightColor: string | undefined
-  TypeIcon: ReturnType<typeof getTypeIcon> | undefined
 }
 
 export function hasMultipleSuggestionWorkspaces(items: { entry?: VaultEntry }[]): boolean {
@@ -38,24 +27,6 @@ export function hasMultipleSuggestionWorkspaces(items: { entry?: VaultEntry }[])
 function buildTarget(item: BaseSuggestionItem, vaultPath: string, sourceEntry?: VaultEntry): string {
   if (item.entry) return canonicalWikilinkTargetForEntry(item.entry, vaultPath, sourceEntry)
   return relativePathStem(item.path, vaultPath)
-}
-
-function suggestionTypeMetadata(
-  entryType: string | null | undefined,
-  typeEntryMap: Record<string, VaultEntry>,
-): SuggestionTypeMetadata {
-  const noteType = entryType ?? undefined
-  if (!noteType) {
-    return { noteType, typeColor: undefined, typeLightColor: undefined, TypeIcon: undefined }
-  }
-
-  const typeEntry = Reflect.get(typeEntryMap, noteType) as VaultEntry | undefined
-  return {
-    noteType,
-    typeColor: getTypeColor(noteType, typeEntry?.color),
-    typeLightColor: getTypeLightColor(noteType, typeEntry?.color),
-    TypeIcon: getTypeIcon(noteType, typeEntry?.icon),
-  }
 }
 
 /** Add onItemClick to raw suggestion candidates.
@@ -73,11 +44,10 @@ export function attachClickHandlers(
   }))
 }
 
-/** Filter, deduplicate, disambiguate, and enrich suggestion items with type metadata */
+/** Filter, deduplicate, disambiguate, and add workspace metadata to suggestions. */
 export function enrichSuggestionItems(
   items: (BaseSuggestionItem & { onItemClick: () => void })[],
   query: string,
-  typeEntryMap: Record<string, VaultEntry>,
   options: EnrichSuggestionOptions = {},
 ): WikilinkSuggestionItem[] {
   const filtered = filterSuggestionItems(items, query)
@@ -87,10 +57,9 @@ export function enrichSuggestionItems(
   const sliced = filtered.slice(0, MAX_RESULTS)
   const final = disambiguateTitles(deduplicateByPath(sliced))
   const showWorkspace = options.showWorkspace ?? hasMultipleSuggestionWorkspaces(final)
-  return final.map(({ entry, entryType, ...rest }) => {
+  return final.map(({ entry, ...rest }) => {
     return {
       ...rest,
-      ...suggestionTypeMetadata(entryType, typeEntryMap),
       workspace: showWorkspace ? entry?.workspace ?? null : null,
     }
   })

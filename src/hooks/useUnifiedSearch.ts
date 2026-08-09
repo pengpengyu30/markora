@@ -37,7 +37,6 @@ function mapResults(raw: SearchResultData[]): SearchResult[] {
     }))
     .filter(r => {
       if (seen.has(r.path)) return false
-      if (r.noteType === 'Config') return false
       seen.add(r.path)
       return true
     })

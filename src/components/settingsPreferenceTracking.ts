@@ -4,7 +4,6 @@ import {
   trackDateDisplayFormatChanged,
   trackDefaultNoteWidthChanged,
   trackGitFeaturesEnabledChanged,
-  trackSidebarTypePluralizationChanged,
 } from '../lib/productAnalytics'
 import { areGitFeaturesEnabled } from '../lib/gitSettings'
 import { areAutomaticUpdateChecksEnabled } from '../lib/automaticUpdateChecks'
@@ -22,7 +21,6 @@ export interface SettingsPreferenceDraft {
   defaultNoteWidth: NoteWidthMode
   gitFeaturesEnabled: boolean
   multiWorkspaceEnabled: boolean
-  sidebarTypePluralizationEnabled: boolean
 }
 
 function numericFlag(value: boolean): number {
@@ -68,11 +66,6 @@ export function trackSettingsPreferenceChanges(settings: Settings, draft: Settin
     normalizeNoteWidthMode(settings.note_width_mode) ?? DEFAULT_NOTE_WIDTH_MODE,
     draft.defaultNoteWidth,
     trackDefaultNoteWidthChanged,
-  )
-  trackPreferenceChange(
-    settings.sidebar_type_pluralization_enabled ?? true,
-    draft.sidebarTypePluralizationEnabled,
-    trackSidebarTypePluralizationChanged,
   )
   trackEnabledPreferenceChange(
     settings.multi_workspace_enabled === true,

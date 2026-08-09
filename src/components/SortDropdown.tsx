@@ -15,7 +15,6 @@ const SORT_LABEL_KEYS = {
   modified: 'noteList.sort.modified',
   created: 'noteList.sort.created',
   title: 'noteList.sort.title',
-  status: 'noteList.sort.status',
 } satisfies Record<string, TranslationKey>
 const SORT_LABEL_KEYS_BY_OPTION = new Map<string, TranslationKey>(Object.entries(SORT_LABEL_KEYS))
 const SORT_MENU_WIDTH = 170
@@ -27,20 +26,14 @@ const SORT_MENU_VIEWPORT_PADDING = 8
 type SortMenuAction = { type: 'close' } | { type: 'focus'; index: number }
 
 function getLocalizedSortOptionLabel(option: SortOption, locale: AppLocale): string {
-  if (option.startsWith('property:')) return option.slice('property:'.length)
   return translate(locale, SORT_LABEL_KEYS_BY_OPTION.get(option) ?? 'noteList.sort.modified')
 }
 
-function buildSortItems(locale: AppLocale, customProperties?: string[]): SortItem[] {
-  const builtInItems = SORT_OPTIONS.map(({ value }) => ({
+function buildSortItems(locale: AppLocale): SortItem[] {
+  return SORT_OPTIONS.map(({ value }) => ({
     value,
     label: getLocalizedSortOptionLabel(value, locale),
   }))
-  const customItems = (customProperties ?? []).map((key) => ({
-    value: `property:${key}` as SortOption,
-    label: key,
-  }))
-  return [...builtInItems, ...customItems]
 }
 
 function resolveFocusedIndex(groupLabel: string, current: SortOption, sortItems: SortItem[]) {
@@ -267,9 +260,6 @@ function SortDropdownMenu(options: {
     options
   if (!open) return null
 
-  const hasCustom = sortItems.length > SORT_OPTIONS.length
-  const builtInOptionCount = SORT_OPTIONS.length
-
   return createPortal(
     <div
       ref={menuRef}
@@ -298,7 +288,6 @@ function SortDropdownMenu(options: {
           buttonRef={(node) => {
             Reflect.set(sortButtonRefs.current, index, node)
           }}
-          showSeparator={hasCustom && index === builtInOptionCount}
           locale={locale}
           onSelect={onSelect}
         />
@@ -312,14 +301,13 @@ interface SortDropdownProps {
   groupLabel: string
   current: SortOption
   direction: SortDirection
-  customProperties?: string[]
   locale?: AppLocale
   onChange: (groupLabel: string, option: SortOption, direction: SortDirection) => void
 }
 
 export function SortDropdown(options: SortDropdownProps) {
-  const { groupLabel, current, direction, customProperties, locale = 'en', onChange } = options
-  const sortItems = useMemo(() => buildSortItems(locale, customProperties), [customProperties, locale])
+  const { groupLabel, current, direction, locale = 'en', onChange } = options
+  const sortItems = useMemo(() => buildSortItems(locale), [locale])
   const { open, toggleMenu, containerRef, menuRef, triggerRef, sortButtonRefs, handleSelect, handleMenuKeyDown } =
     useSortDropdownState({
     groupLabel,
@@ -363,11 +351,10 @@ function SortRow(options: {
   current: SortOption
   direction: SortDirection
   buttonRef: (node: HTMLButtonElement | null) => void
-  showSeparator: boolean
   locale: AppLocale
   onSelect: (opt: SortOption, dir: SortDirection) => void
 }) {
-  const { index, groupLabel, value, label, current, direction, buttonRef, showSeparator, locale, onSelect } = options
+  const { index, groupLabel, value, label, current, direction, buttonRef, locale, onSelect } = options
   const isActive = value === current
   const defaultDirection = isActive ? direction : getDefaultDirection(value)
   const itemData = {
@@ -377,7 +364,6 @@ function SortRow(options: {
 
   return (
     <>
-      {showSeparator && <div className="mx-2 my-1 border-t border-border" data-testid="sort-separator" />}
       <div
         className={cn(
           'flex items-center justify-between gap-1 rounded px-1 text-[12px] text-popover-foreground hover:bg-accent',

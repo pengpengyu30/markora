@@ -1,4 +1,4 @@
-import type { FolderNode, ModifiedFile, VaultEntry, ViewFile } from '../types'
+import type { FolderNode, ModifiedFile, VaultEntry } from '../types'
 
 export interface VaultStateResetOptions {
   clearNewPaths: () => void
@@ -8,13 +8,11 @@ export interface VaultStateResetOptions {
   setIsLoading: (isLoading: boolean) => void
   setModifiedFiles: (files: ModifiedFile[]) => void
   setModifiedFilesError: (message: string | null) => void
-  setViews: (views: ViewFile[]) => void
 }
 
 export function resetVaultState(options: VaultStateResetOptions) {
   options.setEntries([])
   options.setFolders([])
-  options.setViews([])
   options.setModifiedFiles([])
   options.setModifiedFilesError(null)
   options.setIsLoading(false)

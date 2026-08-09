@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useVaultLoader } from './useVaultLoader'
-import type { ModifiedFile, VaultEntry, ViewFile } from '../types'
+import type { ModifiedFile, VaultEntry } from '../types'
 import type { VaultOption } from '../components/status-bar/types'
 import { loadedWorkspacePathsFromEntries, uniqueWorkspacePathsFromVaults } from './vaultWorkspaceEntries'
 
@@ -68,27 +68,12 @@ function makeModifiedFile(overrides: Partial<ModifiedFile> = {}): ModifiedFile {
   }
 }
 
-function makeView(name: string): ViewFile {
-  return {
-    path: `/vault/.views/${name.toLowerCase()}.yml`,
-    filename: `${name.toLowerCase()}.yml`,
-    definition: {
-      name,
-      icon: 'Folder',
-      filters: [],
-      sort: null,
-      listPropertiesDisplay: [],
-    },
-  }
-}
-
 function configureBackend(overrides: Partial<Record<string, unknown | Error>> = {}) {
   const defaults: Record<string, unknown> = {
     list_vault: [makeEntry()],
     reload_vault: [makeEntry()],
     get_modified_files: [],
     list_vault_folders: [],
-    list_views: [],
     git_commit: 'committed',
     git_push: { status: 'ok', message: 'pushed' },
   }
@@ -206,7 +191,7 @@ describe('useVaultLoader extra', () => {
           makeModifiedFile({ path: '/vault/note/fresh.md', relativePath: 'note/fresh.md' }),
         ])
       }
-      if (command === 'list_vault_folders' || command === 'list_views') return Promise.resolve([])
+      if (command === 'list_vault_folders') return Promise.resolve([])
       return Promise.resolve([makeEntry()])
     })
 
@@ -245,43 +230,17 @@ describe('useVaultLoader extra', () => {
     warnSpy.mockRestore()
   })
 
-  it('reloads views when the backend succeeds', async () => {
-    const views = [makeView('Projects')]
-    configureBackend({
-      list_vault: [makeEntry()],
-      list_views: [],
-    })
-
-    const { result } = renderHook(() => useVaultLoader('/vault'))
-    await waitForEntries(result)
-
-    backendInvokeFn.mockImplementation((command: string) => {
-      if (command === 'list_views') return Promise.resolve(views)
-      if (command === 'get_modified_files' || command === 'list_vault_folders') return Promise.resolve([])
-      return Promise.resolve([makeEntry()])
-    })
-
-    let reloaded: ViewFile[] = []
-    await act(async () => {
-      reloaded = await result.current.reloadViews()
-    })
-
-    expect(reloaded.map((view) => view.definition.name)).toEqual(['Projects'])
-    expect(result.current.views[0]?.definition.name).toBe('Projects')
-  })
-
-  it('returns empty arrays when folder or view reloads fail', async () => {
+  it('returns an empty array when folder reload fails', async () => {
     configureBackend({
       list_vault: [makeEntry()],
       list_vault_folders: [{ name: 'projects', path: 'projects', children: [] }],
-      list_views: [makeView('Inbox')],
     })
 
     const { result } = renderHook(() => useVaultLoader('/vault'))
     await waitForEntries(result)
 
     backendInvokeFn.mockImplementation((command: string) => {
-      if (command === 'list_vault_folders' || command === 'list_views') {
+      if (command === 'list_vault_folders') {
         return Promise.reject(new Error('unavailable'))
       }
       if (command === 'get_modified_files') return Promise.resolve([])
@@ -289,14 +248,11 @@ describe('useVaultLoader extra', () => {
     })
 
     let folders: unknown[] = []
-    let views: ViewFile[] = []
     await act(async () => {
       folders = await result.current.reloadFolders()
-      views = await result.current.reloadViews()
     })
 
     expect(folders).toEqual([])
-    expect(views).toEqual([])
   })
 
   it('does not infer the fallback workspace from untagged entries when explicit workspace metadata is required', () => {

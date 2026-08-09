@@ -417,10 +417,10 @@ mod tests {
     }
 
     #[test]
-    fn keeps_notes_assets_and_saved_views_watchable() {
+    fn keeps_notes_assets_and_text_files_watchable() {
         assert!(is_watchable_path(Path::new("notes/day.md"), None));
         assert!(is_watchable_path(Path::new("attachments/image.png"), None));
-        assert!(is_watchable_path(Path::new(".laputa/views/work.yml"), None));
+        assert!(is_watchable_path(Path::new("data/metadata.yml"), None));
     }
 
     #[test]

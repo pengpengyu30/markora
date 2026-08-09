@@ -1,4 +1,4 @@
-import type { FrontmatterValue } from '../components/Inspector'
+import type { FrontmatterValue } from '../types'
 import { canonicalFrontmatterKey } from './systemMetadata'
 
 export interface ParsedFrontmatter {

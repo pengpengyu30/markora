@@ -5,6 +5,7 @@ import type { DateDisplayFormat } from './utils/dateDisplay'
 export type VaultPropertyScalar = string | number | boolean | null
 export type VaultPropertyArray = Array<string | number | boolean>
 export type VaultPropertyValue = VaultPropertyScalar | VaultPropertyArray
+export type FrontmatterValue = string | number | boolean | string[] | null
 
 export interface VaultEntry {
   path: string
@@ -122,7 +123,6 @@ export interface Settings {
   autogit_enabled?: boolean | null
   autogit_idle_threshold_seconds?: number | null
   autogit_inactive_threshold_seconds?: number | null
-  auto_advance_inbox_after_organize?: boolean | null
   telemetry_consent: boolean | null
   crash_reporting_enabled: boolean | null
   analytics_enabled: boolean | null
@@ -133,7 +133,6 @@ export interface Settings {
   ui_language?: AppLocale | null
   date_display_format?: DateDisplayFormat | null
   note_width_mode?: NoteWidthMode | null
-  sidebar_type_pluralization_enabled?: boolean | null
   initial_h1_auto_rename_enabled?: boolean | null
   hide_gitignored_files?: boolean | null
   all_notes_show_pdfs?: boolean | null
@@ -217,17 +216,6 @@ export interface SearchResponse {
 export type SearchMode = 'keyword' | 'semantic' | 'hybrid'
 
 /** Vault-scoped UI configuration stored locally per vault path. */
-export interface InboxConfig {
-  noteListProperties: string[] | null
-  explicitOrganization?: boolean | null
-}
-
-/** Vault-scoped UI configuration stored locally per vault path. */
-export interface AllNotesConfig {
-  noteListProperties: string[] | null
-}
-
-/** Vault-scoped UI configuration stored locally per vault path. */
 export type NoteLayout = 'centered' | 'left'
 
 export type NoteWidthMode = 'normal' | 'wide'
@@ -241,11 +229,6 @@ export interface VaultConfig {
   editor_mode: string | null
   note_layout?: NoteLayout | null
   git_setup_preference?: GitSetupPreference | null
-  tag_colors: Record<string, string> | null
-  status_colors: Record<string, string> | null
-  property_display_modes: Record<string, string> | null
-  inbox?: InboxConfig | null
-  allNotes?: AllNotesConfig | null
 }
 
 export interface PulseFile {
@@ -266,48 +249,11 @@ export interface PulseCommit {
   deleted: number
 }
 
-export type SidebarFilter = 'all' | 'archived' | 'changes' | 'pulse' | 'inbox' | 'favorites'
-
-export type InboxPeriod = 'week' | 'month' | 'quarter' | 'all'
+export type SidebarFilter = 'all' | 'changes' | 'pulse'
 
 export type SidebarSelection =
   | { kind: 'filter'; filter: SidebarFilter }
-  | { kind: 'sectionGroup'; type: string }
   | { kind: 'folder'; path: string; rootPath?: string }
-  | { kind: 'entity'; entry: VaultEntry }
-  | { kind: 'view'; filename: string; rootPath?: string }
-
-// --- Custom Views ---
-
-export type FilterOp = 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'any_of' | 'none_of' | 'is_empty' | 'is_not_empty' | 'before' | 'after'
-
-export interface FilterCondition {
-  field: string
-  op: FilterOp
-  value?: unknown
-  regex?: boolean
-}
-
-export type FilterGroup = { all: FilterNode[] } | { any: FilterNode[] }
-export type FilterNode = FilterCondition | FilterGroup
-
-export interface ViewDefinition {
-  name: string
-  icon: string | null
-  color: string | null
-  /** Display order for saved Views in sidebar/list surfaces (lower = higher). */
-  order?: number | null
-  sort: string | null
-  listPropertiesDisplay?: string[]
-  filters: FilterGroup
-}
-
-export interface ViewFile {
-  filename: string
-  definition: ViewDefinition
-  rootPath?: string
-  workspace?: WorkspaceIdentity
-}
 
 /** A node in the vault's folder tree (directories only, no files). */
 export interface FolderNode {
