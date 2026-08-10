@@ -190,4 +190,24 @@ describe('buildSettingsCommands', () => {
     window.removeEventListener(TOGGLE_GITIGNORED_VISIBILITY_EVENT, listener)
   })
 
+  it('exposes deleted-note recovery only for managed vaults', () => {
+    const onRestoreDeletedNote = vi.fn()
+    const command = findCommand('restore-deleted-note', buildSettingsCommands({
+      onOpenSettings: vi.fn(),
+      onRestoreDeletedNote,
+    }))
+
+    expect(command).toMatchObject({
+      label: 'Restore Deleted Note…',
+      enabled: true,
+      group: 'Settings',
+    })
+    command?.execute()
+    expect(onRestoreDeletedNote).toHaveBeenCalledTimes(1)
+
+    expect(findCommand('restore-deleted-note')).toMatchObject({
+      enabled: false,
+    })
+  })
+
 })

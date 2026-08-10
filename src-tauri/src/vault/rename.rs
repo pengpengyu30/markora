@@ -868,7 +868,7 @@ mod tests {
         init_git_repo_with_quoted_paths(repository);
         create_test_file(&vault, "old.md", "# Vault\n");
         create_test_file(repository, "outside-old.md", "# Outside\n");
-        run_git(repository, &["add", "-A"]);
+        run_git(repository, &["add", "-f", "-A"]);
         run_git(repository, &["commit", "-m", "initial"]);
         fs::rename(vault.join("old.md"), vault.join("new.md")).unwrap();
         fs::rename(
@@ -876,7 +876,7 @@ mod tests {
             repository.join("outside-new.md"),
         )
         .unwrap();
-        run_git(repository, &["add", "-A"]);
+        run_git(repository, &["add", "-f", "-A"]);
 
         let renames = detect_renames(&vault).unwrap();
 

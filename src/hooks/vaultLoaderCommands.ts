@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
 import { isTauri, mockInvoke } from '../mock-tauri'
-import type { FolderNode, GitPushResult, VaultEntry } from '../types'
+import type { FolderNode, VaultEntry } from '../types'
 import type { VaultOption } from '../components/status-bar/types'
 import { normalizeVaultEntries } from '../utils/vaultMetadataNormalization'
 import {
@@ -36,10 +36,6 @@ interface MountedVaultEntriesOptions extends VaultPathOptions, EmptyResultReload
 type MountedVaultFoldersOptions = MountedVaultEntriesOptions
 
 type WorkspaceEntryLoadOptions = EmptyResultReloadOptions
-
-interface CommitWithPushOptions extends VaultPathOptions {
-  message: string
-}
 
 interface LoadedVaultData {
   entries: VaultEntry[]
@@ -276,13 +272,4 @@ export async function loadVaultChrome(options: MountedVaultEntriesOptions): Prom
   return {
     folders: folders ?? [],
   }
-}
-
-export async function commitWithPush({ vaultPath, message }: CommitWithPushOptions): Promise<GitPushResult> {
-  if (!isTauri()) {
-    await mockInvoke<string>('git_commit', { message })
-    return mockInvoke<GitPushResult>('git_push', {})
-  }
-  await invoke<string>('git_commit', { vaultPath, message })
-  return invoke<GitPushResult>('git_push', { vaultPath })
 }

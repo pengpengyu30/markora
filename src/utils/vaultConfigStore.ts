@@ -1,3 +1,4 @@
+import { APP_STORAGE_KEYS } from '../constants/appStorage'
 import type { VaultConfig } from '../types'
 
 type SaveFn = (config: VaultConfig) => void
@@ -8,7 +9,7 @@ const DEFAULT_CONFIG: VaultConfig = {
   git_setup_preference: 'prompt',
 }
 
-let config: VaultConfig = DEFAULT_CONFIG
+let config: VaultConfig = loadPersistedVaultConfig()
 let saveFn: SaveFn | null = null
 const listeners: Set<Listener> = new Set()
 
@@ -23,7 +24,7 @@ export function bindVaultConfigStore(initial: VaultConfig, save: SaveFn): void {
 }
 
 export function resetVaultConfigStore(): void {
-  config = DEFAULT_CONFIG
+  config = { ...DEFAULT_CONFIG }
   saveFn = null
   notify()
 }
@@ -31,7 +32,26 @@ export function resetVaultConfigStore(): void {
 export function updateVaultConfigField<K extends keyof VaultConfig>(key: K, value: VaultConfig[K]): void {
   config = normalizeVaultConfig({ ...config, [key]: value })
   saveFn?.(config)
+  savePersistedVaultConfig(config)
   notify()
+}
+
+export function loadPersistedVaultConfig(): VaultConfig {
+  try {
+    const raw = localStorage.getItem(APP_STORAGE_KEYS.vaultConfig)
+    if (!raw) return { ...DEFAULT_CONFIG }
+    return normalizeVaultConfig(JSON.parse(raw))
+  } catch {
+    return { ...DEFAULT_CONFIG }
+  }
+}
+
+export function savePersistedVaultConfig(next: VaultConfig): void {
+  try {
+    localStorage.setItem(APP_STORAGE_KEYS.vaultConfig, JSON.stringify(normalizeVaultConfig(next)))
+  } catch {
+    // Ignore unavailable or restricted localStorage implementations.
+  }
 }
 
 export function subscribeVaultConfig(listener: Listener): () => void {
@@ -43,10 +63,15 @@ function notify(): void {
   for (const fn of listeners) fn()
 }
 
-function normalizeVaultConfig(next: VaultConfig): VaultConfig {
+function normalizeVaultConfig(next: unknown): VaultConfig {
+  const source = isVaultConfigRecord(next) ? next : {}
   return {
     ...DEFAULT_CONFIG,
-    ...next,
-    git_setup_preference: next.git_setup_preference === 'never' ? 'never' : 'prompt',
+    ...source,
+    git_setup_preference: source.git_setup_preference === 'never' ? 'never' : 'prompt',
   }
+}
+
+function isVaultConfigRecord(value: unknown): value is Partial<VaultConfig> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }

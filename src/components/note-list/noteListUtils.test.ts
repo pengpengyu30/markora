@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { createNoteStatusResolver, resolveHeaderTitle, routeNoteClick } from './noteListUtils'
+import { createNoteStatusResolver, routeNoteClick } from './noteListUtils'
 
 function makeEntry(path = '/test.md') {
   return {
@@ -37,14 +37,6 @@ function makeStatusResolver(activeStatus, modifiedFiles) {
     new Set(modifiedFiles.map((file) => file.path)),
   )
 }
-
-describe('resolveHeaderTitle', () => {
-  it('returns History for the pulse filter', () => {
-    const selection = { kind: 'filter', filter: 'pulse' }
-    expect(resolveHeaderTitle(selection, null)).toBe('History')
-  })
-
-})
 
 describe('routeNoteClick', () => {
   it('plain click replaces active tab', () => {

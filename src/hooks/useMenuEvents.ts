@@ -21,18 +21,10 @@ const NOTE_LIST_SEARCH_MENU_ID = 'edit-toggle-note-list-search'
 
 export interface MenuEventHandlers extends AppCommandHandlers {
   activeTabPath: string | null
-  modifiedCount?: number
-  conflictCount?: number
-  hasRestorableDeletedNote?: boolean
-  hasNoRemote?: boolean
 }
 
 interface MenuStatePayload {
   hasActiveNote: boolean
-  hasModifiedFiles?: boolean
-  hasConflicts?: boolean
-  hasRestorableDeletedNote?: boolean
-  hasNoRemote?: boolean
   noteListSearchEnabled?: boolean
   editorFindEnabled?: boolean
 }
@@ -173,24 +165,12 @@ export function useMenuEvents(handlers: MenuEventHandlers) {
     readEditorFindAvailability,
   )
   const hasActiveNote = handlers.activeTabPath !== null
-  const hasModifiedFiles = handlers.modifiedCount != null ? handlers.modifiedCount > 0 : undefined
-  const hasConflicts = handlers.conflictCount != null ? handlers.conflictCount > 0 : undefined
-  const hasRestorableDeletedNote = handlers.hasRestorableDeletedNote
-  const hasNoRemote = handlers.hasNoRemote
   const menuState = useMemo(() => ({
     hasActiveNote,
-    hasModifiedFiles,
-    hasConflicts,
-    hasRestorableDeletedNote,
-    hasNoRemote,
     noteListSearchEnabled,
     editorFindEnabled,
   }), [
     hasActiveNote,
-    hasModifiedFiles,
-    hasConflicts,
-    hasRestorableDeletedNote,
-    hasNoRemote,
     noteListSearchEnabled,
     editorFindEnabled,
   ])

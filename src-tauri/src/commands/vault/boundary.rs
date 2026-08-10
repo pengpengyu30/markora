@@ -137,19 +137,6 @@ fn push_unique_vault_root_path(paths: &mut Vec<String>, path: String) {
     paths.push(path);
 }
 
-#[cfg(all(debug_assertions, not(test)))]
-fn local_dev_demo_vault_path() -> Option<String> {
-    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    manifest_dir
-        .parent()
-        .map(|root| root.join("demo-vault-v2").to_string_lossy().into_owned())
-}
-
-#[cfg(not(all(debug_assertions, not(test))))]
-fn local_dev_demo_vault_path() -> Option<String> {
-    None
-}
-
 fn configured_vault_root_paths(list: &vault_list::VaultList) -> Vec<String> {
     let mut paths = Vec::new();
     for entry in &list.vaults {
@@ -164,9 +151,6 @@ fn configured_vault_root_paths(list: &vault_list::VaultList) -> Vec<String> {
     #[cfg(not(test))]
     if let Ok(default_path) = crate::vault::default_vault_path() {
         push_unique_vault_root_path(&mut paths, default_path.to_string_lossy().into_owned());
-    }
-    if let Some(dev_demo_path) = local_dev_demo_vault_path() {
-        push_unique_vault_root_path(&mut paths, dev_demo_path);
     }
     paths
 }

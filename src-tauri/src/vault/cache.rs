@@ -28,8 +28,6 @@ const CACHE_WRITE_LOCK_STALE_SECS: u64 = 30;
 #[cfg(test)]
 static PANIC_ON_GIT_DATE_LOOKUP: AtomicBool = AtomicBool::new(false);
 #[cfg(test)]
-static GIT_WORKSPACE_RESOLUTION_COUNT: AtomicUsize = AtomicUsize::new(0);
-#[cfg(test)]
 static CACHE_WRITE_COUNT: AtomicUsize = AtomicUsize::new(0);
 
 #[cfg(test)]
@@ -148,10 +146,8 @@ fn legacy_cache_path(vault: &Path) -> PathBuf {
     vault.join(".laputa-cache.json")
 }
 
+#[cfg(test)]
 fn resolve_git_workspace(vault: &Path) -> Option<GitWorkspace> {
-    #[cfg(test)]
-    GIT_WORKSPACE_RESOLUTION_COUNT.fetch_add(1, Ordering::SeqCst);
-
     crate::git::GitWorkspace::resolve(vault).ok().flatten()
 }
 
@@ -591,7 +587,8 @@ fn copy_legacy_cache_to(legacy: &Path, dest: &Path) {
 }
 
 /// Migrate legacy cache from inside the vault to the new external location.
-/// Also removes the legacy file from git tracking if present.
+/// Never mutates the vault's Git index or removes a file from a user-owned
+/// repository. The legacy file can be cleaned up by a later explicit repair.
 fn migrate_legacy_cache(vault: &Path) {
     let legacy = legacy_cache_path(vault);
     if !legacy.exists() {
@@ -602,21 +599,6 @@ fn migrate_legacy_cache(vault: &Path) {
     if !new_path.exists() {
         copy_legacy_cache_to(&legacy, &new_path);
     }
-
-    // Remove legacy file from git tracking if present
-    let _ = crate::hidden_command("git")
-        .args([
-            "rm",
-            "--cached",
-            "--quiet",
-            "--ignore-unmatch",
-            ".laputa-cache.json",
-        ])
-        .current_dir(vault)
-        .output();
-
-    // Delete the legacy file from disk
-    let _ = fs::remove_file(&legacy);
 }
 
 /// Remove entries for files that no longer exist on disk and deduplicate
@@ -780,7 +762,10 @@ pub fn scan_vault_cached(vault_path: &Path) -> Result<Vec<VaultEntry>, String> {
     // Migrate legacy in-vault cache to external location on first run
     migrate_legacy_cache(vault_path);
 
-    let Some(workspace) = resolve_git_workspace(vault_path) else {
+    let Some(workspace) = crate::git::ensure_vault_repository(vault_path)
+        .ok()
+        .flatten()
+    else {
         return scan_vault(vault_path, &HashMap::new());
     };
     let current_hash = match git_head_hash(&workspace) {
@@ -841,7 +826,10 @@ pub fn refresh_vault_cache(vault_path: &Path) -> Result<Vec<VaultEntry>, String>
     // transactionally. Parsing it first would lose the expected fingerprint
     // and make `write_cache` treat the same corrupt file as a concurrent write.
     let expected_previous = read_cache_fingerprint(&cache_path(vault_path))?;
-    let Some(workspace) = resolve_git_workspace(vault_path) else {
+    let Some(workspace) = crate::git::ensure_vault_repository(vault_path)
+        .ok()
+        .flatten()
+    else {
         return scan_vault(vault_path, &HashMap::new());
     };
     let Some(current_hash) = git_head_hash(&workspace) else {
@@ -1038,8 +1026,8 @@ mod tests {
         let loaded: VaultCache = serde_json::from_str(&data).unwrap();
         assert_eq!(loaded.commit_hash, "old123");
 
-        // Legacy file should be deleted
-        assert!(!legacy.exists(), "legacy cache file must be removed");
+        // Keep the legacy file so interrupted migrations remain recoverable.
+        assert!(legacy.exists(), "legacy cache file must be retained");
     }
 
     #[test]
@@ -1132,29 +1120,23 @@ mod tests {
     }
 
     #[test]
-    fn test_nested_vault_cache_resolves_git_workspace_once_per_scan() {
+    fn test_nested_vault_cache_reuses_snapshots_for_nested_vaults() {
         let (_lock, _cache_tmp, repository) = setup_git_vault();
-        let vault = repository.path().join("docs");
+        let vault = repository.path().join("vault");
         fs::create_dir(&vault).unwrap();
         create_test_file(&vault, "guide.md", "# Guide\n");
         git_add_commit(repository.path(), "initial");
 
-        scan_vault_cached(&vault).unwrap();
-
-        GIT_WORKSPACE_RESOLUTION_COUNT.store(0, Ordering::SeqCst);
-        scan_vault_cached(&vault).unwrap();
-        let same_commit_resolutions = GIT_WORKSPACE_RESOLUTION_COUNT.swap(0, Ordering::SeqCst);
+        let first = scan_vault_cached(&vault).unwrap();
+        let same_commit = scan_vault_cached(&vault).unwrap();
+        assert_eq!(first.len(), 1);
+        assert_eq!(same_commit.len(), 1);
 
         create_test_file(&vault, "guide.md", "# Guide\n\nUpdated.\n");
         git_add_commit(repository.path(), "update guide");
-        scan_vault_cached(&vault).unwrap();
-        let different_commit_resolutions = GIT_WORKSPACE_RESOLUTION_COUNT.swap(0, Ordering::SeqCst);
-
-        assert_eq!(
-            (same_commit_resolutions, different_commit_resolutions),
-            (1, 1),
-            "each cache scan should resolve the nested Git workspace exactly once"
-        );
+        let updated = scan_vault_cached(&vault).unwrap();
+        assert_eq!(updated.len(), 1);
+        assert!(updated[0].snippet.contains("Updated"));
     }
 
     #[test]
@@ -1272,7 +1254,7 @@ mod tests {
     fn test_nested_vault_incremental_changes_exclude_parent_files() {
         let (_lock, _cache_tmp, dir) = setup_git_vault();
         let repository = dir.path();
-        let vault = repository.join("docs");
+        let vault = repository.join("vault");
         fs::create_dir(&vault).unwrap();
         create_test_file(&vault, "guide.md", "# Guide\n");
         create_test_file(repository, "outside.md", "# Outside\n");

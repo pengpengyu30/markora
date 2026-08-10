@@ -48,24 +48,17 @@ function makeHandlers(): AppCommandHandlers {
     onDeleteNote: vi.fn(),
     onSearch: vi.fn(),
     onToggleRawEditor: vi.fn(),
-    onToggleDiff: vi.fn(),
     onToggleTableOfContents: vi.fn(),
     onPastePlainText: vi.fn(),
     onGoBack: vi.fn(),
     onGoForward: vi.fn(),
     onCheckForUpdates: vi.fn(),
-    onSelectFilter: vi.fn(),
     onOpenVault: vi.fn(),
     onRemoveActiveVault: vi.fn(),
     onRestoreGettingStarted: vi.fn(),
-    onCommitPush: vi.fn(),
-    onPull: vi.fn(),
-    onResolveConflicts: vi.fn(),
-    onViewChanges: vi.fn(),
     onOpenInNewWindow: vi.fn(),
     onReloadVault: vi.fn(),
     onRepairVault: vi.fn(),
-    onRestoreDeletedNote: vi.fn(),
     activeTabPathRef: { current: '/vault/test.md' },
     multiSelectionCommandRef: { current: null },
   }
@@ -254,12 +247,6 @@ describe('appCommandDispatcher', () => {
     handlers.activeTabPathRef.current = null
     expect(dispatchAppCommand(APP_COMMAND_IDS.noteDelete, handlers)).toBe(false)
     expect(handlers.onDeleteNote).not.toHaveBeenCalled()
-  })
-
-  it('dispatches navigation filters through the same shared command path', () => {
-    const handlers = makeHandlers()
-    expect(dispatchAppCommand(APP_COMMAND_IDS.goChanges, handlers)).toBe(true)
-    expect(handlers.onSelectFilter).toHaveBeenCalledWith('changes')
   })
 
   it('suppresses a native-menu echo after renderer keyboard dispatch', () => {

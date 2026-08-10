@@ -118,6 +118,24 @@ describe('deriveEditorContentState', () => {
     expect(state.showEditor).toBe(true)
   })
 
+  it('keeps a newly created active note editable when the editor source includes all vault entries', () => {
+    const activeEntry = {
+      ...baseEntry,
+      path: '/vault/other-workspace/untitled-note-1700000000.md',
+      filename: 'untitled-note-1700000000.md',
+      title: 'Untitled Note 1700000000',
+    }
+
+    const state = deriveEditorContentState({
+      activeTab: { entry: activeEntry, content: '\n# \n\n' },
+      entries: [activeEntry],
+      rawMode: false,
+    })
+
+    expect(state.isDeletedPreview).toBe(false)
+    expect(state.showEditor).toBe(true)
+  })
+
   it.each([
     ['marks markdown notes with sheet display as sheet editor content', 'Note', '---\ntype: Note\n_display: sheet\n---\nMetric,January', true],
     ['does not treat Sheet type metadata as sheet editor content', 'Sheet', '---\ntype: Sheet\n---\nMetric,January', false],

@@ -10,7 +10,6 @@ import { cn } from '@/lib/utils'
 import { getDisplayDate } from '../utils/noteListHelpers'
 import { formatTimestampForDateDisplay } from '../utils/dateDisplay'
 import { filePreviewKind, type FilePreviewKind } from '../utils/filePreview'
-import { ChangeNoteContent } from './note-item/ChangeNoteContent'
 import { workspaceForEntry } from '../utils/workspaces'
 import { WorkspaceInitialsBadge } from './WorkspaceInitialsBadge'
 import { useDateDisplayFormat } from '../hooks/useAppPreferences'
@@ -32,12 +31,12 @@ const NOTE_STATUS_DOT: Record<VisibleNoteStatus, { color: string; testId: string
   new: {
     color: 'var(--accent-green)',
     testId: 'new-indicator',
-    title: 'New (uncommitted)',
+    title: 'New',
   },
   modified: {
     color: 'var(--accent-orange)',
     testId: 'modified-indicator',
-    title: 'Modified (uncommitted)',
+    title: 'Modified',
   },
 }
 
@@ -268,8 +267,6 @@ type NoteItemProps = {
   isMultiSelected?: boolean
   isHighlighted?: boolean
   noteStatus?: NoteStatus
-  /** When set, renders in Changes-view style: filename + change type icon */
-  changeStatus?: 'modified' | 'added' | 'deleted' | 'untracked' | 'renamed'
   allEntries?: VaultEntry[]
   onClickNote: (entry: VaultEntry, e: ReactMouseEvent) => void
   onPrefetch?: (entry: VaultEntry) => void
@@ -333,7 +330,6 @@ function resolveNoteItemSurfaceProps(
     onClickNote: NoteItemProps['onClickNote']
     onPrefetch?: NoteItemProps['onPrefetch']
     onContextMenu?: NoteItemProps['onContextMenu']
-    changeStatus?: NoteItemProps['changeStatus']
   },
 ): NoteItemSurfaceProps {
   const {
@@ -346,12 +342,10 @@ function resolveNoteItemSurfaceProps(
     onClickNote,
     onPrefetch,
     onContextMenu,
-    changeStatus,
   } = options
   const draggable =
     !isUnavailableBinary &&
-    (entry.fileKind === undefined || entry.fileKind === 'markdown') &&
-    changeStatus !== 'deleted'
+    (entry.fileKind === undefined || entry.fileKind === 'markdown')
 
   return {
     className: noteItemClassName({
@@ -385,7 +379,6 @@ function NoteItemRow({
   isSelected,
   isMultiSelected,
   isHighlighted,
-  changeStatus,
   children,
 }: {
   surfaceProps: NoteItemSurfaceProps
@@ -393,7 +386,6 @@ function NoteItemRow({
   isSelected: boolean
   isMultiSelected: boolean
   isHighlighted: boolean
-  changeStatus: NoteItemProps['changeStatus']
   children: ReactNode
 }) {
   return (
@@ -414,7 +406,6 @@ function NoteItemRow({
       data-testid={surfaceProps.testId}
       data-highlighted={isHighlighted || undefined}
       data-note-path={entryPath}
-      data-change-status={changeStatus}
       title={surfaceProps.title}
     >
       {children}
@@ -428,7 +419,6 @@ function NoteItemContent(options: {
   isUnavailableBinary: boolean
   isSelected: boolean
   noteStatus: NoteStatus
-  changeStatus?: NoteItemProps['changeStatus']
   allEntries: VaultEntry[]
 }) {
   const {
@@ -437,20 +427,8 @@ function NoteItemContent(options: {
     isUnavailableBinary,
     isSelected,
     noteStatus,
-    changeStatus,
     allEntries,
   } = options
-  if (changeStatus) {
-    return (
-      <ChangeNoteContent
-        entry={entry}
-        changeStatus={changeStatus}
-        isSelected={isSelected}
-        isDeletedChange={changeStatus === 'deleted'}
-      />
-    )
-  }
-
   return (
     <StandardNoteContent
       entry={entry}
@@ -470,7 +448,6 @@ export function NoteItem(options: NoteItemProps) {
     isMultiSelected = false,
     isHighlighted = false,
     noteStatus = 'clean',
-    changeStatus,
     allEntries,
     onClickNote,
     onPrefetch,
@@ -489,7 +466,6 @@ export function NoteItem(options: NoteItemProps) {
     onClickNote,
     onPrefetch,
     onContextMenu,
-    changeStatus,
   })
 
   return (
@@ -499,7 +475,6 @@ export function NoteItem(options: NoteItemProps) {
       isSelected={isSelected}
       isMultiSelected={isMultiSelected}
       isHighlighted={isHighlighted}
-      changeStatus={changeStatus}
     >
       <NoteItemContent
         entry={entry}
@@ -507,7 +482,6 @@ export function NoteItem(options: NoteItemProps) {
         isUnavailableBinary={isUnavailableBinary}
         isSelected={isSelected}
         noteStatus={noteStatus}
-        changeStatus={changeStatus}
         allEntries={allEntries ?? [entry]}
       />
     </NoteItemRow>

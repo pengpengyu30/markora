@@ -12,7 +12,6 @@ type TurnCurrentBlockIntoActiveTab = {
 
 interface TurnCurrentBlockIntoCommandConfig {
   activeTab: TurnCurrentBlockIntoActiveTab
-  diffMode: boolean
   editor: TurnCurrentBlockIntoEditor
   rawMode: boolean
   turnCurrentBlockIntoRef?: MutableRefObject<((target: RichEditorBlockTypeDefinition) => void) | null>
@@ -20,15 +19,14 @@ interface TurnCurrentBlockIntoCommandConfig {
 
 export function useTurnCurrentBlockIntoCommand({
   activeTab,
-  diffMode,
   editor,
   rawMode,
   turnCurrentBlockIntoRef,
 }: TurnCurrentBlockIntoCommandConfig) {
   const handleTurnCurrentBlockInto = useCallback((target: RichEditorBlockTypeDefinition) => {
-    if (!activeTab || activeTab.entry.fileKind === 'binary' || rawMode || diffMode) return
+    if (!activeTab || activeTab.entry.fileKind === 'binary' || rawMode) return
     turnCurrentBlockIntoType(editor, target, 'command_palette')
-  }, [activeTab, diffMode, editor, rawMode])
+  }, [activeTab, editor, rawMode])
 
   useEffect(() => {
     if (!turnCurrentBlockIntoRef) return

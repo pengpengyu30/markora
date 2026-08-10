@@ -51,7 +51,7 @@ const makeCommand = (overrides: Partial<CommandAction> = {}): CommandAction => (
 const commands: CommandAction[] = [
   makeCommand({ id: 'search-notes', label: 'Search Notes', group: 'Navigation', shortcut: '⌘P', keywords: ['find'] }),
   makeCommand({ id: 'create-note', label: 'New Note', group: 'Note', shortcut: '⌘N' }),
-  makeCommand({ id: 'commit-push', label: 'Commit & Push', group: 'Git', keywords: ['git', 'sync'] }),
+  makeCommand({ id: 'rename-note', label: 'Rename Note', group: 'Note', keywords: ['rename'] }),
   makeCommand({ id: 'open-settings', label: 'Open Settings', group: 'Settings', shortcut: '⌘,' }),
   makeCommand({ id: 'disabled-cmd', label: 'Disabled Command', group: 'Note', enabled: false }),
 ]
@@ -136,7 +136,7 @@ describe('CommandPalette', () => {
     render(<CommandPalette open={true} commands={commands} onClose={onClose} />)
     expect(screen.getByText('Search Notes')).toBeInTheDocument()
     expect(screen.getByText('New Note')).toBeInTheDocument()
-    expect(screen.getByText('Commit & Push')).toBeInTheDocument()
+    expect(screen.getByText('Rename Note')).toBeInTheDocument()
     expect(screen.getByText('Open Settings')).toBeInTheDocument()
     // Disabled command should not appear
     expect(screen.queryByText('Disabled Command')).not.toBeInTheDocument()
@@ -146,7 +146,6 @@ describe('CommandPalette', () => {
     render(<CommandPalette open={true} commands={commands} onClose={onClose} />)
     expect(screen.getByText('Navigation')).toBeInTheDocument()
     expect(screen.getByText('Note')).toBeInTheDocument()
-    expect(screen.getByText('Git')).toBeInTheDocument()
     expect(screen.getByText('Settings')).toBeInTheDocument()
   })
 
@@ -160,9 +159,9 @@ describe('CommandPalette', () => {
   it('filters commands by fuzzy search', () => {
     render(<CommandPalette open={true} commands={commands} onClose={onClose} />)
     const input = screen.getByPlaceholderText('Type a command...')
-    fireEvent.change(input, { target: { value: 'commit' } })
+    fireEvent.change(input, { target: { value: 'rename' } })
 
-    expect(screen.getByText('Commit & Push')).toBeInTheDocument()
+    expect(screen.getByText('Rename Note')).toBeInTheDocument()
     expect(screen.queryByText('Search Notes')).not.toBeInTheDocument()
   })
 
@@ -220,7 +219,7 @@ describe('CommandPalette', () => {
   it('keeps keyboard selection stable when the mouse is already over a row', () => {
     render(<CommandPalette open={true} commands={commands} onClose={onClose} />)
 
-    fireEvent.mouseMove(screen.getByText('Commit & Push'), {
+    fireEvent.mouseMove(screen.getByText('Rename Note'), {
       clientX: 10,
       clientY: 10,
       screenX: 10,
@@ -237,13 +236,13 @@ describe('CommandPalette', () => {
   it('lets real mouse movement take over command selection', () => {
     render(<CommandPalette open={true} commands={commands} onClose={onClose} />)
 
-    fireEvent.mouseMove(screen.getByText('Commit & Push'), {
+    fireEvent.mouseMove(screen.getByText('Rename Note'), {
       clientX: 10,
       clientY: 10,
       screenX: 10,
       screenY: 10,
     })
-    fireEvent.mouseMove(screen.getByText('Commit & Push'), {
+    fireEvent.mouseMove(screen.getByText('Rename Note'), {
       clientX: 10,
       clientY: 11,
       screenX: 10,
@@ -258,20 +257,20 @@ describe('CommandPalette', () => {
   it('ignores stationary mouse hover again after keyboard navigation changes selection', () => {
     render(<CommandPalette open={true} commands={commands} onClose={onClose} />)
 
-    fireEvent.mouseMove(screen.getByText('Commit & Push'), {
+    fireEvent.mouseMove(screen.getByText('Rename Note'), {
       clientX: 10,
       clientY: 10,
       screenX: 10,
       screenY: 10,
     })
-    fireEvent.mouseMove(screen.getByText('Commit & Push'), {
+    fireEvent.mouseMove(screen.getByText('Rename Note'), {
       clientX: 10,
       clientY: 11,
       screenX: 10,
       screenY: 11,
     })
     fireEvent.keyDown(window, { key: 'ArrowUp' })
-    fireEvent.mouseMove(screen.getByText('Commit & Push'), {
+    fireEvent.mouseMove(screen.getByText('Rename Note'), {
       clientX: 10,
       clientY: 11,
       screenX: 10,
@@ -346,7 +345,7 @@ describe('CommandPalette', () => {
 
   it('executes command when clicking an item', () => {
     render(<CommandPalette open={true} commands={commands} onClose={onClose} />)
-    fireEvent.click(screen.getByText('Commit & Push'))
+    fireEvent.click(screen.getByText('Rename Note'))
 
     expect(commands[2].execute).toHaveBeenCalled()
     expect(onClose).toHaveBeenCalled()

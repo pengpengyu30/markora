@@ -92,51 +92,6 @@ describe('mockHandlers coverage', () => {
     })).toThrow('A note with that name already exists')
   })
 
-  it('tracks saved files, deduplicates modified-file listings, and clears them on commit', async () => {
-    const { mockHandlers } = await loadHandlers()
-
-    mockHandlers.save_note_content({
-      path: '/Users/luca/Laputa/26q1-laputa-app.md',
-      content: '# Updated project note',
-    })
-    mockHandlers.save_note_content({
-      path: '/Users/luca/Laputa/new-note.md',
-      content: '# New note',
-    })
-
-    const modifiedBeforeCommit = mockHandlers.get_modified_files()
-    const basePathCount = modifiedBeforeCommit.filter((entry) => entry.path === '/Users/luca/Laputa/26q1-laputa-app.md').length
-
-    expect(basePathCount).toBe(1)
-    expect(modifiedBeforeCommit.some((entry) => entry.path === '/Users/luca/Laputa/new-note.md')).toBe(true)
-
-    expect(mockHandlers.git_commit({ message: 'Save everything' })).toContain('6 files changed')
-    expect(mockHandlers.get_modified_files()).toEqual([])
-  })
-
-  it('searches mock content and slices pulse results to the requested limit', async () => {
-    const { mockHandlers } = await loadHandlers()
-    const projectPath = '/Users/luca/Laputa/26q1-laputa-app.md'
-
-    mockHandlers.save_note_content({
-      path: projectPath,
-      content: '# Project Plan\n\nStrategic coverage improvements',
-    })
-
-    const search = mockHandlers.search_vault({ query: 'strategic', mode: 'content' })
-    const pulse = mockHandlers.get_vault_pulse({ limit: 2 })
-
-    expect(search.query).toBe('strategic')
-    expect(search.results).toEqual([
-      expect.objectContaining({
-        path: projectPath,
-        title: 'Build Laputa App',
-      }),
-    ])
-    expect(pulse).toHaveLength(2)
-    expect(pulse[0]?.shortHash).toBe('a1b2c3d')
-  })
-
   it('applies setting defaults and keeps saved vault lists isolated from caller mutations', async () => {
     const { mockHandlers } = await loadHandlers()
 

@@ -18,10 +18,8 @@ const noop = () => {}
 
 interface ViewCommandsConfig {
   hasActiveNote: boolean
-  activeNoteModified: boolean
   onSetViewMode: (mode: ViewMode) => void
   onToggleBacklinks: () => void
-  onToggleDiff?: () => void
   onToggleRawEditor?: () => void
   noteWidth?: NoteWidthMode
   defaultNoteWidth?: NoteWidthMode
@@ -82,8 +80,8 @@ function buildToggleTableOfContentsCommand(
 
 export function buildViewCommands(config: ViewCommandsConfig): CommandAction[] {
   const {
-    hasActiveNote, activeNoteModified,
-    onSetViewMode, onToggleBacklinks, onToggleDiff, onToggleRawEditor,
+    hasActiveNote,
+    onSetViewMode, onToggleBacklinks, onToggleRawEditor,
     noteWidth = DEFAULT_NOTE_WIDTH_MODE, defaultNoteWidth = DEFAULT_NOTE_WIDTH_MODE,
     onSetNoteWidth, onSetDefaultNoteWidth, onToggleTableOfContents,
     zoomLevel, onZoomIn, onZoomOut, onZoomReset,
@@ -93,7 +91,6 @@ export function buildViewCommands(config: ViewCommandsConfig): CommandAction[] {
     { id: 'view-editor', label: 'Editor Only', group: 'View', shortcut: getAppCommandShortcutDisplay(APP_COMMAND_IDS.viewEditorOnly), keywords: ['layout', 'focus'], enabled: true, execute: () => onSetViewMode('editor-only') },
     { id: 'view-editor-list', label: 'Editor + Note List', group: 'View', shortcut: getAppCommandShortcutDisplay(APP_COMMAND_IDS.viewEditorList), keywords: ['layout'], enabled: true, execute: () => onSetViewMode('editor-list') },
     { id: 'view-all', label: 'Full Layout', group: 'View', shortcut: getAppCommandShortcutDisplay(APP_COMMAND_IDS.viewAll), keywords: ['layout', 'sidebar'], enabled: true, execute: () => onSetViewMode('all') },
-    { id: 'toggle-diff', label: 'Toggle Diff Mode', group: 'View', keywords: ['diff', 'changes', 'git', 'compare', 'version'], enabled: hasActiveNote && activeNoteModified, execute: () => onToggleDiff?.() },
     { id: 'toggle-raw-editor', label: 'Toggle Raw Editor', group: 'View', keywords: ['raw', 'source', 'markdown', 'frontmatter', 'code', 'textarea'], enabled: hasActiveNote && !!onToggleRawEditor, execute: () => onToggleRawEditor?.() },
     buildSetNoteWidthCommand('normal', noteWidth, hasActiveNote, onSetNoteWidth),
     buildSetNoteWidthCommand('wide', noteWidth, hasActiveNote, onSetNoteWidth),

@@ -109,10 +109,6 @@ fn apply_title_bar_double_click_action(
 #[serde(rename_all = "camelCase")]
 pub struct MenuStateUpdate {
     has_active_note: bool,
-    has_modified_files: Option<bool>,
-    has_conflicts: Option<bool>,
-    has_restorable_deleted_note: Option<bool>,
-    has_no_remote: Option<bool>,
     note_list_search_enabled: Option<bool>,
     editor_find_enabled: Option<bool>,
 }
@@ -124,18 +120,6 @@ pub fn update_menu_state(
     state: MenuStateUpdate,
 ) -> Result<(), String> {
     menu::set_note_items_enabled(&app_handle, state.has_active_note);
-    if let Some(v) = state.has_modified_files {
-        menu::set_git_commit_items_enabled(&app_handle, v);
-    }
-    if let Some(v) = state.has_conflicts {
-        menu::set_git_conflict_items_enabled(&app_handle, v);
-    }
-    if let Some(v) = state.has_restorable_deleted_note {
-        menu::set_restore_deleted_item_enabled(&app_handle, v);
-    }
-    if let Some(v) = state.has_no_remote {
-        menu::set_git_no_remote_items_enabled(&app_handle, v);
-    }
     if let Some(v) = state.note_list_search_enabled {
         menu::set_note_list_search_items_enabled(&app_handle, v);
     }

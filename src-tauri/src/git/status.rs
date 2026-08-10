@@ -397,13 +397,29 @@ pub fn discard_file_changes(vault_path: &str, relative_path: &str) -> Result<(),
 mod tests {
     use super::*;
     use crate::git::git_command;
-    use crate::git::git_commit;
     use crate::git::tests::setup_git_repo;
     use std::fs;
 
     fn write_and_commit_markdown(vault: &Path, vp: &str, relative_path: &str, content: &str) {
         fs::write(vault.join(relative_path), content).unwrap();
-        git_commit(vp, "initial").unwrap();
+        commit_for_test(vault, vp, "initial");
+    }
+
+    fn commit_for_test(vault: &Path, vp: &str, message: &str) -> String {
+        let add = git_command()
+            .args(["add", "-A"])
+            .current_dir(vault)
+            .output()
+            .unwrap();
+        assert!(add.status.success(), "git add failed: {:?}", add);
+
+        let commit = git_command()
+            .args(["commit", "--no-verify", "-m", message])
+            .current_dir(vp)
+            .output()
+            .unwrap();
+        assert!(commit.status.success(), "git commit failed: {:?}", commit);
+        String::from_utf8_lossy(&commit.stdout).to_string()
     }
 
     fn force_quoted_git_paths(vault: &Path) {
@@ -617,7 +633,7 @@ mod tests {
 
         // Create and commit initial file
         fs::write(vault.join("flow.md"), "# Original\n").unwrap();
-        git_commit(vp, "initial").unwrap();
+        commit_for_test(vault, vp, "initial");
 
         // Modify the file on disk
         fs::write(vault.join("flow.md"), "# Modified\n").unwrap();
@@ -630,7 +646,7 @@ mod tests {
         );
 
         // Commit the change
-        let result = git_commit(vp, "update flow").unwrap();
+        let result = commit_for_test(vault, vp, "update flow");
         assert!(
             result.contains("1 file changed") || result.contains("flow.md"),
             "Commit output should reference the changed file: {}",

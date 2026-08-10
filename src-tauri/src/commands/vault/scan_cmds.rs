@@ -34,10 +34,6 @@ fn collect_registered_vault_roots(vault_list: &vault_list::VaultList) -> Vec<Pat
         push_unique_vault_root_path(&mut roots, default_path);
     }
 
-    if let Some(dev_demo_path) = local_dev_demo_vault_path() {
-        push_unique_vault_root_path(&mut roots, dev_demo_path);
-    }
-
     roots
 }
 
@@ -46,17 +42,6 @@ fn push_unique_vault_root_path(paths: &mut Vec<PathBuf>, path: PathBuf) {
         return;
     }
     paths.push(path);
-}
-
-#[cfg(all(debug_assertions, not(test)))]
-fn local_dev_demo_vault_path() -> Option<PathBuf> {
-    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    manifest_dir.parent().map(|root| root.join("demo-vault-v2"))
-}
-
-#[cfg(not(all(debug_assertions, not(test))))]
-fn local_dev_demo_vault_path() -> Option<PathBuf> {
-    None
 }
 
 fn find_registered_vault_root(path: &Path, registered_roots: &[PathBuf]) -> Option<PathBuf> {

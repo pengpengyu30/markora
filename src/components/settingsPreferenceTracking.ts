@@ -3,9 +3,7 @@ import { trackEvent } from '../lib/telemetry'
 import {
   trackDateDisplayFormatChanged,
   trackDefaultNoteWidthChanged,
-  trackGitFeaturesEnabledChanged,
 } from '../lib/productAnalytics'
-import { areGitFeaturesEnabled } from '../lib/gitSettings'
 import { areAutomaticUpdateChecksEnabled } from '../lib/automaticUpdateChecks'
 import {
   DEFAULT_DATE_DISPLAY_FORMAT,
@@ -19,7 +17,6 @@ export interface SettingsPreferenceDraft {
   automaticUpdateChecksEnabled: boolean
   dateDisplayFormat: DateDisplayFormat
   defaultNoteWidth: NoteWidthMode
-  gitFeaturesEnabled: boolean
   multiWorkspaceEnabled: boolean
 }
 
@@ -51,7 +48,6 @@ export function trackTelemetryConsentChange(previousAnalytics: boolean, nextAnal
 }
 
 export function trackSettingsPreferenceChanges(settings: Settings, draft: SettingsPreferenceDraft): void {
-  trackPreferenceChange(areGitFeaturesEnabled(settings), draft.gitFeaturesEnabled, trackGitFeaturesEnabledChanged)
   trackEnabledPreferenceChange(
     areAutomaticUpdateChecksEnabled(settings),
     draft.automaticUpdateChecksEnabled,

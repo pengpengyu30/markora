@@ -249,13 +249,13 @@ mod tests {
     }
 
     #[test]
-    fn test_repair_vault_only_ensures_gitignore() {
+    fn test_repair_vault_preserves_an_empty_vault() {
         let dir = tempfile::TempDir::new().unwrap();
         let vault_path = dir.path();
 
         let result = repair_vault(vault_path.to_str().unwrap().to_string());
         assert!(result.is_ok());
-        assert_paths_exist(vault_path, &[".gitignore"]);
+        assert_paths_absent(vault_path, &[".gitignore", ".git"]);
         assert_paths_absent(vault_path, &["type.md", "note.md", "config.md"]);
     }
 

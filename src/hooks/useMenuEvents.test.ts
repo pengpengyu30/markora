@@ -35,7 +35,6 @@ function makeHandlers(): MenuEventHandlers {
     onDeleteNote: vi.fn(),
     onSearch: vi.fn(),
     onToggleRawEditor: vi.fn(),
-    onToggleDiff: vi.fn(),
     onPastePlainText: vi.fn(),
     onGoBack: vi.fn(),
     onGoForward: vi.fn(),
@@ -44,20 +43,12 @@ function makeHandlers(): MenuEventHandlers {
     onOpenVault: vi.fn(),
     onRemoveActiveVault: vi.fn(),
     onRestoreGettingStarted: vi.fn(),
-    onAddRemote: vi.fn(),
-    onCommitPush: vi.fn(),
-    onPull: vi.fn(),
-    onResolveConflicts: vi.fn(),
-    onViewChanges: vi.fn(),
     onReloadVault: vi.fn(),
     onRepairVault: vi.fn(),
     onOpenInNewWindow: vi.fn(),
-    onRestoreDeletedNote: vi.fn(),
     activeTabPathRef: { current: '/vault/test.md' } as React.MutableRefObject<string | null>,
     multiSelectionCommandRef: { current: null },
     activeTabPath: '/vault/test.md',
-    hasRestorableDeletedNote: false,
-    hasNoRemote: false,
   }
 }
 
@@ -165,12 +156,6 @@ describe('dispatchMenuEvent', () => {
     expect(h.onCommandPalette).toHaveBeenCalled()
   })
 
-  it('vault-add-remote triggers the add-remote flow', () => {
-    const h = makeHandlers()
-    dispatchMenuEvent('vault-add-remote', h)
-    expect(h.onAddRemote).toHaveBeenCalled()
-  })
-
   it('view-zoom-in triggers zoom in', () => {
     const h = makeHandlers()
     dispatchMenuEvent('view-zoom-in', h)
@@ -249,22 +234,10 @@ describe('dispatchMenuEvent', () => {
     expect(h.onToggleRawEditor).toHaveBeenCalled()
   })
 
-  it('edit-toggle-diff triggers toggle diff', () => {
-    const h = makeHandlers()
-    dispatchMenuEvent('edit-toggle-diff', h)
-    expect(h.onToggleDiff).toHaveBeenCalled()
-  })
-
   it('edit-paste-plain-text triggers plain-text paste', () => {
     const h = makeHandlers()
     dispatchMenuEvent('edit-paste-plain-text', h)
     expect(h.onPastePlainText).toHaveBeenCalled()
-  })
-
-  it('note-restore-deleted triggers restore deleted note', () => {
-    const h = makeHandlers()
-    dispatchMenuEvent('note-restore-deleted', h)
-    expect(h.onRestoreDeletedNote).toHaveBeenCalled()
   })
 
   it('view-toggle-backlinks triggers the backlinks panel', () => {
@@ -278,12 +251,6 @@ describe('dispatchMenuEvent', () => {
     const h = makeHandlers()
     dispatchMenuEvent('go-all-notes', h)
     expect(h.onSelectFilter).toHaveBeenCalledWith('all')
-  })
-
-  it('go-changes selects changes filter', () => {
-    const h = makeHandlers()
-    dispatchMenuEvent('go-changes', h)
-    expect(h.onSelectFilter).toHaveBeenCalledWith('changes')
   })
 
   // Vault menu events
@@ -303,30 +270,6 @@ describe('dispatchMenuEvent', () => {
     const h = makeHandlers()
     dispatchMenuEvent('vault-restore-getting-started', h)
     expect(h.onRestoreGettingStarted).toHaveBeenCalled()
-  })
-
-  it('vault-commit-push triggers commit push', () => {
-    const h = makeHandlers()
-    dispatchMenuEvent('vault-commit-push', h)
-    expect(h.onCommitPush).toHaveBeenCalled()
-  })
-
-  it('vault-pull triggers pull', () => {
-    const h = makeHandlers()
-    dispatchMenuEvent('vault-pull', h)
-    expect(h.onPull).toHaveBeenCalled()
-  })
-
-  it('vault-resolve-conflicts triggers resolve conflicts', () => {
-    const h = makeHandlers()
-    dispatchMenuEvent('vault-resolve-conflicts', h)
-    expect(h.onResolveConflicts).toHaveBeenCalled()
-  })
-
-  it('vault-view-changes triggers view changes', () => {
-    const h = makeHandlers()
-    dispatchMenuEvent('vault-view-changes', h)
-    expect(h.onViewChanges).toHaveBeenCalled()
   })
 
   it('vault-reload triggers reload vault', () => {

@@ -10,12 +10,12 @@ pub fn create_empty_vault(target_path: String) -> Result<String, String> {
     Ok(canonical_vault_path_string(vault_dir))
 }
 
-fn initialize_empty_vault(vault_dir: &Path, vault_path: &str) -> Result<(), String> {
+fn initialize_empty_vault(vault_dir: &Path, _vault_path: &str) -> Result<(), String> {
     ensure_directory_is_missing_or_empty(vault_dir)?;
     std::fs::create_dir_all(vault_dir)
         .map_err(|e| format!("Failed to create vault directory: {}", e))?;
 
-    git::init_repo(vault_path)?;
+    git::ensure_vault_repository(vault_dir)?;
     Ok(())
 }
 
@@ -76,9 +76,7 @@ pub fn get_default_vault_path() -> Result<String, String> {
 }
 
 #[tauri::command]
-pub fn repair_vault(vault_path: String) -> Result<String, String> {
-    let vault_path = expand_tilde(&vault_path);
-    git::ensure_gitignore(std::path::Path::new(vault_path.as_ref()))?;
+pub fn repair_vault(_vault_path: String) -> Result<String, String> {
     Ok("Vault repaired".to_string())
 }
 

@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ThemeMode } from '../lib/themeMode'
 import type { AppLocale } from '../lib/i18n'
-import type { GitRemoteStatus, SyncStatus } from '../types'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import type { GitRepositoryOption } from '../utils/gitRepositories'
 import { StatusBarPrimarySection, StatusBarSecondarySection } from './status-bar/StatusBarSections'
 import type { VaultOption } from './status-bar/types'
 
@@ -51,7 +49,6 @@ function useStatusBarLayout() {
 
 interface StatusBarProps {
   noteCount: number
-  modifiedCount?: number
   vaultPath: string
   defaultWorkspacePath?: string | null
   vaults: VaultOption[]
@@ -62,27 +59,9 @@ interface StatusBarProps {
   onOpenVaultSettings?: () => void
   onOpenLocalFolder?: () => void
   onCreateEmptyVault?: () => void
-  onCloneVault?: () => void
   onCloneGettingStarted?: () => void
-  onClickPending?: () => void
-  onClickPulse?: () => void
-  onCommitPush?: () => void
-  commitActionPending?: boolean
-  gitFeaturesEnabled?: boolean
-  onInitializeGit?: () => void
   isOffline?: boolean
   isVaultReloading?: boolean
-  isGitVault?: boolean
-  syncStatus?: SyncStatus
-  lastSyncTime?: number | null
-  conflictCount?: number
-  remoteStatus?: GitRemoteStatus | null
-  repositories?: GitRepositoryOption[]
-  selectedRepositoryPath?: string
-  onRepositoryChange?: (path: string) => void
-  onTriggerSync?: () => void
-  onPullAndPush?: () => void
-  onOpenConflictResolver?: () => void
   zoomLevel?: number
   themeMode?: ThemeMode
   onZoomReset?: () => void
@@ -104,13 +83,7 @@ interface StatusBarFooterProps extends StatusBarProps {
 
 function StatusBarPrimaryFromFooter(options: StatusBarFooterProps) {
   return (
-    <StatusBarPrimarySection
-      {...options}
-      modifiedCount={options.modifiedCount ?? 0}
-      syncStatus={options.syncStatus ?? 'idle'}
-      lastSyncTime={options.lastSyncTime ?? null}
-      conflictCount={options.conflictCount ?? 0}
-    />
+    <StatusBarPrimarySection {...options} />
   )
 }
 

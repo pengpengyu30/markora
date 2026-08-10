@@ -426,20 +426,6 @@ describe('Editor', () => {
     expect(screen.getByTestId('blocknote-view')).toBeInTheDocument()
   })
 
-  it('renders git diff in the breadcrumb overflow menu when file is modified', async () => {
-    render(
-      <Editor
-        {...defaultProps}
-        tabs={[mockTab]}
-        activeTabPath={mockEntry.path}
-        getNoteStatus={() => 'modified'}
-        onLoadDiff={async () => '+ added line'}
-      />
-    )
-    fireEvent.click(screen.getByRole('button', { name: 'More note actions' }))
-    expect(within(await screen.findByRole('menu')).getByRole('menuitem', { name: 'Git diff' })).toBeInTheDocument()
-  })
-
   it('renders the table of contents panel from the active note content', async () => {
     mockEditor.document = [
       { id: 'toc-heading', type: 'heading', content: [{ type: 'text', text: 'Table Heading' }], props: { level: 2 }, children: [] },

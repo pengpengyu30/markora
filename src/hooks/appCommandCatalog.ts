@@ -43,7 +43,6 @@ type SimpleHandlerKey =
   | 'onPastePlainText'
   | 'onSearch'
   | 'onToggleRawEditor'
-  | 'onToggleDiff'
   | 'onToggleBacklinks'
   | 'onToggleTableOfContents'
   | 'onExportNoteAsPdf'
@@ -56,15 +55,9 @@ type SimpleHandlerKey =
   | 'onOpenVault'
   | 'onRemoveActiveVault'
   | 'onRestoreGettingStarted'
-  | 'onAddRemote'
-  | 'onCommitPush'
-  | 'onPull'
-  | 'onResolveConflicts'
-  | 'onViewChanges'
   | 'onReloadVault'
   | 'onRepairVault'
   | 'onOpenInNewWindow'
-  | 'onRestoreDeletedNote'
 
 type ActiveTabHandlerKey =
   | 'onDeleteNote'
@@ -178,7 +171,6 @@ const MENU_LABEL_KEYS = {
   'Replace in Note': 'command.note.replaceInNote',
   'Find in Vault': 'menu.edit.findInVault',
   'Toggle Note List Search': 'menu.edit.toggleNoteListSearch',
-  'Toggle Diff Mode': 'command.view.toggleDiff',
   'Editor Only': 'command.view.editorOnly',
   'Editor + Notes': 'command.view.editorNoteList',
   'All Panels': 'menu.view.allPanels',
@@ -187,11 +179,9 @@ const MENU_LABEL_KEYS = {
   'Actual Size': 'menu.view.actualSize',
   'Command Palette': 'menu.view.commandPalette',
   'All Notes': 'menu.go.allNotes',
-  Changes: 'menu.go.changes',
   'Go Back': 'command.navigation.goBack',
   'Go Forward': 'command.navigation.goForward',
   'Delete Note': 'command.note.deleteNote',
-  'Restore Deleted Note': 'command.note.restoreDeleted',
   'Open in New Window': 'command.note.openNewWindow',
   'Export Note as PDF': 'command.note.exportPdf',
   'Toggle Raw Editor': 'command.view.toggleRaw',
@@ -200,11 +190,6 @@ const MENU_LABEL_KEYS = {
   'Open Vault…': 'command.settings.openVault',
   'Remove Vault from List': 'command.settings.removeVault',
   'Restore Getting Started': 'command.settings.restoreGettingStarted',
-  'Add Remote…': 'menu.vault.addRemote',
-  'Commit & Push': 'command.git.commitPush',
-  'Pull from Remote': 'command.git.pull',
-  'Resolve Conflicts': 'command.git.resolveConflicts',
-  'View Pending Changes': 'command.git.viewChanges',
   'Reload Vault': 'command.settings.reloadVault',
   'Repair Vault': 'command.settings.repairVault',
 } as const

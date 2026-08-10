@@ -7,11 +7,8 @@ import { QuickOpenPalette } from './components/QuickOpenPalette'
 import { CommandPalette } from './components/CommandPalette'
 import { SearchPanel } from './components/SearchPanel'
 import { Toast } from './components/Toast'
-import { CommitDialog } from './components/CommitDialog'
-import { PulseView } from './components/PulseView'
 import { StatusBar } from './components/StatusBar'
 import { SettingsPanel } from './components/SettingsPanel'
-import { CloneVaultModal } from './components/CloneVaultModal'
 import { FeedbackDialog } from './components/FeedbackDialog'
 import { NoteRetargetingDialogs } from './components/note-retargeting/NoteRetargetingDialogs'
 import { StartupShellFallback } from './components/StartupShellFallback'
@@ -22,17 +19,10 @@ import { useRecentVaultWrites, useVaultWatcher } from './hooks/useVaultWatcher'
 import { useSettings } from './hooks/useSettings'
 import { useNoteWidthMode } from './hooks/useNoteWidthMode'
 import { useNoteActions } from './hooks/useNoteActions'
-import { useCommitFlow } from './hooks/useCommitFlow'
-import { useGitRepositories } from './hooks/useGitRepositories'
 import { useAppCommands } from './hooks/useAppCommands'
-import { triggerCommitEntryAction } from './utils/commitEntryAction'
-import { generateCommitMessage } from './utils/commitMessage'
 import { useDialogs } from './hooks/useDialogs'
 import { useVaultSwitcher } from './hooks/useVaultSwitcher'
 import { useUpdater, restartApp } from './hooks/useUpdater'
-import { useAutoSync } from './hooks/useAutoSync'
-import { useConflictResolver } from './hooks/useConflictResolver'
-import { useVaultConfig } from './hooks/useVaultConfig'
 import { useOnboarding } from './hooks/useOnboarding'
 import { useGettingStartedClone } from './hooks/useGettingStartedClone'
 import { useNetworkStatus } from './hooks/useNetworkStatus'
@@ -41,29 +31,25 @@ import { useDeleteActions } from './hooks/useDeleteActions'
 import { useFolderActions } from './hooks/useFolderActions'
 import { useFileActions } from './hooks/useFileActions'
 import { useDeepLinks } from './hooks/useDeepLinks'
-import { useNoteGitUrls } from './hooks/useNoteGitUrls'
 import { useLayoutPanels } from './hooks/useLayoutPanels'
 import { useLastActiveNote } from './hooks/useLastActiveNote'
-import { useConflictFlow } from './hooks/useConflictFlow'
 import { useAppSave } from './hooks/useAppSave'
 import { useNoteRetargetingUi } from './hooks/useNoteRetargetingUi'
 import { useAppWindowControls } from './hooks/useAppWindowControls'
-import { ConflictResolverModal } from './components/ConflictResolverModal'
 import { ConfirmDeleteDialog } from './components/ConfirmDeleteDialog'
+import { RestoreDeletedNoteDialog } from './components/RestoreDeletedNoteDialog'
 import { DeleteProgressNotice } from './components/DeleteProgressNotice'
 import { UpdateBanner } from './components/UpdateBanner'
 import { invoke } from '@tauri-apps/api/core'
 import { isTauri, mockInvoke } from './mock-tauri'
-import type { GitSetupPreference, SidebarSelection, VaultEntry } from './types'
+import type { SidebarSelection, VaultEntry } from './types'
 import { openNoteInNewWindow } from './utils/openNoteWindow'
 import { refreshPulledVaultState } from './utils/pulledVaultRefresh'
 import { refreshNoteWindowVaultChanges } from './utils/noteWindowVaultRefresh'
 import { isNoteWindow, getNoteWindowParams, type NoteWindowParams } from './utils/windowMode'
-import { GitSetupDialog } from './components/GitRequiredModal'
 import { RenameDetectedBanner } from './components/RenameDetectedBanner'
 import type { NoteListMultiSelectionCommands } from './components/note-list/multiSelectionCommands'
 import { areAutomaticUpdateChecksEnabled } from './lib/automaticUpdateChecks'
-import { areGitFeaturesEnabled } from './lib/gitSettings'
 import { TOLARIA_DOCS_URL } from './constants/feedback'
 import { openExternalUrl } from './utils/url'
 import {
@@ -76,25 +62,20 @@ import {
   vaultPathForEntry,
 } from './utils/workspaces'
 import { notePathsMatch } from './utils/notePathIdentity'
-import { activeGitRepositories } from './utils/gitRepositories'
 import { entrySupportsPreviewSourceToggle } from './utils/filePreview'
 import { isMarkdownEntry } from './utils/typeDefinitions'
 import type { RichEditorBlockTypeDefinition } from './utils/richEditorBlockTypes'
 import { useVisibleWorkspaceEntries, useWorkspaceGraphState } from './hooks/useWorkspaceGraphState'
-import { useGitSetupState } from './hooks/useGitSetupState'
+import { useManagedGit } from './hooks/useManagedGit'
 import { AppPreferencesProvider, useAppPreferences } from './hooks/useAppPreferences'
 import { syncVaultAssetScope, useNoteWindowLifecycle } from './hooks/useNoteWindowLifecycle'
 import { useVaultRenameDetection } from './hooks/useVaultRenameDetection'
 import { useVaultOpenedTelemetry } from './hooks/useVaultOpenedTelemetry'
 import { useStartupScreenState } from './hooks/useStartupScreenState'
 import { useStartupStateMilestones } from './hooks/useStartupStateMilestones'
-import { useGitFileWorkflows } from './hooks/useGitFileWorkflows'
-import { useAutoGitWork } from './hooks/useAutoGitWork'
 import { shouldReplaceSyncedTabEntry } from './utils/tabEntrySync'
 import {
-  activeVaultModifiedFiles,
   isActiveElementInsideEditorSurface,
-  mergeModifiedFiles,
   runNativeTextHistoryCommand,
   shouldPreferOnboardingVaultPath,
 } from './utils/appOrchestration'
@@ -127,7 +108,6 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
   const visibleNotesRef = useRef<VaultEntry[]>([])
   const multiSelectionCommandRef = useRef<NoteListMultiSelectionCommands | null>(null)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
-  const [gitHistoryRefreshKey, setGitHistoryRefreshKey] = useState(0)
   const dialogs = useDialogs()
   const [showFeedback, setShowFeedback] = useState(false)
   const openFeedback = useCallback(() => setShowFeedback(true), [])
@@ -200,7 +180,6 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
   const [settingsInitialSectionId, setSettingsInitialSectionId] = useState<string | null>(null)
   const {
     folderVaults,
-    graphDefaultWorkspacePath,
     graphVaults,
     multiWorkspaceEnabled,
     visibleWorkspacePathList,
@@ -212,48 +191,16 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
     settings,
     windowMode: Boolean(noteWindowParams),
   })
-  const { config: vaultConfig, updateConfig } = useVaultConfig(resolvedPath)
-  const gitFeaturesEnabled = areGitFeaturesEnabled(settings)
-  const automaticGitEnabled = gitFeaturesEnabled && !noteWindowParams
-  const handleGitSetupPreferenceChange = useCallback((preference: GitSetupPreference) => {
-    updateConfig('git_setup_preference', preference)
-  }, [updateConfig])
-  const {
-    dismissGitSetupDialog,
-    gitRepoState,
-    handleInitGitRepo,
-    neverForVaultGitSetupDialog,
-    openGitSetupDialog,
-    shouldShowGitSetupDialog,
-  } = useGitSetupState({
-    gitSetupPreference: vaultConfig.git_setup_preference,
-    onGitSetupPreferenceChange: handleGitSetupPreferenceChange,
-    onToast: setToastMessage,
-    resolvedPath,
-    windowMode: Boolean(noteWindowParams),
-  })
+  const managedGit = useManagedGit(resolvedPath, vaultSwitcher.loaded && !noteWindowParams)
+  const automaticGitEnabled = !noteWindowParams && managedGit.mode === 'managed'
 
   const vault = useVaultLoader(
     vaultSwitcher.loaded ? resolvedPath : '',
     graphVaults,
     multiWorkspaceEnabled ? defaultWorkspacePath : null,
     folderVaults,
-    { loadModifiedFiles: automaticGitEnabled },
+    { loadModifiedFiles: !noteWindowParams },
   )
-  const gitRepositories = useMemo(() => activeGitRepositories({
-    defaultVaultPath: graphDefaultWorkspacePath,
-    multiWorkspaceEnabled,
-    vaults: allVaults,
-  }), [allVaults, graphDefaultWorkspacePath, multiWorkspaceEnabled])
-  const activeGitRepositoryPaths = useMemo(
-    () => gitRepositories.map((repository) => repository.path),
-    [gitRepositories],
-  )
-  const gitSurfaces = useGitRepositories({
-    defaultVaultPath: graphDefaultWorkspacePath,
-    enabled: automaticGitEnabled,
-    repositories: gitRepositories,
-  })
   const watchedVaultPaths = useMemo(() => {
     if (visibleWorkspacePathList && visibleWorkspacePathList.length > 0) return visibleWorkspacePathList
     return resolvedPath.trim() ? [resolvedPath] : []
@@ -272,7 +219,6 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
     vaultPaths: watchedVaultPaths,
   })
   const effectiveSelection = selection
-  const isChangesSelection = effectiveSelection.kind === 'filter' && effectiveSelection.filter === 'changes'
 
   const {
     allNotesFileVisibility,
@@ -297,34 +243,20 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
   })
   useVaultOpenedTelemetry({
     entryCount: vault.entries.length,
-    gitRepoState,
+    gitMode: managedGit.mode,
     resolvedPath,
   })
   const loadDefaultVaultModifiedFiles = vault.loadModifiedFiles
-  const loadAllGitModifiedFiles = gitSurfaces.loadAllModifiedFiles
-  const loadModifiedFilesForRepository = gitSurfaces.loadModifiedFilesForRepository
-  const refreshAllGitRemoteStatuses = gitSurfaces.refreshAllRemoteStatuses
-  const refreshRemoteStatusForRepository = gitSurfaces.refreshRemoteStatusForRepository
-  const refreshGitRemoteStatus = useCallback(
-    () => refreshRemoteStatusForRepository(resolvedPath),
-    [refreshRemoteStatusForRepository, resolvedPath],
-  )
   const refreshGitModifiedFiles = useCallback(async () => {
-    if (!automaticGitEnabled) return
-    await Promise.all([
-      loadDefaultVaultModifiedFiles(),
-      loadAllGitModifiedFiles({ includeStats: isChangesSelection }),
-    ])
-  }, [automaticGitEnabled, isChangesSelection, loadAllGitModifiedFiles, loadDefaultVaultModifiedFiles])
-  const loadVaultModifiedFiles = refreshGitModifiedFiles
+    if (noteWindowParams) return
+    await loadDefaultVaultModifiedFiles()
+  }, [loadDefaultVaultModifiedFiles, noteWindowParams])
+  const reloadVault = vault.reloadVault
 
-  useEffect(() => {
-    if (!automaticGitEnabled) return
-    if (gitRepoState !== 'ready') return
-    void loadVaultModifiedFiles()
-    void refreshGitRemoteStatus()
-    void refreshAllGitRemoteStatuses()
-  }, [automaticGitEnabled, gitRepoState, loadVaultModifiedFiles, refreshAllGitRemoteStatuses, refreshGitRemoteStatus])
+  const handleDeletedNoteRestored = useCallback(async () => {
+    await reloadVault()
+    await refreshGitModifiedFiles()
+  }, [refreshGitModifiedFiles, reloadVault])
 
   const handleOpenSettings = useCallback(() => {
     setSettingsInitialSectionId(null)
@@ -346,17 +278,6 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
     vaultPath: resolvedPath,
   })
 
-  const conflictResolver = useConflictResolver({
-    vaultPath: resolvedPath,
-    onResolved: () => {
-      dialogs.closeConflictResolver()
-      autoSync.resumePull()
-      vault.reloadVault()
-      autoSync.triggerSync()
-    },
-    onToast: (msg) => setToastMessage(msg),
-    onOpenFile: (relativePath) => conflictFlow.openConflictFileRef.current(relativePath),
-  })
   const flushPendingEditorContentRef = useRef<((path: string) => void) | null>(null)
   const flushPendingRawContentRef = useRef<((path: string) => void) | null>(null)
   const appSaveFlushBeforeActionRef = useRef<((path: string) => Promise<unknown>) | null>(null)
@@ -486,12 +407,6 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
       vault.reloadVault,
       vault.unsavedPaths,
     ])
-  const handlePulledVaultUpdate = useCallback(async (updatedFiles: string[], vaultPath: string) => {
-    await handleVaultUpdate(updatedFiles, { vaultPath })
-  }, [handleVaultUpdate])
-  const refreshGitHistorySurfaces = useCallback(() => {
-    setGitHistoryRefreshKey((key) => key + 1)
-  }, [])
   const handleFocusedVaultUpdate = useCallback(async (updatedFiles: string[]) => {
     if (!noteWindowParams) {
       await handleVaultUpdate(updatedFiles)
@@ -556,19 +471,6 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
     onVaultChanged: handleFocusedVaultUpdate,
     filterChangedPaths: filterExternalVaultPaths,
   })
-  const autoSync = useAutoSync({
-    enabled: automaticGitEnabled && gitRepoState === 'ready',
-    vaultPath: gitSurfaces.syncRepositoryPath,
-    vaultPaths: activeGitRepositoryPaths,
-    intervalMinutes: settings.auto_pull_interval_minutes,
-    onVaultUpdated: handlePulledVaultUpdate,
-    onSyncUpdated: refreshGitHistorySurfaces,
-    onConflict: (files) => {
-      const names = files.map((f) => f.split('/').pop()).join(', ')
-      setToastMessage(`Conflict in ${names} — click to resolve`)
-    },
-    onToast: (msg) => setToastMessage(msg),
-  })
   // Keep note entry in sync with vault entries so banners (trash/archive)
   // and read-only state react immediately without reopening the note.
   useEffect(() => {
@@ -586,24 +488,10 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
     })
   }, [visibleEntries, notes.setTabs]) // eslint-disable-line react-hooks/exhaustive-deps -- notes.setTabs is stable (useState setter)
 
-  const { handleGoBack, handleGoForward, canGoBack, canGoForward, entriesByPath } = useAppNavigation({
+  const { handleGoBack, handleGoForward, canGoBack, canGoForward } = useAppNavigation({
     entries: visibleEntries,
     activeTabPath: notes.activeTabPath,
     onSelectNote: notes.handleSelectNote,
-  })
-
-  const conflictFlow = useConflictFlow({
-    resolvedPath: autoSync.conflictVaultPath ?? graphDefaultWorkspacePath,
-    entries: visibleEntries,
-    conflictFiles: autoSync.conflictFiles,
-    pausePull: autoSync.pausePull, resumePull: autoSync.resumePull,
-    triggerSync: autoSync.triggerSync, reloadVault: vault.reloadVault,
-    initConflictFiles: conflictResolver.initFiles,
-    openConflictResolver: dialogs.openConflictResolver,
-    closeConflictResolver: dialogs.closeConflictResolver,
-    onSelectNote: notes.handleSelectNote,
-    activeTabPath: notes.activeTabPath,
-    setToastMessage,
   })
 
   const appSave = useAppSave({
@@ -671,122 +559,30 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
     openNoteInNewWindow(entry.path, vaultPathForEntry(entry, resolvedPath), entry.title)
   }, [resolvedPath])
 
-  const allGitModifiedFiles = useMemo(
-    () => mergeModifiedFiles(
-      gitSurfaces.allModifiedFiles,
-      activeVaultModifiedFiles(vault.modifiedFiles, resolvedPath),
-    ),
-    [gitSurfaces.allModifiedFiles, resolvedPath, vault.modifiedFiles],
-  )
-  const selectedChangesModifiedFiles = gitSurfaces.changesModifiedFiles
-  const commitModifiedFiles = gitSurfaces.commitModifiedFiles
-  const changesRepositoryPath = gitSurfaces.changesRepositoryPath
-  const gitModifiedCount = gitFeaturesEnabled ? allGitModifiedFiles.length : 0
-
-  const {
-    activeDeletedFile,
-    activeNoteModified,
-    handleDiscardFile,
-    handleOpenDeletedNote,
-    handlePendingDiffHandled,
-    handlePulseOpenNote,
-    handleReplaceActiveTabWithQueuedDiff,
-    loadDiffAtCommitForPath,
-    loadDiffForPath,
-    pendingDiffRequest,
-  } = useGitFileWorkflows({
-    activeTabPath: notes.activeTabPath,
-    allGitModifiedFiles,
-    changesRepositoryPath,
-    effectiveSelection,
-    entriesByPath,
-    historyRepositoryPath: gitSurfaces.historyRepositoryPath,
-    loadModifiedFilesForRepository,
-    onCloseAllTabs: notes.closeAllTabs,
-    onOpenTabWithContent: notes.openTabWithContent,
-    onReplaceActiveTab: notes.handleReplaceActiveTab,
-    onSelectNote: notes.handleSelectNote,
-    reloadVault: vault.reloadVault,
-    resolvedPath,
-    selectedChangesModifiedFiles,
-    setToastMessage,
-    tabs: notes.tabs,
-    vaultEntries: vault.entries,
-    visibleEntries,
-  })
-
-  const commitFlow = useCommitFlow({
-    savePending: appSave.savePending,
-    loadModifiedFiles: refreshGitModifiedFiles,
-    loadModifiedFilesForVaultPath: loadModifiedFilesForRepository,
-    resolveRemoteStatusForVaultPath: refreshRemoteStatusForRepository,
-    setToastMessage,
-    onPushRejected: autoSync.handlePushRejected,
-    automaticVaultPaths: automaticGitEnabled ? activeGitRepositoryPaths : [],
-    locale: appLocale,
-    manualVaultPath: gitSurfaces.commitRepositoryPath,
-    vaultPath: resolvedPath,
-  })
-  const suggestedCommitMessage = useMemo(() => generateCommitMessage(commitModifiedFiles), [commitModifiedFiles])
-  const isGitVault = gitFeaturesEnabled && gitRepoState !== 'missing'
-  const {
-    activitySignature: autoGitActivitySignature,
-    hasPendingWork: autoGitHasPendingWork,
-  } = useAutoGitWork({
-    activeRemoteStatus: autoSync.remoteStatus,
-    activeVaultPath: resolvedPath,
-    modifiedFiles: allGitModifiedFiles,
-    repositoryPaths: activeGitRepositoryPaths,
-    remoteStatusForRepository: gitSurfaces.remoteStatusForRepository,
-  })
   const autoGit = useAutoGit({
-    enabled: automaticGitEnabled && settings.autogit_enabled === true,
-    idleThresholdSeconds: settings.autogit_idle_threshold_seconds ?? 90,
-    inactiveThresholdSeconds: settings.autogit_inactive_threshold_seconds ?? 30,
-    isGitVault,
-    hasPendingChanges: autoGitHasPendingWork,
+    enabled: automaticGitEnabled,
+    idleThresholdSeconds: 90,
+    inactiveThresholdSeconds: 30,
+    isGitVault: automaticGitEnabled,
+    hasPendingChanges: vault.modifiedFiles.length > 0,
     hasUnsavedChanges: vault.unsavedPaths.size > 0,
-    onCheckpoint: () => commitFlow.runAutomaticCheckpoint(),
+    onCheckpoint: async () => {
+      try {
+        await appSave.savePending()
+        const command = isTauri() ? invoke : mockInvoke
+        await command('git_snapshot', { vaultPath: resolvedPath })
+        await refreshGitModifiedFiles()
+        return true
+      } catch (error) {
+        console.warn('[git] Automatic snapshot failed:', error)
+        return false
+      }
+    },
   })
   const recordAutoGitActivity = autoGit.recordActivity
-  const openCommitDialog = commitFlow.openCommitDialog
-  const runAutomaticCheckpoint = commitFlow.runAutomaticCheckpoint
   const handleAppContentChange = appSave.handleContentChange
   const handleAppSave = appSave.handleSave
   const loadModifiedFiles = refreshGitModifiedFiles
-  const triggerSync = autoSync.triggerSync
-  const pullAndPush = autoSync.pullAndPush
-
-  useEffect(() => {
-    if (!gitFeaturesEnabled) return
-    if (!isChangesSelection) return
-    void loadModifiedFilesForRepository(changesRepositoryPath, { includeStats: true })
-  }, [changesRepositoryPath, gitFeaturesEnabled, isChangesSelection, loadModifiedFilesForRepository])
-
-  useEffect(() => {
-    if (autoGitActivitySignature.length === 0) return
-    recordAutoGitActivity()
-  }, [autoGitActivitySignature, recordAutoGitActivity])
-
-  const handleCommitPush = useCallback(() => {
-    if (!gitFeaturesEnabled) return
-    triggerCommitEntryAction({
-      autoGitEnabled: settings.autogit_enabled === true,
-      openCommitDialog,
-      runAutomaticCheckpoint,
-    })
-  }, [gitFeaturesEnabled, openCommitDialog, runAutomaticCheckpoint, settings.autogit_enabled])
-  const handlePullRepository = useCallback((targetVaultPath: string) => {
-    if (!gitFeaturesEnabled) return
-    triggerSync(targetVaultPath)
-  }, [gitFeaturesEnabled, triggerSync])
-  const handlePullSelectedRepository = useCallback(() => {
-    if (!gitFeaturesEnabled) return
-    triggerSync()
-  }, [gitFeaturesEnabled, triggerSync])
-  const handlePullAndPushSelectedRepository = useCallback(() => {
-    pullAndPush()
-  }, [pullAndPush])
 
   const handleTrackedContentChange = useCallback((path: string, content: string) => {
     recordAutoGitActivity()
@@ -802,21 +598,15 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
     const activeTab = notes.activeTabPath
       ? notes.tabs.find((tab) => tab.entry.path === notes.activeTabPath)
       : null
-    if (activeTab) {
-      await loadModifiedFilesForRepository(vaultPathForEntry(activeTab.entry, resolvedPath), {
-        includeStats: isChangesSelection,
-      })
-    }
+    if (activeTab) await refreshGitModifiedFiles()
     recordAutoGitActivity()
     return result
   }, [
     handleAppSave,
-    isChangesSelection,
-    loadModifiedFilesForRepository,
     notes.activeTabPath,
     notes.tabs,
     recordAutoGitActivity,
-    resolvedPath,
+    refreshGitModifiedFiles,
   ])
 
   const seedAutoGitSavedChange = useCallback(async () => {
@@ -877,7 +667,6 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
   const {
     backlinksToggleRef,
     buildNumber,
-    diffToggleRef,
     findInNoteRef,
     handleCollapseSidebar,
     handleSetViewMode,
@@ -940,7 +729,7 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
   }, [notes.activeTabPath, notes.tabs, vault.entries])
   const noteRetargetingUi = useNoteRetargetingUi({
     activeEntry: activeCommandEntry,
-    activeNoteBlocked: !!activeDeletedFile,
+    activeNoteBlocked: false,
     entries: visibleEntries,
     folders: vault.folders,
     setToastMessage,
@@ -950,8 +739,6 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
 
   const canToggleRichEditor = !!activeCommandEntry
     && entrySupportsPreviewSourceToggle(activeCommandEntry)
-    && !activeDeletedFile
-  const toggleDiffCommand = useCallback(() => diffToggleRef.current(), [diffToggleRef])
   const toggleRawEditorCommand = useMemo(
     () => canToggleRichEditor ? () => rawToggleRef.current() : undefined,
     [canToggleRichEditor, rawToggleRef],
@@ -985,10 +772,6 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
   const moveNoteToFolderCommand = useMemo(
     () => noteRetargetingUi.canMoveActiveNoteToFolder ? noteRetargetingUi.openMoveNoteToFolderDialog : undefined,
     [noteRetargetingUi.canMoveActiveNoteToFolder, noteRetargetingUi.openMoveNoteToFolderDialog],
-  )
-  const restoreDeletedNoteCommand = useMemo(
-    () => activeDeletedFile ? () => { void handleDiscardFile(activeDeletedFile.relativePath) } : undefined,
-    [activeDeletedFile, handleDiscardFile],
   )
   const reloadVaultForCommand = vault.reloadVault
   const handleManualVaultReload = useCallback(async () => {
@@ -1074,12 +857,6 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
     vaults: vaultSwitcher.allVaults,
   })
   const activeEditorVaultPath = activeTab ? vaultPathForEntry(activeTab.entry, resolvedPath) : resolvedPath
-  const noteGitUrls = useNoteGitUrls({
-    currentVaultPath: resolvedPath,
-    locale: appLocale,
-    remoteStatusForRepository: gitSurfaces.remoteStatusForRepository,
-    setToastMessage,
-  })
   const undoCommand = useCallback(() => {
     if (runNativeTextHistoryCommand('undo')) return
     void notes.handleUndo()
@@ -1094,14 +871,12 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
     entries: visibleEntries,
     visibleNotesRef,
     multiSelectionCommandRef,
-    modifiedCount: gitModifiedCount,
-    activeNoteModified,
     selection: effectiveSelection,
     onQuickOpen: dialogs.openQuickOpen, onCommandPalette: dialogs.openCommandPalette,
     onSearch: dialogs.openSearch,
     onFindInNote: findInNoteCommand,
-    onReplaceInNote: activeDeletedFile ? undefined : replaceInNoteCommand,
-    onTurnCurrentBlockInto: activeDeletedFile ? undefined : turnCurrentBlockIntoCommand,
+    onReplaceInNote: replaceInNoteCommand,
+    onTurnCurrentBlockInto: turnCurrentBlockIntoCommand,
     onPastePlainText: pastePlainTextCommand,
     onCreateNote: notes.handleCreateNoteImmediate,
     onSave: appSave.handleSave,
@@ -1114,20 +889,11 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
     onOpenSettings: handleOpenSettings,
     onOpenFeedback: openFeedback,
     onDeleteNote: deleteActions.handleDeleteNote,
-    onCommitPush: handleCommitPush,
-    gitRepositories,
-    gitFeaturesEnabled,
-    isGitVault,
-    onInitializeGit: openGitSetupDialog,
-    onPull: handlePullSelectedRepository,
-    onPullRepository: handlePullRepository,
-    onResolveConflicts: conflictFlow.handleOpenConflictResolver,
     onSetViewMode: handleSetViewMode,
     onToggleBacklinks: toggleBacklinksCommand,
-    onToggleDiff: toggleDiffCommand,
     onToggleRawEditor: toggleRawEditorCommand,
     onToggleTableOfContents: toggleTableOfContentsCommand,
-    onExportNoteAsPdf: activeDeletedFile ? undefined : exportNotePdfCommand,
+    onExportNoteAsPdf: exportNotePdfCommand,
     noteWidth: activeNoteWidth,
     defaultNoteWidth,
     onSetNoteWidth: handleSetActiveNoteWidth,
@@ -1157,6 +923,7 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
     onSetThemeMode: handleSetThemeMode,
     onReloadVault: handleManualVaultReload,
     onRepairVault: handleRepairVault,
+    onRestoreDeletedNote: automaticGitEnabled ? dialogs.openRestoreDeletedNote : undefined,
     onMoveNoteToFolder: moveNoteToFolderCommand,
     canMoveNoteToFolder: noteRetargetingUi.canMoveActiveNoteToFolder,
     onOpenInNewWindow: handleOpenInNewWindow,
@@ -1164,8 +931,6 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
     onCopyActiveFilePath: fileActions.copyFilePath,
     onCopyActiveDeepLink: deepLinks.copyPathDeepLink,
     onOpenActiveFileExternal: fileActions.openExternalFile,
-    onRestoreDeletedNote: restoreDeletedNoteCommand,
-    canRestoreDeletedNote: !!activeDeletedFile,
   })
 
   if (!vault.hasCompletedInitialLoad && isVaultContentLoading) {
@@ -1190,9 +955,6 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
       />
     )
   }
-
-  const noteListModifiedFiles = isChangesSelection ? selectedChangesModifiedFiles : undefined
-  const noteListModifiedFilesError = isChangesSelection ? gitSurfaces.changesModifiedFilesError : null
 
   return (
     <AppPreferencesProvider appLocale={appLocale} dateDisplayFormat={dateDisplayFormat}>
@@ -1232,11 +994,7 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
           {noteListVisible && (
             <>
               <div className="app__note-list" style={{ width: layout.noteListWidth }}>
-                {effectiveSelection.kind === 'filter' && effectiveSelection.filter === 'pulse' ? (
-                  <PulseView vaultPath={gitSurfaces.historyRepositoryPath} onOpenNote={handlePulseOpenNote} refreshKey={gitHistoryRefreshKey} sidebarCollapsed={!sidebarVisible} onExpandSidebar={() => handleSetViewMode('all')} repositories={gitRepositories} selectedRepositoryPath={gitSurfaces.historyRepositoryPath} onRepositoryChange={gitSurfaces.setHistoryRepositoryPath} locale={appLocale} />
-                ) : (
-                  <NoteList entries={visibleEntries} selection={effectiveSelection} selectedNote={activeTab?.entry ?? null} loading={isVaultContentLoading} modifiedFiles={noteListModifiedFiles} modifiedFilesError={noteListModifiedFilesError} gitRepositories={gitRepositories} selectedGitRepositoryPath={gitSurfaces.changesRepositoryPath} onGitRepositoryChange={gitSurfaces.setChangesRepositoryPath} getNoteStatus={vault.getNoteStatus} sidebarCollapsed={!sidebarVisible} onSelectNote={notes.handleSelectNote} onReplaceActiveTab={handleReplaceActiveTabWithQueuedDiff} onCreateNote={notes.handleCreateNoteImmediate} onBulkDeletePermanently={deleteActions.handleBulkDeletePermanently} onOpenInNewWindow={handleOpenEntryInNewWindow} onRenameFilename={appSave.handleFilenameRename} onExportPdf={handleExportNotePdfFromList} onRevealFile={fileActions.revealFile} onCopyFilePath={fileActions.copyFilePath} canCopyGitUrl={noteGitUrls.canCopyEntryGitUrl} onCopyGitUrl={noteGitUrls.copyEntryGitUrl} onDiscardFile={handleDiscardFile} onOpenDeletedNote={handleOpenDeletedNote} visibleNotesRef={visibleNotesRef} allNotesFileVisibility={allNotesFileVisibility} multiSelectionCommandRef={multiSelectionCommandRef} locale={appLocale} />
-                )}
+                <NoteList entries={visibleEntries} selection={effectiveSelection} selectedNote={activeTab?.entry ?? null} loading={isVaultContentLoading} modifiedFiles={vault.modifiedFiles} getNoteStatus={vault.getNoteStatus} sidebarCollapsed={!sidebarVisible} onSelectNote={notes.handleSelectNote} onReplaceActiveTab={notes.handleReplaceActiveTab} onCreateNote={notes.handleCreateNoteImmediate} onBulkDeletePermanently={deleteActions.handleBulkDeletePermanently} onOpenInNewWindow={handleOpenEntryInNewWindow} onRenameFilename={appSave.handleFilenameRename} onExportPdf={handleExportNotePdfFromList} onRevealFile={fileActions.revealFile} onCopyFilePath={fileActions.copyFilePath} visibleNotesRef={visibleNotesRef} allNotesFileVisibility={allNotesFileVisibility} multiSelectionCommandRef={multiSelectionCommandRef} locale={appLocale} />
               </div>
               <ResizeHandle onResize={layout.handleNoteListResize} />
             </>
@@ -1246,13 +1004,8 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
               tabs={notes.tabs}
               activeTabPath={notes.activeTabPath}
               isVaultLoading={isVaultContentLoading}
-              entries={visibleEntries}
+              entries={vault.entries}
               onNavigateWikilink={notes.handleNavigateWikilink}
-              onLoadDiff={loadDiffForPath}
-              onLoadDiffAtCommit={loadDiffAtCommitForPath}
-              pendingCommitDiffRequest={pendingDiffRequest}
-              onPendingCommitDiffHandled={handlePendingDiffHandled}
-              getNoteStatus={vault.getNoteStatus}
               onCreateNote={notes.handleCreateNoteImmediate}
               rightPanelCollapsed={layout.rightPanelCollapsed}
               onToggleRightPanel={handleToggleRightPanel}
@@ -1263,13 +1016,12 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
               vaultPath={activeEditorVaultPath}
               onRevealFile={fileActions.revealFile}
               onCopyFilePath={fileActions.copyFilePath}
-              onCopyDeepLink={activeDeletedFile ? undefined : deepLinks.copyEntryDeepLink}
-              onCopyGitUrl={activeDeletedFile || !activeTabEntry || !noteGitUrls.canCopyEntryGitUrl(activeTabEntry) ? undefined : noteGitUrls.copyEntryGitUrl}
+              onCopyDeepLink={deepLinks.copyEntryDeepLink}
               onOpenExternalFile={fileActions.openExternalFile}
-              onDeleteNote={activeDeletedFile ? undefined : deleteActions.handleDeleteNote}
+              onDeleteNote={deleteActions.handleDeleteNote}
               onContentChange={handleTrackedContentChange}
               onSave={handleTrackedSave}
-              onRenameFilename={activeDeletedFile ? undefined : appSave.handleFilenameRename}
+              onRenameFilename={appSave.handleFilenameRename}
               noteWidth={activeNoteWidth}
               onToggleNoteWidth={handleToggleNoteWidth}
               rawToggleRef={rawToggleRef}
@@ -1278,15 +1030,11 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
               pdfExportRef={pdfExportRef}
               turnCurrentBlockIntoRef={turnCurrentBlockIntoRef}
               findInNoteRef={findInNoteRef}
-              diffToggleRef={diffToggleRef}
               canGoBack={canGoBack}
               canGoForward={canGoForward}
               onGoBack={handleGoBack}
               onGoForward={handleGoForward}
               leftPanelsCollapsed={!sidebarVisible && !noteListVisible}
-              isConflicted={conflictFlow.isConflicted}
-              onKeepMine={conflictFlow.handleKeepMine}
-              onKeepTheirs={conflictFlow.handleKeepTheirs}
               flushPendingEditorContentRef={flushPendingEditorContentRef}
               flushPendingRawContentRef={flushPendingRawContentRef}
               onToast={setToastMessage}
@@ -1296,8 +1044,7 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
         </div>
         <UpdateBanner status={updateStatus} actions={updateActions} locale={appLocale} />
         <RenameDetectedBanner renames={detectedRenames} onUpdate={handleUpdateWikilinks} onDismiss={handleDismissRenames} />
-        <StatusBar noteCount={visibleEntries.length} modifiedCount={gitModifiedCount} vaultPath={resolvedPath} defaultWorkspacePath={defaultWorkspacePath} vaults={vaultSwitcher.allVaults} multiWorkspaceEnabled={multiWorkspaceEnabled} onSwitchVault={vaultSwitcher.switchVault} onSetDefaultWorkspace={vaultSwitcher.setDefaultWorkspace} onOpenSettings={handleOpenSettings} onOpenVaultSettings={handleOpenVaultSettings} onOpenFeedback={openFeedback} onOpenDocs={openDocs} onOpenLocalFolder={vaultSwitcher.handleOpenLocalFolder} onCreateEmptyVault={vaultSwitcher.handleCreateEmptyVault} onCloneVault={dialogs.openCloneVault} onCloneGettingStarted={cloneGettingStartedVault} onClickPending={() => handleSetSelection({ kind: 'filter', filter: 'changes' })} onClickPulse={() => handleSetSelection({ kind: 'filter', filter: 'pulse' })} onCommitPush={handleCommitPush} commitActionPending={commitFlow.isOpeningCommitDialog} gitFeaturesEnabled={gitFeaturesEnabled} onInitializeGit={openGitSetupDialog} isOffline={networkStatus.isOffline} isGitVault={isGitVault} isVaultReloading={vault.isReloading || isVaultContentLoading} syncStatus={autoSync.syncStatus} lastSyncTime={autoSync.lastSyncTime} conflictCount={autoSync.conflictFiles.length} remoteStatus={autoSync.remoteStatus} repositories={gitRepositories} selectedRepositoryPath={gitSurfaces.syncRepositoryPath} onRepositoryChange={gitSurfaces.setSyncRepositoryPath} onTriggerSync={handlePullSelectedRepository} onPullAndPush={handlePullAndPushSelectedRepository} onOpenConflictResolver={conflictFlow.handleOpenConflictResolver} zoomLevel={zoom.zoomLevel} themeMode={documentThemeMode} onZoomReset={zoom.zoomReset} onToggleThemeMode={settingsLoaded ? handleToggleThemeMode : undefined} buildNumber={buildNumber} onCheckForUpdates={handleCheckForUpdates} onRemoveVault={vaultSwitcher.removeVault} onReorderVaults={vaultSwitcher.reorderVaults} onUpdateWorkspaceIdentity={vaultSwitcher.updateWorkspaceIdentity} locale={appLocale} />
-        <GitSetupDialog open={gitFeaturesEnabled && shouldShowGitSetupDialog} onInitGit={handleInitGitRepo} onDismiss={dismissGitSetupDialog} onNeverForVault={neverForVaultGitSetupDialog} />
+        <StatusBar noteCount={visibleEntries.length} vaultPath={resolvedPath} defaultWorkspacePath={defaultWorkspacePath} vaults={vaultSwitcher.allVaults} multiWorkspaceEnabled={multiWorkspaceEnabled} onSwitchVault={vaultSwitcher.switchVault} onSetDefaultWorkspace={vaultSwitcher.setDefaultWorkspace} onOpenSettings={handleOpenSettings} onOpenVaultSettings={handleOpenVaultSettings} onOpenFeedback={openFeedback} onOpenDocs={openDocs} onOpenLocalFolder={vaultSwitcher.handleOpenLocalFolder} onCreateEmptyVault={vaultSwitcher.handleCreateEmptyVault} onCloneGettingStarted={cloneGettingStartedVault} isOffline={networkStatus.isOffline} isVaultReloading={vault.isReloading || isVaultContentLoading} zoomLevel={zoom.zoomLevel} themeMode={documentThemeMode} onZoomReset={zoom.zoomReset} onToggleThemeMode={settingsLoaded ? handleToggleThemeMode : undefined} buildNumber={buildNumber} onCheckForUpdates={handleCheckForUpdates} onRemoveVault={vaultSwitcher.removeVault} onReorderVaults={vaultSwitcher.reorderVaults} onUpdateWorkspaceIdentity={vaultSwitcher.updateWorkspaceIdentity} locale={appLocale} />
         <DeleteProgressNotice count={deleteActions.pendingDeleteCount} />
         <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />
         <QuickOpenPalette open={dialogs.showQuickOpen} entries={visibleEntries} isLoading={vault.isLoading} onSelect={notes.handleSelectNote} onCreateNote={(title) => notes.handleCreateNote(title, 'quick_open')} onClose={dialogs.closeQuickOpen} locale={appLocale} />
@@ -1307,6 +1054,15 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
           locale={appLocale}
           onClose={dialogs.closeCommandPalette}
         />
+        <RestoreDeletedNoteDialog
+          open={dialogs.showRestoreDeletedNote}
+          managed={automaticGitEnabled}
+          vaultPath={resolvedPath}
+          locale={appLocale}
+          onClose={dialogs.closeRestoreDeletedNote}
+          onRestored={handleDeletedNoteRestored}
+          onToast={setToastMessage}
+        />
         <SearchPanel open={dialogs.showSearch} vaultPath={resolvedPath} entries={visibleEntries} onSelectNote={notes.handleSelectNote} onClose={dialogs.closeSearch} />
         <NoteRetargetingDialogs
           dialogState={noteRetargetingUi.dialogState}
@@ -1315,33 +1071,8 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
           onClose={noteRetargetingUi.closeDialog}
           onSelectFolder={noteRetargetingUi.selectFolder}
         />
-        <CommitDialog
-          open={commitFlow.showCommitDialog}
-          modifiedCount={commitModifiedFiles.length}
-          commitMode={commitFlow.commitMode}
-          authorIdentity={commitFlow.authorIdentity}
-          locale={appLocale}
-          repositories={gitRepositories}
-          selectedRepositoryPath={gitSurfaces.commitRepositoryPath}
-          suggestedMessage={suggestedCommitMessage}
-          onRepositoryChange={gitSurfaces.setCommitRepositoryPath}
-          onCommit={commitFlow.handleCommitPush}
-          onClose={commitFlow.closeCommitDialog}
-        />
-        <ConflictResolverModal
-          open={dialogs.showConflictResolver}
-          fileStates={conflictResolver.fileStates}
-          allResolved={conflictResolver.allResolved}
-          committing={conflictResolver.committing}
-          error={conflictResolver.error}
-          onResolveFile={conflictResolver.resolveFile}
-          onOpenInEditor={conflictResolver.openInEditor}
-          onCommit={conflictResolver.commitResolution}
-          onClose={conflictFlow.handleCloseConflictResolver}
-        />
-        <SettingsPanel open={dialogs.showSettings} initialSectionId={settingsInitialSectionId} settings={settings} locale={appLocale} systemLocale={systemLocale} vaults={vaultSwitcher.allVaults} defaultWorkspacePath={vaultSwitcher.defaultWorkspacePath} onSetDefaultWorkspace={vaultSwitcher.setDefaultWorkspace} onRemoveVault={vaultSwitcher.removeVault} onReorderVaults={vaultSwitcher.reorderVaults} onUpdateWorkspaceIdentity={vaultSwitcher.updateWorkspaceIdentity} isGitVault={gitRepoState !== 'missing'} vaultPath={resolvedPath} onSave={saveSettings} onClose={dialogs.closeSettings} />
+        <SettingsPanel open={dialogs.showSettings} initialSectionId={settingsInitialSectionId} settings={settings} locale={appLocale} systemLocale={systemLocale} vaults={vaultSwitcher.allVaults} defaultWorkspacePath={vaultSwitcher.defaultWorkspacePath} onSetDefaultWorkspace={vaultSwitcher.setDefaultWorkspace} onRemoveVault={vaultSwitcher.removeVault} onReorderVaults={vaultSwitcher.reorderVaults} onUpdateWorkspaceIdentity={vaultSwitcher.updateWorkspaceIdentity} onSave={saveSettings} onClose={dialogs.closeSettings} />
         <FeedbackDialog open={showFeedback} onClose={closeFeedback} locale={appLocale} />
-        <CloneVaultModal key={dialogs.showCloneVault ? 'clone-open' : 'clone-closed'} open={dialogs.showCloneVault} onClose={dialogs.closeCloneVault} onVaultCloned={vaultSwitcher.handleVaultCloned} />
         {deleteActions.confirmDelete && (
           <ConfirmDeleteDialog
             open={true}

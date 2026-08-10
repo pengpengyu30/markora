@@ -9,6 +9,7 @@ export const APP_STORAGE_KEYS = {
   rightPanelCollapsed: 'tolaria:right-panel-collapsed',
   lastActiveNotePath: 'tolaria:last-active-note-path',
   layoutPanels: 'tolaria:layout-panels',
+  vaultConfig: 'tolaria:vault-config',
   welcomeDismissed: 'tolaria_welcome_dismissed',
 } as const
 

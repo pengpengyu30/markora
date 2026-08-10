@@ -5,7 +5,6 @@ import {
   ClipboardText,
   FilePdf,
   FolderOpen,
-  GitBranch,
   PencilSimple,
   Trash,
   type Icon,
@@ -42,8 +41,6 @@ interface NoteListContextMenuNodeProps {
   onExportPdf?: (entry: VaultEntry) => void
   onRevealFile?: (path: string) => void
   onCopyFilePath?: (path: string) => void
-  canCopyGitUrl?: (entry: VaultEntry) => boolean
-  onCopyGitUrl?: (entry: VaultEntry) => void
   onClose: () => void
 }
 
@@ -56,8 +53,6 @@ type BuildContextMenuItemsParams = Pick<
   | 'onExportPdf'
   | 'onRevealFile'
   | 'onCopyFilePath'
-  | 'canCopyGitUrl'
-  | 'onCopyGitUrl'
 >
 
 function openWindowItem(
@@ -117,21 +112,6 @@ function copyFilePathItem(
   }]
 }
 
-function copyGitUrlItem(
-  entry: VaultEntry,
-  locale: AppLocale,
-  canCopyGitUrl: ((entry: VaultEntry) => boolean) | undefined,
-  onCopyGitUrl: ((entry: VaultEntry) => void) | undefined,
-  selectAction: SelectContextAction,
-) {
-  if (!onCopyGitUrl || !canCopyGitUrl?.(entry)) return []
-  return [{
-    icon: GitBranch,
-    label: translate(locale, 'editor.toolbar.copyNoteGitUrl'),
-    onSelect: () => { selectAction('copy_git_url', () => { onCopyGitUrl(entry); }); },
-  }]
-}
-
 function exportPdfItem(
   entry: VaultEntry,
   locale: AppLocale,
@@ -173,7 +153,6 @@ function buildContextMenuItems(
     ...renameItem(entry, props.locale, props.onRequestRename, selectAction),
     ...revealFileItem(entry, props.locale, props.onRevealFile, selectAction),
     ...copyFilePathItem(entry, props.locale, props.onCopyFilePath, selectAction),
-    ...copyGitUrlItem(entry, props.locale, props.canCopyGitUrl, props.onCopyGitUrl, selectAction),
     ...exportPdfItem(entry, props.locale, props.onExportPdf, selectAction),
     ...deleteItem(entry, props.locale, props.onDeletePaths, selectAction),
   ]
@@ -206,8 +185,6 @@ export function NoteListContextMenuNode(props: NoteListContextMenuNodeProps) {
     onExportPdf,
     onRevealFile,
     onCopyFilePath,
-    canCopyGitUrl,
-    onCopyGitUrl,
     onClose,
   } = props
 
@@ -227,8 +204,6 @@ export function NoteListContextMenuNode(props: NoteListContextMenuNodeProps) {
     onExportPdf,
     onRevealFile,
     onCopyFilePath,
-    canCopyGitUrl,
-    onCopyGitUrl,
   }, entry, selectAction)
 
   return createPortal(

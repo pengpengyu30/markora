@@ -195,7 +195,25 @@ export interface GitWorkspaceInfo {
   gitRoot: string | null
   vaultPathspec: string | null
   gitRootRelation: GitRootRelation
+  mode: 'managed' | 'readOnly' | 'none'
   resolutionFailure: string | null
+}
+
+export interface DeletedNote {
+  relativePath: string
+  title: string
+  deletedAt: string
+}
+
+export interface DeletedNotePreview {
+  relativePath: string
+  content: string
+}
+
+export interface RestoredNote {
+  relativePath: string
+  snapshotCreated: boolean
+  snapshotError: string | null
 }
 
 export interface SearchResult {
@@ -249,7 +267,7 @@ export interface PulseCommit {
   deleted: number
 }
 
-export type SidebarFilter = 'all' | 'changes' | 'pulse'
+export type SidebarFilter = 'all'
 
 export type SidebarSelection =
   | { kind: 'filter'; filter: SidebarFilter }

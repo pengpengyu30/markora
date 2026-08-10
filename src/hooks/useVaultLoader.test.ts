@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
-import type { VaultEntry, ModifiedFile, GitCommit, FolderNode } from '../types'
+import type { VaultEntry, ModifiedFile, FolderNode } from '../types'
 import { useVaultLoader, resolveNoteStatus } from './useVaultLoader'
 
 const mockEntries: VaultEntry[] = [
@@ -24,10 +24,6 @@ const mockModifiedFiles: ModifiedFile[] = [
   { path: '/vault/note/hello.md', relativePath: 'note/hello.md', status: 'modified' },
 ]
 
-const mockGitHistory: GitCommit[] = [
-  { hash: 'abc1234567', shortHash: 'abc1234', message: 'initial commit', author: 'luca', date: 1700000000 },
-]
-
 type MockCommandHandler = (args?: Record<string, unknown>) => unknown
 
 const defaultMockHandlers: Record<string, MockCommandHandler> = {
@@ -35,11 +31,6 @@ const defaultMockHandlers: Record<string, MockCommandHandler> = {
   reload_vault: () => mockEntries,
   get_all_content: () => mockContent,
   get_modified_files: () => mockModifiedFiles,
-  get_file_history: () => mockGitHistory,
-  get_file_diff: () => '--- a/note.md\n+++ b/note.md',
-  get_file_diff_at_commit: (args) => `diff for ${(args as Record<string, string>)?.commitHash}`,
-  git_commit: () => 'committed',
-  git_push: () => ({ status: 'ok', message: 'Pushed to remote' }),
 }
 
 function defaultMockInvoke(cmd: string, args?: Record<string, unknown>) {
@@ -58,22 +49,16 @@ function isVaultLoadCommand(cmd: string) {
 function buildVaultLoaderMock(options: {
   entries?: VaultEntry[]
   modifiedFiles?: ModifiedFile[]
-  pushResult?: { status: string; message: string }
-  failHistory?: boolean
 } = {}) {
   const {
     entries = mockEntries,
     modifiedFiles = mockModifiedFiles,
-    pushResult,
-    failHistory = false,
   } = options
 
   return ((cmd: string, args?: Record<string, unknown>) => {
     if (isVaultLoadCommand(cmd)) return Promise.resolve(entries)
     if (cmd === 'get_modified_files') return Promise.resolve(modifiedFiles)
     if (cmd === 'list_vault_folders') return Promise.resolve([])
-    if (cmd === 'get_file_history' && failHistory) return Promise.reject(new Error('fail'))
-    if (cmd === 'git_push' && pushResult) return Promise.resolve(pushResult)
     return defaultMockInvoke(cmd, args)
   }) as typeof defaultMockInvoke
 }
@@ -274,7 +259,6 @@ describe('useVaultLoader', () => {
     await waitFor(() => {
       expect(result.current.entries).toEqual([])
       expect(result.current.modifiedFiles).toEqual([])
-      expect(result.current.modifiedFilesError).toBeNull()
     })
 
     expect(backendInvokeFn).not.toHaveBeenCalled()
@@ -679,129 +663,6 @@ describe('useVaultLoader', () => {
     })
   })
 
-  describe('loadGitHistory', () => {
-    it('returns git commits for a file', async () => {
-      const { result } = await renderVaultLoader()
-
-      let history: GitCommit[] = []
-      await act(async () => {
-        history = await result.current.loadGitHistory('/vault/note/hello.md')
-      })
-
-      expect(history).toHaveLength(1)
-      expect(history[0].shortHash).toBe('abc1234')
-    })
-
-    it('returns empty array on error', async () => {
-      backendInvokeFn.mockImplementation(buildVaultLoaderMock({
-        entries: [],
-        modifiedFiles: [],
-        failHistory: true,
-      }))
-
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
-      const { result } = renderHook(() => useVaultLoader('/vault'))
-
-      let history: GitCommit[] = []
-      await act(async () => {
-        history = await result.current.loadGitHistory('/vault/note/hello.md')
-      })
-
-      expect(history).toEqual([])
-      warnSpy.mockRestore()
-    })
-  })
-
-  describe('loadDiff', () => {
-    it('returns diff string for a file', async () => {
-      const { result } = await renderVaultLoader()
-
-      let diff = ''
-      await act(async () => {
-        diff = await result.current.loadDiff('/vault/note/hello.md')
-      })
-
-      expect(diff).toContain('--- a/note.md')
-    })
-  })
-
-  describe('loadDiffAtCommit', () => {
-    it('returns diff for a specific commit', async () => {
-      const { result } = await renderVaultLoader()
-
-      let diff = ''
-      await act(async () => {
-        diff = await result.current.loadDiffAtCommit('/vault/note/hello.md', 'abc1234')
-      })
-
-      expect(diff).toBe('diff for abc1234')
-    })
-  })
-
-  describe('commitAndPush', () => {
-    it('commits and pushes in mock mode', async () => {
-      const { result } = await renderVaultLoader()
-
-      let response: { status: string; message: string } = { status: '', message: '' }
-      await act(async () => {
-        response = await result.current.commitAndPush('test commit')
-      })
-
-      expect(response.status).toBe('ok')
-    })
-
-    it('commits and pushes through the Tauri invoke path', async () => {
-      await enableTauriMode()
-      const { result } = renderHook(() => useVaultLoader('/vault'))
-
-      await waitForEntries(result)
-
-      let response: { status: string; message: string } = { status: '', message: '' }
-      await act(async () => {
-        response = await result.current.commitAndPush('tauri commit')
-      })
-
-      expect(response.status).toBe('ok')
-      expect(backendInvokeFn).toHaveBeenCalledWith('git_commit', {
-        vaultPath: '/vault',
-        message: 'tauri commit',
-      })
-      expect(backendInvokeFn).toHaveBeenCalledWith('git_push', {
-        vaultPath: '/vault',
-      })
-    })
-
-    it.each([
-      {
-        name: 'returns rejected status when push is rejected',
-        pushResult: { status: 'rejected', message: 'Push rejected: remote has new commits. Pull first, then push.' },
-        expectedStatus: 'rejected',
-        expectedMessage: 'Pull first',
-      },
-      {
-        name: 'returns network error status on network failure',
-        pushResult: { status: 'network_error', message: 'Push failed: network error. Check your connection and try again.' },
-        expectedStatus: 'network_error',
-        expectedMessage: 'network error',
-      },
-    ])('$name', async ({ pushResult, expectedStatus, expectedMessage }) => {
-      backendInvokeFn.mockImplementation(buildVaultLoaderMock({
-        modifiedFiles: [],
-        pushResult,
-      }))
-
-      const { result } = await renderVaultLoader()
-
-      let response: { status: string; message: string } = { status: '', message: '' }
-      await act(async () => {
-        response = await result.current.commitAndPush('test commit')
-      })
-
-      expect(response.status).toBe(expectedStatus)
-      expect(response.message).toContain(expectedMessage)
-    })
-  })
-
   describe('reloadFolders', () => {
     it('refreshes folder tree from backend', async () => {
       const folders = [{ name: 'projects', path: 'projects', children: [] }]
@@ -917,11 +778,11 @@ describe('useVaultLoader', () => {
       expect(statusCalls).toBe(2)
     })
 
-    it('captures backend errors when modified files cannot be loaded', async () => {
+    it('falls back to an empty modified-file list when status cannot be loaded', async () => {
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
       backendInvokeFn.mockImplementation(((cmd: string) => {
         if (isVaultLoadCommand(cmd)) return Promise.resolve(mockEntries)
-        if (cmd === 'get_modified_files') return Promise.reject('git unavailable')
+        if (cmd === 'get_modified_files') return Promise.reject('status unavailable')
         if (cmd === 'list_vault_folders') return Promise.resolve([])
         return Promise.resolve(null)
       }) as typeof defaultMockInvoke)
@@ -930,9 +791,8 @@ describe('useVaultLoader', () => {
 
       await waitFor(() => {
         expect(result.current.modifiedFiles).toEqual([])
-        expect(result.current.modifiedFilesError).toBe('git unavailable')
       })
-      expect(warnSpy).toHaveBeenCalledWith('Failed to load modified files:', 'git unavailable')
+      expect(warnSpy).toHaveBeenCalledWith('Failed to load modified files:', 'status unavailable')
 
       warnSpy.mockRestore()
     })

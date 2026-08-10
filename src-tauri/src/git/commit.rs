@@ -1,32 +1,33 @@
-use super::{ensure_author_config, git_command_at, GitWorkspace};
+use super::{git_command_at, GitWorkspace};
 use std::path::Path;
+
+pub const SNAPSHOT_COMMIT_MESSAGE: &str = "tolaria: snapshot";
 
 struct CommitFailure {
     stdout: String,
     stderr: String,
 }
 
-/// Commit all changes with a message.
-pub fn git_commit(vault_path: &str, message: &str) -> Result<String, String> {
+/// Create the fixed, local-only snapshot used by managed vaults.
+pub fn git_snapshot(vault_path: &str) -> Result<String, String> {
+    commit_vault(vault_path, SNAPSHOT_COMMIT_MESSAGE)
+}
+
+fn commit_vault(vault_path: &str, message: &str) -> Result<String, String> {
     let vault = Path::new(vault_path);
     let workspace = GitWorkspace::resolve(vault)?
         .ok_or_else(|| "Vault is not inside a Git work tree".to_string())?;
+    if workspace.mode() != super::workspace::GitRepositoryMode::Managed {
+        return Err("Git workspace is read-only".to_string());
+    }
 
     stage_vault_changes(&workspace)?;
-    ensure_author_config(workspace.git_root())?;
-
-    match run_commit(&workspace, message, false) {
-        Ok(stdout) => Ok(stdout),
-        Err(failure) if is_commit_signing_failure(&failure.detail()) => {
-            run_commit(&workspace, message, true).map_err(|retry_failure| {
-                format!(
-                    "git commit signing failed; retried without signing but git commit still failed: {}",
-                    retry_failure.detail()
-                )
-            })
-        }
-        Err(failure) => Err(format!("git commit failed: {}", failure.detail())),
+    if !has_staged_changes(&workspace)? {
+        return Err("nothing to commit".to_string());
     }
+
+    run_commit(&workspace, message)
+        .map_err(|failure| format!("git commit failed: {}", failure.detail()))
 }
 
 fn stage_vault_changes(workspace: &GitWorkspace) -> Result<(), String> {
@@ -40,28 +41,68 @@ fn stage_vault_changes(workspace: &GitWorkspace) -> Result<(), String> {
 
     if !add.status.success() {
         let stderr = String::from_utf8_lossy(&add.stderr);
-        return Err(format!("git add failed: {}", stderr));
+        return Err(format!("git add failed: {}", stderr.trim()));
     }
 
     Ok(())
 }
 
-fn run_commit(
-    workspace: &GitWorkspace,
-    message: &str,
-    disable_signing: bool,
-) -> Result<String, CommitFailure> {
+fn has_staged_changes(workspace: &GitWorkspace) -> Result<bool, String> {
+    let output = git_command_at(workspace.git_root())
+        .and_then(|mut command| {
+            command
+                .args([
+                    "diff",
+                    "--cached",
+                    "--quiet",
+                    "--",
+                    workspace.vault_pathspec(),
+                ])
+                .output()
+        })
+        .map_err(|e| format!("Failed to inspect staged changes: {e}"))?;
+
+    match output.status.code() {
+        Some(0) => Ok(false),
+        Some(1) => Ok(true),
+        _ => Err(format!(
+            "Failed to inspect staged changes: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        )),
+    }
+}
+
+fn run_commit(workspace: &GitWorkspace, message: &str) -> Result<String, CommitFailure> {
     let mut command = git_command_at(workspace.git_root()).map_err(|e| CommitFailure {
         stdout: String::new(),
-        stderr: format!("Failed to run git commit: {}", e),
+        stderr: format!("Failed to run git commit: {e}"),
     })?;
-    if disable_signing {
-        command.args(["-c", "commit.gpgsign=false"]);
+
+    // Git environment variables take precedence over config. Remove the
+    // inherited identity for this child process so the command-level identity
+    // below is deterministic without changing any user or repository config.
+    for name in [
+        "GIT_AUTHOR_NAME",
+        "GIT_AUTHOR_EMAIL",
+        "GIT_COMMITTER_NAME",
+        "GIT_COMMITTER_EMAIL",
+        "EMAIL",
+    ] {
+        command.env_remove(name);
     }
+    command.args([
+        "-c",
+        "user.name=Tolaria",
+        "-c",
+        "user.email=tolaria@local",
+        "-c",
+        "commit.gpgsign=false",
+    ]);
 
     let commit = command
         .args([
             "commit",
+            "--no-verify",
             "--only",
             "-m",
             message,
@@ -71,7 +112,7 @@ fn run_commit(
         .output()
         .map_err(|e| CommitFailure {
             stdout: String::new(),
-            stderr: format!("Failed to run git commit: {}", e),
+            stderr: format!("Failed to run git commit: {e}"),
         })?;
 
     if commit.status.success() {
@@ -96,34 +137,11 @@ impl CommitFailure {
     }
 }
 
-fn is_commit_signing_failure(detail: &str) -> bool {
-    let lower = detail.to_ascii_lowercase();
-    lower.contains("cannot run gpg")
-        || lower.contains("gpg failed to sign")
-        || lower.contains("failed to sign the data")
-        || lower.contains("gpg.ssh")
-        || (lower.contains("failed to write commit object")
-            && (lower.contains("sign") || lower.contains("gpg")))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::git::git_command;
-    use crate::git::tests::{setup_git_repo, GitConfigEnvGuard};
     use std::fs;
-    use std::path::Path;
-
-    fn unset_local_author_config(vault: &Path) {
-        for key in ["user.name", "user.email"] {
-            let status = git_command()
-                .args(["config", "--local", "--unset-all", key])
-                .current_dir(vault)
-                .status()
-                .unwrap();
-            assert!(status.success(), "failed to unset {key}");
-        }
-    }
 
     fn local_config_value(vault: &Path, key: &str) -> Option<String> {
         let output = git_command()
@@ -138,211 +156,82 @@ mod tests {
     }
 
     #[test]
-    fn test_git_commit() {
-        let dir = setup_git_repo();
-        let vault = dir.path();
+    fn managed_snapshot_uses_fixed_identity_without_writing_git_config() {
+        let dir = tempfile::TempDir::new().unwrap();
+        crate::git::ensure_vault_repository(dir.path()).unwrap();
+        fs::write(dir.path().join("snapshot.md"), "# Snapshot\n").unwrap();
 
-        fs::write(vault.join("commit-test.md"), "# Test\n").unwrap();
+        let result = git_snapshot(dir.path().to_str().unwrap());
 
-        let result = git_commit(vault.to_str().unwrap(), "Test commit");
-        assert!(result.is_ok());
-
-        // Verify the commit exists
-        let log = git_command()
-            .args(["log", "--oneline", "-1"])
-            .current_dir(vault)
-            .output()
-            .unwrap();
-        let log_str = String::from_utf8_lossy(&log.stdout);
-        assert!(log_str.contains("Test commit"));
-    }
-
-    #[test]
-    fn test_git_commit_sets_missing_local_author_identity() {
-        let _env = GitConfigEnvGuard::isolated();
-
-        let dir = setup_git_repo();
-        let vault = dir.path();
-        unset_local_author_config(vault);
-
-        fs::write(vault.join("identity-fallback.md"), "# Identity fallback\n").unwrap();
-
-        let result = git_commit(vault.to_str().unwrap(), "Commit without local identity");
         assert!(
             result.is_ok(),
-            "commit should set local fallback identity: {result:?}"
+            "managed snapshot should succeed: {result:?}"
         );
-
-        assert_eq!(
-            local_config_value(vault, "user.name").as_deref(),
-            Some("Tolaria")
-        );
-        assert_eq!(
-            local_config_value(vault, "user.email").as_deref(),
-            Some("vault@tolaria.default")
-        );
-
+        assert_eq!(local_config_value(dir.path(), "user.name"), None);
+        assert_eq!(local_config_value(dir.path(), "user.email"), None);
         let author = git_command()
-            .args(["log", "-1", "--format=%an <%ae>"])
-            .current_dir(vault)
+            .args(["log", "-1", "--format=%an <%ae> %s"])
+            .current_dir(dir.path())
             .output()
             .unwrap();
         assert_eq!(
             String::from_utf8_lossy(&author.stdout).trim(),
-            "Tolaria <vault@tolaria.default>"
+            "Tolaria <tolaria@local> tolaria: snapshot"
         );
     }
 
+    #[cfg(unix)]
     #[test]
-    fn test_git_commit_respects_global_author_identity() {
-        let _env =
-            GitConfigEnvGuard::with_global_identity(Some(("Global User", "global@test.com")));
+    fn managed_snapshot_skips_a_failing_pre_commit_hook() {
+        let dir = tempfile::TempDir::new().unwrap();
+        crate::git::ensure_vault_repository(dir.path()).unwrap();
+        let hook = dir.path().join(".git/hooks/pre-commit");
+        fs::write(&hook, "#!/bin/sh\necho hook-ran > hook-ran.txt\nexit 1\n").unwrap();
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(&hook, fs::Permissions::from_mode(0o755)).unwrap();
+        fs::write(dir.path().join("hooked.md"), "# Hooked\n").unwrap();
 
-        let dir = setup_git_repo();
-        let vault = dir.path();
-        unset_local_author_config(vault);
+        let result = git_snapshot(dir.path().to_str().unwrap());
 
-        fs::write(vault.join("global-identity.md"), "# Global identity\n").unwrap();
-
-        let result = git_commit(vault.to_str().unwrap(), "Commit with global identity");
         assert!(
             result.is_ok(),
-            "commit should use the global identity: {result:?}"
+            "--no-verify should skip the hook: {result:?}"
         );
-
-        // The global identity resolves, so no local override is written.
-        assert_eq!(local_config_value(vault, "user.name"), None);
-        assert_eq!(local_config_value(vault, "user.email"), None);
-
-        let author = git_command()
-            .args(["log", "-1", "--format=%an <%ae>"])
-            .current_dir(vault)
-            .output()
-            .unwrap();
-        assert_eq!(
-            String::from_utf8_lossy(&author.stdout).trim(),
-            "Global User <global@test.com>"
-        );
+        assert!(!dir.path().join("hook-ran.txt").exists());
     }
 
     #[test]
-    fn test_commit_nothing_to_commit_returns_error() {
-        let dir = setup_git_repo();
-        let vault = dir.path();
-        let vp = vault.to_str().unwrap();
+    fn managed_snapshot_does_not_create_a_commit_when_clean() {
+        let dir = tempfile::TempDir::new().unwrap();
+        crate::git::ensure_vault_repository(dir.path()).unwrap();
+        fs::write(dir.path().join("clean.md"), "# Clean\n").unwrap();
+        git_snapshot(dir.path().to_str().unwrap()).unwrap();
 
-        // Create and commit, so working tree is clean
-        fs::write(vault.join("clean.md"), "# Clean\n").unwrap();
-        git_commit(vp, "initial").unwrap();
+        let result = git_snapshot(dir.path().to_str().unwrap());
 
-        // Committing again with no changes should fail
-        let result = git_commit(vp, "nothing here");
-        assert!(result.is_err(), "Commit should fail when nothing to commit");
-        assert!(
-            result.unwrap_err().contains("nothing to commit"),
-            "Error should mention 'nothing to commit'"
-        );
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("nothing to commit"));
     }
 
     #[test]
-    fn nested_vault_commit_preserves_outside_repository_changes() {
-        let dir = setup_git_repo();
-        let repository = dir.path();
-        let vault = repository.join("docs");
-        fs::create_dir(&vault).unwrap();
-        fs::create_dir(repository.join("src")).unwrap();
-        fs::write(vault.join("guide.md"), "# Guide\n").unwrap();
-        fs::write(repository.join("src/staged.txt"), "original\n").unwrap();
-        fs::write(repository.join("src/unstaged.txt"), "original\n").unwrap();
-        git_command()
-            .args(["add", "-A"])
-            .current_dir(repository)
+    fn existing_repository_snapshot_is_read_only() {
+        let dir = crate::git::tests::setup_git_repo();
+        fs::write(dir.path().join("note.md"), "# Note\n").unwrap();
+        let before = git_command()
+            .args(["rev-parse", "--verify", "HEAD"])
+            .current_dir(dir.path())
             .output()
             .unwrap();
-        git_command()
-            .args(["commit", "-m", "initial"])
-            .current_dir(repository)
+        assert!(before.status.success());
+
+        let result = git_snapshot(dir.path().to_str().unwrap());
+
+        assert_eq!(result, Err("Git workspace is read-only".to_string()));
+        let after = git_command()
+            .args(["rev-parse", "--verify", "HEAD"])
+            .current_dir(dir.path())
             .output()
             .unwrap();
-
-        fs::write(vault.join("guide.md"), "# Guide\n\nUpdated.\n").unwrap();
-        fs::write(repository.join("src/staged.txt"), "staged outside\n").unwrap();
-        git_command()
-            .args(["add", "src/staged.txt"])
-            .current_dir(repository)
-            .output()
-            .unwrap();
-        fs::write(repository.join("src/unstaged.txt"), "unstaged outside\n").unwrap();
-
-        git_commit(vault.to_str().unwrap(), "update nested vault").unwrap();
-
-        let committed = git_command()
-            .args(["show", "--pretty=format:", "--name-only", "HEAD"])
-            .current_dir(repository)
-            .output()
-            .unwrap();
-        assert_eq!(
-            String::from_utf8_lossy(&committed.stdout).trim(),
-            "docs/guide.md"
-        );
-
-        let status = git_command()
-            .args(["status", "--porcelain=v1"])
-            .current_dir(repository)
-            .output()
-            .unwrap();
-        let status = String::from_utf8_lossy(&status.stdout);
-        assert!(status.contains("M  src/staged.txt"), "{status}");
-        assert!(status.contains(" M src/unstaged.txt"), "{status}");
-        assert!(!status.contains("docs/guide.md"), "{status}");
-    }
-
-    #[test]
-    fn test_git_commit_retries_without_signing_when_gpg_is_missing() {
-        let dir = setup_git_repo();
-        let vault = dir.path();
-        let vp = vault.to_str().unwrap();
-
-        git_command()
-            .args(["config", "commit.gpgsign", "true"])
-            .current_dir(vault)
-            .output()
-            .unwrap();
-        git_command()
-            .args(["config", "gpg.program", "/missing/tolaria-test-gpg"])
-            .current_dir(vault)
-            .output()
-            .unwrap();
-        fs::write(vault.join("signed-config.md"), "# Signed config\n").unwrap();
-
-        let result = git_commit(vp, "Commit with broken signing config");
-        assert!(
-            result.is_ok(),
-            "commit should retry unsigned when signing helper is missing: {result:?}"
-        );
-
-        let log = git_command()
-            .args(["log", "--oneline", "-1"])
-            .current_dir(vault)
-            .output()
-            .unwrap();
-        assert!(String::from_utf8_lossy(&log.stdout).contains("Commit with broken signing config"));
-
-        let config = git_command()
-            .args(["config", "commit.gpgsign"])
-            .current_dir(vault)
-            .output()
-            .unwrap();
-        assert_eq!(String::from_utf8_lossy(&config.stdout).trim(), "true");
-    }
-
-    #[test]
-    fn test_commit_signing_failure_detection_is_specific() {
-        assert!(is_commit_signing_failure(
-            "error: cannot run gpg: No such file or directory\nfatal: failed to write commit object"
-        ));
-        assert!(!is_commit_signing_failure(
-            "On branch main\nnothing to commit, working tree clean"
-        ));
+        assert_eq!(before.stdout, after.stdout);
     }
 }

@@ -25,6 +25,7 @@ interface SettingsCommandsConfig {
   onCheckForUpdates?: () => void
   onReloadVault?: () => void
   onRepairVault?: () => void
+  onRestoreDeletedNote?: () => void
   onToggleGitignoredFilesVisibility?: () => void
   locale?: AppLocale
   systemLocale?: AppLocale
@@ -175,8 +176,9 @@ function buildVaultSettingsCommands({
 function buildMaintenanceCommands({
   onReloadVault,
   onRepairVault,
+  onRestoreDeletedNote,
   onToggleGitignoredFilesVisibility,
-}: Pick<SettingsCommandsConfig, 'onReloadVault' | 'onRepairVault' | 'onToggleGitignoredFilesVisibility'>): CommandAction[] {
+}: Pick<SettingsCommandsConfig, 'onReloadVault' | 'onRepairVault' | 'onRestoreDeletedNote' | 'onToggleGitignoredFilesVisibility'>): CommandAction[] {
   return [
     {
       id: 'toggle-gitignored-files-visibility',
@@ -188,6 +190,7 @@ function buildMaintenanceCommands({
     },
     { id: 'reload-vault', label: 'Reload Vault', group: 'Settings', keywords: ['reload', 'refresh', 'rescan', 'sync', 'filesystem', 'cache'], enabled: !!onReloadVault, execute: () => onReloadVault?.() },
     { id: 'repair-vault', label: 'Repair Vault', group: 'Settings', keywords: ['repair', 'fix', 'restore', 'config', 'missing', 'reset', 'flatten', 'structure'], enabled: !!onRepairVault, execute: () => onRepairVault?.() },
+    { id: 'restore-deleted-note', label: 'Restore Deleted Note…', group: 'Settings', keywords: ['restore', 'deleted', 'note', 'recover', 'recovery', 'undo'], enabled: !!onRestoreDeletedNote, execute: () => onRestoreDeletedNote?.() },
   ]
 }
 
@@ -195,7 +198,7 @@ export function buildSettingsCommands(config: SettingsCommandsConfig): CommandAc
   const {
     vaultCount, isGettingStartedHidden,
     onOpenSettings, onOpenFeedback, onOpenVault, onCreateEmptyVault, onRemoveActiveVault, onRestoreGettingStarted,
-    onCheckForUpdates, onReloadVault, onRepairVault, onToggleGitignoredFilesVisibility,
+    onCheckForUpdates, onReloadVault, onRepairVault, onRestoreDeletedNote, onToggleGitignoredFilesVisibility,
     locale = 'en', systemLocale = locale, selectedUiLanguage = SYSTEM_UI_LANGUAGE, onSetUiLanguage, onSetThemeMode,
   } = config
 
@@ -220,6 +223,7 @@ export function buildSettingsCommands(config: SettingsCommandsConfig): CommandAc
     ...buildMaintenanceCommands({
       onReloadVault,
       onRepairVault,
+      onRestoreDeletedNote,
       onToggleGitignoredFilesVisibility,
     }),
   ]

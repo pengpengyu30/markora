@@ -22,7 +22,6 @@ function makeHandlers(): MenuEventHandlers {
   return {
     activeTabPath: '/vault/a.md',
     activeTabPathRef: { current: '/vault/a.md' },
-    hasNoRemote: false,
     hasRestorableDeletedNote: false,
     multiSelectionCommandRef: { current: null },
     onArchiveNote: vi.fn(),

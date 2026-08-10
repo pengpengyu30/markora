@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { SettingsPanel } from './SettingsPanel'
 import type { Settings } from '../types'
 import { THEME_MODE_STORAGE_KEY } from '../lib/themeMode'
@@ -86,12 +86,6 @@ function installMatchMedia(matches = false) {
       dispatchEvent: vi.fn(() => true),
     })),
   })
-}
-
-function expectAutoGitControlsDisabled() {
-  expect(screen.getByRole('switch', { name: 'Enable AutoGit' })).toBeDisabled()
-  expect(screen.getByTestId('settings-autogit-idle-threshold')).toBeDisabled()
-  expect(screen.getByTestId('settings-autogit-inactive-threshold')).toBeDisabled()
 }
 
 describe('SettingsPanel', () => {
@@ -183,10 +177,9 @@ describe('SettingsPanel', () => {
     fireEvent.click(screen.getByTestId('settings-save'))
 
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
-      auto_pull_interval_minutes: 5,
-      autogit_enabled: false,
-      autogit_idle_threshold_seconds: 90,
-      autogit_inactive_threshold_seconds: 30,
+      analytics_enabled: false,
+      crash_reporting_enabled: false,
+      initial_h1_auto_rename_enabled: true,
       release_channel: null,
       automatic_update_checks_enabled: null,
       theme_mode: 'light',
@@ -618,175 +611,6 @@ describe('SettingsPanel', () => {
     expect(screen.getByRole('switch', { name: 'Auto-rename untitled notes from first H1' })).toHaveAttribute('aria-checked', 'true')
   })
 
-  it('defaults AutoGit to off with recommended thresholds', () => {
-    render(
-      <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
-    )
-
-    expect(screen.getAllByText('Git')).not.toHaveLength(0)
-    expect(screen.getByRole('switch', { name: 'Enable Git features' })).toHaveAttribute('aria-checked', 'true')
-    expect(screen.getByRole('switch', { name: 'Enable AutoGit' })).toHaveAttribute('aria-checked', 'false')
-    expect(screen.getByTestId('settings-autogit-idle-threshold')).toHaveValue(90)
-    expect(screen.getByTestId('settings-autogit-inactive-threshold')).toHaveValue(30)
-  })
-
-  it('defaults the Git provider selector to native Git', () => {
-    renderOpenSettings()
-
-    expect(screen.getByTestId('settings-git-provider')).toHaveAttribute('data-value', 'native')
-    expect(screen.queryByTestId('settings-git-wsl-distro')).not.toBeInTheDocument()
-  })
-
-  it('saves an explicit WSL Git provider and distribution', async () => {
-    renderOpenSettings()
-
-    fireEvent.pointerDown(screen.getByTestId('settings-git-provider'), { button: 0, pointerType: 'mouse' })
-    fireEvent.click(screen.getByRole('option', { name: 'WSL2 Git' }))
-
-    await waitFor(() => {
-      expect(screen.getByTestId('settings-git-wsl-distro')).toHaveAttribute('data-value', 'Ubuntu')
-    })
-
-    saveSettingsPanel()
-
-    expectSettingsSaved({
-      git_provider: 'wsl',
-      git_wsl_distro: 'Ubuntu',
-    })
-    expect(trackEventMock).toHaveBeenCalledWith('git_provider_changed', { provider: 'wsl' })
-  })
-
-  it('tests the selected WSL Git provider without leaving settings', async () => {
-    renderOpenSettings()
-
-    fireEvent.pointerDown(screen.getByTestId('settings-git-provider'), { button: 0, pointerType: 'mouse' })
-    fireEvent.click(screen.getByRole('option', { name: 'WSL2 Git' }))
-    await waitFor(() => {
-      expect(screen.getByTestId('settings-git-wsl-distro')).toHaveAttribute('data-value', 'Ubuntu')
-    })
-
-    fireEvent.click(screen.getByTestId('settings-git-provider-test'))
-
-    expect(await screen.findByText('Connection works. git version 2.43.0')).toBeInTheDocument()
-    expect(trackEventMock).toHaveBeenCalledWith('git_provider_tested', {
-      available: 1,
-      provider: 'wsl',
-    })
-  })
-
-  it('tracks explicit WSL distribution changes without leaking distro names', async () => {
-    renderOpenSettings({
-      ...emptySettings,
-      git_provider: 'wsl',
-      git_wsl_distro: 'Ubuntu',
-    })
-
-    fireEvent.pointerDown(screen.getByTestId('settings-git-wsl-distro'), { button: 0, pointerType: 'mouse' })
-    fireEvent.click(screen.getByRole('option', { name: 'Default WSL distribution' }))
-
-    expect(trackEventMock).toHaveBeenCalledWith('git_wsl_distro_changed', {
-      has_distro: 0,
-    })
-  })
-
-  it('keeps the Git provider selector keyboard accessible', () => {
-    renderOpenSettings()
-
-    const trigger = screen.getByTestId('settings-git-provider')
-    trigger.focus()
-    fireEvent.keyDown(trigger, { key: 'ArrowDown', code: 'ArrowDown' })
-
-    expect(screen.getByRole('option', { name: 'WSL2 Git' })).toBeInTheDocument()
-  })
-
-  it('saves the global Git feature preference when toggled off', () => {
-    render(
-      <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
-    )
-
-    fireEvent.click(screen.getByRole('switch', { name: 'Enable Git features' }))
-    fireEvent.click(screen.getByTestId('settings-save'))
-
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
-      git_enabled: false,
-    }))
-  })
-
-  it('disables AutoGit controls when Git features are disabled globally', () => {
-    render(
-      <SettingsPanel
-        open={true}
-        settings={{ ...emptySettings, git_enabled: false, autogit_enabled: true }}
-        onSave={onSave}
-        onClose={onClose}
-      />
-    )
-
-    expect(screen.getByRole('switch', { name: 'Enable Git features' })).toHaveAttribute('aria-checked', 'false')
-    expectAutoGitControlsDisabled()
-  })
-
-  it('saves AutoGit preferences when toggled and edited', () => {
-    render(
-      <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
-    )
-
-    fireEvent.click(screen.getByRole('switch', { name: 'Enable AutoGit' }))
-    fireEvent.change(screen.getByTestId('settings-autogit-idle-threshold'), { target: { value: '120' } })
-    fireEvent.change(screen.getByTestId('settings-autogit-inactive-threshold'), { target: { value: '45' } })
-    fireEvent.click(screen.getByTestId('settings-save'))
-
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
-      autogit_enabled: true,
-      autogit_idle_threshold_seconds: 120,
-      autogit_inactive_threshold_seconds: 45,
-    }))
-  })
-
-  it('disables AutoGit controls when the current vault is not git-enabled', () => {
-    render(
-      <SettingsPanel
-        open={true}
-        settings={emptySettings}
-        isGitVault={false}
-        onSave={onSave}
-        onClose={onClose}
-      />
-    )
-
-    expectAutoGitControlsDisabled()
-  })
-
-  it('shows the parent Git repository root', async () => {
-    const handlers = window.__mockHandlers as Record<string, unknown>
-    const originalHandler = handlers.git_workspace_info
-    handlers.git_workspace_info = () => ({
-      vaultRoot: '/repo/docs',
-      gitRoot: '/repo',
-      vaultPathspec: 'docs',
-      gitRootRelation: 'parent',
-      resolutionFailure: null,
-    })
-
-    render(
-      <SettingsPanel
-        open={true}
-        settings={emptySettings}
-        isGitVault={true}
-        vaultPath="/repo/docs"
-        onSave={onSave}
-        onClose={onClose}
-      />
-    )
-
-    const root = await screen.findByTestId('settings-git-root')
-    expect(root).toHaveTextContent('/repo')
-    expect(root).toBeVisible()
-    expect(screen.getByText(/Repository-wide sync actions use this parent folder/)).toBeInTheDocument()
-
-    handlers.git_workspace_info = originalHandler
-  })
-
   it('saves the initial H1 auto-rename preference when toggled off', () => {
     render(
       <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
@@ -831,7 +655,7 @@ describe('SettingsPanel', () => {
     fireEvent.keyDown(screen.getByTestId('settings-panel'), { key: 'Enter', metaKey: true })
 
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
-      auto_pull_interval_minutes: 5,
+      theme_mode: 'light',
     }))
   })
 

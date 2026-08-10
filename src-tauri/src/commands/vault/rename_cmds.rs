@@ -404,6 +404,24 @@ mod tests {
         assert!(auto.new_path.ends_with("project-plan.md"));
 
         crate::git::init_repo(&vault).unwrap();
+        crate::hidden_command("git")
+            .args(["add", "-A"])
+            .current_dir(dir.path())
+            .output()
+            .unwrap();
+        crate::hidden_command("git")
+            .args([
+                "-c",
+                "user.name=Test",
+                "-c",
+                "user.email=test@test.com",
+                "commit",
+                "-m",
+                "initial",
+            ])
+            .current_dir(dir.path())
+            .output()
+            .unwrap();
         let old_path = dir.path().join("project-plan.md");
         let new_path = dir.path().join("plans.md");
         fs::rename(&old_path, &new_path).unwrap();

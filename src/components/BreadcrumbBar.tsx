@@ -32,7 +32,6 @@ import {
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu'
 import {
-  GitBranch,
   Code,
   ListBullets,
   Trash,
@@ -54,10 +53,6 @@ import {
 interface BreadcrumbBarProps {
   entry: VaultEntry
   wordCount: number
-  showDiffToggle: boolean
-  diffMode: boolean
-  diffLoading: boolean
-  onToggleDiff: () => void
   rawMode?: boolean
   onToggleRaw?: () => void
   /** When true, raw mode is forced (non-markdown file) — hide the toggle. */
@@ -67,7 +62,6 @@ interface BreadcrumbBarProps {
   onRevealFile?: (path: string) => void
   onCopyFilePath?: (path: string) => void
   onCopyDeepLink?: (entry: VaultEntry) => void
-  onCopyGitUrl?: (entry: VaultEntry) => void
   onExportPdf?: () => void
   onDelete?: () => void
   onRenameFilename?: (path: string, newFilenameStem: string) => void
@@ -406,10 +400,6 @@ function FilePathActions({
 
 function OverflowToolbarAction({ children }: { children: ReactNode }) {
   return <span className="breadcrumb-bar__overflowable-action flex items-center gap-2">{children}</span>
-}
-
-function availableDiffAction(showDiffToggle: boolean, onToggleDiff: () => void): (() => void) | undefined {
-  return showDiffToggle ? onToggleDiff : undefined
 }
 
 function noteWidthLabelKey(noteWidth: NoteWidthMode = 'normal'): Parameters<typeof translate>[1] {
@@ -807,8 +797,6 @@ function BreadcrumbActions(options: Omit<BreadcrumbBarProps, 'wordCount' | 'barR
 }) {
   const {
     entry,
-    showDiffToggle,
-    onToggleDiff,
     rawMode,
     onToggleRaw,
     forceRawMode,
@@ -819,7 +807,6 @@ function BreadcrumbActions(options: Omit<BreadcrumbBarProps, 'wordCount' | 'barR
     onRevealFile,
     onCopyFilePath,
     onCopyDeepLink,
-    onCopyGitUrl,
     onExportPdf,
     onDelete,
     actionsRef,
@@ -853,8 +840,6 @@ function BreadcrumbActions(options: Omit<BreadcrumbBarProps, 'wordCount' | 'barR
       </OverflowToolbarAction>
       <BreadcrumbOverflowMenu
         entry={entry}
-        showDiffToggle={showDiffToggle}
-        onToggleDiff={onToggleDiff}
         noteWidth={noteWidth}
         onToggleNoteWidth={onToggleNoteWidth}
         showTableOfContents={showTableOfContents}
@@ -862,7 +847,6 @@ function BreadcrumbActions(options: Omit<BreadcrumbBarProps, 'wordCount' | 'barR
         onRevealFile={onRevealFile}
         onCopyFilePath={onCopyFilePath}
         onCopyDeepLink={onCopyDeepLink}
-        onCopyGitUrl={onCopyGitUrl}
         onExportPdf={onExportPdf}
         onDelete={onDelete}
         showResponsiveActions={overflowCollapsed}
@@ -875,8 +859,6 @@ function BreadcrumbActions(options: Omit<BreadcrumbBarProps, 'wordCount' | 'barR
 function BreadcrumbOverflowMenu(options: Pick<
   BreadcrumbBarProps,
   | 'entry'
-  | 'showDiffToggle'
-  | 'onToggleDiff'
   | 'noteWidth'
   | 'onToggleNoteWidth'
   | 'showTableOfContents'
@@ -884,7 +866,6 @@ function BreadcrumbOverflowMenu(options: Pick<
   | 'onRevealFile'
   | 'onCopyFilePath'
   | 'onCopyDeepLink'
-  | 'onCopyGitUrl'
   | 'onExportPdf'
   | 'onDelete'
   | 'locale'
@@ -893,8 +874,6 @@ function BreadcrumbOverflowMenu(options: Pick<
 }) {
   const {
     entry,
-    showDiffToggle,
-    onToggleDiff,
     noteWidth,
     onToggleNoteWidth,
     showTableOfContents,
@@ -902,7 +881,6 @@ function BreadcrumbOverflowMenu(options: Pick<
     onRevealFile,
     onCopyFilePath,
     onCopyDeepLink,
-    onCopyGitUrl,
     onExportPdf,
     onDelete,
     showResponsiveActions,
@@ -910,11 +888,9 @@ function BreadcrumbOverflowMenu(options: Pick<
 } = options
   let showMarkdownActions = true
   if (isHtmlFileEntry(entry)) showMarkdownActions = false
-  const runDiffAction = availableDiffAction(showDiffToggle, onToggleDiff)
   const runRevealAction = pathAction(onRevealFile, entry.path)
   const runCopyPathAction = pathAction(onCopyFilePath, entry.path)
   const runCopyDeepLinkAction = entryAction(onCopyDeepLink, entry)
-  const diffLabel = translate(locale, 'editor.toolbar.gitDiff')
   const exportPdfLabel = translate(locale, 'editor.toolbar.exportPdf')
   const noteWidthLabel = translate(locale, noteWidthLabelKey(noteWidth))
   const tableOfContentsLabel = translate(locale, showTableOfContents ? 'editor.toolbar.closeTableOfContents' : 'editor.toolbar.openTableOfContents')
@@ -926,10 +902,6 @@ function BreadcrumbOverflowMenu(options: Pick<
     <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
       <BreadcrumbOverflowMenuTrigger label={moreActionsLabel} setMenuOpen={setMenuOpen} tooltipControl={tooltipControl} />
       <DropdownMenuContent align="end" className="min-w-44">
-        <DropdownMenuItem disabled={!runDiffAction} onSelect={runDiffAction}>
-          <GitBranch size={16} />
-          {diffLabel}
-        </DropdownMenuItem>
         <DropdownMenuItem disabled={!onExportPdf} onSelect={onExportPdf}>
           <FilePdf size={16} />
           {exportPdfLabel}
@@ -962,29 +934,12 @@ function BreadcrumbOverflowMenu(options: Pick<
           <Link size={16} />
           {translate(locale, 'editor.toolbar.copyNoteDeepLink')}
         </DropdownMenuItem>
-        <CopyGitUrlMenuItem action={entryAction(onCopyGitUrl, entry)} locale={locale} />
         <DropdownMenuItem disabled={!onDelete} variant="destructive" onSelect={onDelete}>
           <Trash size={16} />
           {translate(locale, 'editor.toolbar.delete')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
-}
-
-function CopyGitUrlMenuItem({
-  action,
-  locale,
-}: {
-  action: (() => void) | undefined
-  locale: AppLocale
-}) {
-  if (!action) return null
-  return (
-    <DropdownMenuItem onSelect={action}>
-      <GitBranch size={16} />
-      {translate(locale, 'editor.toolbar.copyNoteGitUrl')}
-    </DropdownMenuItem>
   )
 }
 

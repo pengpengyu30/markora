@@ -25,8 +25,8 @@ describe('fuzzyMatch', () => {
   })
 
   it('returns higher score for consecutive matches', () => {
-    const consecutive = fuzzyMatch('com', 'Commit & Push')
-    const scattered = fuzzyMatch('cmt', 'Commit & Push')
+    const consecutive = fuzzyMatch('com', 'Command Palette')
+    const scattered = fuzzyMatch('cmt', 'Command Palette')
     expect(consecutive.score).toBeGreaterThan(scattered.score)
   })
 

@@ -7,7 +7,6 @@ function makeConfig(overrides: Record<string, unknown> = {}) {
     activeNoteModified: false,
     activeTabPath: '/vault/a.md',
     entries: [{ path: '/vault/a.md', title: 'A', fileKind: 'markdown' }],
-    modifiedCount: 0,
     onArchiveNote: vi.fn(),
     onCreateNote: vi.fn(),
     onCreateNoteOfType: vi.fn(),

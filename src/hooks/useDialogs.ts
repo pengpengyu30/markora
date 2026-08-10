@@ -4,9 +4,8 @@ export function useDialogs() {
   const [showQuickOpen, setShowQuickOpen] = useState(false)
   const [showCommandPalette, setShowCommandPalette] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
-  const [showCloneVault, setShowCloneVault] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
-  const [showConflictResolver, setShowConflictResolver] = useState(false)
+  const [showRestoreDeletedNote, setShowRestoreDeletedNote] = useState(false)
 
   const openQuickOpen = useCallback(() => setShowQuickOpen(true), [])
   const closeQuickOpen = useCallback(() => setShowQuickOpen(false), [])
@@ -14,19 +13,16 @@ export function useDialogs() {
   const closeCommandPalette = useCallback(() => setShowCommandPalette(false), [])
   const openSettings = useCallback(() => setShowSettings(true), [])
   const closeSettings = useCallback(() => setShowSettings(false), [])
-  const openCloneVault = useCallback(() => setShowCloneVault(true), [])
-  const closeCloneVault = useCallback(() => setShowCloneVault(false), [])
   const openSearch = useCallback(() => setShowSearch(true), [])
   const closeSearch = useCallback(() => setShowSearch(false), [])
-  const openConflictResolver = useCallback(() => setShowConflictResolver(true), [])
-  const closeConflictResolver = useCallback(() => setShowConflictResolver(false), [])
+  const openRestoreDeletedNote = useCallback(() => setShowRestoreDeletedNote(true), [])
+  const closeRestoreDeletedNote = useCallback(() => setShowRestoreDeletedNote(false), [])
 
   return {
     showQuickOpen, openQuickOpen, closeQuickOpen,
     showCommandPalette, openCommandPalette, closeCommandPalette,
     showSettings, openSettings, closeSettings,
-    showCloneVault, openCloneVault, closeCloneVault,
     showSearch, openSearch, closeSearch,
-    showConflictResolver, openConflictResolver, closeConflictResolver,
+    showRestoreDeletedNote, openRestoreDeletedNote, closeRestoreDeletedNote,
   }
 }

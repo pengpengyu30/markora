@@ -8,7 +8,6 @@ function makeConfig(overrides: Record<string, unknown> = {}) {
   return {
     activeTabPath: '/vault/test.md',
     entries: [],
-    modifiedCount: 0,
     onQuickOpen: vi.fn(),
     onCreateNote: vi.fn(),
     onSave: vi.fn(),
@@ -18,11 +17,8 @@ function makeConfig(overrides: Record<string, unknown> = {}) {
     onArchiveNote: vi.fn(),
     onUnarchiveNote: vi.fn(),
     onToggleOrganized: vi.fn(),
-    onCommitPush: vi.fn(),
-    onResolveConflicts: vi.fn(),
     onSetViewMode: vi.fn(),
     onToggleBacklinks: vi.fn(),
-    onToggleDiff: vi.fn(),
     onToggleRawEditor: vi.fn(),
     noteWidth: 'normal',
     defaultNoteWidth: 'normal',
@@ -64,124 +60,6 @@ function expectFolderCommandStates(overrides: Record<string, unknown>, expected:
 }
 
 describe('useCommandRegistry', () => {
-  it('includes resolve-conflicts command in Git group', () => {
-    const config = makeConfig()
-    const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'resolve-conflicts')
-    expect(cmd).toBeDefined()
-    expect(cmd!.group).toBe('Git')
-    expect(cmd!.label).toBe('Resolve Conflicts')
-  })
-
-  it('resolve-conflicts is always enabled', () => {
-    const config = makeConfig()
-    const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'resolve-conflicts')
-    expect(cmd!.enabled).toBe(true)
-  })
-
-  it('resolve-conflicts executes onResolveConflicts callback', () => {
-    const onResolveConflicts = vi.fn()
-    const config = makeConfig({ onResolveConflicts })
-    const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'resolve-conflicts')
-    cmd!.execute()
-    expect(onResolveConflicts).toHaveBeenCalled()
-  })
-
-  it('resolve-conflicts has searchable keywords', () => {
-    const config = makeConfig()
-    const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'resolve-conflicts')
-    expect(cmd!.keywords).toContain('conflict')
-    expect(cmd!.keywords).toContain('merge')
-  })
-
-  it('commit-push is enabled when modifiedCount > 0', () => {
-    const config = makeConfig({ modifiedCount: 5 })
-    const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'commit-push')
-    expect(cmd!.enabled).toBe(true)
-  })
-
-  it('commit-push is disabled when modifiedCount is 0', () => {
-    const config = makeConfig({ modifiedCount: 0 })
-    const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'commit-push')
-    expect(cmd!.enabled).toBe(false)
-  })
-
-  it('includes initialize-git command for non-git vaults', () => {
-    const onInitializeGit = vi.fn()
-    const config = makeConfig({ isGitVault: false, onInitializeGit })
-    const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'initialize-git')
-
-    expect(cmd).toBeDefined()
-    expect(cmd!.group).toBe('Git')
-    expect(cmd!.label).toBe('Initialize Git for Current Vault')
-    expect(cmd!.enabled).toBe(true)
-
-    cmd!.execute()
-    expect(onInitializeGit).toHaveBeenCalledOnce()
-  })
-
-  it('hides remote git commands for non-git vaults', () => {
-    const config = makeConfig({ isGitVault: false, modifiedCount: 5 })
-    const { result } = renderHook(() => useCommandRegistry(config))
-
-    expect(findCommand(result.current, 'commit-push')).toBeUndefined()
-    expect(findCommand(result.current, 'git-pull')).toBeUndefined()
-    expect(findCommand(result.current, 'add-remote')).toBeUndefined()
-    expect(findCommand(result.current, 'view-changes')).toBeUndefined()
-  })
-
-  it('hides all Git commands when Git features are disabled globally', () => {
-    const config = makeConfig({ gitFeaturesEnabled: false, isGitVault: false, modifiedCount: 5 })
-    const { result } = renderHook(() => useCommandRegistry(config))
-
-    expect(findCommand(result.current, 'initialize-git')).toBeUndefined()
-    expect(findCommand(result.current, 'commit-push')).toBeUndefined()
-    expect(findCommand(result.current, 'git-pull')).toBeUndefined()
-    expect(findCommand(result.current, 'add-remote')).toBeUndefined()
-    expect(findCommand(result.current, 'view-changes')).toBeUndefined()
-  })
-
-  it('exposes a single pull command for all active repositories', () => {
-    const onPull = vi.fn()
-    const onPullRepository = vi.fn()
-    const config = makeConfig({
-      gitRepositories: [
-        { path: '/vault/main', label: 'Main Vault', defaultForNewNotes: true },
-        { path: '/vault/brian', label: 'Brian', defaultForNewNotes: false },
-      ],
-      onPull,
-      onPullRepository,
-    })
-    const { result } = renderHook(() => useCommandRegistry(config))
-
-    expect(findCommand(result.current, 'git-pull-0')).toBeUndefined()
-    expect(findCommand(result.current, 'git-pull-1')).toBeUndefined()
-
-    const pull = findCommand(result.current, 'git-pull')
-    expect(pull?.label).toBe('Pull from Remote')
-    pull?.execute()
-    expect(onPull).toHaveBeenCalled()
-    expect(onPullRepository).not.toHaveBeenCalled()
-  })
-
-  it('resolve-conflicts stays enabled across rerenders', () => {
-    const config = makeConfig()
-    const { result, rerender } = renderHook(
-      (props) => useCommandRegistry(props),
-      { initialProps: config },
-    )
-    expect(findCommand(result.current, 'resolve-conflicts')!.enabled).toBe(true)
-
-    rerender(makeConfig())
-    expect(findCommand(result.current, 'resolve-conflicts')!.enabled).toBe(true)
-  })
-
   it('exposes command palette actions for changing the focused editor block type', () => {
     const onTurnCurrentBlockInto = vi.fn()
     const config = makeConfig({ onTurnCurrentBlockInto })
@@ -244,21 +122,6 @@ describe('useCommandRegistry', () => {
       canMoveNoteToFolder: false,
     }))
     expect(findCommand(result.current, 'move-note-to-folder')?.enabled).toBe(false)
-  })
-
-  it('includes restore deleted note command when provided', () => {
-    const config = makeConfig({ onRestoreDeletedNote: vi.fn(), canRestoreDeletedNote: true })
-    const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'restore-deleted-note')
-    expect(cmd).toBeDefined()
-    expect(cmd!.enabled).toBe(true)
-  })
-
-  it('disables restore deleted note when there is no deleted preview', () => {
-    const config = makeConfig({ onRestoreDeletedNote: vi.fn(), canRestoreDeletedNote: false })
-    const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'restore-deleted-note')
-    expect(cmd!.enabled).toBe(false)
   })
 
   it('exposes undo and redo commands only when action history has entries', () => {
@@ -634,8 +497,7 @@ describe('useCommandRegistry', () => {
 describe('groupSortKey', () => {
   it('returns correct order for groups', () => {
     expect(groupSortKey('Navigation')).toBeLessThan(groupSortKey('Note'))
-    expect(groupSortKey('Note')).toBeLessThan(groupSortKey('Git'))
-    expect(groupSortKey('Git')).toBeLessThan(groupSortKey('View'))
+    expect(groupSortKey('Note')).toBeLessThan(groupSortKey('View'))
   })
 })
 

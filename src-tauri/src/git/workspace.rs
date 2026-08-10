@@ -1,7 +1,7 @@
 use serde::Serialize;
 use std::path::{Component, Path, PathBuf};
 
-use super::git_command_at;
+use super::{git_command_at, init_repo};
 
 const RELATION_NONE: &str = "none";
 const RELATION_PARENT: &str = "parent";
@@ -12,6 +12,22 @@ pub(crate) struct GitWorkspace {
     vault_root: PathBuf,
     git_root: PathBuf,
     vault_pathspec: String,
+    mode: GitRepositoryMode,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum GitRepositoryMode {
+    Managed,
+    ReadOnly,
+}
+
+impl GitRepositoryMode {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Managed => "managed",
+            Self::ReadOnly => "readOnly",
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -24,6 +40,7 @@ pub struct GitWorkspaceInfo {
     pub vault_pathspec: Option<String>,
     #[serde(rename = "gitRootRelation")]
     pub git_root_relation: String,
+    pub mode: String,
     #[serde(rename = "resolutionFailure")]
     pub resolution_failure: Option<String>,
 }
@@ -35,7 +52,7 @@ impl GitWorkspace {
         }
 
         let output = git_command_at(vault_root)
-            .and_then(|mut command| command.args(["rev-parse", "--show-prefix"]).output())
+            .and_then(|mut command| command.args(["rev-parse", "--show-toplevel"]).output())
             .map_err(|_| "provider_unavailable".to_string())?;
         if !output.status.success() {
             return Ok(None);
@@ -44,14 +61,32 @@ impl GitWorkspace {
         let resolved_vault_root = vault_root
             .canonicalize()
             .map_err(|_| "vault_resolution_failed".to_string())?;
-        let vault_pathspec = normalize_prefix(&String::from_utf8_lossy(&output.stdout))?;
-        let git_root = ancestor_for_prefix(&resolved_vault_root, &vault_pathspec)?;
+        let git_root = PathBuf::from(String::from_utf8_lossy(&output.stdout).trim())
+            .canonicalize()
+            .map_err(|_| "git_root_resolution_failed".to_string())?;
+        let vault_relative = resolved_vault_root
+            .strip_prefix(&git_root)
+            .map_err(|_| "invalid_git_root".to_string())?;
+        let vault_pathspec = path_to_git_string(vault_relative);
+        let mode = if vault_pathspec.is_empty()
+            && vault_root.join(".git").exists()
+            && super::is_managed_vault(vault_root)
+        {
+            GitRepositoryMode::Managed
+        } else {
+            GitRepositoryMode::ReadOnly
+        };
 
         Ok(Some(Self {
             vault_root: vault_root.to_path_buf(),
             git_root,
             vault_pathspec,
+            mode,
         }))
+    }
+
+    pub(crate) fn mode(&self) -> GitRepositoryMode {
+        self.mode
     }
 
     pub(crate) fn git_root(&self) -> &Path {
@@ -68,10 +103,6 @@ impl GitWorkspace {
         } else {
             &self.vault_pathspec
         }
-    }
-
-    pub(crate) fn uses_parent_repository(&self) -> bool {
-        !self.vault_pathspec.is_empty()
     }
 
     pub(crate) fn repo_relative_path(&self, vault_relative_path: &Path) -> String {
@@ -105,6 +136,30 @@ impl GitWorkspace {
     }
 }
 
+/// Resolve the vault's repository and initialize only a vault with no Git
+/// repository at its root or in any ancestor. A marker inside a repository
+/// created by Tolaria restores managed mode after an application restart;
+/// existing user repositories without that marker remain read-only.
+pub(crate) fn ensure_vault_repository(
+    vault_root: impl AsRef<Path>,
+) -> Result<Option<GitWorkspace>, String> {
+    let vault_root = vault_root.as_ref();
+    if let Some(workspace) = GitWorkspace::resolve(vault_root)? {
+        if workspace.mode() == GitRepositoryMode::ReadOnly
+            && workspace.vault_pathspec.is_empty()
+            && super::has_legacy_tolaria_snapshot(vault_root)
+        {
+            super::remember_managed_vault(vault_root)?;
+            return GitWorkspace::resolve(vault_root);
+        }
+        return Ok(Some(workspace));
+    }
+
+    init_repo(vault_root)?;
+    super::remember_managed_vault(vault_root)?;
+    GitWorkspace::resolve(vault_root)
+}
+
 pub fn git_workspace_info(vault_root: impl AsRef<Path>) -> GitWorkspaceInfo {
     let vault_root = vault_root.as_ref();
     match GitWorkspace::resolve(vault_root) {
@@ -113,6 +168,7 @@ pub fn git_workspace_info(vault_root: impl AsRef<Path>) -> GitWorkspaceInfo {
             git_root: Some(display_path(workspace.git_root())),
             vault_pathspec: Some(workspace.vault_pathspec.clone()),
             git_root_relation: workspace.relation().to_string(),
+            mode: workspace.mode().as_str().to_string(),
             resolution_failure: None,
         },
         Ok(None) => GitWorkspaceInfo {
@@ -120,6 +176,7 @@ pub fn git_workspace_info(vault_root: impl AsRef<Path>) -> GitWorkspaceInfo {
             git_root: None,
             vault_pathspec: None,
             git_root_relation: RELATION_NONE.to_string(),
+            mode: "none".to_string(),
             resolution_failure: None,
         },
         Err(category) => GitWorkspaceInfo {
@@ -127,39 +184,10 @@ pub fn git_workspace_info(vault_root: impl AsRef<Path>) -> GitWorkspaceInfo {
             git_root: None,
             vault_pathspec: None,
             git_root_relation: RELATION_NONE.to_string(),
+            mode: "none".to_string(),
             resolution_failure: Some(category),
         },
     }
-}
-
-fn normalize_prefix(prefix: &str) -> Result<String, String> {
-    let prefix = normalize_git_path(prefix.trim().trim_end_matches('/'));
-    if prefix.is_empty() {
-        return Ok(String::new());
-    }
-    if is_invalid_prefix(&prefix) {
-        return Err("invalid_git_prefix".to_string());
-    }
-    Ok(prefix)
-}
-
-fn is_invalid_prefix(prefix: &str) -> bool {
-    prefix.starts_with('/') || prefix.split('/').any(is_invalid_prefix_part)
-}
-
-fn is_invalid_prefix_part(part: &str) -> bool {
-    part.is_empty() || matches!(part, "." | "..")
-}
-
-fn ancestor_for_prefix(vault_root: &Path, prefix: &str) -> Result<PathBuf, String> {
-    let depth = prefix.split('/').filter(|part| !part.is_empty()).count();
-    let mut git_root = vault_root.to_path_buf();
-    for _ in 0..depth {
-        if !git_root.pop() {
-            return Err("invalid_git_prefix".to_string());
-        }
-    }
-    Ok(git_root)
 }
 
 fn path_to_git_string(path: &Path) -> String {
@@ -196,6 +224,7 @@ mod tests {
         assert_eq!(workspace.git_root(), dir.path().canonicalize().unwrap());
         assert_eq!(workspace.vault_pathspec(), ".");
         assert_eq!(workspace.relation(), RELATION_VAULT);
+        assert_eq!(workspace.mode(), GitRepositoryMode::ReadOnly);
     }
 
     #[test]
@@ -208,6 +237,7 @@ mod tests {
 
         assert_eq!(workspace.git_root(), dir.path().canonicalize().unwrap());
         assert_eq!(workspace.vault_pathspec(), "docs/user guides");
+        assert_eq!(workspace.mode(), GitRepositoryMode::ReadOnly);
         assert_eq!(
             workspace.repo_relative_path(Path::new("intro.md")),
             "docs/user guides/intro.md"
@@ -226,21 +256,152 @@ mod tests {
 
         assert_eq!(info.git_root_relation, RELATION_NONE);
         assert_eq!(info.git_root, None);
+        assert_eq!(info.mode, "none");
         assert_eq!(info.resolution_failure, None);
+    }
+
+    #[test]
+    fn existing_vault_repository_is_read_only_even_when_unborn() {
+        let dir = setup_git_repo();
+
+        let workspace = GitWorkspace::resolve(dir.path()).unwrap().unwrap();
+        let info = git_workspace_info(dir.path());
+
+        assert_eq!(workspace.mode(), GitRepositoryMode::ReadOnly);
+        assert_eq!(info.mode, "readOnly");
+        assert_eq!(info.git_root_relation, RELATION_VAULT);
+    }
+
+    #[test]
+    fn persistent_tolaria_marker_restores_managed_mode_after_restart() {
+        let dir = setup_git_repo();
+        fs::write(dir.path().join(".git").join("tolaria-managed"), "1\n").unwrap();
+
+        let workspace = GitWorkspace::resolve(dir.path()).unwrap().unwrap();
+
+        assert_eq!(workspace.mode(), GitRepositoryMode::Managed);
+    }
+
+    #[test]
+    fn legacy_tolaria_snapshot_is_migrated_to_a_persistent_marker() {
+        let dir = setup_git_repo();
+        fs::write(dir.path().join("note.md"), "# Note\n").unwrap();
+        git_command()
+            .args(["add", "-A"])
+            .current_dir(dir.path())
+            .output()
+            .unwrap();
+        git_command()
+            .args([
+                "-c",
+                "user.name=Tolaria",
+                "-c",
+                "user.email=tolaria@local",
+                "-c",
+                "commit.gpgsign=false",
+                "commit",
+                "--no-verify",
+                "-m",
+                "tolaria: snapshot",
+            ])
+            .current_dir(dir.path())
+            .output()
+            .unwrap();
+
+        let workspace = super::super::ensure_vault_repository(dir.path())
+            .unwrap()
+            .expect("the legacy managed repository should be detected");
+
+        assert_eq!(workspace.mode(), GitRepositoryMode::Managed);
+        assert!(dir.path().join(".git").join("tolaria-managed").is_file());
+    }
+
+    #[test]
+    fn user_snapshot_identity_is_not_migrated_to_managed_mode() {
+        let dir = setup_git_repo();
+        fs::write(dir.path().join("note.md"), "# Note\n").unwrap();
+        git_command()
+            .args(["add", "-A"])
+            .current_dir(dir.path())
+            .output()
+            .unwrap();
+        git_command()
+            .args([
+                "-c",
+                "user.name=User",
+                "-c",
+                "user.email=user@example.com",
+                "commit",
+                "--no-verify",
+                "-m",
+                "tolaria: snapshot",
+            ])
+            .current_dir(dir.path())
+            .output()
+            .unwrap();
+
+        let workspace = super::super::ensure_vault_repository(dir.path())
+            .unwrap()
+            .expect("the existing repository should remain resolvable");
+
+        assert_eq!(workspace.mode(), GitRepositoryMode::ReadOnly);
+        assert!(!dir.path().join(".git").join("tolaria-managed").exists());
+    }
+
+    #[test]
+    fn ensure_vault_repository_initializes_only_a_gitless_vault() {
+        let dir = tempfile::TempDir::new().unwrap();
+        fs::write(dir.path().join("note.md"), "# Note\n").unwrap();
+
+        let workspace = super::super::ensure_vault_repository(dir.path())
+            .unwrap()
+            .expect("Git should be available in the test environment");
+
+        assert_eq!(workspace.mode(), GitRepositoryMode::Managed);
+        assert_eq!(workspace.git_root(), dir.path().canonicalize().unwrap());
+        assert!(dir.path().join(".git").is_dir());
+        assert!(dir.path().join(".git").join("tolaria-managed").is_file());
+        assert!(!dir.path().join(".gitignore").exists());
+        assert!(!git_command()
+            .args(["rev-parse", "--verify", "HEAD"])
+            .current_dir(dir.path())
+            .output()
+            .unwrap()
+            .status
+            .success());
+
+        let second = super::super::ensure_vault_repository(dir.path())
+            .unwrap()
+            .expect("the managed repository should remain resolvable");
+        assert_eq!(second.mode(), GitRepositoryMode::Managed);
+    }
+
+    #[test]
+    fn ensure_vault_repository_does_not_create_nested_repository() {
+        let dir = setup_git_repo();
+        let vault = dir.path().join("docs");
+        fs::create_dir(&vault).unwrap();
+
+        let workspace = super::super::ensure_vault_repository(&vault)
+            .unwrap()
+            .expect("the parent repository should be detected");
+
+        assert_eq!(workspace.mode(), GitRepositoryMode::ReadOnly);
+        assert!(!vault.join(".git").exists());
     }
 
     #[test]
     fn nested_vault_status_excludes_parent_repository_changes() {
         let dir = setup_git_repo();
         let repository = dir.path();
-        let vault = repository.join("docs");
+        let vault = repository.join("vault");
         fs::create_dir(&vault).unwrap();
         fs::create_dir(repository.join("src")).unwrap();
         fs::write(vault.join("guide.md"), "# Guide\n").unwrap();
         fs::write(repository.join("outside.md"), "# Outside\n").unwrap();
         fs::write(repository.join("src/app.md"), "# Source docs\n").unwrap();
         git_command()
-            .args(["add", "-A"])
+            .args(["add", "-f", "-A"])
             .current_dir(repository)
             .output()
             .unwrap();

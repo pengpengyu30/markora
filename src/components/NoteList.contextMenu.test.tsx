@@ -10,10 +10,8 @@ function setViewportSize(width: number, height: number) {
 
 function renderNoteListWithFullActionMenu() {
   renderNoteList({
-    canCopyGitUrl: vi.fn(() => true),
     onBulkDeletePermanently: vi.fn(),
     onCopyFilePath: vi.fn(),
-    onCopyGitUrl: vi.fn(),
     onExportPdf: vi.fn(),
     onOpenInNewWindow: vi.fn(),
     onRenameFilename: vi.fn(),
@@ -38,8 +36,6 @@ describe('NoteList context menu', () => {
     const onRenameFilename = vi.fn()
     const onRevealFile = vi.fn()
     const onCopyFilePath = vi.fn()
-    const canCopyGitUrl = vi.fn(() => true)
-    const onCopyGitUrl = vi.fn()
 
     renderNoteList({
       onOpenInNewWindow,
@@ -48,8 +44,6 @@ describe('NoteList context menu', () => {
       onRenameFilename,
       onRevealFile,
       onCopyFilePath,
-      canCopyGitUrl,
-      onCopyGitUrl,
     })
 
     openBuildLaputaActions()
@@ -78,10 +72,6 @@ describe('NoteList context menu', () => {
 
     clickBuildLaputaAction('Copy file path')
     expect(onCopyFilePath).toHaveBeenCalledWith(mockEntries[0].path)
-
-    clickBuildLaputaAction('Copy git URL')
-    expect(canCopyGitUrl).toHaveBeenCalledWith(mockEntries[0])
-    expect(onCopyGitUrl).toHaveBeenCalledWith(mockEntries[0])
 
     clickBuildLaputaAction('Export note as PDF')
     expect(onExportPdf).toHaveBeenCalledWith(mockEntries[0])
@@ -119,18 +109,6 @@ describe('NoteList context menu', () => {
 
     fireEvent.click(screen.getByText('Copy file path'))
     expect(onCopyFilePath).toHaveBeenCalledWith(pdfEntry.path)
-  })
-
-  it('hides the git URL action for notes without a remote', () => {
-    renderNoteList({
-      canCopyGitUrl: () => false,
-      onCopyGitUrl: vi.fn(),
-      onCopyFilePath: vi.fn(),
-    })
-
-    fireEvent.contextMenu(screen.getByText('Build Laputa App'))
-
-    expect(screen.queryByText('Copy git URL')).not.toBeInTheDocument()
   })
 
   it('keeps note actions visible when opened near the bottom-right viewport edge', () => {

@@ -39,14 +39,12 @@
 		3D8616031E45547278A88B60 /* main.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
 		3E23075B718E12551904D3B6 /* frontmatter.rs */ = {isa = PBXFileReference; path = frontmatter.rs; sourceTree = "<group>"; };
 		43C29783A8194F596483AD35 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
-		4AAEE16E1AC0E472E9EAF907 /* conflict.rs */ = {isa = PBXFileReference; path = conflict.rs; sourceTree = "<group>"; };
 		4F4C2FE8D3697D180E1D4304 /* entry.rs */ = {isa = PBXFileReference; path = entry.rs; sourceTree = "<group>"; };
 		50B53E0FE0FC2A5515B48A28 /* main.rs */ = {isa = PBXFileReference; path = main.rs; sourceTree = "<group>"; };
 		517A653F5A674050430C1167 /* commit.rs */ = {isa = PBXFileReference; path = commit.rs; sourceTree = "<group>"; };
 		5800BA1A3E5C03124E02E946 /* title_sync.rs */ = {isa = PBXFileReference; path = title_sync.rs; sourceTree = "<group>"; };
 		5F28F393EB20BA7F8F2102EF /* config_seed.rs */ = {isa = PBXFileReference; path = config_seed.rs; sourceTree = "<group>"; };
 		6288FD61B10C36115B12B4A4 /* cache.rs */ = {isa = PBXFileReference; path = cache.rs; sourceTree = "<group>"; };
-		692CE75FC8E670478C4209C8 /* remote.rs */ = {isa = PBXFileReference; path = remote.rs; sourceTree = "<group>"; };
 		6A5C3DA38846B440DD56E98A /* claude_cli.rs */ = {isa = PBXFileReference; path = claude_cli.rs; sourceTree = "<group>"; };
 		6AC39E9370FCCB01E81EC824 /* ai_chat.rs */ = {isa = PBXFileReference; path = ai_chat.rs; sourceTree = "<group>"; };
 		6F67F5CDD6BB137126C5AABB /* menu.rs */ = {isa = PBXFileReference; path = menu.rs; sourceTree = "<group>"; };
@@ -55,7 +53,6 @@
 		7FCDD5B9C3D021A45C402A43 /* mod.rs */ = {isa = PBXFileReference; path = mod.rs; sourceTree = "<group>"; };
 		81C8EBDD5CAD14B7F366AA54 /* trash.rs */ = {isa = PBXFileReference; path = trash.rs; sourceTree = "<group>"; };
 		84ECD74B7841E52AD6549346 /* image.rs */ = {isa = PBXFileReference; path = image.rs; sourceTree = "<group>"; };
-		87F0375DE367A8192708C2D8 /* pulse.rs */ = {isa = PBXFileReference; path = pulse.rs; sourceTree = "<group>"; };
 		9274F38B9AA0A9A44A3CBEAA /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		94B5B4BBA850E2BCAE3E4CC7 /* mod.rs */ = {isa = PBXFileReference; path = mod.rs; sourceTree = "<group>"; };
 		A17AA2469F233241B0DF8BE3 /* vault_list.rs */ = {isa = PBXFileReference; path = vault_list.rs; sourceTree = "<group>"; };
@@ -69,7 +66,6 @@
 		C80E8FDDA822F4F167B601C1 /* mod_tests.rs */ = {isa = PBXFileReference; path = mod_tests.rs; sourceTree = "<group>"; };
 		CEDEEAE68B0DB4CD43ED89A8 /* laputa_iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = laputa_iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D0900BA51E68887E5DA395B7 /* bindings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bindings.h; sourceTree = "<group>"; };
-		DDC76F9C00A29C8C52345249 /* history.rs */ = {isa = PBXFileReference; path = history.rs; sourceTree = "<group>"; };
 		E1428C0A0CC22F741B7A4A0C /* lib.rs */ = {isa = PBXFileReference; path = lib.rs; sourceTree = "<group>"; };
 		E36BAA25D76F212157A06395 /* search.rs */ = {isa = PBXFileReference; path = search.rs; sourceTree = "<group>"; };
 		E3FC10F8A144BB158574C774 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
@@ -178,11 +174,7 @@
 			isa = PBXGroup;
 			children = (
 				517A653F5A674050430C1167 /* commit.rs */,
-				4AAEE16E1AC0E472E9EAF907 /* conflict.rs */,
-				DDC76F9C00A29C8C52345249 /* history.rs */,
 				7FCDD5B9C3D021A45C402A43 /* mod.rs */,
-				87F0375DE367A8192708C2D8 /* pulse.rs */,
-				692CE75FC8E670478C4209C8 /* remote.rs */,
 				BB4E3DD2D3BA34BB86C908B6 /* status.rs */,
 			);
 			path = git;

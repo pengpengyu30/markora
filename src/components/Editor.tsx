@@ -12,9 +12,8 @@ import {
 } from '../hooks/useImageDrop'
 import { translate, type AppLocale } from '../lib/i18n'
 import { RUNTIME_STYLE_NONCE } from '../lib/runtimeStyleNonce'
-import type { VaultEntry, NoteWidthMode, NoteStatus } from '../types'
+import type { VaultEntry, NoteWidthMode } from '../types'
 import { ResizeHandle } from './ResizeHandle'
-import { useDiffMode, type CommitDiffRequest } from '../hooks/useDiffMode'
 import { useEditorFocus } from '../hooks/useEditorFocus'
 import { useDragRegion } from '../hooks/useDragRegion'
 import { formatShortcutDisplay } from '../hooks/appCommandCatalog'
@@ -70,11 +69,6 @@ export interface EditorProps {
   isVaultLoading?: boolean
   entries: VaultEntry[]
   onNavigateWikilink: (target: string) => void
-  onLoadDiff?: (path: string) => Promise<string>
-  onLoadDiffAtCommit?: (path: string, commitHash: string) => Promise<string>
-  pendingCommitDiffRequest?: CommitDiffRequest | null
-  onPendingCommitDiffHandled?: (requestId: number) => void
-  getNoteStatus?: (path: string) => NoteStatus
   onCreateNote?: () => void
   rightPanelCollapsed: boolean
   onToggleRightPanel: () => void
@@ -86,7 +80,6 @@ export interface EditorProps {
   onRevealFile?: (path: string) => void
   onCopyFilePath?: (path: string) => void
   onCopyDeepLink?: (entry: VaultEntry) => void
-  onCopyGitUrl?: (entry: VaultEntry) => void
   onOpenExternalFile?: (path: string) => void
   onDeleteNote?: (path: string) => void
   onContentChange?: (path: string, content: string) => void
@@ -104,8 +97,6 @@ export interface EditorProps {
   rawToggleRef?: React.MutableRefObject<() => void>
   /** Mutable ref that Editor registers editor find commands into, for shortcuts and menus. */
   findInNoteRef?: React.MutableRefObject<((options?: { replace?: boolean }) => void) | null>
-  /** Mutable ref that Editor registers its diff-mode toggle into, for command palette access. */
-  diffToggleRef?: React.MutableRefObject<() => void>
   /** Mutable ref that Editor registers its table-of-contents toggle into, for app shortcuts and menus. */
   tableOfContentsToggleRef?: React.MutableRefObject<() => void>
   /** Mutable ref that Editor registers its backlinks toggle into, for app commands and menus. */
@@ -116,12 +107,6 @@ export interface EditorProps {
   turnCurrentBlockIntoRef?: React.MutableRefObject<((target: RichEditorBlockTypeDefinition) => void) | null>
   /** Emits short user-visible messages for editor actions. */
   onToast?: (message: string | null) => void
-  /** Whether the active note has a merge conflict. */
-  isConflicted?: boolean
-  /** Resolve conflict by keeping the local version. */
-  onKeepMine?: (path: string) => void
-  /** Resolve conflict by keeping the remote version. */
-  onKeepTheirs?: (path: string) => void
   /** Registers a hook that flushes pending rich-editor changes into app state before external actions. */
   flushPendingEditorContentRef?: React.MutableRefObject<((path: string) => void) | null>
   /** Registers a hook that flushes the raw editor buffer into app state before external actions. */
@@ -130,42 +115,6 @@ export interface EditorProps {
 }
 
 type ImageImportErrorHandler = (error: ImageImportError) => void
-
-function useEditorModeExclusion({
-  diffMode,
-  rawMode,
-  handleToggleDiff,
-  handleToggleRaw,
-  rawToggleRef,
-  diffToggleRef,
-}: {
-  diffMode: boolean
-  rawMode: boolean
-  handleToggleDiff: () => void | Promise<void>
-  handleToggleRaw: () => void
-  rawToggleRef?: React.MutableRefObject<() => void>
-  diffToggleRef?: React.MutableRefObject<() => void>
-}) {
-  const handleToggleDiffExclusive = useCallback(async () => {
-    if (!diffMode && rawMode) handleToggleRaw()
-    await handleToggleDiff()
-  }, [diffMode, rawMode, handleToggleDiff, handleToggleRaw])
-
-  const handleToggleRawExclusive = useCallback(() => {
-    if (!rawMode && diffMode) handleToggleDiff()
-    handleToggleRaw()
-  }, [rawMode, diffMode, handleToggleDiff, handleToggleRaw])
-
-  useEffect(() => {
-    if (rawToggleRef) rawToggleRef.current = handleToggleRawExclusive
-  }, [rawToggleRef, handleToggleRawExclusive])
-
-  useEffect(() => {
-    if (diffToggleRef) diffToggleRef.current = handleToggleDiffExclusive
-  }, [diffToggleRef, handleToggleDiffExclusive])
-
-  return { handleToggleDiffExclusive, handleToggleRawExclusive }
-}
 
 function EditorEmptyState({ locale = 'en' }: { locale?: AppLocale }) {
   const breadcrumbBarHeight = 52
@@ -201,13 +150,7 @@ interface EditorSetupParams {
   activeTabPath: string | null
   vaultPath?: string
   onContentChange?: (path: string, content: string) => void
-  onLoadDiff?: (path: string) => Promise<string>
-  onLoadDiffAtCommit?: (path: string, commitHash: string) => Promise<string>
-  pendingCommitDiffRequest?: CommitDiffRequest | null
-  onPendingCommitDiffHandled?: (requestId: number) => void
-  getNoteStatus?: (path: string) => NoteStatus
   rawToggleRef?: React.MutableRefObject<() => void>
-  diffToggleRef?: React.MutableRefObject<() => void>
   onImageImportError?: ImageImportErrorHandler
 }
 
@@ -240,13 +183,7 @@ function useEditorSetup(options: EditorSetupParams) {
     activeTabPath,
     vaultPath,
     onContentChange,
-    onLoadDiff,
-    onLoadDiffAtCommit,
-    pendingCommitDiffRequest,
-    onPendingCommitDiffHandled,
-    getNoteStatus,
     rawToggleRef,
-    diffToggleRef,
     onImageImportError,
   } = options
   const vaultPathRef = useRef(vaultPath)
@@ -377,26 +314,18 @@ function useEditorSetup(options: EditorSetupParams) {
       }, [flushPendingEditorChange])
       useEditorFocus(editor, editorMountedRef)
 
-      const { diffMode, diffContent, diffLoading, handleToggleDiff } = useDiffMode({
-        activeTabPath,
-        onLoadDiff,
-        onLoadDiffAtCommit,
-        pendingCommitDiffRequest,
-        onPendingCommitDiffHandled,
-      })
-
-      const { handleToggleDiffExclusive, handleToggleRawExclusive } = useEditorModeExclusion({
-        diffMode,
-        rawMode,
-        handleToggleDiff,
-        handleToggleRaw,
-        rawToggleRef,
-        diffToggleRef,
-      })
+      const handleToggleRawExclusive = useCallback(() => {
+        handleToggleRaw()
+      }, [handleToggleRaw])
+      useEffect(() => {
+        if (!rawToggleRef) return
+        rawToggleRef.current = handleToggleRawExclusive
+        return () => {
+          if (rawToggleRef.current === handleToggleRawExclusive) rawToggleRef.current = () => {}
+        }
+      }, [handleToggleRawExclusive, rawToggleRef])
 
       const isLoadingNewTab = activeTabPath !== null && !activeTab
-      const activeStatus = activeTab ? (getNoteStatus?.(activeTab.entry.path) ?? 'clean') : 'clean'
-      const showDiffToggle = !!(activeTab && (diffMode || activeStatus === 'modified'))
 
       return {
         editor,
@@ -404,16 +333,10 @@ function useEditorSetup(options: EditorSetupParams) {
         rawLatestContentRef,
         rawModeContent,
         rawMode,
-        diffMode,
-        diffContent,
-        diffLoading,
-        handleToggleDiffExclusive,
         handleToggleRawExclusive,
         handleEditorChange,
         flushPendingEditorChange,
         isLoadingNewTab,
-        activeStatus,
-        showDiffToggle,
         sheetFlushRef,
         richEditorContentReady,
       }
@@ -467,17 +390,11 @@ function useEditorSetup(options: EditorSetupParams) {
       isVaultLoading?: boolean
       entries: VaultEntry[]
       editor: ReturnType<typeof useCreateBlockNote>
-      diffMode: boolean
-      diffContent: string | null
-      diffLoading: boolean
       richEditorContentReady: boolean
-      handleToggleDiffExclusive: () => void | Promise<void>
       rawMode: boolean
       handleToggleRawExclusive: () => void
       onContentChange?: (path: string, content: string) => void
       onSave?: () => void
-      activeStatus: NoteStatus
-      showDiffToggle: boolean
       showTableOfContents?: boolean
       showBacklinks?: boolean
       onToggleTableOfContents?: () => void
@@ -487,7 +404,6 @@ function useEditorSetup(options: EditorSetupParams) {
       onRevealFile?: (path: string) => void
       onCopyFilePath?: (path: string) => void
       onCopyDeepLink?: (entry: VaultEntry) => void
-      onCopyGitUrl?: (entry: VaultEntry) => void
       onOpenExternalFile?: (path: string) => void
       onDeleteNote?: (path: string) => void
       vaultPath?: string
@@ -498,9 +414,6 @@ function useEditorSetup(options: EditorSetupParams) {
       onRenameFilename?: (path: string, newFilenameStem: string) => void
       noteWidth?: NoteWidthMode
       onToggleNoteWidth?: () => void
-      isConflicted?: boolean
-      onKeepMine?: (path: string) => void
-      onKeepTheirs?: (path: string) => void
       onRightPanelResize: (delta: number) => void
       rightPanelWidth: number
       rightPanelEntry: VaultEntry | null
@@ -518,17 +431,11 @@ function useEditorSetup(options: EditorSetupParams) {
       isVaultLoading,
       entries,
       editor,
-      diffMode,
-      diffContent,
-      diffLoading,
       richEditorContentReady,
-      handleToggleDiffExclusive,
       rawMode,
       handleToggleRawExclusive,
       onContentChange,
       onSave,
-      activeStatus,
-      showDiffToggle,
       showTableOfContents,
       showBacklinks,
       onToggleTableOfContents,
@@ -538,7 +445,6 @@ function useEditorSetup(options: EditorSetupParams) {
       onRevealFile,
       onCopyFilePath,
       onCopyDeepLink,
-      onCopyGitUrl,
       onExportPdf,
       onOpenExternalFile,
       onDeleteNote,
@@ -550,9 +456,6 @@ function useEditorSetup(options: EditorSetupParams) {
       onRenameFilename,
       noteWidth,
       onToggleNoteWidth,
-      isConflicted,
-      onKeepMine,
-      onKeepTheirs,
       onRightPanelResize,
       rightPanelWidth,
       rightPanelEntry,
@@ -587,17 +490,11 @@ function useEditorSetup(options: EditorSetupParams) {
               isVaultLoading={isVaultLoading}
               entries={entries}
               editor={editor}
-              diffMode={diffMode}
-              diffContent={diffContent}
-              diffLoading={diffLoading}
               richEditorContentReady={richEditorContentReady}
-              onToggleDiff={handleToggleDiffExclusive}
               rawMode={rawMode}
               onToggleRaw={handleToggleRawExclusive}
               onRawContentChange={onContentChange}
               onSave={onSave}
-              activeStatus={activeStatus}
-              showDiffToggle={showDiffToggle}
               showTableOfContents={showTableOfContents}
               onToggleTableOfContents={onToggleTableOfContents}
               onNavigateWikilink={onNavigateWikilink}
@@ -605,7 +502,6 @@ function useEditorSetup(options: EditorSetupParams) {
               onRevealFile={onRevealFile}
               onCopyFilePath={onCopyFilePath}
               onCopyDeepLink={onCopyDeepLink}
-              onCopyGitUrl={onCopyGitUrl}
               onExportPdf={() => onExportPdf?.('breadcrumb')}
               onDeleteNote={onDeleteNote}
               vaultPath={vaultPath}
@@ -616,9 +512,6 @@ function useEditorSetup(options: EditorSetupParams) {
               onRenameFilename={onRenameFilename}
               noteWidth={noteWidth}
               onToggleNoteWidth={onToggleNoteWidth}
-              isConflicted={isConflicted}
-              onKeepMine={onKeepMine}
-              onKeepTheirs={onKeepTheirs}
               onImageImportError={onImageImportError}
               locale={locale}
             />
@@ -673,13 +566,7 @@ export const Editor = memo(function Editor(props: EditorProps) {
     activeTabPath: props.activeTabPath,
     vaultPath: props.vaultPath,
     onContentChange: props.onContentChange,
-    onLoadDiff: props.onLoadDiff,
-    onLoadDiffAtCommit: props.onLoadDiffAtCommit,
-    pendingCommitDiffRequest: props.pendingCommitDiffRequest,
-    onPendingCommitDiffHandled: props.onPendingCommitDiffHandled,
-    getNoteStatus: props.getNoteStatus,
     rawToggleRef: props.rawToggleRef,
-    diffToggleRef: props.diffToggleRef,
     onImageImportError: handleImageImportError,
   })
   const findRequest = useEditorFindCommand({
@@ -690,15 +577,12 @@ export const Editor = memo(function Editor(props: EditorProps) {
   })
   useTurnCurrentBlockIntoCommand({
     activeTab: runtime.activeTab,
-    diffMode: runtime.diffMode,
     editor: runtime.editor,
     rawMode: runtime.rawMode,
     turnCurrentBlockIntoRef: props.turnCurrentBlockIntoRef,
   })
   const handleExportPdf = useEditorPdfExport({
     activeTab: runtime.activeTab,
-    diffMode: runtime.diffMode,
-    handleToggleDiffExclusive: runtime.handleToggleDiffExclusive,
     handleToggleRawExclusive: runtime.handleToggleRawExclusive,
     locale: props.locale,
     onToast: props.onToast,

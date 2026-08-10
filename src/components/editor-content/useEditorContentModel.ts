@@ -2,7 +2,7 @@ import type React from 'react'
 import { useMemo, useRef } from 'react'
 import type { useCreateBlockNote } from '@blocknote/react'
 import type { AppLocale } from '../../lib/i18n'
-import type { NoteWidthMode, NoteStatus, VaultEntry } from '../../types'
+import type { NoteWidthMode, VaultEntry } from '../../types'
 import { useEditorTheme } from '../../hooks/useTheme'
 import { deriveEditorContentState } from './editorContentState'
 import type { RawEditorFindRequest } from '../RawEditorFindBar'
@@ -20,17 +20,11 @@ export interface EditorContentProps {
   isVaultLoading?: boolean
   entries: VaultEntry[]
   editor: ReturnType<typeof useCreateBlockNote>
-  diffMode: boolean
-  diffContent: string | null
-  diffLoading: boolean
   richEditorContentReady: boolean
-  onToggleDiff: () => void
   rawMode: boolean
   onToggleRaw: () => void
   onRawContentChange?: (path: string, content: string) => void
   onSave?: () => void
-  activeStatus: NoteStatus
-  showDiffToggle: boolean
   showTableOfContents?: boolean
   onToggleTableOfContents?: () => void
   onNavigateWikilink: (target: string) => void
@@ -38,7 +32,6 @@ export interface EditorContentProps {
   onRevealFile?: (path: string) => void
   onCopyFilePath?: (path: string) => void
   onCopyDeepLink?: (entry: VaultEntry) => void
-  onCopyGitUrl?: (entry: VaultEntry) => void
   onExportPdf?: () => void
   onDeleteNote?: (path: string) => void
   vaultPath?: string
@@ -49,9 +42,6 @@ export interface EditorContentProps {
   onRenameFilename?: (path: string, newFilenameStem: string) => void
   noteWidth?: NoteWidthMode
   onToggleNoteWidth?: () => void
-  isConflicted?: boolean
-  onKeepMine?: (path: string) => void
-  onKeepTheirs?: (path: string) => void
   onImageImportError?: (error: ImageImportError) => void
   locale?: AppLocale
 }
@@ -62,7 +52,6 @@ export function useEditorContentModel(props: EditorContentProps) {
     activeTabPath,
     entries,
     rawMode,
-    diffMode,
   } = props
 
   const { cssVars } = useEditorTheme()
@@ -79,9 +68,8 @@ export function useEditorContentModel(props: EditorContentProps) {
     activeTab,
     entries,
     rawMode,
-    activeStatus: props.activeStatus,
-  }), [activeTab, entries, props.activeStatus, rawMode])
-  const showEditor = !diffMode && showContentEditor
+  }), [activeTab, entries, rawMode])
+  const showEditor = showContentEditor
   const loadingEntry = !activeTab && activeTabPath
     ? entries.find((entry) => entry.path === activeTabPath) ?? null
     : null

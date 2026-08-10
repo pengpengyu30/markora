@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { beforeEach, describe, it, expect, vi } from 'vitest'
 import { WelcomeScreen } from './WelcomeScreen'
-import tolariaIcon from '@/assets/tolaria-icon.svg'
+import customizeLogo from '@/assets/customize-logo-cropped.svg'
 import { TOLARIA_FIRST_LAUNCH_DOCS_URL } from '@/constants/feedback'
 
 const dragRegionMouseDown = vi.fn()
@@ -43,7 +43,7 @@ describe('WelcomeScreen', () => {
       render(<WelcomeScreen {...defaultProps} />)
 
       const brandIcon = screen.getByAltText('Tolaria icon')
-      expect(brandIcon).toHaveAttribute('src', tolariaIcon)
+      expect(brandIcon).toHaveAttribute('src', customizeLogo)
     })
 
     it('shows the onboarding actions in the guided-first order', () => {

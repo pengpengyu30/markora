@@ -965,11 +965,13 @@ export default defineConfig({
     },
   },
 
-  // Inject the demo-vault-v2 path in local dev only — production Tauri builds and
-  // CI must resolve the default vault path at runtime via the backend to avoid
-  // baking the CI runner's absolute path into the distributed bundle.
+  // Keep the repository fixture opt-in. Normal dev and Tauri runs should use the
+  // persisted vault list or the runtime Getting Started path instead of opening
+  // demo-vault-v2 on every startup.
   define: {
-    ...(process.env.CI || (process.env.TAURI_PLATFORM && !process.env.TAURI_DEBUG)
+    ...(process.env.TOLARIA_USE_DEMO_VAULT !== '1'
+      || process.env.CI
+      || (process.env.TAURI_PLATFORM && !process.env.TAURI_DEBUG)
       ? {}
       : { __DEMO_VAULT_PATH__: JSON.stringify(path.resolve(__dirname, 'demo-vault-v2')) }),
   },

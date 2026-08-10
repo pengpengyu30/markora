@@ -5,11 +5,9 @@ import type { NoteWidthMode, SidebarSelection, VaultEntry } from '../types'
 import type { ViewMode } from './useViewMode'
 import { buildNavigationCommands } from './commands/navigationCommands'
 import { buildNoteCommands } from './commands/noteCommands'
-import { buildGitCommands } from './commands/gitCommands'
 import { buildViewCommands } from './commands/viewCommands'
 import { buildSettingsCommands } from './commands/settingsCommands'
 import { localizeCommandActions } from './commands/localizeCommands'
-import type { GitRepositoryOption } from '../utils/gitRepositories'
 import type { ImmediateCreateOptions } from './useNoteCreation'
 import type { RichEditorBlockTypeDefinition } from '../utils/richEditorBlockTypes'
 
@@ -21,9 +19,9 @@ export { buildViewCommands } from './commands/viewCommands'
 interface CommandRegistryConfig {
   activeTabPath: string | null
   entries: VaultEntry[]
-  modifiedCount: number
   onReloadVault?: () => void
   onRepairVault?: () => void
+  onRestoreDeletedNote?: () => void
   locale?: AppLocale
   systemLocale?: AppLocale
   selectedUiLanguage?: UiLanguagePreference
@@ -38,8 +36,6 @@ interface CommandRegistryConfig {
   onCopyActiveDeepLink?: (path: string) => void
   onOpenActiveFileExternal?: (path: string) => void
   onExportNoteAsPdf?: () => void
-  onRestoreDeletedNote?: () => void
-  canRestoreDeletedNote?: boolean
   onQuickOpen: () => void
   onCreateNote: (options?: ImmediateCreateOptions) => void
   onSave: () => void
@@ -54,20 +50,9 @@ interface CommandRegistryConfig {
   onOpenFeedback?: () => void
   onOpenVault?: () => void
   onCreateEmptyVault?: () => void
-  onAddRemote?: () => void
-  canAddRemote?: boolean
-  gitFeaturesEnabled?: boolean
-  isGitVault?: boolean
-  gitRepositories?: GitRepositoryOption[]
-  onInitializeGit?: () => void
   onDeleteNote: (path: string) => void
-  onCommitPush: () => void
-  onPull?: () => void
-  onPullRepository?: (path: string) => void
-  onResolveConflicts?: () => void
   onSetViewMode: (mode: ViewMode) => void
   onToggleBacklinks: () => void
-  onToggleDiff?: () => void
   onToggleRawEditor?: () => void
   onFindInNote?: () => void
   onReplaceInNote?: () => void
@@ -76,7 +61,6 @@ interface CommandRegistryConfig {
   onSetNoteWidth?: (mode: NoteWidthMode) => void
   onSetDefaultNoteWidth?: (mode: NoteWidthMode) => void
   onToggleTableOfContents?: () => void
-  activeNoteModified: boolean
   onCheckForUpdates?: () => void
   onZoomIn: () => void
   onZoomOut: () => void
@@ -109,25 +93,23 @@ function currentFolderCreateOptions(selection: SidebarSelection | undefined): Im
 
 export function useCommandRegistry(config: CommandRegistryConfig): import('./commands/types').CommandAction[] {
   const {
-    activeTabPath, entries, modifiedCount,
+    activeTabPath, entries,
     onQuickOpen, onCreateNote, onSave, onUndo, onRedo, canUndo, canRedo, undoLabel, redoLabel,
     onPastePlainText, onOpenSettings, onOpenFeedback,
     onDeleteNote,
-    onCommitPush, onPull, onResolveConflicts, onSetViewMode, onToggleBacklinks, onToggleDiff, onToggleRawEditor, onFindInNote, onReplaceInNote,
+    onSetViewMode, onToggleBacklinks, onToggleRawEditor, onFindInNote, onReplaceInNote,
     noteWidth, defaultNoteWidth, onSetNoteWidth, onSetDefaultNoteWidth, onToggleTableOfContents, onOpenVault, onCreateEmptyVault,
-    activeNoteModified,
     onZoomIn, onZoomOut, onZoomReset, zoomLevel,
     onSelect, onRenameFolder, onDeleteFolder, onRevealSelectedFolder, onCopySelectedFolderPath,
     onGoBack, onGoForward, canGoBack, canGoForward,
     onCheckForUpdates,
     onRemoveActiveVault, onRestoreGettingStarted, isGettingStartedHidden, vaultCount,
-    onReloadVault, onRepairVault,
+    onReloadVault, onRepairVault, onRestoreDeletedNote,
     locale, systemLocale, selectedUiLanguage, onSetUiLanguage, onSetThemeMode,
     onMoveNoteToFolder, canMoveNoteToFolder, onTurnCurrentBlockInto,
     onOpenInNewWindow, onRevealActiveFile, onCopyActiveFilePath, onCopyActiveDeepLink, onOpenActiveFileExternal, onExportNoteAsPdf,
-    onRestoreDeletedNote, canRestoreDeletedNote,
+    
     selection,
-    gitFeaturesEnabled, isGitVault, gitRepositories, onInitializeGit, onPullRepository,
   } = config
 
   const hasActiveNote = activeTabPath !== null
@@ -166,7 +148,6 @@ export function useCommandRegistry(config: CommandRegistryConfig): import('./com
     onOpenInNewWindow,
     onRevealActiveFile, onCopyActiveFilePath, onOpenActiveFileExternal,
     onCopyActiveDeepLink, onExportNoteAsPdf,
-    onRestoreDeletedNote, canRestoreDeletedNote,
   }), [
     hasActiveNote, activeTabPath, activeEntry?.fileKind, locale,
     folderCreateOptions, onCreateNote, onSave, onUndo, onRedo, canUndo, canRedo, undoLabel, redoLabel,
@@ -175,56 +156,36 @@ export function useCommandRegistry(config: CommandRegistryConfig): import('./com
     onOpenInNewWindow,
     onRevealActiveFile, onCopyActiveFilePath, onOpenActiveFileExternal,
     onCopyActiveDeepLink, onExportNoteAsPdf,
-    onRestoreDeletedNote, canRestoreDeletedNote,
-  ])
-
-  const gitCommands = useMemo(() => buildGitCommands({
-    modifiedCount,
-    gitFeaturesEnabled,
-    isGitVault,
-    repositories: gitRepositories,
-    canAddRemote: config.canAddRemote ?? false,
-    onAddRemote: config.onAddRemote,
-    onCommitPush,
-    onInitializeGit,
-    onPull,
-    onPullRepository,
-    onResolveConflicts,
-    onSelect,
-  }), [
-    modifiedCount, gitFeaturesEnabled, isGitVault, gitRepositories, config.canAddRemote, config.onAddRemote,
-    onCommitPush, onInitializeGit, onPull, onPullRepository, onResolveConflicts, onSelect,
   ])
 
   const viewCommands = useMemo(() => buildViewCommands({
-    hasActiveNote, activeNoteModified, onSetViewMode, onToggleBacklinks,
-    onToggleDiff, onToggleRawEditor, noteWidth, defaultNoteWidth, onSetNoteWidth, onSetDefaultNoteWidth, onToggleTableOfContents, zoomLevel, onZoomIn, onZoomOut, onZoomReset,
+    hasActiveNote, onSetViewMode, onToggleBacklinks,
+    onToggleRawEditor, noteWidth, defaultNoteWidth, onSetNoteWidth, onSetDefaultNoteWidth, onToggleTableOfContents, zoomLevel, onZoomIn, onZoomOut, onZoomReset,
   }), [
-    hasActiveNote, activeNoteModified, onSetViewMode, onToggleBacklinks,
-    onToggleDiff, onToggleRawEditor, noteWidth, defaultNoteWidth, onSetNoteWidth, onSetDefaultNoteWidth, onToggleTableOfContents,
+    hasActiveNote, onSetViewMode, onToggleBacklinks,
+    onToggleRawEditor, noteWidth, defaultNoteWidth, onSetNoteWidth, onSetDefaultNoteWidth, onToggleTableOfContents,
     zoomLevel, onZoomIn, onZoomOut, onZoomReset,
   ])
 
   const settingsCommands = useMemo(() => buildSettingsCommands({
     vaultCount, isGettingStartedHidden,
     onOpenSettings, onOpenFeedback, onOpenVault, onCreateEmptyVault, onRemoveActiveVault, onRestoreGettingStarted,
-    onCheckForUpdates, onReloadVault, onRepairVault,
+    onCheckForUpdates, onReloadVault, onRepairVault, onRestoreDeletedNote,
     locale, systemLocale, selectedUiLanguage, onSetUiLanguage, onSetThemeMode,
   }), [
     vaultCount, isGettingStartedHidden, onOpenSettings, onOpenFeedback,
     onOpenVault, onCreateEmptyVault, onRemoveActiveVault, onRestoreGettingStarted,
-    onCheckForUpdates, onReloadVault, onRepairVault,
+    onCheckForUpdates, onReloadVault, onRepairVault, onRestoreDeletedNote,
     locale, systemLocale, selectedUiLanguage, onSetUiLanguage, onSetThemeMode,
   ])
 
   const commands = useMemo(() => [
     ...navigationCommands,
     ...noteCommands,
-    ...gitCommands,
     ...viewCommands,
     ...settingsCommands,
   ], [
-    navigationCommands, noteCommands, gitCommands, viewCommands,
+    navigationCommands, noteCommands, viewCommands,
     settingsCommands,
   ])
 

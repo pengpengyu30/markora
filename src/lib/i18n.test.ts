@@ -71,12 +71,6 @@ describe('i18n', () => {
     expect(translate('it-IT', 'editor.callout.defaultHeading')).toBe('Nota')
   })
 
-  it('drops English-only plural suffix values for non-English locales', () => {
-    expect(translate('en', 'status.conflict.count', { count: 2, plural: 's' })).toBe('2 conflicts')
-    expect(translate('zh-CN', 'status.conflict.count', { count: 2, plural: 's' })).toBe('2 个冲突')
-    expect(translate('zh-TW', 'status.conflict.count', { count: 2, plural: 's' })).toBe('2 個衝突')
-  })
-
   it('uses platform-neutral Chinese labels for revealing files and folders', () => {
     const revealKeys = ['sidebar.action.revealFolderMenu', 'editor.toolbar.revealFile'] as const
 

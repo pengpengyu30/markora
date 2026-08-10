@@ -38,8 +38,6 @@ interface NoteCommandsConfig {
   onCopyActiveFilePath?: (path: string) => void
   onCopyActiveDeepLink?: (path: string) => void
   onOpenActiveFileExternal?: (path: string) => void
-  onRestoreDeletedNote?: () => void
-  canRestoreDeletedNote?: boolean
   locale?: AppLocale
   onExportNoteAsPdf?: () => void
 }
@@ -167,22 +165,9 @@ function buildDestructiveNoteCommands(config: NoteCommandsConfig): CommandAction
 
 function buildOptionalNoteCommands(config: NoteCommandsConfig): CommandAction[] {
   return [
-    ...buildRecoveryCommands(config),
     ...buildFileActionCommands(config),
     ...buildRetargetingCommands(config),
     ...buildPresentationCommands(config),
-  ]
-}
-
-function buildRecoveryCommands(config: NoteCommandsConfig): CommandAction[] {
-  return [
-    createNoteCommand({
-      id: 'restore-deleted-note',
-      label: 'Restore Deleted Note',
-      keywords: ['restore', 'deleted', 'undelete', 'git', 'checkout'],
-      enabled: !!config.canRestoreDeletedNote && !!config.onRestoreDeletedNote,
-      execute: () => config.onRestoreDeletedNote?.(),
-    }),
   ]
 }
 

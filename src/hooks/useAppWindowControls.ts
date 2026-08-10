@@ -27,7 +27,6 @@ interface UseAppWindowControlsParams {
 
 interface AppWindowActionRefs {
   backlinksToggleRef: MutableRefObject<() => void>
-  diffToggleRef: MutableRefObject<() => void>
   findInNoteRef: MutableRefObject<FindInNoteHandler | null>
   pdfExportRef: MutableRefObject<PdfExportHandler | null>
   rawToggleRef: MutableRefObject<() => void>
@@ -37,7 +36,6 @@ interface AppWindowActionRefs {
 interface AppWindowControls {
   backlinksToggleRef: MutableRefObject<() => void>
   buildNumber: string | undefined
-  diffToggleRef: MutableRefObject<() => void>
   findInNoteRef: MutableRefObject<FindInNoteHandler | null>
   handleCollapseSidebar: () => void
   handleSetViewMode: (mode: ViewMode) => void
@@ -53,7 +51,6 @@ interface AppWindowControls {
 function useAppWindowActionRefs(): AppWindowActionRefs {
   return {
     backlinksToggleRef: useRef<() => void>(() => { /* Initialized before the action is exposed. */ }),
-    diffToggleRef: useRef<() => void>(() => { /* Initialized before the action is exposed. */ }),
     findInNoteRef: useRef<FindInNoteHandler | null>(null),
     pdfExportRef: useRef<PdfExportHandler | null>(null),
     rawToggleRef: useRef<() => void>(() => { /* Initialized before the action is exposed. */ }),
@@ -98,7 +95,6 @@ export function useAppWindowControls({
 }: UseAppWindowControlsParams): AppWindowControls {
   const {
     backlinksToggleRef,
-    diffToggleRef,
     findInNoteRef,
     pdfExportRef,
     rawToggleRef,
@@ -145,7 +141,6 @@ export function useAppWindowControls({
   return {
     backlinksToggleRef,
     buildNumber,
-    diffToggleRef,
     findInNoteRef,
     handleCollapseSidebar,
     handleSetViewMode,

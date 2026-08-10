@@ -194,7 +194,6 @@ export function VaultMenu(props: VaultMenuProps) {
     defaultWorkspacePath,
     onSetDefaultWorkspace,
     onOpenVaultSettings,
-    onCloneVault,
     onCloneGettingStarted,
     onRemoveVault,
     multiWorkspaceEnabled = false,
@@ -232,10 +231,9 @@ export function VaultMenu(props: VaultMenuProps) {
       multiWorkspaceEnabled,
       onCreateEmptyVault,
       onCloneGettingStarted,
-      onCloneVault,
       onOpenLocalFolder,
     })
-  }, [multiWorkspaceEnabled, onCreateEmptyVault, onCloneGettingStarted, onCloneVault, onOpenLocalFolder])
+  }, [multiWorkspaceEnabled, onCreateEmptyVault, onCloneGettingStarted, onOpenLocalFolder])
 
   return (
     <div ref={menuRef} style={{ position: 'relative' }}>

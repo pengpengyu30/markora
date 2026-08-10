@@ -7,24 +7,21 @@ import type {
 } from '../../types'
 import type { AppLocale } from '../../lib/i18n'
 import type { AllNotesFileVisibility } from '../../utils/allNotesFileVisibility'
-import type { GitRepositoryOption } from '../../utils/gitRepositories'
 import type { ImmediateCreateOptions } from '../../hooks/useNoteCreation'
 import { NoteItem } from '../NoteItem'
 import { prefetchNoteContent } from '../../hooks/useTabManagement'
 import type { MultiSelectState } from '../../hooks/useMultiSelect'
-import { isDeletedNoteEntry, resolveHeaderTitle, type DeletedNoteEntry } from './noteListUtils'
+import { isDeletedNoteEntry, resolveHeaderTitle } from './noteListUtils'
 import { useNoteListFullTextSearch } from './noteListFullTextSearch'
 import { filterEntriesByNoteListQuery } from './noteListSearch'
 import { useNoteListSearchState } from './useNoteListSearchState'
 import {
-  useChangeStatusResolver,
   useModifiedFilesState,
   useNoteListData,
   useNoteListInteractions,
   useNoteListSort,
   useVisibleNotesSync,
 } from './noteListHooks'
-import { useChangesContextMenu } from './NoteListChangesMenu'
 import { useNoteListContextMenu } from './NoteListContextMenu'
 import { addNoteListSearchToggleListener, dispatchNoteListSearchAvailability } from '../../utils/noteListSearchEvents'
 import { useDateDisplayFormat } from '../../hooks/useAppPreferences'
@@ -96,9 +93,6 @@ function useBulkActions(
 interface UseNoteListContentParams {
   entries: VaultEntry[]
   selection: SidebarSelection
-  modifiedFiles?: ModifiedFile[]
-  modifiedSuffixes: string[]
-  modifiedPathSet: Set<string>
   selectedNotePath: string | null
   visibleNotesRef?: React.MutableRefObject<VaultEntry[]>
   allNotesFileVisibility?: AllNotesFileVisibility
@@ -135,7 +129,7 @@ function useFilteredNoteListSearch({
 }
 
 function useNoteListContent(options: UseNoteListContentParams) {
-  const { entries, selection, modifiedFiles, modifiedSuffixes, modifiedPathSet, selectedNotePath, visibleNotesRef, allNotesFileVisibility } = options
+  const { entries, selection, selectedNotePath, visibleNotesRef, allNotesFileVisibility } = options
   const dateDisplayFormat = useDateDisplayFormat()
   const { listSort, listDirection, handleSortChange, sortPrefs } = useNoteListSort()
   const {
@@ -156,9 +150,6 @@ function useNoteListContent(options: UseNoteListContentParams) {
         query: '',
         listSort,
         listDirection,
-        modifiedPathSet,
-        modifiedSuffixes,
-        modifiedFiles,
         allNotesFileVisibility,
       })
       const { isFullTextSearching, searched } = useFilteredNoteListSearch({
@@ -190,38 +181,25 @@ function useNoteListContent(options: UseNoteListContentParams) {
       }
     }
 
-    interface UseNoteListInteractionStateParams {
-      searched: VaultEntry[]
-      selectedNotePath: string | null
-      selection: SidebarSelection
-      isChangesView: boolean
-      searchVisible: boolean
-      toggleSearch: () => void
-      modifiedFiles?: ModifiedFile[]
-      onReplaceActiveTab: (entry: VaultEntry) => void
-      onOpenDeletedNote?: (entry: DeletedNoteEntry) => void
-      onOpenInNewWindow?: (entry: VaultEntry) => void
-      onRenameFilename?: (path: string, newFilenameStem: string) => void
-      onExportPdf?: (entry: VaultEntry) => void
-      onRevealFile?: (path: string) => void
-      onCopyFilePath?: (path: string) => void
-      canCopyGitUrl?: (entry: VaultEntry) => boolean
-      onCopyGitUrl?: (entry: VaultEntry) => void
-      onAutoTriggerDiff?: () => void
-      onDiscardFile?: (relativePath: string) => Promise<void>
-      onCreateNote: (options?: ImmediateCreateOptions) => void
-      onBulkDeletePermanently?: (paths: string[]) => void
-      locale: AppLocale
-    }
+interface UseNoteListInteractionStateParams {
+  searched: VaultEntry[]
+  selectedNotePath: string | null
+  selection: SidebarSelection
+  searchVisible: boolean
+  toggleSearch: () => void
+  onReplaceActiveTab: (entry: VaultEntry) => void
+  onOpenInNewWindow?: (entry: VaultEntry) => void
+  onRenameFilename?: (path: string, newFilenameStem: string) => void
+  onExportPdf?: (entry: VaultEntry) => void
+  onRevealFile?: (path: string) => void
+  onCopyFilePath?: (path: string) => void
+  onCreateNote: (options?: ImmediateCreateOptions) => void
+  onBulkDeletePermanently?: (paths: string[]) => void
+  locale: AppLocale
+}
 
-    function useNoteListInteractionState(options: UseNoteListInteractionStateParams) {
-      const { searched, selectedNotePath, selection, isChangesView, searchVisible, toggleSearch, modifiedFiles, onReplaceActiveTab, onOpenDeletedNote, onOpenInNewWindow, onRenameFilename, onExportPdf, onRevealFile, onCopyFilePath, canCopyGitUrl, onCopyGitUrl, onAutoTriggerDiff, onDiscardFile, onCreateNote, onBulkDeletePermanently, locale } = options
-  const changesContextMenu = useChangesContextMenu({
-    isChangesView,
-    onDiscardFile,
-    modifiedFiles,
-    locale,
-  })
+function useNoteListInteractionState(options: UseNoteListInteractionStateParams) {
+  const { searched, selectedNotePath, selection, searchVisible, toggleSearch, onReplaceActiveTab, onOpenInNewWindow, onRenameFilename, onExportPdf, onRevealFile, onCopyFilePath, onCreateNote, onBulkDeletePermanently, locale } = options
   const noteListContextMenu = useNoteListContextMenu({
     locale,
     onOpenInNewWindow,
@@ -230,8 +208,6 @@ function useNoteListContent(options: UseNoteListContentParams) {
     onDeletePaths: onBulkDeletePermanently,
     onRevealFile,
     onCopyFilePath,
-    canCopyGitUrl,
-    onCopyGitUrl,
   })
   const {
         handleClickNote,
@@ -243,26 +219,18 @@ function useNoteListContent(options: UseNoteListContentParams) {
         searched,
         selectedNotePath,
         selection,
-        isChangesView,
         searchVisible,
         toggleSearch,
         onReplaceActiveTab,
-        onOpenDeletedNote,
         onOpenInNewWindow,
-        onAutoTriggerDiff,
-        onDiscardFile,
-        openContextMenuForEntry: changesContextMenu.openContextMenuForEntry,
         onCreateNote,
       })
-      const getChangeStatus = useChangeStatusResolver(isChangesView, modifiedFiles)
       const { handleBulkDeletePermanently } = useBulkActions(
         multiSelect,
         onBulkDeletePermanently,
       )
 
       return {
-        changesContextMenu,
-        getChangeStatus,
         handleBulkDeletePermanently,
         handleClickNote,
         handleCreateNote,
@@ -276,12 +244,8 @@ function useNoteListContent(options: UseNoteListContentParams) {
     interface UseRenderItemParams {
       entries: VaultEntry[]
       selectedNotePath: string | null
-      isChangesView: boolean
-      onDiscardFile?: (relativePath: string) => Promise<void>
       resolvedGetNoteStatus: (path: string) => NoteStatus
-      getChangeStatus: (path: string) => ModifiedFile['status'] | undefined
       handleClickNote: (entry: VaultEntry, event: React.MouseEvent) => void
-      changesContextMenu?: ((entry: VaultEntry, event: React.MouseEvent) => void) | undefined
       noteListContextMenu?: ((entry: VaultEntry, event: React.MouseEvent) => void) | undefined
       multiSelect: MultiSelectState
       noteListKeyboard: { highlightedPath: string | null }
@@ -291,21 +255,15 @@ function useNoteListContent(options: UseNoteListContentParams) {
       const {
       entries,
       selectedNotePath,
-      isChangesView,
-      onDiscardFile,
       resolvedGetNoteStatus,
-      getChangeStatus,
       handleClickNote,
-      changesContextMenu,
       noteListContextMenu,
       multiSelect,
       noteListKeyboard,
   } = functionOptions
-  const contextMenuHandler = isChangesView && onDiscardFile ? changesContextMenu : noteListContextMenu
 
   return useCallback(
-    (entry: VaultEntry, options?: { forceSelected?: boolean }) =>
-    isDeletedNoteEntry(entry) ? (
+    (entry: VaultEntry, options?: { forceSelected?: boolean }) => (
       <NoteItem
         key={entry.path}
         entry={entry}
@@ -313,33 +271,18 @@ function useNoteListContent(options: UseNoteListContentParams) {
         isMultiSelected={multiSelect.selectedPaths.has(entry.path)}
         isHighlighted={entry.path === noteListKeyboard.highlightedPath}
         noteStatus={resolvedGetNoteStatus(entry.path)}
-        changeStatus={getChangeStatus(entry.path)}
-        allEntries={entries}
-        onClickNote={handleClickNote}
-        onContextMenu={contextMenuHandler}
-      />
-    ) : (
-      <NoteItem
-        key={entry.path}
-        entry={entry}
-        isSelected={options?.forceSelected || selectedNotePath === entry.path}
-        isMultiSelected={multiSelect.selectedPaths.has(entry.path)}
-        isHighlighted={entry.path === noteListKeyboard.highlightedPath}
-        noteStatus={resolvedGetNoteStatus(entry.path)}
-        changeStatus={getChangeStatus(entry.path)}
         allEntries={entries}
         onClickNote={handleClickNote}
         onPrefetch={prefetchNoteContent}
-        onContextMenu={contextMenuHandler}
+        onContextMenu={noteListContextMenu}
       />
-      ),
+    ),
     [
-    contextMenuHandler,
     entries,
-    getChangeStatus,
     handleClickNote,
     multiSelect.selectedPaths,
     noteListKeyboard.highlightedPath,
+    noteListContextMenu,
     resolvedGetNoteStatus,
     selectedNotePath,
     ],
@@ -352,10 +295,6 @@ export interface NoteListProps {
   selectedNote: VaultEntry | null
   loading?: boolean
   modifiedFiles?: ModifiedFile[]
-  modifiedFilesError?: string | null
-  gitRepositories?: GitRepositoryOption[]
-  selectedGitRepositoryPath?: string
-  onGitRepositoryChange?: (path: string) => void
   getNoteStatus?: (path: string) => NoteStatus
   sidebarCollapsed?: boolean
   onSelectNote: (entry: VaultEntry) => void
@@ -367,11 +306,6 @@ export interface NoteListProps {
   onExportPdf?: (entry: VaultEntry) => void
   onRevealFile?: (path: string) => void
   onCopyFilePath?: (path: string) => void
-  canCopyGitUrl?: (entry: VaultEntry) => boolean
-  onCopyGitUrl?: (entry: VaultEntry) => void
-  onDiscardFile?: (relativePath: string) => Promise<void>
-  onAutoTriggerDiff?: () => void
-  onOpenDeletedNote?: (entry: DeletedNoteEntry) => void
   visibleNotesRef?: React.MutableRefObject<VaultEntry[]>
   allNotesFileVisibility?: AllNotesFileVisibility
   locale?: AppLocale
@@ -381,10 +315,6 @@ function buildNoteListLayoutModel(params: {
   selection: SidebarSelection
   sidebarCollapsed?: boolean
   loading: boolean
-  modifiedFilesError?: string | null
-  gitRepositories?: GitRepositoryOption[]
-  selectedGitRepositoryPath?: string
-  onGitRepositoryChange?: (path: string) => void
   locale: AppLocale
   content: ReturnType<typeof useNoteListContent> & {
     handleSearchKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void
@@ -421,38 +351,25 @@ function buildNoteListLayoutModel(params: {
     sortPrefs: params.content.sortPrefs,
     renderItem: params.interaction.renderItem,
     handleClickNote: params.interaction.handleClickNote,
-    isChangesView: params.selection.kind === 'filter' && params.selection.filter === 'changes',
-    gitRepositories: params.gitRepositories ?? [],
-    selectedGitRepositoryPath: params.selectedGitRepositoryPath ?? '',
-    onGitRepositoryChange: params.onGitRepositoryChange,
-    modifiedFilesError: params.modifiedFilesError,
     searched: params.content.searched,
     query: params.content.query,
     multiSelect: params.interaction.multiSelect,
     handleBulkDeletePermanently: params.interaction.handleBulkDeletePermanently,
-    contextMenuNode: (
-      <>
-        {params.interaction.changesContextMenu.contextMenuNode}
-        {params.interaction.noteListContextMenu.contextMenuNode}
-      </>
-    ),
-    dialogNode: params.interaction.changesContextMenu.dialogNode,
+    contextMenuNode: params.interaction.noteListContextMenu.contextMenuNode,
+    dialogNode: null,
   }
 }
 
 export function useNoteListModel(options: NoteListProps) {
-  const { entries, selection, selectedNote, loading = false, modifiedFiles, modifiedFilesError, gitRepositories, selectedGitRepositoryPath, onGitRepositoryChange, getNoteStatus, sidebarCollapsed, onReplaceActiveTab, onCreateNote, onBulkDeletePermanently, onOpenInNewWindow, onRenameFilename, onExportPdf, onRevealFile, onCopyFilePath, canCopyGitUrl, onCopyGitUrl, onDiscardFile, onAutoTriggerDiff, onOpenDeletedNote, visibleNotesRef, allNotesFileVisibility, locale = 'en' } = options
+  const { entries, selection, selectedNote, loading = false, modifiedFiles, getNoteStatus, sidebarCollapsed, onReplaceActiveTab, onCreateNote, onBulkDeletePermanently, onOpenInNewWindow, onRenameFilename, onExportPdf, onRevealFile, onCopyFilePath, visibleNotesRef, allNotesFileVisibility, locale = 'en' } = options
   const selectedNotePath = selectedNote?.path ?? null
-  const { modifiedPathSet, modifiedSuffixes, resolvedGetNoteStatus } = useModifiedFilesState(
+  const { resolvedGetNoteStatus } = useModifiedFilesState(
     modifiedFiles,
     getNoteStatus,
   )
   const content = useNoteListContent({
     entries,
     selection,
-    modifiedFiles,
-    modifiedSuffixes,
-    modifiedPathSet,
     selectedNotePath,
     visibleNotesRef,
     allNotesFileVisibility,
@@ -461,21 +378,14 @@ export function useNoteListModel(options: NoteListProps) {
     searched: content.searched,
     selectedNotePath,
     selection,
-    isChangesView: selection.kind === 'filter' && selection.filter === 'changes',
     searchVisible: content.searchVisible,
     toggleSearch: content.toggleSearch,
-    modifiedFiles,
     onReplaceActiveTab,
-    onOpenDeletedNote,
     onOpenInNewWindow,
     onRenameFilename,
     onExportPdf,
     onRevealFile,
     onCopyFilePath,
-    canCopyGitUrl,
-    onCopyGitUrl,
-    onAutoTriggerDiff,
-    onDiscardFile,
     onCreateNote,
     onBulkDeletePermanently,
     locale,
@@ -483,12 +393,8 @@ export function useNoteListModel(options: NoteListProps) {
   const renderItem = useRenderItem({
     entries,
     selectedNotePath,
-    isChangesView: selection.kind === 'filter' && selection.filter === 'changes',
-    onDiscardFile,
     resolvedGetNoteStatus,
-    getChangeStatus: interaction.getChangeStatus,
     handleClickNote: interaction.handleClickNote,
-    changesContextMenu: interaction.changesContextMenu.handleNoteContextMenu,
     noteListContextMenu: interaction.noteListContextMenu.handleNoteContextMenu,
     multiSelect: interaction.multiSelect,
     noteListKeyboard: interaction.noteListKeyboard,
@@ -520,10 +426,6 @@ export function useNoteListModel(options: NoteListProps) {
     selection,
     sidebarCollapsed,
     loading,
-    modifiedFilesError,
-    gitRepositories,
-    selectedGitRepositoryPath,
-    onGitRepositoryChange,
     locale,
     content: {
       ...content,

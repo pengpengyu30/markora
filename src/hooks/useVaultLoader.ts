@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type MutableRefObject, type SetStateAction } from 'react'
-import type { VaultEntry, FolderNode, GitCommit, ModifiedFile, NoteStatus, GitPushResult } from '../types'
+import type { VaultEntry, FolderNode, ModifiedFile, NoteStatus } from '../types'
 import type { VaultOption } from '../components/status-bar/types'
 import {
   GITIGNORED_VISIBILITY_CHANGED_EVENT,
@@ -9,7 +9,6 @@ import {
 import { clearPrefetchCache } from './useTabManagement'
 import {
   checkVaultPathAvailability,
-  commitWithPush,
   hasVaultPath,
   loadVaultChrome,
   loadStartupVaultData,
@@ -602,38 +601,6 @@ function replaceEntryByPath(
   return nextEntries
 }
 
-function useGitLoaders(vaultPath: string) {
-  const loadGitHistory = useCallback(async (path: string): Promise<GitCommit[]> => {
-    try {
-      return await tauriCall<GitCommit[]>({
-        command: 'get_file_history',
-        tauriArgs: { vaultPath, path },
-        mockArgs: { path },
-      })
-    }
-    catch (err) { console.warn('Failed to load git history:', err); return [] }
-  }, [vaultPath])
-
-  const loadDiffAtCommit = useCallback((path: string, commitHash: string): Promise<string> =>
-    tauriCall<string>({
-      command: 'get_file_diff_at_commit',
-      tauriArgs: { vaultPath, path, commitHash },
-      mockArgs: { path, commitHash },
-    }), [vaultPath])
-
-  const loadDiff = useCallback((path: string): Promise<string> =>
-    tauriCall<string>({
-      command: 'get_file_diff',
-      tauriArgs: { vaultPath, path },
-      mockArgs: { path },
-    }), [vaultPath])
-
-  const commitAndPush = useCallback((message: string): Promise<GitPushResult> =>
-    commitWithPush({ vaultPath, message }), [vaultPath])
-
-  return { loadGitHistory, loadDiffAtCommit, loadDiff, commitAndPush }
-}
-
 interface VaultReloadOptions {
   defaultWorkspacePath?: string | null
   folderVaults?: VaultOption[]
@@ -1122,7 +1089,6 @@ function useWorkspaceEntrySync({
 
 interface VaultLoaderResultOptions {
   entryMutations: ReturnType<typeof useEntryMutations>
-  gitLoaders: ReturnType<typeof useGitLoaders>
   state: ReturnType<typeof useVaultState>
   unavailableVault: ReturnType<typeof useVaultUnavailable>
   vaultReloads: ReturnType<typeof useVaultReloads>
@@ -1130,7 +1096,6 @@ interface VaultLoaderResultOptions {
 
 function useVaultLoaderResult({
   entryMutations,
-  gitLoaders,
   state,
   unavailableVault,
   vaultReloads,
@@ -1152,11 +1117,9 @@ function useVaultLoaderResult({
     isLoading: state.isLoading,
     isReloading: vaultReloads.isReloading,
     modifiedFiles: modified.modifiedFiles,
-    modifiedFilesError: modified.modifiedFilesError,
     unavailableVaultPath: unavailableVault.unavailableVaultPath,
     ...entryMutations,
     loadModifiedFiles: modified.loadModifiedFiles,
-    ...gitLoaders,
     getNoteStatus,
     reloadVault: vaultReloads.reloadVault,
     reloadFolders: vaultReloads.reloadFolders,
@@ -1179,7 +1142,6 @@ export function useVaultLoader(
   const state = useVaultState(vaultPath, options.loadModifiedFiles !== false)
   const setInitialFolders = useInitialFolderSetter(folderVaults, state.setFolders)
   const entryMutations = useEntryMutations(state.setEntries, state.tracker.trackNew)
-  const gitLoaders = useGitLoaders(vaultPath)
   const unavailableVault = useVaultUnavailable(vaultPath, state)
   const vaultReloads = useVaultReloads({
     handleVaultAvailable: unavailableVault.markVaultAvailable,
@@ -1209,5 +1171,5 @@ export function useVaultLoader(
     vaults,
   })
 
-  return useVaultLoaderResult({ entryMutations, gitLoaders, state, unavailableVault, vaultReloads })
+  return useVaultLoaderResult({ entryMutations, state, unavailableVault, vaultReloads })
 }

@@ -149,12 +149,26 @@ function resetCommandResults() {
     check_vault_exists: true,
     get_all_content: { [activeEntry.path]: noteContent },
     get_default_vault_path: defaultVaultPath,
-    get_file_history: [],
     get_modified_files: [],
     get_note_content: vi.fn(() => noteContent),
     get_settings: createSettings(),
     get_vault_settings: { theme: null },
-    is_git_repo: true,
+    git_workspace_info: {
+      vaultRoot: '/vault',
+      gitRoot: '/vault',
+      vaultPathspec: '',
+      gitRootRelation: 'vault',
+      mode: 'managed',
+      resolutionFailure: null,
+    },
+    ensure_git_repository: {
+      vaultRoot: '/vault',
+      gitRoot: '/vault',
+      vaultPathspec: '',
+      gitRootRelation: 'vault',
+      mode: 'managed',
+      resolutionFailure: null,
+    },
     list_themes: [],
     list_vault: vi.fn(() => entries),
     list_vault_folders: [],
@@ -267,18 +281,18 @@ describe('App note windows', () => {
     expect(vi.mocked(commandResults.list_vault).mock.calls.length).toBeGreaterThanOrEqual(2)
   })
 
-  it('keeps automatic Git work out of secondary note windows', async () => {
-    const isGitRepo = vi.fn(() => true)
-    const getModifiedFiles = vi.fn(() => [])
-    const gitRemoteStatus = vi.fn(() => ({
-      ahead: 0,
-      behind: 0,
-      branch: 'main',
-      hasRemote: true,
+  it('keeps automatic workspace detection and status refresh out of secondary note windows', async () => {
+    const ensureGitRepository = vi.fn(() => ({
+      vaultRoot: '/vault',
+      gitRoot: '/vault',
+      vaultPathspec: '',
+      gitRootRelation: 'vault',
+      mode: 'managed' as const,
+      resolutionFailure: null,
     }))
-    commandResults.is_git_repo = isGitRepo
+    const getModifiedFiles = vi.fn(() => [])
+    commandResults.ensure_git_repository = ensureGitRepository
     commandResults.get_modified_files = getModifiedFiles
-    commandResults.git_remote_status = gitRemoteStatus
 
     renderApp(<App />)
 
@@ -288,9 +302,8 @@ describe('App note windows', () => {
         vaultPath: '/vault',
       })
     })
-    expect(isGitRepo).not.toHaveBeenCalled()
+    expect(ensureGitRepository).not.toHaveBeenCalled()
     expect(getModifiedFiles).not.toHaveBeenCalled()
-    expect(gitRemoteStatus).not.toHaveBeenCalled()
   })
 
 })

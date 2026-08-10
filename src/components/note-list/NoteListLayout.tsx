@@ -7,21 +7,12 @@ import { EmptyMessage } from './TrashWarningBanner'
 import type { useNoteListModel } from './useNoteListModel'
 
 function resolveEmptyText({
-  isChangesView,
-  changesError,
   query,
   locale,
 }: {
-  isChangesView: boolean
-  changesError: string | null | undefined
   query: string
   locale: AppLocale
 }): string {
-  if (isChangesView && changesError)
-    return translate(locale, 'noteList.empty.changesError', {
-      error: changesError,
-    })
-  if (isChangesView) return translate(locale, 'noteList.empty.noChanges')
   return query ? translate(locale, 'noteList.empty.noMatching') : translate(locale, 'noteList.empty.noNotes')
 }
 
@@ -33,8 +24,6 @@ const BOTTOM_OVERLAY_COMPONENTS = { Footer: BottomOverlaySpacer }
 const NO_EXTRA_COMPONENTS = {}
 
 interface ListViewProps {
-  isChangesView?: boolean
-  changesError?: string | null
   searched: VaultEntry[]
   query: string
   renderItem: (entry: VaultEntry) => React.ReactNode
@@ -45,8 +34,6 @@ interface ListViewProps {
 
 export function ListView(props: ListViewProps) {
   const {
-    isChangesView,
-    changesError,
     searched,
     query,
     renderItem,
@@ -55,8 +42,6 @@ export function ListView(props: ListViewProps) {
     hasBottomOverlay,
   } = props
   const emptyText = resolveEmptyText({
-    isChangesView: !!isChangesView,
-    changesError: changesError ?? null,
     query,
     locale,
   })
@@ -154,8 +139,6 @@ function NoteListContent(
     NoteListLayoutProps,
   | 'query'
   | 'renderItem'
-  | 'isChangesView'
-  | 'modifiedFilesError'
   | 'searched'
   | 'noteListVirtuosoRef'
   | 'locale'
@@ -165,8 +148,6 @@ function NoteListContent(
   const {
     query,
     renderItem,
-    isChangesView,
-    modifiedFilesError,
     searched,
     noteListVirtuosoRef,
     locale,
@@ -178,8 +159,6 @@ function NoteListContent(
         <NoteListLoadingSkeleton />
       ) : (
         <ListView
-          isChangesView={isChangesView}
-          changesError={modifiedFilesError}
           searched={searched}
           query={query}
           renderItem={renderItem}
@@ -202,8 +181,6 @@ function NoteListBody(
   | 'noteListVirtuosoRef'
   | 'query'
   | 'renderItem'
-  | 'isChangesView'
-  | 'modifiedFilesError'
   | 'searched'
   | 'locale'
   | 'loading'
@@ -218,8 +195,6 @@ function NoteListBody(
     noteListVirtuosoRef,
     query,
     renderItem,
-    isChangesView,
-    modifiedFilesError,
     searched,
     locale,
     loading,
@@ -241,8 +216,6 @@ function NoteListBody(
       <NoteListContent
         query={query}
         renderItem={renderItem}
-        isChangesView={isChangesView}
-        modifiedFilesError={modifiedFilesError}
         searched={searched}
         noteListVirtuosoRef={noteListVirtuosoRef}
         locale={locale}
@@ -256,12 +229,8 @@ function NoteListLayoutHeader(
   options: Pick<
     NoteListLayoutProps,
   | 'title'
-  | 'isChangesView'
   | 'listSort'
   | 'listDirection'
-  | 'gitRepositories'
-  | 'selectedGitRepositoryPath'
-  | 'onGitRepositoryChange'
   | 'locale'
   | 'sidebarCollapsed'
   | 'searchVisible'
@@ -277,12 +246,8 @@ function NoteListLayoutHeader(
 ) {
   const {
     title,
-    isChangesView,
     listSort,
     listDirection,
-    gitRepositories,
-    selectedGitRepositoryPath,
-    onGitRepositoryChange,
     locale,
     sidebarCollapsed,
     searchVisible,
@@ -298,12 +263,8 @@ function NoteListLayoutHeader(
   return (
     <NoteListHeader
       title={title}
-      isChangesView={isChangesView}
       listSort={listSort}
       listDirection={listDirection}
-      gitRepositories={gitRepositories}
-      selectedGitRepositoryPath={selectedGitRepositoryPath}
-      onGitRepositoryChange={onGitRepositoryChange}
       locale={locale}
       sidebarCollapsed={sidebarCollapsed}
       searchVisible={searchVisible}

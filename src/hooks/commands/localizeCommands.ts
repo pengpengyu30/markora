@@ -6,7 +6,6 @@ type Translate = ReturnType<typeof createTranslator>
 const GROUP_LABEL_KEYS = {
   Navigation: 'command.group.navigation',
   Note: 'command.group.note',
-  Git: 'command.group.git',
   View: 'command.group.view',
   Settings: 'command.group.settings',
 } satisfies Record<CommandGroup, TranslationKey>
@@ -14,8 +13,6 @@ const GROUP_LABEL_KEYS = {
 const STATIC_LABEL_KEYS: Partial<Record<string, TranslationKey>> = {
   'search-notes': 'command.navigation.searchNotes',
   'go-all': 'command.navigation.goAllNotes',
-  'go-changes': 'command.navigation.goChanges',
-  'go-pulse': 'command.navigation.goHistory',
   'go-back': 'command.navigation.goBack',
   'go-forward': 'command.navigation.goForward',
   'rename-folder': 'command.navigation.renameFolder',
@@ -29,21 +26,13 @@ const STATIC_LABEL_KEYS: Partial<Record<string, TranslationKey>> = {
   'find-in-note': 'command.note.findInNote',
   'replace-in-note': 'command.note.replaceInNote',
   'delete-note': 'command.note.deleteNote',
-  'restore-deleted-note': 'command.note.restoreDeleted',
   'move-note-to-folder': 'command.note.moveToFolder',
   'copy-active-deep-link': 'command.note.copyDeepLink',
   'export-note-pdf': 'command.note.exportPdf',
   'open-in-new-window': 'command.note.openNewWindow',
-  'initialize-git': 'command.git.initialize',
-  'commit-push': 'command.git.commitPush',
-  'add-remote': 'command.git.addRemote',
-  'git-pull': 'command.git.pull',
-  'resolve-conflicts': 'command.git.resolveConflicts',
-  'view-changes': 'command.git.viewChanges',
   'view-editor': 'command.view.editorOnly',
   'view-editor-list': 'command.view.editorNoteList',
   'view-all': 'command.view.fullLayout',
-  'toggle-diff': 'command.view.toggleDiff',
   'toggle-raw-editor': 'command.view.toggleRaw',
   'set-note-width-normal': 'command.view.noteWidthNormal',
   'set-note-width-wide': 'command.view.noteWidthWide',
@@ -57,6 +46,7 @@ const STATIC_LABEL_KEYS: Partial<Record<string, TranslationKey>> = {
   'restore-getting-started': 'command.settings.restoreGettingStarted',
   'reload-vault': 'command.settings.reloadVault',
   'repair-vault': 'command.settings.repairVault',
+  'restore-deleted-note': 'command.settings.restoreDeletedNote',
   'use-light-mode': 'command.settings.useLightMode',
   'use-dark-mode': 'command.settings.useDarkMode',
   'use-system-theme-mode': 'command.settings.useSystemTheme',
@@ -107,16 +97,6 @@ function localizeViewStateCommand(command: CommandAction, t: Translate): string 
   return VIEW_STATE_LOCALIZERS.find(([id]) => id === command.id)?.[1](command, t) ?? null
 }
 
-function localizeGitStateCommand(command: CommandAction, t: Translate): string | null {
-  if (command.id.startsWith('git-pull-')) {
-    return t('command.git.pullRepository', {
-      repository: stripKnownPrefix(command.label, 'Pull from Remote: '),
-    })
-  }
-
-  return null
-}
-
 export function localizeCommandGroup(group: CommandGroup, locale: AppLocale = 'en'): string {
   return createTranslator(locale)(Reflect.get(GROUP_LABEL_KEYS, group) as keyof ReturnType<typeof createTranslator> extends never ? never : Parameters<ReturnType<typeof createTranslator>>[0])
 }
@@ -124,7 +104,6 @@ export function localizeCommandGroup(group: CommandGroup, locale: AppLocale = 'e
 const DYNAMIC_COMMAND_LOCALIZERS: readonly NullableCommandLocalizer[] = [
   localizeNoteStateCommand,
   localizeViewStateCommand,
-  localizeGitStateCommand,
 ]
 
 function localizeDynamicCommand(command: CommandAction, t: Translate): string | null {

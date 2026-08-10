@@ -7,11 +7,9 @@ import type { CommandAction } from './useCommandRegistry'
 import { useKeyboardNavigation } from './useKeyboardNavigation'
 import { useMenuEvents } from './useMenuEvents'
 import type { NoteWidthMode, SidebarSelection, SidebarFilter, VaultEntry } from '../types'
-import { requestAddRemote } from '../utils/addRemoteEvents'
 import type { ViewMode } from './useViewMode'
 import type { ImmediateCreateOptions } from './useNoteCreation'
 import type { NoteListMultiSelectionCommands } from '../components/note-list/multiSelectionCommands'
-import type { GitRepositoryOption } from '../utils/gitRepositories'
 import type { RichEditorBlockTypeDefinition } from '../utils/richEditorBlockTypes'
 
 interface AppCommandsConfig {
@@ -20,7 +18,6 @@ interface AppCommandsConfig {
   entries: VaultEntry[]
   visibleNotesRef: React.RefObject<VaultEntry[]>
   multiSelectionCommandRef: React.MutableRefObject<NoteListMultiSelectionCommands | null>
-  modifiedCount: number
   selection: SidebarSelection
   onQuickOpen: () => void
   onCommandPalette: () => void
@@ -39,19 +36,13 @@ interface AppCommandsConfig {
   onOpenSettings: () => void
   onOpenFeedback?: () => void
   onDeleteNote: (path: string) => void
-  onCommitPush: () => void
-  onPull?: () => void
-  onPullRepository?: (path: string) => void
-  onResolveConflicts?: () => void
   onSetViewMode: (mode: ViewMode) => void
   onToggleBacklinks: () => void
-  onToggleDiff?: () => void
   onToggleRawEditor?: () => void
   noteWidth?: NoteWidthMode
   defaultNoteWidth?: NoteWidthMode
   onSetNoteWidth?: (mode: NoteWidthMode) => void
   onSetDefaultNoteWidth?: (mode: NoteWidthMode) => void
-  activeNoteModified: boolean
   onZoomIn: () => void
   onZoomOut: () => void
   onZoomReset: () => void
@@ -67,12 +58,6 @@ interface AppCommandsConfig {
   canGoForward?: boolean
   onOpenVault?: () => void
   onCreateEmptyVault?: () => void
-  onAddRemote?: () => void
-  canAddRemote?: boolean
-  gitFeaturesEnabled?: boolean
-  isGitVault?: boolean
-  gitRepositories?: GitRepositoryOption[]
-  onInitializeGit?: () => void
   onToggleTableOfContents?: () => void
   onCheckForUpdates?: () => void
   onRemoveActiveVault?: () => void
@@ -86,6 +71,7 @@ interface AppCommandsConfig {
   onSetThemeMode?: (mode: ThemeMode) => void
   onReloadVault?: () => void
   onRepairVault?: () => void
+  onRestoreDeletedNote?: () => void
   onMoveNoteToFolder?: () => void
   canMoveNoteToFolder?: boolean
   onTurnCurrentBlockInto?: (target: RichEditorBlockTypeDefinition) => void
@@ -97,14 +83,11 @@ interface AppCommandsConfig {
   onExportNoteAsPdf?: () => void
   onRevealSelectedFolder?: () => void
   onCopySelectedFolderPath?: () => void
-  onRestoreDeletedNote?: () => void
-  canRestoreDeletedNote?: boolean
 }
 
 type CommandRegistryConfig = Parameters<typeof useCommandRegistry>[0]
 type CommandRegistrySelectionState = Pick<
   CommandRegistryConfig,
-  | 'activeNoteModified'
   | 'onZoomIn'
   | 'onZoomOut'
   | 'onZoomReset'
@@ -124,7 +107,6 @@ type CommandRegistryCoreActions = Pick<
   CommandRegistryConfig,
   | 'activeTabPath'
   | 'entries'
-  | 'modifiedCount'
   | 'onQuickOpen'
   | 'onCreateNote'
   | 'onSave'
@@ -141,13 +123,8 @@ type CommandRegistryCoreActions = Pick<
   | 'onOpenSettings'
   | 'onOpenFeedback'
   | 'onDeleteNote'
-  | 'onCommitPush'
-  | 'onPull'
-  | 'onPullRepository'
-  | 'onResolveConflicts'
   | 'onSetViewMode'
   | 'onToggleBacklinks'
-  | 'onToggleDiff'
   | 'onToggleRawEditor'
   | 'noteWidth'
   | 'defaultNoteWidth'
@@ -159,12 +136,6 @@ type CommandRegistryVaultActions = Pick<
   CommandRegistryConfig,
   | 'onOpenVault'
   | 'onCreateEmptyVault'
-  | 'onAddRemote'
-  | 'canAddRemote'
-  | 'gitFeaturesEnabled'
-  | 'isGitVault'
-  | 'gitRepositories'
-  | 'onInitializeGit'
   | 'onCheckForUpdates'
   | 'locale'
   | 'systemLocale'
@@ -177,13 +148,12 @@ type CommandRegistryVaultActions = Pick<
   | 'vaultCount'
   | 'onReloadVault'
   | 'onRepairVault'
+  | 'onRestoreDeletedNote'
   | 'onOpenInNewWindow'
   | 'onRevealActiveFile'
   | 'onCopyActiveFilePath'
   | 'onCopyActiveDeepLink'
   | 'onOpenActiveFileExternal'
-  | 'onRestoreDeletedNote'
-  | 'canRestoreDeletedNote'
 >
 type CommandRegistryNoteActions = Pick<
   CommandRegistryConfig,
@@ -229,11 +199,10 @@ function createKeyboardActions(
 function createMenuEventHandlers(
   config: AppCommandsConfig,
   selectFilter: (filter: SidebarFilter) => void,
-  viewChanges: () => void,
 ): Parameters<typeof useMenuEvents>[0] {
   return {
     ...createMenuEventActionHandlers(config, selectFilter),
-    ...createMenuEventVaultHandlers(config, viewChanges),
+    ...createMenuEventVaultHandlers(config),
     ...createMenuEventState(config),
   }
 }
@@ -261,7 +230,6 @@ function createMenuEventActionHandlers(
   | 'onPastePlainText'
   | 'onSearch'
   | 'onToggleRawEditor'
-  | 'onToggleDiff'
   | 'onToggleTableOfContents'
   | 'onExportNoteAsPdf'
   | 'onGoBack'
@@ -288,7 +256,6 @@ function createMenuEventActionHandlers(
     onPastePlainText: config.onPastePlainText,
     onSearch: config.onSearch,
     onToggleRawEditor: config.onToggleRawEditor,
-    onToggleDiff: config.onToggleDiff,
     onToggleTableOfContents: config.onToggleTableOfContents,
     onExportNoteAsPdf: config.onExportNoteAsPdf,
     onGoBack: config.onGoBack,
@@ -300,35 +267,22 @@ function createMenuEventActionHandlers(
 
 function createMenuEventVaultHandlers(
   config: AppCommandsConfig,
-  viewChanges: () => void,
 ): Pick<
   Parameters<typeof useMenuEvents>[0],
   | 'onOpenVault'
   | 'onRemoveActiveVault'
   | 'onRestoreGettingStarted'
-  | 'onAddRemote'
-  | 'onCommitPush'
-  | 'onPull'
-  | 'onResolveConflicts'
-  | 'onViewChanges'
   | 'onReloadVault'
   | 'onRepairVault'
   | 'onOpenInNewWindow'
-  | 'onRestoreDeletedNote'
 > {
   return {
     onOpenVault: config.onOpenVault,
     onRemoveActiveVault: config.onRemoveActiveVault,
     onRestoreGettingStarted: config.onRestoreGettingStarted,
-    onAddRemote: config.onAddRemote ?? requestAddRemote,
-    onCommitPush: config.onCommitPush,
-    onPull: config.onPull,
-    onResolveConflicts: config.onResolveConflicts,
-    onViewChanges: viewChanges,
     onReloadVault: config.onReloadVault,
     onRepairVault: config.onRepairVault,
     onOpenInNewWindow: config.onOpenInNewWindow,
-    onRestoreDeletedNote: config.onRestoreDeletedNote,
   }
 }
 
@@ -339,17 +293,11 @@ function createMenuEventState(
   | 'activeTabPathRef'
   | 'multiSelectionCommandRef'
   | 'activeTabPath'
-  | 'modifiedCount'
-  | 'hasRestorableDeletedNote'
-  | 'hasNoRemote'
 > {
   return {
     activeTabPathRef: config.activeTabPathRef,
     multiSelectionCommandRef: config.multiSelectionCommandRef,
     activeTabPath: config.activeTabPath,
-    modifiedCount: config.modifiedCount,
-    hasRestorableDeletedNote: config.canRestoreDeletedNote,
-    hasNoRemote: config.canAddRemote ?? true,
   }
 }
 
@@ -357,7 +305,6 @@ function createCommandRegistrySelectionConfig(
   config: AppCommandsConfig,
 ): CommandRegistrySelectionState {
   return {
-    activeNoteModified: config.activeNoteModified,
     onZoomIn: config.onZoomIn,
     onZoomOut: config.onZoomOut,
     onZoomReset: config.onZoomReset,
@@ -381,7 +328,6 @@ function createCommandRegistryCoreConfig(
   return {
     activeTabPath: config.activeTabPath,
     entries: config.entries,
-    modifiedCount: config.modifiedCount,
     onQuickOpen: config.onQuickOpen,
     onCreateNote: config.onCreateNote,
     onSave: config.onSave,
@@ -394,13 +340,8 @@ function createCommandRegistryCoreConfig(
     onOpenSettings: config.onOpenSettings,
     onOpenFeedback: config.onOpenFeedback,
     onDeleteNote: config.onDeleteNote,
-    onCommitPush: config.onCommitPush,
-    onPull: config.onPull,
-    onPullRepository: config.onPullRepository,
-    onResolveConflicts: config.onResolveConflicts,
     onSetViewMode: config.onSetViewMode,
     onToggleBacklinks: config.onToggleBacklinks,
-    onToggleDiff: config.onToggleDiff,
     onToggleRawEditor: config.onToggleRawEditor,
     onFindInNote: config.onFindInNote,
     onReplaceInNote: config.onReplaceInNote,
@@ -420,12 +361,6 @@ function createCommandRegistryVaultConfig(
   return {
     onOpenVault: config.onOpenVault,
     onCreateEmptyVault: config.onCreateEmptyVault,
-    onAddRemote: config.onAddRemote ?? requestAddRemote,
-    canAddRemote: config.canAddRemote ?? true,
-    gitFeaturesEnabled: config.gitFeaturesEnabled,
-    isGitVault: config.isGitVault,
-    gitRepositories: config.gitRepositories,
-    onInitializeGit: config.onInitializeGit,
     onCheckForUpdates: config.onCheckForUpdates,
     locale: config.locale,
     systemLocale: config.systemLocale,
@@ -438,13 +373,12 @@ function createCommandRegistryVaultConfig(
     vaultCount: config.vaultCount,
     onReloadVault: config.onReloadVault,
     onRepairVault: config.onRepairVault,
+    onRestoreDeletedNote: config.onRestoreDeletedNote,
     onOpenInNewWindow: config.onOpenInNewWindow,
     onRevealActiveFile: config.onRevealActiveFile,
     onCopyActiveFilePath: config.onCopyActiveFilePath,
     onCopyActiveDeepLink: config.onCopyActiveDeepLink,
     onOpenActiveFileExternal: config.onOpenActiveFileExternal,
-    onRestoreDeletedNote: config.onRestoreDeletedNote,
-    canRestoreDeletedNote: config.canRestoreDeletedNote,
   }
 }
 
@@ -475,12 +409,8 @@ export function useAppCommands(config: AppCommandsConfig): CommandAction[] {
     onSelect({ kind: 'filter', filter })
   }, [onSelect])
 
-  const viewChanges = useCallback(() => {
-    onSelect({ kind: 'filter', filter: 'changes' })
-  }, [onSelect])
-
   const keyboardActions = createKeyboardActions(config)
-  const menuEventHandlers = createMenuEventHandlers(config, selectFilter, viewChanges)
+  const menuEventHandlers = createMenuEventHandlers(config, selectFilter)
 
   useAppKeyboard(keyboardActions)
 

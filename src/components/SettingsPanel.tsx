@@ -1,6 +1,6 @@
 import { Cube, Monitor, Moon, Sun, X } from '@phosphor-icons/react'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
-import type { GitProviderId, Settings } from '../types'
+import type { Settings } from '../types'
 import {
   APP_LOCALES,
   SYSTEM_UI_LANGUAGE,
@@ -20,10 +20,8 @@ import {
 } from '../lib/themeMode'
 import { normalizeReleaseChannel, serializeReleaseChannel, type ReleaseChannel } from '../lib/releaseChannel'
 import { shouldHideGitignoredFiles } from '../lib/gitignoredVisibility'
-import { areGitFeaturesEnabled } from '../lib/gitSettings'
 import { areAutomaticUpdateChecksEnabled } from '../lib/automaticUpdateChecks'
 import { trackAllNotesVisibilityChanged } from '../lib/productAnalytics'
-import { GitSettingsSection } from './GitSettingsSection'
 import { PrivacySettingsSection } from './PrivacySettingsSection'
 import { SettingsBodyNav } from './SettingsBodyNav'
 import {
@@ -65,19 +63,10 @@ interface SettingsPanelProps {
   onReorderVaults?: (orderedPaths: string[]) => void
   onSetDefaultWorkspace?: (path: string) => void
   onUpdateWorkspaceIdentity?: (path: string, patch: Partial<VaultOption>) => void
-  isGitVault?: boolean
-  vaultPath?: string
   onClose: () => void
 }
 
 interface SettingsDraft {
-  pullInterval: number
-  gitFeaturesEnabled: boolean
-  gitProvider: GitProviderId
-  gitWslDistro: string | null
-  autoGitEnabled: boolean
-  autoGitIdleThresholdSeconds: number
-  autoGitInactiveThresholdSeconds: number
   releaseChannel: ReleaseChannel
   automaticUpdateChecksEnabled: boolean
   themeMode: ThemeMode
@@ -94,22 +83,6 @@ interface SettingsDraft {
 
 interface SettingsBodyProps {
   t: Translate
-  pullInterval: number
-  setPullInterval: (value: number) => void
-  gitFeaturesEnabled: boolean
-  setGitFeaturesEnabled: (value: boolean) => void
-  gitProvider: GitProviderId
-  setGitProvider: (value: GitProviderId) => void
-  gitWslDistro: string | null
-  setGitWslDistro: (value: string | null) => void
-  isGitVault: boolean
-  vaultPath: string
-  autoGitEnabled: boolean
-  setAutoGitEnabled: (value: boolean) => void
-  autoGitIdleThresholdSeconds: number
-  setAutoGitIdleThresholdSeconds: (value: number) => void
-  autoGitInactiveThresholdSeconds: number
-  setAutoGitInactiveThresholdSeconds: (value: number) => void
   releaseChannel: ReleaseChannel
   setReleaseChannel: (value: ReleaseChannel) => void
   automaticUpdateChecksEnabled: boolean
@@ -144,9 +117,6 @@ interface SettingsBodyProps {
   setAnalytics: (value: boolean) => void
 }
 
-const PULL_INTERVAL_OPTIONS = [1, 2, 5, 10, 15, 30] as const
-const DEFAULT_AUTOGIT_IDLE_THRESHOLD_SECONDS = 90
-const DEFAULT_AUTOGIT_INACTIVE_THRESHOLD_SECONDS = 30
 type Translate = ReturnType<typeof createTranslator>
 
 function isSaveShortcut(event: { ctrlKey: boolean; key: string; metaKey: boolean }): boolean {
@@ -155,19 +125,6 @@ function isSaveShortcut(event: { ctrlKey: boolean; key: string; metaKey: boolean
 
 function createSettingsDraft(settings: Settings): SettingsDraft {
   return {
-    pullInterval: settings.auto_pull_interval_minutes ?? 5,
-    gitFeaturesEnabled: areGitFeaturesEnabled(settings),
-    gitProvider: normalizeSettingsGitProvider(settings.git_provider),
-    gitWslDistro: settings.git_wsl_distro?.trim() || null,
-    autoGitEnabled: settings.autogit_enabled ?? false,
-    autoGitIdleThresholdSeconds: sanitizePositiveInteger(
-      settings.autogit_idle_threshold_seconds,
-      DEFAULT_AUTOGIT_IDLE_THRESHOLD_SECONDS,
-    ),
-    autoGitInactiveThresholdSeconds: sanitizePositiveInteger(
-      settings.autogit_inactive_threshold_seconds,
-      DEFAULT_AUTOGIT_INACTIVE_THRESHOLD_SECONDS,
-    ),
     releaseChannel: normalizeReleaseChannel(settings.release_channel),
     automaticUpdateChecksEnabled: areAutomaticUpdateChecksEnabled(settings),
     themeMode: resolveSettingsDraftThemeMode(settings.theme_mode),
@@ -204,13 +161,7 @@ function resolveAnonymousId(settings: Settings, draft: SettingsDraft): string | 
 
 function buildSettingsFromDraft(settings: Settings, draft: SettingsDraft): Settings {
   const nextSettings = {
-    auto_pull_interval_minutes: draft.pullInterval,
-    git_enabled: draft.gitFeaturesEnabled,
-    git_provider: draft.gitProvider === 'native' ? null : draft.gitProvider,
-    git_wsl_distro: draft.gitProvider === 'wsl' ? draft.gitWslDistro : null,
-    autogit_enabled: draft.autoGitEnabled,
-    autogit_idle_threshold_seconds: draft.autoGitIdleThresholdSeconds,
-    autogit_inactive_threshold_seconds: draft.autoGitInactiveThresholdSeconds,
+    ...settings,
     telemetry_consent: resolveTelemetryConsent(settings, draft),
     crash_reporting_enabled: draft.crashReporting,
     analytics_enabled: draft.analytics,
@@ -228,15 +179,6 @@ function buildSettingsFromDraft(settings: Settings, draft: SettingsDraft): Setti
   return settingsWithAllNotesFileVisibility(nextSettings, draft.allNotesFileVisibility)
 }
 
-function normalizeSettingsGitProvider(value: Settings['git_provider']): GitProviderId {
-  return value === 'wsl' ? 'wsl' : 'native'
-}
-
-function sanitizePositiveInteger(value: number | null | undefined, fallback: number): number {
-  if (value === null || value === undefined || !Number.isFinite(value) || value < 1) return fallback
-  return Math.round(value)
-}
-
 function applyThemeModeSelection(value: ThemeMode): void {
   const matchMedia = typeof window !== 'undefined' ? window.matchMedia?.bind(window) : undefined
   if (typeof document !== 'undefined') applyThemeSelectionToDocument(document, value, matchMedia)
@@ -244,7 +186,7 @@ function applyThemeModeSelection(value: ThemeMode): void {
 }
 
 export function SettingsPanel(options: SettingsPanelProps) {
-  const { open, settings, initialSectionId = null, locale = 'en', systemLocale = locale, onSave, vaults = [], defaultWorkspacePath = null, onRemoveVault, onReorderVaults, onSetDefaultWorkspace, onUpdateWorkspaceIdentity, isGitVault = true, vaultPath = '', onClose } = options
+  const { open, settings, initialSectionId = null, locale = 'en', systemLocale = locale, onSave, vaults = [], defaultWorkspacePath = null, onRemoveVault, onReorderVaults, onSetDefaultWorkspace, onUpdateWorkspaceIdentity, onClose } = options
   if (!open) return null
   const initialDraft = createSettingsDraft(settings)
 
@@ -265,8 +207,6 @@ export function SettingsPanel(options: SettingsPanelProps) {
         onSetDefaultWorkspace,
         onUpdateWorkspaceIdentity,
       }}
-      isGitVault={isGitVault}
-      vaultPath={vaultPath}
       onClose={onClose}
     />
   )
@@ -274,14 +214,12 @@ export function SettingsPanel(options: SettingsPanelProps) {
 
 type SettingsPanelInnerProps = Omit<
   SettingsPanelProps,
-  'open' | 'isGitVault' | 'vaultPath'
+  'open'
 > & {
   initialDraft: SettingsDraft
   initialSectionId: string | null
   locale: AppLocale
   systemLocale: AppLocale
-  isGitVault: boolean
-  vaultPath: string
 }
 
 function useSettingsDraftActions(options: Pick<SettingsPanelInnerProps, 'initialDraft' | 'onClose' | 'onSave' | 'settings'>) {
@@ -354,7 +292,7 @@ function useSettingsPanelInteractions(options: {
 }
 
 function SettingsPanelInner(options: SettingsPanelInnerProps) {
-  const { settings, initialDraft, initialSectionId, systemLocale, onSave, vaults, defaultWorkspacePath, onRemoveVault, onReorderVaults, onSetDefaultWorkspace, onUpdateWorkspaceIdentity, isGitVault, vaultPath, onClose } = options
+  const { settings, initialDraft, initialSectionId, systemLocale, onSave, vaults, defaultWorkspacePath, onRemoveVault, onReorderVaults, onSetDefaultWorkspace, onUpdateWorkspaceIdentity, onClose } = options
   const backdropRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
   const { draft, updateDraft, handleGitignoredVisibilityChange, handleAllNotesFileVisibilityChange, handleThemeModeChange, handleSave } = useSettingsDraftActions({ initialDraft, onClose, onSave, settings })
@@ -387,8 +325,6 @@ function SettingsPanelInner(options: SettingsPanelInnerProps) {
           locale={draftLocale}
           systemLocale={systemLocale}
           updateDraft={updateDraft}
-          isGitVault={isGitVault}
-          vaultPath={vaultPath}
           vaults={vaults ?? []}
           defaultWorkspacePath={defaultWorkspacePath}
           {...{
@@ -448,8 +384,6 @@ interface SettingsBodyFromDraftProps {
   locale: AppLocale
   systemLocale: AppLocale
   updateDraft: <Key extends keyof SettingsDraft>(key: Key, value: SettingsDraft[Key]) => void
-  isGitVault: boolean
-  vaultPath: string
   vaults: VaultOption[]
   defaultWorkspacePath?: string | null
   onRemoveVault?: (path: string) => void
@@ -462,28 +396,12 @@ interface SettingsBodyFromDraftProps {
 }
 
 function SettingsBodyFromDraft(options: SettingsBodyFromDraftProps) {
-  const { t, draft, locale, systemLocale, updateDraft, isGitVault, vaultPath, vaults, defaultWorkspacePath, onRemoveVault, onReorderVaults, onSetDefaultWorkspace, onUpdateWorkspaceIdentity, setThemeMode, setHideGitignoredFiles, setAllNotesFileVisibility } = options
+  const { t, draft, locale, systemLocale, updateDraft, vaults, defaultWorkspacePath, onRemoveVault, onReorderVaults, onSetDefaultWorkspace, onUpdateWorkspaceIdentity, setThemeMode, setHideGitignoredFiles, setAllNotesFileVisibility } = options
   return (
     <SettingsBody
       t={t}
       locale={locale}
       systemLocale={systemLocale}
-      pullInterval={draft.pullInterval}
-      setPullInterval={(value) => updateDraft('pullInterval', value)}
-      gitFeaturesEnabled={draft.gitFeaturesEnabled}
-      setGitFeaturesEnabled={(value) => updateDraft('gitFeaturesEnabled', value)}
-      gitProvider={draft.gitProvider}
-      setGitProvider={(value) => updateDraft('gitProvider', value)}
-      gitWslDistro={draft.gitWslDistro}
-      setGitWslDistro={(value) => updateDraft('gitWslDistro', value)}
-      isGitVault={isGitVault}
-      vaultPath={vaultPath}
-      autoGitEnabled={draft.autoGitEnabled}
-      setAutoGitEnabled={(value) => updateDraft('autoGitEnabled', value)}
-      autoGitIdleThresholdSeconds={draft.autoGitIdleThresholdSeconds}
-      setAutoGitIdleThresholdSeconds={(value) => updateDraft('autoGitIdleThresholdSeconds', value)}
-      autoGitInactiveThresholdSeconds={draft.autoGitInactiveThresholdSeconds}
-      setAutoGitInactiveThresholdSeconds={(value) => updateDraft('autoGitInactiveThresholdSeconds', value)}
       releaseChannel={draft.releaseChannel}
       setReleaseChannel={(value) => updateDraft('releaseChannel', value)}
       automaticUpdateChecksEnabled={draft.automaticUpdateChecksEnabled}
@@ -534,14 +452,12 @@ function SettingsBody(props: SettingsBodyProps) {
 }
 
 function SettingsSyncAndAppearanceSections(options: SettingsBodyProps) {
-  const { t, locale, systemLocale, pullInterval, setPullInterval, gitFeaturesEnabled, setGitFeaturesEnabled, gitProvider, setGitProvider, gitWslDistro, setGitWslDistro, isGitVault, vaultPath, autoGitEnabled, setAutoGitEnabled, autoGitIdleThresholdSeconds, setAutoGitIdleThresholdSeconds, autoGitInactiveThresholdSeconds, setAutoGitInactiveThresholdSeconds, releaseChannel, setReleaseChannel, automaticUpdateChecksEnabled, setAutomaticUpdateChecksEnabled, multiWorkspaceEnabled, setMultiWorkspaceEnabled, vaults, defaultWorkspacePath, onRemoveVault, onReorderVaults, onSetDefaultWorkspace, onUpdateWorkspaceIdentity, themeMode, setThemeMode, uiLanguage, setUiLanguage } = options
+  const { t, locale, systemLocale, releaseChannel, setReleaseChannel, automaticUpdateChecksEnabled, setAutomaticUpdateChecksEnabled, multiWorkspaceEnabled, setMultiWorkspaceEnabled, vaults, defaultWorkspacePath, onRemoveVault, onReorderVaults, onSetDefaultWorkspace, onUpdateWorkspaceIdentity, themeMode, setThemeMode, uiLanguage, setUiLanguage } = options
   return (
     <>
       <SettingsSection id={SETTINGS_SECTION_IDS.sync} showDivider={false}>
         <SyncAndUpdatesSection
           t={t}
-          pullInterval={pullInterval}
-          setPullInterval={setPullInterval}
           releaseChannel={releaseChannel}
           setReleaseChannel={setReleaseChannel}
           automaticUpdateChecksEnabled={automaticUpdateChecksEnabled}
@@ -564,26 +480,6 @@ function SettingsSyncAndAppearanceSections(options: SettingsBodyProps) {
           vaults={vaults}
         />
       </SettingsSection>
-      <SettingsSection id={SETTINGS_SECTION_IDS.autogit}>
-        <GitSettingsSection
-          t={t}
-          gitFeaturesEnabled={gitFeaturesEnabled}
-          setGitFeaturesEnabled={setGitFeaturesEnabled}
-          gitProvider={gitProvider}
-          setGitProvider={setGitProvider}
-          gitWslDistro={gitWslDistro}
-          setGitWslDistro={setGitWslDistro}
-          isGitVault={isGitVault}
-          vaultPath={vaultPath}
-          autoGitEnabled={autoGitEnabled}
-          setAutoGitEnabled={setAutoGitEnabled}
-          autoGitIdleThresholdSeconds={autoGitIdleThresholdSeconds}
-          setAutoGitIdleThresholdSeconds={setAutoGitIdleThresholdSeconds}
-          autoGitInactiveThresholdSeconds={autoGitInactiveThresholdSeconds}
-          setAutoGitInactiveThresholdSeconds={setAutoGitInactiveThresholdSeconds}
-        />
-      </SettingsSection>
-
       <SettingsSection id={SETTINGS_SECTION_IDS.appearance}>
         <SectionHeading title={t('settings.appearance.title')} />
         <SettingsGroup>
@@ -641,8 +537,6 @@ function SettingsPrivacySections(options: SettingsBodyProps) {
 
 function SyncAndUpdatesSection({
   t,
-  pullInterval,
-  setPullInterval,
   releaseChannel,
   setReleaseChannel,
   automaticUpdateChecksEnabled,
@@ -650,8 +544,6 @@ function SyncAndUpdatesSection({
 }: Pick<
   SettingsBodyProps,
   | 't'
-  | 'pullInterval'
-  | 'setPullInterval'
   | 'releaseChannel'
   | 'setReleaseChannel'
   | 'automaticUpdateChecksEnabled'
@@ -662,20 +554,6 @@ function SyncAndUpdatesSection({
       <SectionHeading title={t('settings.sync.title')} />
 
       <SettingsGroup>
-        <SettingsRow label={t('settings.pullInterval')} description={t('settings.pullIntervalDescription')}>
-          <SelectControl
-            ariaLabel={t('settings.pullInterval')}
-            value={`${pullInterval}`}
-            onValueChange={(value) => setPullInterval(Number(value))}
-            options={PULL_INTERVAL_OPTIONS.map((value) => ({
-              value: `${value}`,
-              label: `${value}`,
-            }))}
-            testId="settings-pull-interval"
-            autoFocus={true}
-          />
-        </SettingsRow>
-
         <SettingsRow label={t('settings.releaseChannel')} description={t('settings.releaseChannelDescription')}>
           <SelectControl
             ariaLabel={t('settings.releaseChannel')}

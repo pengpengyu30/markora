@@ -97,7 +97,6 @@ status: Active
 |---------|--------|----------|
 | Editor | Done | High |
 | Right panel | Done | High |
-| Git Integration | Done | Medium |
 | Mobile App | Planned | Low |
 
 ## Horizontal Rule

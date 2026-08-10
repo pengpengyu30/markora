@@ -12,8 +12,6 @@ interface EditorPdfExportTab {
 
 interface UseEditorPdfExportParams {
   activeTab: EditorPdfExportTab | null
-  diffMode: boolean
-  handleToggleDiffExclusive: () => void | Promise<void>
   handleToggleRawExclusive: () => void
   locale?: AppLocale
   onToast?: (message: string | null) => void
@@ -22,8 +20,6 @@ interface UseEditorPdfExportParams {
 }
 
 interface PreparePdfExportModeParams {
-  diffMode: boolean
-  handleToggleDiffExclusive: () => void | Promise<void>
   handleToggleRawExclusive: () => void
   rawMode: boolean
   setPendingSource: (source: NotePdfExportSource | null) => void
@@ -38,7 +34,6 @@ interface PdfExportErrorParams {
 
 interface PendingPdfExportParams {
   activeTab: EditorPdfExportTab | null
-  diffMode: boolean
   locale: AppLocale
   onToast?: (message: string | null) => void
   pendingSource: NotePdfExportSource | null
@@ -63,21 +58,17 @@ function reportPdfExportError({ error, locale, onToast }: PdfExportErrorParams):
 }
 
 async function preparePdfExportMode({
-  diffMode,
-  handleToggleDiffExclusive,
   handleToggleRawExclusive,
   rawMode,
   setPendingSource,
   source,
 }: PreparePdfExportModeParams): Promise<void> {
-  if (diffMode) await Promise.resolve(handleToggleDiffExclusive())
   if (rawMode) handleToggleRawExclusive()
   setPendingSource(source)
 }
 
 function usePendingPdfExport({
   activeTab,
-  diffMode,
   locale,
   onToast,
   pendingSource,
@@ -85,7 +76,7 @@ function usePendingPdfExport({
   setPendingSource,
 }: PendingPdfExportParams): void {
   useEffect(() => {
-    if (!pendingSource || diffMode || rawMode || !isPdfExportableTab(activeTab)) return
+    if (!pendingSource || rawMode || !isPdfExportableTab(activeTab)) return
 
     let cancelled = false
     const defaultFilename = notePdfExportFilename(activeTab.entry.filename)
@@ -101,7 +92,7 @@ function usePendingPdfExport({
     return () => {
       cancelled = true
     }
-  }, [activeTab, diffMode, locale, onToast, pendingSource, rawMode, setPendingSource])
+  }, [activeTab, locale, onToast, pendingSource, rawMode, setPendingSource])
 }
 
 function useRegisteredPdfExportHandler(
@@ -123,8 +114,6 @@ function useRegisteredPdfExportHandler(
 export function useEditorPdfExport(options: UseEditorPdfExportParams): (source?: NotePdfExportSource) => void {
   const {
     activeTab,
-    diffMode,
-    handleToggleDiffExclusive,
     handleToggleRawExclusive,
     locale = 'en',
     onToast,
@@ -142,8 +131,6 @@ export function useEditorPdfExport(options: UseEditorPdfExportParams): (source?:
     }
 
     void preparePdfExportMode({
-      diffMode,
-      handleToggleDiffExclusive,
       handleToggleRawExclusive,
       rawMode,
       setPendingSource,
@@ -152,12 +139,11 @@ export function useEditorPdfExport(options: UseEditorPdfExportParams): (source?:
       reportPdfExportError({ error, locale, onToast })
     })
     },
-    [activeTab, diffMode, handleToggleDiffExclusive, handleToggleRawExclusive, locale, onToast, rawMode],
+    [activeTab, handleToggleRawExclusive, locale, onToast, rawMode],
   )
 
   usePendingPdfExport({
     activeTab,
-    diffMode,
     locale,
     onToast,
     pendingSource,

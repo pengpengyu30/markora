@@ -68,9 +68,7 @@ fn create_getting_started_vault_from_repo(
     }
 
     crate::git::clone_repo(repo_url, &target_path_str)?;
-    let vault_path = canonical_vault_path(target_path)?;
-    crate::git::disconnect_all_remotes(path_to_utf8(&vault_path, "Vault path")?)?;
-    Ok(vault_path)
+    canonical_vault_path(target_path)
 }
 
 fn getting_started_repo_url() -> String {
@@ -86,11 +84,6 @@ fn canonical_vault_path(target_path: &Path) -> Result<PathBuf, String> {
             target_path.display()
         )
     })
-}
-
-fn path_to_utf8<'a>(path: &'a Path, context: &str) -> Result<&'a str, String> {
-    path.to_str()
-        .ok_or_else(|| format!("{context} '{}' is not valid UTF-8", path.display()))
 }
 
 #[cfg(test)]
@@ -256,17 +249,5 @@ mod tests {
             .output()
             .unwrap();
         assert!(String::from_utf8_lossy(&output.stdout).trim().is_empty());
-    }
-
-    #[test]
-    fn create_getting_started_vault_removes_the_starter_remote() {
-        let dir = tempfile::TempDir::new().unwrap();
-        let source = dir.path().join("starter");
-        let dest = dir.path().join("Getting Started");
-        init_source_repo(&source);
-
-        create_getting_started_vault_from_repo(&dest, source.to_str().unwrap()).unwrap();
-
-        assert!(!crate::git::has_remote(dest.to_str().unwrap()).unwrap());
     }
 }

@@ -74,8 +74,6 @@ function configureBackend(overrides: Partial<Record<string, unknown | Error>> = 
     reload_vault: [makeEntry()],
     get_modified_files: [],
     list_vault_folders: [],
-    git_commit: 'committed',
-    git_push: { status: 'ok', message: 'pushed' },
   }
 
   backendInvokeFn.mockImplementation((command: string) => {
@@ -98,29 +96,6 @@ describe('useVaultLoader extra', () => {
     vi.clearAllMocks()
     mockIsTauri = false
     configureBackend()
-  })
-
-  it('uses native commit and push commands when Tauri mode is active', async () => {
-    mockIsTauri = true
-    configureBackend({
-      reload_vault: [makeEntry()],
-      get_modified_files: [],
-    })
-
-    const { result } = renderHook(() => useVaultLoader('/vault'))
-    await waitForEntries(result)
-
-    let response = { status: '', message: '' }
-    await act(async () => {
-      response = await result.current.commitAndPush('save current note')
-    })
-
-    expect(response.status).toBe('ok')
-    expect(backendInvokeFn).toHaveBeenCalledWith('git_commit', {
-      vaultPath: '/vault',
-      message: 'save current note',
-    })
-    expect(backendInvokeFn).toHaveBeenCalledWith('git_push', { vaultPath: '/vault' })
   })
 
   it('tracks pending saves and replaces entries in place', async () => {
@@ -161,7 +136,6 @@ describe('useVaultLoader extra', () => {
     const { result } = renderHook(() => useVaultLoader('/vault'))
 
     await waitFor(() => {
-      expect(result.current.modifiedFilesError).toBe('Failed to load changes')
       expect(result.current.modifiedFiles).toEqual([])
     })
 

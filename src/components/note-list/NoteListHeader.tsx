@@ -8,8 +8,6 @@ import { APP_COMMAND_EVENT_NAME, APP_COMMAND_IDS } from '../../hooks/appCommandD
 import { trackEvent } from '../../lib/telemetry'
 import { useDragRegion } from '../../hooks/useDragRegion'
 import { SortDropdown } from '../SortDropdown'
-import { GitRepositorySelect } from '../GitRepositorySelect'
-import type { GitRepositoryOption } from '../../utils/gitRepositories'
 import { isMac, MACOS_TRAFFIC_LIGHT_SAFE_PADDING } from '../../utils/platform'
 
 const NOTE_LIST_ACTION_BUTTON_CLASSNAME = '!h-auto !w-auto !min-w-0 !rounded-none !p-0 !text-muted-foreground hover:!bg-transparent hover:!text-foreground focus-visible:!bg-transparent data-[state=open]:!bg-transparent data-[state=open]:!text-foreground [&_svg]:!size-4'
@@ -17,7 +15,6 @@ const NOTE_LIST_EXPAND_BUTTON_CLASSNAME = '!h-6 !w-6 !min-w-0 !rounded !p-0 !tex
 const NOTE_LIST_SEARCH_DEBOUNCE_MS = 180
 interface NoteListHeaderProps {
   title: string
-  isChangesView?: boolean
   listSort: SortOption
   listDirection: SortDirection
   sidebarCollapsed?: boolean
@@ -25,15 +22,12 @@ interface NoteListHeaderProps {
   search: string
   isSearching: boolean
   searchInputRef: React.RefObject<HTMLInputElement | null>
-  gitRepositories?: GitRepositoryOption[]
-  selectedGitRepositoryPath?: string
   locale?: AppLocale
   onSortChange: (groupLabel: string, option: SortOption, direction: SortDirection) => void
   onCreateNote: () => void
   onToggleSearch: () => void
   onSearchChange: (value: string) => void
   onSearchKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void
-  onGitRepositoryChange?: (path: string) => void
 }
 
 function dispatchExpandSidebarFromHeader() {
@@ -83,35 +77,6 @@ function HeaderLeading({
     <div className="flex min-w-0 flex-1 items-center gap-2">
       {sidebarCollapsed && <ExpandSidebarButton locale={locale} />}
       <HeaderTitle title={title} />
-    </div>
-  )
-}
-
-function RepositorySelectorRow({
-  isChangesView,
-  gitRepositories = [],
-  selectedGitRepositoryPath = '',
-  locale = 'en',
-  onGitRepositoryChange,
-}: Pick<
-  NoteListHeaderProps,
-  | 'isChangesView'
-  | 'gitRepositories'
-  | 'selectedGitRepositoryPath'
-  | 'locale'
-  | 'onGitRepositoryChange'
->) {
-  if (!isChangesView || !onGitRepositoryChange || gitRepositories.length <= 1) return null
-
-  return (
-    <div className="flex h-11 shrink-0 items-center border-b border-border px-4" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
-      <GitRepositorySelect
-        label={translate(locale, 'git.repository.select')}
-        repositories={gitRepositories}
-        selectedPath={selectedGitRepositoryPath}
-        onChange={onGitRepositoryChange}
-        testId="changes-repository-select"
-      />
     </div>
   )
 }
@@ -237,10 +202,10 @@ function SearchRow({ search, isSearching, searchInputRef, locale, onSearchChange
 }
 
 export function NoteListHeader(options: NoteListHeaderProps) {
-  const { title, isChangesView = false, listSort, listDirection } = options
+  const { title, listSort, listDirection } = options
   const { sidebarCollapsed, searchVisible, search, isSearching, searchInputRef } = options
-  const { gitRepositories = [], selectedGitRepositoryPath = '', locale = 'en' } = options
-  const { onSortChange, onCreateNote, onToggleSearch, onSearchChange, onSearchKeyDown, onGitRepositoryChange } = options
+  const { locale = 'en' } = options
+  const { onSortChange, onCreateNote, onToggleSearch, onSearchChange, onSearchKeyDown } = options
   const { dragRegionRef } = useDragRegion<HTMLDivElement>()
   const collapsedSidebarPadding = sidebarCollapsed && isMac()
     ? `var(--tolaria-macos-traffic-light-padding, ${MACOS_TRAFFIC_LIGHT_SAFE_PADDING}px)`
@@ -263,13 +228,6 @@ export function NoteListHeader(options: NoteListHeaderProps) {
           onToggleSearch={onToggleSearch}
         />
       </div>
-      <RepositorySelectorRow
-        isChangesView={isChangesView}
-        gitRepositories={gitRepositories}
-        selectedGitRepositoryPath={selectedGitRepositoryPath}
-        locale={locale}
-        onGitRepositoryChange={onGitRepositoryChange}
-      />
       {searchVisible && (
         <SearchRow
           search={search}

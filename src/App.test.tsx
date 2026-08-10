@@ -158,11 +158,23 @@ const mockCommandResults: Record<string, unknown> = {
   save_note_content: null,
   reload_vault_entry: ({ path }: { path: string }) => mockEntries.find((entry) => entry.path === path) ?? null,
   sync_vault_asset_scope_for_window: null,
-  get_file_history: [],
   get_settings: createSettings(),
-  is_git_repo: true,
-  init_git_repo: null,
-  git_pull: { status: 'up_to_date', message: 'Already up to date', updatedFiles: [], conflictFiles: [] },
+  git_workspace_info: {
+    vaultRoot: '/vault',
+    gitRoot: '/vault',
+    vaultPathspec: '',
+    gitRootRelation: 'vault',
+    mode: 'managed',
+    resolutionFailure: null,
+  },
+  ensure_git_repository: {
+    vaultRoot: '/vault',
+    gitRoot: '/vault',
+    vaultPathspec: '',
+    gitRootRelation: 'vault',
+    mode: 'managed',
+    resolutionFailure: null,
+  },
   save_settings: null,
   check_vault_exists: true,
   get_default_vault_path: expectedDefaultVaultPath,
@@ -178,12 +190,26 @@ function resetMockCommandResults() {
     get_all_content: mockAllContent,
     get_modified_files: [],
     get_note_content: mockAllContent['/vault/project/test.md'] || '',
+    get_settings: createSettings(),
     save_note_content: null,
     reload_vault_entry: ({ path }: { path: string }) => mockEntries.find((entry) => entry.path === path) ?? null,
     sync_vault_asset_scope_for_window: null,
-    get_file_history: [],
-    is_git_repo: true,
-    init_git_repo: null,
+    git_workspace_info: {
+      vaultRoot: '/vault',
+      gitRoot: '/vault',
+      vaultPathspec: '',
+      gitRootRelation: 'vault',
+      mode: 'managed',
+      resolutionFailure: null,
+    },
+    ensure_git_repository: {
+      vaultRoot: '/vault',
+      gitRoot: '/vault',
+      vaultPathspec: '',
+      gitRootRelation: 'vault',
+      mode: 'managed',
+      resolutionFailure: null,
+    },
     save_settings: null,
     check_vault_exists: true,
     get_default_vault_path: expectedDefaultVaultPath,
@@ -316,6 +342,7 @@ import App from './App'
 import { TooltipProvider } from './components/ui/tooltip'
 import { useUpdater } from './hooks/useUpdater'
 import { isTauri } from './mock-tauri'
+import { resetVaultConfigStore } from './utils/vaultConfigStore'
 
 const SLOW_APP_READY_TIMEOUT_MS = 10_000
 
@@ -348,6 +375,7 @@ describe('App', () => {
     vi.mocked(isTauri).mockReturnValue(false)
     vi.mocked(useUpdater).mockReturnValue(createMockUpdaterResult())
     localStorage.clear()
+    resetVaultConfigStore()
     window.history.replaceState({}, '', '/')
   })
 
@@ -464,7 +492,7 @@ describe('App', () => {
       await waitFor(() => {
         expect(saveNoteContent).toHaveBeenCalledWith({
           path: '/vault/untitled-note-1700000000.md',
-          content: '---\ntype: Note\n---\n\n# \n\n',
+          content: '\n# \n\n',
           vaultPath: '/vault',
         })
       })
@@ -781,34 +809,6 @@ describe('App', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('status-vault-trigger')).toHaveTextContent('Work Vault')
-    })
-  })
-
-  it('clears the Git setup dialog when switching to a Git-enabled vault', async () => {
-    mockCommandResults.load_vault_list = {
-      vaults: [
-        { label: 'Missing Git', path: '/work' },
-        { label: 'Git Vault', path: '/vault-2' },
-      ],
-      active_vault: '/work',
-      hidden_defaults: [],
-    }
-    mockCommandResults.is_git_repo = ({ vaultPath }: { vaultPath?: string } = {}) => vaultPath === '/vault-2'
-
-    render(<App />)
-
-    expect(await screen.findByTestId('status-missing-git', {}, { timeout: SLOW_APP_READY_TIMEOUT_MS })).toBeInTheDocument()
-    fireEvent.click(screen.getByTestId('status-missing-git'))
-    expect(await screen.findByText('Enable Git for this vault?')).toBeInTheDocument()
-
-    fireEvent.click(screen.getByTestId('status-vault-trigger'))
-    fireEvent.click(screen.getByTestId('vault-menu-item-Git Vault'))
-
-    await waitFor(() => {
-      expect(screen.getByTestId('status-vault-trigger')).toHaveTextContent('Git Vault')
-    })
-    await waitFor(() => {
-      expect(screen.queryByText('Enable Git for this vault?')).not.toBeInTheDocument()
     })
   })
 

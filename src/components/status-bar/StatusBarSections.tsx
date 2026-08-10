@@ -2,39 +2,19 @@ import { BookOpen, GearSix as Settings, Megaphone, Moon, Package, Sun, type Icon
 import type { ComponentType, MouseEventHandler } from 'react'
 import type { ThemeMode } from '../../lib/themeMode'
 import { translate, type AppLocale, type TranslationKey } from '../../lib/i18n'
-import { useStatusBarAddRemote } from '../../hooks/useStatusBarAddRemote'
-import type { GitRemoteStatus, SyncStatus } from '../../types'
 import { rememberFeedbackDialogOpener } from '../../lib/feedbackDialogOpener'
 import { ActionTooltip } from '@/components/ui/action-tooltip'
-import { AddRemoteModal } from '../AddRemoteModal'
 import { Button } from '@/components/ui/button'
-import {
-  BranchBadge,
-  CommitButton,
-  ConflictBadge,
-  ChangesBadge,
-  MissingGitBadge,
-  NoRemoteBadge,
-  OfflineBadge,
-  PulseBadge,
-  SyncBadge,
-  VaultReloadingBadge,
-} from './StatusBarBadges'
+import { OfflineBadge, VaultReloadingBadge } from './StatusBarBadges'
 import { ICON_STYLE, SEP_STYLE } from './styles'
 import type { VaultOption } from './types'
 import { VaultMenu } from './VaultMenu'
 import { formatShortcutDisplay } from '../../hooks/appCommandCatalog'
-import type { GitRepositoryOption } from '../../utils/gitRepositories'
 
-const SETTINGS_SHORTCUT = {
-  shortcut: formatShortcutDisplay({ display: '⌘,' }),
-} as const
-const ZOOM_RESET_SHORTCUT = {
-  shortcut: formatShortcutDisplay({ display: '⌘0' }),
-} as const
+const SETTINGS_SHORTCUT = { shortcut: formatShortcutDisplay({ display: '⌘,' }) } as const
+const ZOOM_RESET_SHORTCUT = { shortcut: formatShortcutDisplay({ display: '⌘0' }) } as const
 
 interface StatusBarPrimarySectionProps {
-  modifiedCount: number
   vaultPath: string
   defaultWorkspacePath?: string | null
   vaults: VaultOption[]
@@ -44,28 +24,9 @@ interface StatusBarPrimarySectionProps {
   onOpenVaultSettings?: () => void
   onOpenLocalFolder?: () => void
   onCreateEmptyVault?: () => void
-  onCloneVault?: () => void
   onCloneGettingStarted?: () => void
-  onAddRemote?: () => void
-  onClickPending?: () => void
-  onClickPulse?: () => void
-  onCommitPush?: () => void
-  commitActionPending?: boolean
-  gitFeaturesEnabled?: boolean
-  onInitializeGit?: () => void
   isOffline?: boolean
   isVaultReloading?: boolean
-  isGitVault?: boolean
-  syncStatus: SyncStatus
-  lastSyncTime: number | null
-  conflictCount: number
-  remoteStatus?: GitRemoteStatus | null
-  repositories?: GitRepositoryOption[]
-  selectedRepositoryPath?: string
-  onRepositoryChange?: (path: string) => void
-  onTriggerSync?: () => void
-  onPullAndPush?: () => void
-  onOpenConflictResolver?: () => void
   buildNumber?: string
   onCheckForUpdates?: () => void
   onRemoveVault?: (path: string) => void
@@ -126,90 +87,6 @@ function BuildNumberButton({
   )
 }
 
-function StatusBarPrimaryBadges(options: {
-  modifiedCount: number
-  visibleRemoteStatus: GitRemoteStatus | null
-  repositories?: GitRepositoryOption[]
-  selectedRepositoryPath?: string
-  onRepositoryChange?: (path: string) => void
-  onAddRemote: () => void
-  onClickPending?: () => void
-  onCommitPush?: () => void
-  commitActionPending?: boolean
-  gitFeaturesEnabled: boolean
-  onInitializeGit?: () => void
-  syncStatus: SyncStatus
-  lastSyncTime: number | null
-  onTriggerSync?: () => void
-  onPullAndPush?: () => void
-  onOpenConflictResolver?: () => void
-  conflictCount: number
-  onClickPulse?: () => void
-  isGitVault: boolean
-  isOffline: boolean
-  isVaultReloading: boolean
-  compact: boolean
-  locale: AppLocale
-}) {
-  const { modifiedCount, visibleRemoteStatus, repositories, selectedRepositoryPath, onRepositoryChange, onAddRemote, onClickPending, onCommitPush, commitActionPending, gitFeaturesEnabled, onInitializeGit, syncStatus, lastSyncTime, onTriggerSync, onPullAndPush, onOpenConflictResolver, conflictCount, onClickPulse, isGitVault, isOffline, isVaultReloading, compact, locale } = options
-  return (
-    <>
-      <OfflineBadge isOffline={isOffline} showSeparator={!compact} compact={compact} locale={locale} />
-      <VaultReloadingBadge isReloading={isVaultReloading} showSeparator={!compact} compact={compact} locale={locale} />
-      {gitFeaturesEnabled && isGitVault ? (
-        <>
-          <BranchBadge remoteStatus={visibleRemoteStatus} showSeparator={!compact} compact={compact} locale={locale} />
-          <NoRemoteBadge
-            remoteStatus={visibleRemoteStatus}
-            onAddRemote={onAddRemote}
-            showSeparator={!compact}
-            compact={compact}
-            locale={locale}
-          />
-          <ChangesBadge
-            count={modifiedCount}
-            onClick={onClickPending}
-            showSeparator={!compact}
-            compact={compact}
-            locale={locale}
-          />
-          <CommitButton
-            onClick={onCommitPush}
-            remoteStatus={visibleRemoteStatus}
-            pending={commitActionPending}
-            showSeparator={!compact}
-            compact={compact}
-            locale={locale}
-          />
-          <SyncBadge
-            status={syncStatus}
-            lastSyncTime={lastSyncTime}
-            remoteStatus={visibleRemoteStatus}
-            repositories={repositories}
-            selectedRepositoryPath={selectedRepositoryPath}
-            onRepositoryChange={onRepositoryChange}
-            onTriggerSync={onTriggerSync}
-            onPullAndPush={onPullAndPush}
-            onOpenConflictResolver={onOpenConflictResolver}
-            compact={compact}
-            locale={locale}
-          />
-          <ConflictBadge
-            count={conflictCount}
-            onClick={onOpenConflictResolver}
-            showSeparator={!compact}
-            compact={compact}
-            locale={locale}
-          />
-          <PulseBadge onClick={onClickPulse} showSeparator={!compact} compact={compact} locale={locale} />
-        </>
-      ) : gitFeaturesEnabled ? (
-        <MissingGitBadge onClick={onInitializeGit} showSeparator={!compact} compact={compact} locale={locale} />
-      ) : null}
-    </>
-  )
-}
-
 type StatusLinkButtonProps = {
   compact: boolean
   icon: ComponentType<IconProps>
@@ -220,30 +97,14 @@ type StatusLinkButtonProps = {
   tooltipKey: TranslationKey
 }
 
-function StatusLinkButton({
-  compact,
-  icon: Icon,
-  labelKey,
-  locale,
-  onClick,
-  testId,
-  tooltipKey,
-}: StatusLinkButtonProps) {
+function StatusLinkButton({ compact, icon: Icon, labelKey, locale, onClick, testId, tooltipKey }: StatusLinkButtonProps) {
   const className = compact
     ? 'h-6 w-6 rounded-sm p-0 text-muted-foreground hover:text-foreground'
     : 'h-6 px-2 text-[12px] font-medium text-muted-foreground hover:text-foreground'
 
   return (
     <ActionTooltip copy={{ label: translate(locale, tooltipKey) }} side="top">
-      <Button
-        type="button"
-        variant="ghost"
-        size="xs"
-        className={className}
-        onClick={onClick}
-        aria-label={translate(locale, tooltipKey)}
-        data-testid={testId}
-      >
+      <Button type="button" variant="ghost" size="xs" className={className} onClick={onClick} aria-label={translate(locale, tooltipKey)} data-testid={testId}>
         <Icon size={14} weight="regular" />
         {compact ? null : translate(locale, labelKey)}
       </Button>
@@ -251,15 +112,7 @@ function StatusLinkButton({
   )
 }
 
-function FeedbackButton({
-  compact,
-  locale,
-  onOpenFeedback,
-}: {
-  compact: boolean
-  locale: AppLocale
-  onOpenFeedback: () => void
-}) {
+function FeedbackButton({ compact, locale, onOpenFeedback }: { compact: boolean; locale: AppLocale; onOpenFeedback: () => void }) {
   return (
     <StatusLinkButton
       compact={compact}
@@ -308,63 +161,30 @@ function PrimarySeparator({ compact }: { compact: boolean }) {
   return compact ? null : <span style={SEP_STYLE}>|</span>
 }
 
-function StatusBarGitControls(
-  options: StatusBarPrimarySectionProps & {
-    compact: boolean
-    locale: AppLocale
-  },
-) {
-  const { modifiedCount, vaultPath, onAddRemote, onClickPending, onCommitPush, commitActionPending, gitFeaturesEnabled, onInitializeGit, isOffline, isVaultReloading, isGitVault, syncStatus, lastSyncTime, conflictCount, remoteStatus, repositories, selectedRepositoryPath, onRepositoryChange, onTriggerSync, onPullAndPush, onOpenConflictResolver, onClickPulse, compact, locale } = options
-  const gitVaultPath = selectedRepositoryPath || vaultPath
-  const { openAddRemote, closeAddRemote, showAddRemote, visibleRemoteStatus, handleRemoteConnected } =
-    useStatusBarAddRemote({
-    vaultPath: gitVaultPath,
-    isGitVault: gitFeaturesEnabled !== false && isGitVault !== false,
-    remoteStatus,
-    onAddRemote,
-  })
-
-  return (
-    <>
-      <StatusBarPrimaryBadges
-        modifiedCount={modifiedCount}
-        visibleRemoteStatus={visibleRemoteStatus}
-        repositories={repositories}
-        selectedRepositoryPath={gitVaultPath}
-        onRepositoryChange={onRepositoryChange}
-        onAddRemote={() => {
-          void openAddRemote()
-        }}
-        onClickPending={onClickPending}
-        onCommitPush={onCommitPush}
-        commitActionPending={commitActionPending}
-        gitFeaturesEnabled={gitFeaturesEnabled !== false}
-        onInitializeGit={onInitializeGit}
-        syncStatus={syncStatus}
-        lastSyncTime={lastSyncTime}
-        onTriggerSync={onTriggerSync}
-        onPullAndPush={onPullAndPush}
-        onOpenConflictResolver={onOpenConflictResolver}
-        conflictCount={conflictCount}
-        onClickPulse={onClickPulse}
-        isGitVault={isGitVault !== false}
-        isOffline={isOffline === true}
-        isVaultReloading={isVaultReloading === true}
-        compact={compact}
-        locale={locale}
-      />
-      <AddRemoteModal
-        open={showAddRemote}
-        vaultPath={gitVaultPath}
-        onClose={closeAddRemote}
-        onRemoteConnected={handleRemoteConnected}
-      />
-    </>
-  )
-}
-
 export function StatusBarPrimarySection(options: StatusBarPrimarySectionProps) {
-  const { modifiedCount, vaultPath, defaultWorkspacePath, vaults, multiWorkspaceEnabled, onSwitchVault, onSetDefaultWorkspace, onOpenVaultSettings, onOpenLocalFolder, onCreateEmptyVault, onCloneVault, onCloneGettingStarted, onAddRemote, onClickPending, onClickPulse, onCommitPush, commitActionPending = false, gitFeaturesEnabled = true, onInitializeGit, isOffline = false, isVaultReloading = false, isGitVault = true, syncStatus, lastSyncTime, conflictCount, remoteStatus, repositories, selectedRepositoryPath, onRepositoryChange, onTriggerSync, onPullAndPush, onOpenConflictResolver, buildNumber, onCheckForUpdates, onRemoveVault, onReorderVaults, onUpdateWorkspaceIdentity, locale = 'en', stacked = false, compact = false } = options
+  const {
+    vaultPath,
+    defaultWorkspacePath,
+    vaults,
+    multiWorkspaceEnabled,
+    onSwitchVault,
+    onSetDefaultWorkspace,
+    onOpenVaultSettings,
+    onOpenLocalFolder,
+    onCreateEmptyVault,
+    onCloneGettingStarted,
+    isOffline = false,
+    isVaultReloading = false,
+    buildNumber,
+    onCheckForUpdates,
+    onRemoveVault,
+    onReorderVaults,
+    onUpdateWorkspaceIdentity,
+    locale = 'en',
+    stacked = false,
+    compact = false,
+  } = options
+
   return (
     <div style={primarySectionStyle(stacked, compact)}>
       <VaultMenu
@@ -377,47 +197,17 @@ export function StatusBarPrimarySection(options: StatusBarPrimarySectionProps) {
         onOpenVaultSettings={onOpenVaultSettings}
         onOpenLocalFolder={onOpenLocalFolder}
         onCreateEmptyVault={onCreateEmptyVault}
-        onCloneVault={onCloneVault}
         onCloneGettingStarted={onCloneGettingStarted}
-        {...{ onRemoveVault, onReorderVaults, onUpdateWorkspaceIdentity }}
+        onRemoveVault={onRemoveVault}
+        onReorderVaults={onReorderVaults}
+        onUpdateWorkspaceIdentity={onUpdateWorkspaceIdentity}
         compact={compact}
         locale={locale}
       />
       <PrimarySeparator compact={compact} />
-      <BuildNumberButton
-        buildNumber={buildNumber}
-        onCheckForUpdates={onCheckForUpdates}
-        compact={compact}
-        locale={locale}
-      />
-      <StatusBarGitControls
-        modifiedCount={modifiedCount}
-        vaultPath={vaultPath}
-        vaults={vaults}
-        onSwitchVault={onSwitchVault}
-        remoteStatus={remoteStatus}
-        repositories={repositories}
-        selectedRepositoryPath={selectedRepositoryPath}
-        onRepositoryChange={onRepositoryChange}
-        onAddRemote={onAddRemote}
-        onClickPending={onClickPending}
-        onCommitPush={onCommitPush}
-        commitActionPending={commitActionPending}
-        gitFeaturesEnabled={gitFeaturesEnabled}
-        onInitializeGit={onInitializeGit}
-        syncStatus={syncStatus}
-        lastSyncTime={lastSyncTime}
-        onTriggerSync={onTriggerSync}
-        onPullAndPush={onPullAndPush}
-        onOpenConflictResolver={onOpenConflictResolver}
-        conflictCount={conflictCount}
-        onClickPulse={onClickPulse}
-        isGitVault={isGitVault}
-        isOffline={isOffline}
-        isVaultReloading={isVaultReloading}
-        compact={compact}
-        locale={locale}
-      />
+      <BuildNumberButton buildNumber={buildNumber} onCheckForUpdates={onCheckForUpdates} compact={compact} locale={locale} />
+      <OfflineBadge isOffline={isOffline} showSeparator={!compact} compact={compact} locale={locale} />
+      <VaultReloadingBadge isReloading={isVaultReloading} showSeparator={!compact} compact={compact} locale={locale} />
     </div>
   )
 }
@@ -426,38 +216,13 @@ export function StatusBarSecondarySection(options: StatusBarSecondarySectionProp
   const { noteCount, zoomLevel, themeMode = 'light', onZoomReset, onToggleThemeMode, onOpenFeedback, onOpenDocs, onOpenSettings, locale = 'en', stacked = false, compact = false } = options
   void noteCount
   const ThemeIcon = themeMode === 'dark' ? Sun : Moon
-  const themeTooltip = {
-    label: translate(locale, themeMode === 'dark' ? 'status.theme.light' : 'status.theme.dark'),
-  }
+  const themeTooltip = { label: translate(locale, themeMode === 'dark' ? 'status.theme.light' : 'status.theme.dark') }
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: stacked ? 'flex-end' : 'flex-start',
-        gap: compact ? 8 : 12,
-        flexShrink: 0,
-        width: stacked ? '100%' : 'auto',
-      }}
-    >
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: stacked ? 'flex-end' : 'flex-start', gap: compact ? 8 : 12, flexShrink: 0, width: stacked ? '100%' : 'auto' }}>
       {zoomLevel === 100 ? null : (
-        <ActionTooltip
-          copy={{
-            label: translate(locale, 'status.zoom.reset'),
-            ...ZOOM_RESET_SHORTCUT,
-          }}
-          side="top"
-        >
-          <Button
-            type="button"
-            variant="ghost"
-            size="xs"
-            className="h-auto rounded-sm px-1 py-0.5 text-[12px] font-medium text-muted-foreground hover:bg-[var(--hover)] hover:text-foreground"
-            onClick={onZoomReset}
-            aria-label={translate(locale, 'status.zoom.reset')}
-            data-testid="status-zoom"
-          >
+        <ActionTooltip copy={{ label: translate(locale, 'status.zoom.reset'), ...ZOOM_RESET_SHORTCUT }} side="top">
+          <Button type="button" variant="ghost" size="xs" className="h-auto rounded-sm px-1 py-0.5 text-[12px] font-medium text-muted-foreground hover:bg-[var(--hover)] hover:text-foreground" onClick={onZoomReset} aria-label={translate(locale, 'status.zoom.reset')} data-testid="status-zoom">
             <span style={ICON_STYLE}>{zoomLevel}%</span>
           </Button>
         </ActionTooltip>
@@ -465,36 +230,12 @@ export function StatusBarSecondarySection(options: StatusBarSecondarySectionProp
       {onOpenFeedback && <FeedbackButton compact={compact} locale={locale} onOpenFeedback={onOpenFeedback} />}
       {onOpenDocs && <DocsButton compact={compact} locale={locale} onOpenDocs={onOpenDocs} />}
       <ActionTooltip copy={themeTooltip} side="top" align="end" contentTestId="status-theme-mode-tooltip">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-xs"
-          className="text-muted-foreground hover:bg-[var(--hover)] hover:text-foreground"
-          onClick={onToggleThemeMode}
-          disabled={!onToggleThemeMode}
-          aria-label={themeTooltip.label}
-          data-testid="status-theme-mode"
-        >
+        <Button type="button" variant="ghost" size="icon-xs" className="text-muted-foreground hover:bg-[var(--hover)] hover:text-foreground" onClick={onToggleThemeMode} disabled={!onToggleThemeMode} aria-label={themeTooltip.label} data-testid="status-theme-mode">
           <ThemeIcon size={14} weight="regular" />
         </Button>
       </ActionTooltip>
-      <ActionTooltip
-        copy={{
-          label: translate(locale, 'status.settings.open'),
-          ...SETTINGS_SHORTCUT,
-        }}
-        side="top"
-        align="end"
-      >
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-xs"
-          className="text-muted-foreground hover:bg-[var(--hover)] hover:text-foreground"
-          onClick={onOpenSettings}
-          aria-label={translate(locale, 'status.settings.open')}
-          data-testid="status-settings"
-        >
+      <ActionTooltip copy={{ label: translate(locale, 'status.settings.open'), ...SETTINGS_SHORTCUT }} side="top" align="end">
+        <Button type="button" variant="ghost" size="icon-xs" className="text-muted-foreground hover:bg-[var(--hover)] hover:text-foreground" onClick={onOpenSettings} aria-label={translate(locale, 'status.settings.open')} data-testid="status-settings">
           <Settings size={14} weight="regular" />
         </Button>
       </ActionTooltip>

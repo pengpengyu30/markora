@@ -142,11 +142,6 @@
         "accelerator": "CmdOrCtrl+\\"
       }
     },
-    "editToggleDiff": {
-      "id": "edit-toggle-diff",
-      "route": { "kind": "handler", "handler": "onToggleDiff" },
-      "menuOwned": true
-    },
     "viewEditorOnly": {
       "id": "view-editor-only",
       "route": { "kind": "view-mode", "value": "editor-only" },
@@ -274,11 +269,6 @@
       "route": { "kind": "filter", "value": "all" },
       "menuOwned": true
     },
-    "goChanges": {
-      "id": "go-changes",
-      "route": { "kind": "filter", "value": "changes" },
-      "menuOwned": true
-    },
     "noteDelete": {
       "id": "note-delete",
       "route": { "kind": "active-tab-handler", "handler": "onDeleteNote" },
@@ -308,11 +298,6 @@
       "route": { "kind": "handler", "handler": "onExportNoteAsPdf" },
       "menuOwned": true
     },
-    "noteRestoreDeleted": {
-      "id": "note-restore-deleted",
-      "route": { "kind": "handler", "handler": "onRestoreDeletedNote" },
-      "menuOwned": true
-    },
     "vaultOpen": {
       "id": "vault-open",
       "route": { "kind": "handler", "handler": "onOpenVault" },
@@ -326,31 +311,6 @@
     "vaultRestoreGettingStarted": {
       "id": "vault-restore-getting-started",
       "route": { "kind": "handler", "handler": "onRestoreGettingStarted" },
-      "menuOwned": true
-    },
-    "vaultAddRemote": {
-      "id": "vault-add-remote",
-      "route": { "kind": "handler", "handler": "onAddRemote" },
-      "menuOwned": true
-    },
-    "vaultCommitPush": {
-      "id": "vault-commit-push",
-      "route": { "kind": "handler", "handler": "onCommitPush" },
-      "menuOwned": true
-    },
-    "vaultPull": {
-      "id": "vault-pull",
-      "route": { "kind": "handler", "handler": "onPull" },
-      "menuOwned": true
-    },
-    "vaultResolveConflicts": {
-      "id": "vault-resolve-conflicts",
-      "route": { "kind": "handler", "handler": "onResolveConflicts" },
-      "menuOwned": true
-    },
-    "vaultViewChanges": {
-      "id": "vault-view-changes",
-      "route": { "kind": "handler", "handler": "onViewChanges" },
       "menuOwned": true
     },
     "vaultReload": {
@@ -398,8 +358,7 @@
           "label": "Toggle Note List Search",
           "accelerator": "CmdOrCtrl+F",
           "enabled": false
-        },
-        { "kind": "command", "command": "editToggleDiff", "label": "Toggle Diff Mode" }
+        }
       ]
     },
     {
@@ -420,7 +379,6 @@
       "label": "Go",
       "items": [
         { "kind": "command", "command": "goAllNotes", "label": "All Notes" },
-        { "kind": "command", "command": "goChanges", "label": "Changes" },
         { "kind": "separator" },
         { "kind": "command", "command": "viewGoBack", "label": "Go Back" },
         { "kind": "command", "command": "viewGoForward", "label": "Go Forward" }
@@ -430,7 +388,6 @@
       "label": "Note",
       "items": [
         { "kind": "command", "command": "noteDelete", "label": "Delete Note" },
-        { "kind": "command", "command": "noteRestoreDeleted", "label": "Restore Deleted Note", "enabled": false },
         { "kind": "separator" },
         { "kind": "command", "command": "noteOpenInNewWindow", "label": "Open in New Window" },
         { "kind": "command", "command": "noteExportPdf", "label": "Export Note as PDF" },
@@ -447,12 +404,6 @@
         { "kind": "command", "command": "vaultRemove", "label": "Remove Vault from List" },
         { "kind": "command", "command": "vaultRestoreGettingStarted", "label": "Restore Getting Started" },
         { "kind": "separator" },
-        { "kind": "command", "command": "vaultAddRemote", "label": "Add Remote…", "enabled": false },
-        { "kind": "command", "command": "vaultCommitPush", "label": "Commit & Push" },
-        { "kind": "command", "command": "vaultPull", "label": "Pull from Remote" },
-        { "kind": "command", "command": "vaultResolveConflicts", "label": "Resolve Conflicts", "enabled": false },
-        { "kind": "command", "command": "vaultViewChanges", "label": "View Pending Changes" },
-        { "kind": "separator" },
         { "kind": "command", "command": "vaultReload", "label": "Reload Vault" },
         { "kind": "command", "command": "vaultRepair", "label": "Repair Vault" }
       ]
@@ -468,7 +419,6 @@
       { "command": "fileSave" },
       { "command": "noteDelete" },
       { "command": "editToggleRawEditor" },
-      { "command": "editToggleDiff" },
       { "command": "viewToggleTableOfContents" },
       { "command": "viewToggleBacklinks" },
       { "command": "noteOpenInNewWindow" },
@@ -480,18 +430,6 @@
     ],
     "noteListSearchDependent": [
       { "id": "edit-toggle-note-list-search" }
-    ],
-    "restoreDeletedDependent": [
-      { "command": "noteRestoreDeleted" }
-    ],
-    "gitCommitDependent": [
-      { "command": "vaultCommitPush" }
-    ],
-    "gitConflictDependent": [
-      { "command": "vaultResolveConflicts" }
-    ],
-    "gitNoRemoteDependent": [
-      { "command": "vaultAddRemote" }
     ]
   }
 }

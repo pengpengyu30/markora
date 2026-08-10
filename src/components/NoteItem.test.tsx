@@ -90,52 +90,7 @@ describe('NoteItem', () => {
     expect(dataTransfer.setData).toHaveBeenCalledWith('text/plain', entry.path)
   })
 
-  it('shows the title with filename metadata when a change status is present', () => {
-    const entry = {
-      ...makeEntry({ filename: 'my-note.md', title: 'My Note Title' }),
-      __changeAddedLines: 42,
-      __changeDeletedLines: 7,
-    }
-
-    render(<NoteItem entry={entry} isSelected={false} onClickNote={vi.fn()} changeStatus="modified" />)
-
-    expect(screen.getByText('My Note Title')).toBeInTheDocument()
-    expect(screen.getByText('my-note.md')).toBeInTheDocument()
-    expect(screen.getByTestId('change-note-filename')).toHaveClass('truncate', 'text-[12px]', 'leading-[1.5]', 'text-muted-foreground')
-    expect(screen.getByTestId('change-stat-added')).toHaveTextContent('+42')
-    expect(screen.getByTestId('change-stat-deleted')).toHaveTextContent('-7')
-  })
-
-  it.each([
-    { status: 'modified' as const, symbol: '·' },
-    { status: 'added' as const, symbol: '+' },
-  ])('renders the correct symbol for $status files', ({ status, symbol }) => {
-    render(
-      <NoteItem
-        entry={makeEntry({ filename: `${status}-note.md` })}
-        isSelected={false}
-        onClickNote={vi.fn()}
-        changeStatus={status}
-      />,
-    )
-
-    expect(screen.getByTestId('change-status-icon')).toHaveTextContent(symbol)
-  })
-
-  it('shows a neutral fallback when line stats are unavailable', () => {
-    render(
-      <NoteItem
-        entry={makeEntry({ filename: 'binary-note.md', title: 'Binary Note' })}
-        isSelected={false}
-        onClickNote={vi.fn()}
-        changeStatus="modified"
-      />,
-    )
-
-    expect(screen.getByTestId('change-stat-fallback')).toHaveTextContent('Diff unavailable')
-  })
-
-  it('renders the regular title when no change status is set', () => {
+  it('renders the regular title', () => {
     render(
       <NoteItem
         entry={makeEntry({ filename: 'note.md', title: 'My Note' })}
@@ -146,7 +101,6 @@ describe('NoteItem', () => {
 
     expect(screen.getByText('My Note')).toBeInTheDocument()
     expect(screen.queryByText('note.md')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('change-status-icon')).not.toBeInTheDocument()
   })
 
   it('keeps note content sections spaced consistently', () => {

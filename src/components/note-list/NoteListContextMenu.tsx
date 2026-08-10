@@ -19,8 +19,6 @@ interface NoteListContextMenuParams {
   onExportPdf?: (entry: VaultEntry) => void
   onRevealFile?: (path: string) => void
   onCopyFilePath?: (path: string) => void
-  canCopyGitUrl?: (entry: VaultEntry) => boolean
-  onCopyGitUrl?: (entry: VaultEntry) => void
 }
 
 function hasNoteListContextActions(options: NoteListContextMenuParams & { entry: VaultEntry }) {
@@ -32,8 +30,6 @@ function hasNoteListContextActions(options: NoteListContextMenuParams & { entry:
     onExportPdf,
     onRevealFile,
     onCopyFilePath,
-    canCopyGitUrl,
-    onCopyGitUrl,
   } = options
   return [
     onOpenInNewWindow,
@@ -42,7 +38,6 @@ function hasNoteListContextActions(options: NoteListContextMenuParams & { entry:
     onDeletePaths,
     onRevealFile,
     onCopyFilePath,
-    onCopyGitUrl && canCopyGitUrl?.(entry),
   ].some(Boolean)
 }
 
@@ -55,8 +50,6 @@ export function useNoteListContextMenu(options: NoteListContextMenuParams) {
     onExportPdf,
     onRevealFile,
     onCopyFilePath,
-    canCopyGitUrl,
-    onCopyGitUrl,
   } = options
   const [ctxMenu, setCtxMenu] = useState<NoteListContextMenuState | null>(null)
   const [renameEntry, setRenameEntry] = useState<VaultEntry | null>(null)
@@ -108,8 +101,6 @@ export function useNoteListContextMenu(options: NoteListContextMenuParams) {
           onExportPdf,
           onRevealFile,
           onCopyFilePath,
-          canCopyGitUrl,
-          onCopyGitUrl,
         })
       )
         return
@@ -120,12 +111,10 @@ export function useNoteListContextMenu(options: NoteListContextMenuParams) {
     },
     [
       onCopyFilePath,
-      canCopyGitUrl,
       onDeletePaths,
       onExportPdf,
       onRenameFilename,
       onOpenInNewWindow,
-      onCopyGitUrl,
       onRevealFile,
     ],
   )
@@ -142,8 +131,6 @@ export function useNoteListContextMenu(options: NoteListContextMenuParams) {
         onExportPdf={onExportPdf}
         onRevealFile={onRevealFile}
         onCopyFilePath={onCopyFilePath}
-        canCopyGitUrl={canCopyGitUrl}
-        onCopyGitUrl={onCopyGitUrl}
         onClose={closeContextMenu}
       />
       <NoteListRenameDialog entry={renameEntry} locale={locale} onClose={closeRenameDialog} onRename={submitRename} />

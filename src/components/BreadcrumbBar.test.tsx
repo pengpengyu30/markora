@@ -46,10 +46,6 @@ const baseEntry: VaultEntry = {
 
 const defaultProps = {
   wordCount: 100,
-  showDiffToggle: false,
-  diffMode: false,
-  diffLoading: false,
-  onToggleDiff: vi.fn(),
 }
 
 type BreadcrumbBarRenderProps = Omit<ComponentProps<typeof BreadcrumbBar>, 'entry'>
@@ -269,24 +265,6 @@ describe('BreadcrumbBar — file actions', () => {
     fireEvent.click(within(menu).getByRole('menuitem', { name: 'Copy note deeplink' }))
 
     expect(onCopyDeepLink).toHaveBeenCalledWith(baseEntry)
-  })
-
-  it('copies the current note git URL from the overflow menu when available', async () => {
-    const onCopyGitUrl = vi.fn()
-    render(<BreadcrumbBar entry={baseEntry} {...defaultProps} onCopyGitUrl={onCopyGitUrl} />)
-
-    const menu = await openOverflowMenu()
-    fireEvent.click(within(menu).getByRole('menuitem', { name: 'Copy git URL' }))
-
-    expect(onCopyGitUrl).toHaveBeenCalledWith(baseEntry)
-  })
-
-  it('does not show the note git URL action without a remote-backed handler', async () => {
-    render(<BreadcrumbBar entry={baseEntry} {...defaultProps} />)
-
-    const menu = await openOverflowMenu()
-
-    expect(within(menu).queryByRole('menuitem', { name: 'Copy git URL' })).not.toBeInTheDocument()
   })
 
   it('exports the current note as PDF from the overflow menu', async () => {
@@ -601,36 +579,6 @@ describe('BreadcrumbBar — action buttons always right-aligned', () => {
     render(<BreadcrumbBar entry={baseEntry} {...defaultProps} />)
     expect(screen.queryByRole('button', { name: 'Backlinks are coming soon' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'More note actions are coming soon' })).not.toBeInTheDocument()
-  })
-
-  it('keeps git diff first while placing file actions and delete at the bottom', async () => {
-    const restoreMeasurement = mockCollapsedBreadcrumbOverflow()
-
-    try {
-      const { container } = render(
-        <BreadcrumbBar
-          entry={baseEntry}
-          {...defaultProps}
-          showDiffToggle
-          noteWidth="normal"
-          onToggleNoteWidth={vi.fn()}
-          onRevealFile={vi.fn()}
-          onCopyFilePath={vi.fn()}
-          onDelete={vi.fn()}
-        />,
-      )
-
-      await waitFor(() => {
-        expect(container.querySelector('.breadcrumb-bar__actions')).toHaveAttribute('data-overflow-collapsed', 'true')
-      })
-
-      const menu = await openOverflowMenu()
-      const menuLabels = within(menu).getAllByRole('menuitem').map((item) => item.textContent)
-      expect(menuLabels[0]).toBe('Git diff')
-      expect(menuLabels.slice(-2)).toEqual(['Copy note deeplink', 'Delete this note'])
-    } finally {
-      restoreMeasurement()
-    }
   })
 
   it('does not duplicate visible lower-priority toolbar actions in the permanent overflow menu', async () => {

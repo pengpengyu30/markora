@@ -273,9 +273,7 @@ function filterByKind(
 }
 
 function filterByFilterType(entries: VaultEntry[], filter: string): VaultEntry[] {
-  if (filter === 'all') return entries
-  if (filter === 'pulse') return []
-  return []
+  return filter === 'all' ? entries : []
 }
 
 export function filterEntries(

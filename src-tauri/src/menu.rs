@@ -23,10 +23,6 @@ const APP_COMMAND_MANIFEST_JSON: &str = include_str!("../../src/shared/appComman
 const NOTE_DEPENDENT_GROUP: &str = "noteDependent";
 const EDITOR_FIND_DEPENDENT_GROUP: &str = "editorFindDependent";
 const NOTE_LIST_SEARCH_DEPENDENT_GROUP: &str = "noteListSearchDependent";
-const RESTORE_DELETED_DEPENDENT_GROUP: &str = "restoreDeletedDependent";
-const GIT_COMMIT_DEPENDENT_GROUP: &str = "gitCommitDependent";
-const GIT_CONFLICT_DEPENDENT_GROUP: &str = "gitConflictDependent";
-const GIT_NO_REMOTE_DEPENDENT_GROUP: &str = "gitNoRemoteDependent";
 
 type MenuResult = Result<Submenu<tauri::Wry>, Box<dyn Error>>;
 type AppSubmenuBuilder<'a> = SubmenuBuilder<'a, tauri::Wry, App>;
@@ -524,35 +520,9 @@ pub fn set_note_list_search_items_enabled(app_handle: &AppHandle, enabled: bool)
     set_menu_state_group_enabled(app_handle, NOTE_LIST_SEARCH_DEPENDENT_GROUP, enabled);
 }
 
-/// Enable or disable menu items that depend on having uncommitted changes.
-pub fn set_git_commit_items_enabled(app_handle: &AppHandle, enabled: bool) {
-    set_menu_state_group_enabled(app_handle, GIT_COMMIT_DEPENDENT_GROUP, enabled);
-}
-
-/// Enable or disable menu items that depend on having merge conflicts.
-pub fn set_git_conflict_items_enabled(app_handle: &AppHandle, enabled: bool) {
-    set_menu_state_group_enabled(app_handle, GIT_CONFLICT_DEPENDENT_GROUP, enabled);
-}
-
-/// Enable or disable menu items that depend on the active vault having no remote.
-pub fn set_git_no_remote_items_enabled(app_handle: &AppHandle, enabled: bool) {
-    set_menu_state_group_enabled(app_handle, GIT_NO_REMOTE_DEPENDENT_GROUP, enabled);
-}
-
-/// Enable or disable menu items that depend on a deleted note preview being active.
-pub fn set_restore_deleted_item_enabled(app_handle: &AppHandle, enabled: bool) {
-    set_menu_state_group_enabled(app_handle, RESTORE_DELETED_DEPENDENT_GROUP, enabled);
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn menu_item_by_id(id: &str) -> &'static ManifestMenuItem {
-        manifest_menu_items()
-            .find(|item| item.menu_item_id(manifest()) == Some(id))
-            .unwrap_or_else(|| panic!("missing menu item {id}"))
-    }
 
     #[test]
     fn custom_ids_are_manifest_menu_item_ids() {
@@ -661,15 +631,5 @@ mod tests {
     #[test]
     fn native_menu_labels_without_ampersands_are_unchanged() {
         assert_eq!(native_menu_label("Pull from Remote"), "Pull from Remote");
-    }
-
-    #[test]
-    fn vault_commit_push_menu_label_is_native_menu_safe() {
-        let item = menu_item_by_id("vault-commit-push");
-        let label = item.label("windows").expect("commit push label exists");
-
-        assert_eq!(label, "Commit & Push");
-        assert_eq!(native_menu_label(label), "Commit && Push");
-        assert_eq!(item.accelerator(manifest()), None);
     }
 }

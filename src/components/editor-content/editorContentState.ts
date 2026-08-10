@@ -1,4 +1,4 @@
-import type { NoteStatus, VaultEntry } from '../../types'
+import type { VaultEntry } from '../../types'
 import { extractH1TitleFromContent } from '../../utils/noteTitle'
 import { noteDisplaysAsSheet } from '../../utils/noteFormat'
 import { countWords } from '../../utils/wikilinks'
@@ -13,7 +13,6 @@ interface EditorContentStateInput {
   activeTab: EditorContentTab | null
   entries: VaultEntry[]
   rawMode: boolean
-  activeStatus: NoteStatus
 }
 
 interface VisibilityState {

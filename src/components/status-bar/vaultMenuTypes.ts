@@ -11,7 +11,6 @@ export interface VaultMenuProps {
   onOpenVaultSettings?: () => void
   onOpenLocalFolder?: () => void
   onCreateEmptyVault?: () => void
-  onCloneVault?: () => void
   onCloneGettingStarted?: () => void
   onRemoveVault?: (path: string) => void
   onReorderVaults?: (orderedPaths: string[]) => void
@@ -63,5 +62,5 @@ export interface VaultPathSelection extends VaultMenuInteractionOptions {
 
 export type BuildVaultActionOptions = Pick<
   VaultMenuProps,
-  'multiWorkspaceEnabled' | 'onCreateEmptyVault' | 'onCloneGettingStarted' | 'onCloneVault' | 'onOpenLocalFolder'
+  'multiWorkspaceEnabled' | 'onCreateEmptyVault' | 'onCloneGettingStarted' | 'onOpenLocalFolder'
 >

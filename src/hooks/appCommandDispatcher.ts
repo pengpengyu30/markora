@@ -46,7 +46,6 @@ export interface AppCommandHandlers {
   onPastePlainText: () => void
   onSearch: () => void
   onToggleRawEditor?: () => void
-  onToggleDiff?: () => void
   onToggleTableOfContents?: () => void
   onExportNoteAsPdf?: () => void
   onGoBack?: () => void
@@ -56,15 +55,9 @@ export interface AppCommandHandlers {
   onOpenVault?: () => void
   onRemoveActiveVault?: () => void
   onRestoreGettingStarted?: () => void
-  onAddRemote?: () => void
-  onCommitPush?: () => void
-  onPull?: () => void
-  onResolveConflicts?: () => void
-  onViewChanges?: () => void
   onOpenInNewWindow?: () => void
   onReloadVault?: () => void
   onRepairVault?: () => void
-  onRestoreDeletedNote?: () => void
   activeTabPathRef: MutableRefObject<string | null>
   multiSelectionCommandRef?: MutableRefObject<NoteListMultiSelectionCommands | null>
 }
@@ -83,7 +76,6 @@ type SimpleHandlerKey = keyof Pick<
   | 'onPastePlainText'
   | 'onSearch'
   | 'onToggleRawEditor'
-  | 'onToggleDiff'
   | 'onToggleBacklinks'
   | 'onToggleTableOfContents'
   | 'onExportNoteAsPdf'
@@ -96,15 +88,9 @@ type SimpleHandlerKey = keyof Pick<
   | 'onOpenVault'
   | 'onRemoveActiveVault'
   | 'onRestoreGettingStarted'
-  | 'onAddRemote'
-  | 'onCommitPush'
-  | 'onPull'
-  | 'onResolveConflicts'
-  | 'onViewChanges'
   | 'onReloadVault'
   | 'onRepairVault'
   | 'onOpenInNewWindow'
-  | 'onRestoreDeletedNote'
 >
 
 type ActiveTabHandlerKey = keyof Pick<
@@ -128,7 +114,6 @@ const SIMPLE_HANDLER_EXECUTORS: readonly [SimpleHandlerKey, SimpleHandlerExecuto
   ['onPastePlainText', (handlers) => handlers.onPastePlainText()],
   ['onSearch', (handlers) => handlers.onSearch()],
   ['onToggleRawEditor', (handlers) => handlers.onToggleRawEditor?.()],
-  ['onToggleDiff', (handlers) => handlers.onToggleDiff?.()],
   ['onToggleBacklinks', (handlers) => handlers.onToggleBacklinks()],
   ['onToggleTableOfContents', (handlers) => handlers.onToggleTableOfContents?.()],
   ['onExportNoteAsPdf', (handlers) => handlers.onExportNoteAsPdf?.()],
@@ -141,15 +126,9 @@ const SIMPLE_HANDLER_EXECUTORS: readonly [SimpleHandlerKey, SimpleHandlerExecuto
   ['onOpenVault', (handlers) => handlers.onOpenVault?.()],
   ['onRemoveActiveVault', (handlers) => handlers.onRemoveActiveVault?.()],
   ['onRestoreGettingStarted', (handlers) => handlers.onRestoreGettingStarted?.()],
-  ['onAddRemote', (handlers) => handlers.onAddRemote?.()],
-  ['onCommitPush', (handlers) => handlers.onCommitPush?.()],
-  ['onPull', (handlers) => handlers.onPull?.()],
-  ['onResolveConflicts', (handlers) => handlers.onResolveConflicts?.()],
-  ['onViewChanges', (handlers) => handlers.onViewChanges?.()],
   ['onReloadVault', (handlers) => handlers.onReloadVault?.()],
   ['onRepairVault', (handlers) => handlers.onRepairVault?.()],
   ['onOpenInNewWindow', (handlers) => handlers.onOpenInNewWindow?.()],
-  ['onRestoreDeletedNote', (handlers) => handlers.onRestoreDeletedNote?.()],
 ]
 
 const ACTIVE_TAB_HANDLER_EXECUTORS: readonly [ActiveTabHandlerKey, ActiveTabHandlerExecutor][] = [

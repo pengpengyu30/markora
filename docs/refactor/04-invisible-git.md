@@ -18,12 +18,13 @@ When opening a vault, run `git rev-parse --show-toplevel` at the vault root (or 
 | # | Detection result | Mode | Behavior |
 |---|---|---|---|
 | 1 | No Git repository exists at the vault root or any ancestor | **Managed mode** | The app runs `git init` at the vault root (default branch `main`) and enables invisible automatic commits |
-| 2 | The vault root itself is the root of a Git repository | **Read-only mode** | The app never performs any write operation (commit/push/pull/stash/checkout/branch…), and Git is used only as a read-only data source |
+| 2 | The vault root itself is the root of a Git repository | **Read-only mode**, except for a Tolaria-managed marker | Ordinary existing repositories are never written; a Tolaria-created repository is restored to managed mode from its `.git/tolaria-managed` marker |
 | 3 | The vault root is not a repository root, but an ancestor is a Git repository (nested case) | **Read-only mode** | Same as above; **never create a nested repository at the vault root** (to avoid parent-repository gitlink/embedded-repository confusion) |
 
 **Determination details**:
 - Compare the `rev-parse --show-toplevel` result with the vault-root path: equal → case 2; an ancestor of the vault root → case 3; command failure (no repository) → case 1.
 - Special case for case 2: if the repository exists but has no commits (unborn HEAD), still treat it as read-only and do not make the user's first commit.
+- A Tolaria-created root repository stores the installation-independent marker `.git/tolaria-managed`, which lets a later application process restore managed mode without adopting an unrelated repository. Repositories created by older Tolaria builds are migrated only when their history contains the exact `Tolaria <tolaria@local>` / `tolaria: snapshot` identity pair; an ordinary existing repository remains read-only.
 - Cache the detection result for the lifetime of the vault session; an appearance or disappearance of `.git` at the vault root triggers re-evaluation through the watcher.
 
 **Rationale**: A directory that already belongs to a Git user already has its own safety net. Automatic commits would pollute that user's `git log`, trigger their hooks, and disrupt their branch policy. Read-only mode is the lowest-risk common denominator.
@@ -46,9 +47,9 @@ When opening a vault, run `git rev-parse --show-toplevel` at the vault root (or 
 | Vault cache (ADR-0014) | Use Git status for incremental invalidation | Fall back to a full scan plus watcher increments; mark the cache as non-Git sourced |
 | External rename detection (ADR-0036, `RenameDetectedBanner`) | Detect renames with `git diff` | Do not show the banner; let the watcher handle it as “delete + create”; missing link-repair guidance is an acceptable degradation |
 | Note creation/modification dates (ADR-0039) | Read creation time from Git history | Fall back to file mtime/ctime |
-| Delete recovery | Recover with `git show <history>:<path>` | No safety net (within the expected knowledge of Git users; v1 provides no user-facing history UI) |
+| Delete recovery | M3 managed vaults can restore a missing Markdown note through the narrow recovery command; other read-only vaults remain Git-read-only | No safety net |
 
-**Explicitly out of scope for v1**: any history browsing or recovery UI. The recovery path is for the user to run Git commands themselves (in managed mode, the repository is a standard repository and snapshots are visible in `git log`). Whether to add a minimal “Recently deleted” entry in the future is left to the owner's decision and is outside this release.
+**Explicitly out of scope for v1**: history browsing, branch switching, and remote recovery. M3 adds only a narrow “Recently deleted” recovery command for Tolaria-managed vaults; broader history operations remain outside this release.
 
 ## Relationship to existing ADRs
 

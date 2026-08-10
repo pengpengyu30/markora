@@ -3,22 +3,22 @@ import { useEffect, useRef } from 'react'
 import { trackEvent } from '../lib/telemetry'
 import { isTauri, mockInvoke } from '../mock-tauri'
 import type { GitRootRelation, GitWorkspaceInfo } from '../types'
-import type { GitRepoState } from './useGitSetupState'
+import type { ManagedGitMode } from './useManagedGit'
 
 interface UseVaultOpenedTelemetryArgs {
   entryCount: number
-  gitRepoState: GitRepoState
+  gitMode: ManagedGitMode
   resolvedPath: string
 }
 
 function shouldTrackVaultOpened(
   entryCount: number,
-  gitRepoState: GitRepoState,
+  gitMode: ManagedGitMode,
   resolvedPath: string,
   previousPath: string,
 ): boolean {
   const hasEntries = entryCount > 0
-  const gitStateKnown = gitRepoState !== 'checking'
+  const gitStateKnown = gitMode !== 'checking'
   const vaultChanged = resolvedPath !== previousPath
 
   return hasEntries && gitStateKnown && vaultChanged
@@ -26,20 +26,20 @@ function shouldTrackVaultOpened(
 
 export function useVaultOpenedTelemetry({
   entryCount,
-  gitRepoState,
+  gitMode,
   resolvedPath,
 }: UseVaultOpenedTelemetryArgs): void {
   const vaultOpenedRef = useRef('')
 
   useEffect(() => {
-    if (!shouldTrackVaultOpened(entryCount, gitRepoState, resolvedPath, vaultOpenedRef.current)) return
+    if (!shouldTrackVaultOpened(entryCount, gitMode, resolvedPath, vaultOpenedRef.current)) return
 
     vaultOpenedRef.current = resolvedPath
     const trackVault = async () => {
-      const workspace = await loadWorkspaceInfo(resolvedPath, gitRepoState)
+      const workspace = await loadWorkspaceInfo(resolvedPath, gitMode)
       trackEvent('vault_opened', {
         git_root_relation: workspace.relation,
-        has_git: gitRepoState === 'ready' ? 1 : 0,
+        has_git: gitMode === 'unavailable' ? 0 : 1,
         note_count: entryCount,
       })
       if (workspace.failure) {
@@ -47,14 +47,14 @@ export function useVaultOpenedTelemetry({
       }
     }
     void trackVault()
-  }, [entryCount, gitRepoState, resolvedPath])
+  }, [entryCount, gitMode, resolvedPath])
 }
 
 async function loadWorkspaceInfo(
   resolvedPath: string,
-  gitRepoState: GitRepoState,
+  gitMode: ManagedGitMode,
 ): Promise<{ failure: string | null; relation: GitRootRelation }> {
-  if (gitRepoState !== 'ready') return { failure: null, relation: 'none' }
+  if (gitMode === 'unavailable') return { failure: null, relation: 'none' }
   try {
     const info = isTauri()
       ? await invoke<GitWorkspaceInfo>('git_workspace_info', { vaultPath: resolvedPath })

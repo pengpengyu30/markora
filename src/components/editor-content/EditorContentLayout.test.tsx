@@ -13,10 +13,6 @@ vi.mock('../ArchivedNoteBanner', () => ({
   ArchivedNoteBanner: () => <div data-testid="archived-banner" />,
 }))
 
-vi.mock('../ConflictNoteBanner', () => ({
-  ConflictNoteBanner: () => <div data-testid="conflict-banner" />,
-}))
-
 vi.mock('../RawEditorView', () => ({
   RawEditorView: () => <div data-testid="raw-editor-view" />,
 }))
@@ -50,10 +46,6 @@ vi.mock('../SingleEditorView', () => ({
   SingleEditorView: () => <div data-testid="single-editor-view" />,
 }))
 
-vi.mock('../DiffView', () => ({
-  DiffView: () => <div data-testid="diff-view" />,
-}))
-
 function createModel(overrides: Record<string, unknown> = {}) {
   return {
     activeTab: {
@@ -67,11 +59,7 @@ function createModel(overrides: Record<string, unknown> = {}) {
     isLoadingNewTab: false,
     entries: [],
     editor: {},
-    diffMode: false,
-    diffContent: null,
-    diffLoading: false,
     richEditorContentReady: true,
-    onToggleDiff: vi.fn(),
     effectiveRawMode: false,
     onToggleRaw: vi.fn(),
     onRawContentChange: vi.fn(),
@@ -80,9 +68,6 @@ function createModel(overrides: Record<string, unknown> = {}) {
     isArchived: false,
     onUnarchiveNote: undefined,
     path: '/vault/project/demo.md',
-    isConflicted: false,
-    onKeepMine: vi.fn(),
-    onKeepTheirs: vi.fn(),
     breadcrumbBarRef: createRef<HTMLDivElement>(),
     wordCount: 12,
     vaultPath: '/vault',
@@ -95,7 +80,6 @@ function createModel(overrides: Record<string, unknown> = {}) {
     noteWidth: 'normal',
     onToggleNoteWidth: vi.fn(),
     forceRawMode: false,
-    showDiffToggle: false,
     onToggleFavorite: vi.fn(),
     onToggleOrganized: vi.fn(),
     onDeleteNote: vi.fn(),

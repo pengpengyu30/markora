@@ -5,10 +5,8 @@ import { translate, type AppLocale } from '../../lib/i18n'
 import type { VaultEntry } from '../../types'
 import { useEditorFocusScope } from '../../hooks/editorFocusOwnership'
 import { dispatchEditorFindAvailability } from '../../utils/editorFindEvents'
-import { DiffView } from '../DiffView'
 import { BreadcrumbBar } from '../BreadcrumbBar'
 import { HtmlFilePreview } from '../HtmlFilePreview'
-import { ConflictNoteBanner } from '../ConflictNoteBanner'
 import { RawEditorView } from '../RawEditorView'
 import { SingleEditorView } from '../SingleEditorView'
 import type { useEditorContentModel } from './useEditorContentModel'
@@ -17,19 +15,14 @@ type EditorContentModel = ReturnType<typeof useEditorContentModel>
 
 type BreadcrumbActions = Pick<
   EditorContentModel,
-  | 'diffMode'
-  | 'diffLoading'
-  | 'onToggleDiff'
   | 'effectiveRawMode'
   | 'onToggleRaw'
   | 'forceRawMode'
   | 'showTableOfContents'
   | 'onToggleTableOfContents'
-  | 'showDiffToggle'
   | 'onRevealFile'
   | 'onCopyFilePath'
   | 'onCopyDeepLink'
-  | 'onCopyGitUrl'
   | 'onExportPdf'
   | 'onDeleteNote'
   | 'onRenameFilename'
@@ -80,33 +73,6 @@ function SheetEditorLoading({ locale = 'en' }: { locale?: AppLocale }) {
       data-testid="sheet-editor-loading"
     >
       {translate(locale, 'editor.sheet.loading')}
-    </div>
-  )
-}
-
-function DiffModeView({
-  diffContent,
-  locale = 'en',
-  onToggleDiff,
-}: {
-  diffContent: string | null
-  locale?: AppLocale
-  onToggleDiff: () => void
-}) {
-  const label = translate(locale, 'editor.toolbar.rawReturn')
-
-  return (
-    <div className="flex-1 overflow-auto">
-      <button
-        type="button"
-        className="flex items-center gap-1.5 px-4 py-2 text-xs text-primary bg-muted border-b border-border cursor-pointer hover:bg-accent transition-colors w-full border-t-0 border-l-0 border-r-0"
-        onClick={onToggleDiff}
-        title={label}
-      >
-        <span style={{ fontSize: 14, lineHeight: 1 }}>&larr;</span>
-        {label}
-      </button>
-      <DiffView diff={diffContent ?? ''} />
     </div>
   )
 }
@@ -199,10 +165,6 @@ function ActiveTabBreadcrumb({
       wordCount={wordCount}
       barRef={barRef}
       loadingTitle={loadingTitle}
-      showDiffToggle={actions.showDiffToggle}
-      diffMode={actions.diffMode}
-      diffLoading={actions.diffLoading}
-      onToggleDiff={actions.onToggleDiff}
       rawMode={actions.effectiveRawMode}
       onToggleRaw={actions.onToggleRaw}
       forceRawMode={actions.forceRawMode}
@@ -211,7 +173,6 @@ function ActiveTabBreadcrumb({
       onRevealFile={actions.onRevealFile}
       onCopyFilePath={actions.onCopyFilePath}
       onCopyDeepLink={actions.onCopyDeepLink}
-      onCopyGitUrl={actions.onCopyGitUrl}
       onExportPdf={actions.onExportPdf}
       onDelete={bindPath(actions.onDeleteNote, path)}
       onRenameFilename={actions.onRenameFilename}
@@ -237,10 +198,6 @@ function EditorLoadingBreadcrumb({
       wordCount={0}
       barRef={barRef}
       loadingTitle
-      showDiffToggle={false}
-      diffMode={false}
-      diffLoading={false}
-      onToggleDiff={actions.onToggleDiff}
       rawMode={false}
       forceRawMode={false}
       showTableOfContents={actions.showTableOfContents}
@@ -254,19 +211,14 @@ function EditorLoadingBreadcrumb({
 
 function buildBreadcrumbActions(model: EditorContentModel): BreadcrumbActions {
   return {
-    diffMode: model.diffMode,
-    diffLoading: model.diffLoading,
-    onToggleDiff: model.onToggleDiff,
     effectiveRawMode: model.effectiveRawMode,
     onToggleRaw: model.onToggleRaw,
     forceRawMode: model.forceRawMode,
     showTableOfContents: model.showTableOfContents,
     onToggleTableOfContents: model.onToggleTableOfContents,
-    showDiffToggle: model.showDiffToggle,
     onRevealFile: model.onRevealFile,
     onCopyFilePath: model.onCopyFilePath,
     onCopyDeepLink: model.onCopyDeepLink,
-    onCopyGitUrl: model.onCopyGitUrl,
     onExportPdf: model.onExportPdf,
     onDeleteNote: model.onDeleteNote,
     onRenameFilename: model.onRenameFilename,
@@ -309,43 +261,6 @@ function EditorBreadcrumbArea({
   if (!isVaultLoading) return null
 
   return <EditorLoadingBreadcrumb actions={actions} barRef={barRef} locale={locale} />
-}
-
-function EditorChrome(
-  options: Pick<
-    EditorContentModel,
-    | 'path'
-    | 'isConflicted'
-    | 'onKeepMine'
-    | 'onKeepTheirs'
-    | 'diffMode'
-    | 'diffContent'
-    | 'onToggleDiff'
-    | 'locale'
-  >,
-) {
-  const {
-    path,
-    isConflicted,
-    onKeepMine,
-    onKeepTheirs,
-    diffMode,
-    diffContent,
-    onToggleDiff,
-    locale,
-  } = options
-  return (
-    <>
-      {isConflicted && (
-        <ConflictNoteBanner
-          onKeepMine={() => onKeepMine?.(path)}
-          onKeepTheirs={() => onKeepTheirs?.(path)}
-          locale={locale}
-        />
-      )}
-      {diffMode && <DiffModeView diffContent={diffContent} locale={locale} onToggleDiff={onToggleDiff} />}
-    </>
-  )
 }
 
 type EditorCanvasProps = Pick<
@@ -482,17 +397,11 @@ export function EditorContentLayout(model: EditorContentModel) {
     loadingTab,
     entries,
     editor,
-    diffMode,
-    diffContent,
-    onToggleDiff,
     effectiveRawMode,
     onRawContentChange,
     onSave,
     showEditor,
     path,
-    isConflicted,
-    onKeepMine,
-    onKeepTheirs,
     breadcrumbBarRef,
     wordCount,
     vaultPath,
@@ -535,16 +444,6 @@ export function EditorContentLayout(model: EditorContentModel) {
       />
       {showActiveContent && (
         <>
-          <EditorChrome
-            path={path}
-            isConflicted={isConflicted}
-            onKeepMine={onKeepMine}
-            onKeepTheirs={onKeepTheirs}
-            diffMode={diffMode}
-            diffContent={diffContent}
-            onToggleDiff={onToggleDiff}
-            locale={locale}
-          />
           <RawModeEditorSection
             activeTab={activeTab}
             entries={entries}

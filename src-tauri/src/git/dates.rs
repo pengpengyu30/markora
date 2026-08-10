@@ -269,7 +269,7 @@ notes/daily.md
         std::fs::write(vault.join("guide.md"), "# Guide\n").unwrap();
         std::fs::write(repository.join("outside.md"), "# Outside\n").unwrap();
         std::process::Command::new("git")
-            .args(["add", "-A"])
+            .args(["add", "-f", "-A"])
             .current_dir(repository)
             .output()
             .unwrap();

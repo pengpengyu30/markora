@@ -1,35 +1,17 @@
-import type { VaultEntry, SidebarSelection, SidebarFilter, ModifiedFile, NoteStatus } from '../../types'
+import type { VaultEntry, SidebarSelection, ModifiedFile, NoteStatus } from '../../types'
 import { translate, type AppLocale } from '../../lib/i18n'
-import { filenameStemToTitle } from '../../utils/noteTitle'
 import { vaultRelativePathLabel } from '../../utils/notePathIdentity'
 
 export interface DeletedNoteEntry extends VaultEntry {
   __deletedNotePreview: true
-  __deletedRelativePath: string
-  __changeAddedLines: number | null
-  __changeDeletedLines: number | null
-  __changeBinary: boolean
-}
-
-const FILTER_TITLE_KEYS = {
-  changes: 'noteList.title.changes',
-  pulse: 'noteList.title.history',
-} as const
-
-type LocalizedFilter = keyof typeof FILTER_TITLE_KEYS
-
-function isLocalizedFilter(filter: SidebarFilter): filter is LocalizedFilter {
-  return filter in FILTER_TITLE_KEYS
-}
-
-function resolveSelectionFilterTitle(selection: SidebarSelection, locale: AppLocale): string | null {
-  if (selection.kind !== 'filter') return null
-  if (!isLocalizedFilter(selection.filter)) return null
-  return translate(locale, FILTER_TITLE_KEYS[selection.filter])
 }
 
 export function resolveHeaderTitle(selection: SidebarSelection, locale: AppLocale = 'en'): string {
   return resolveNonEntityHeaderTitle(selection, locale)
+}
+
+export function isDeletedNoteEntry(entry: VaultEntry): entry is DeletedNoteEntry {
+  return '__deletedNotePreview' in entry && entry.__deletedNotePreview === true
 }
 
 function resolveNonEntityHeaderTitle(
@@ -37,7 +19,6 @@ function resolveNonEntityHeaderTitle(
   locale: AppLocale,
 ): string {
   return resolveFolderTitle(selection)
-    ?? resolveSelectionFilterTitle(selection, locale)
     ?? translate(locale, 'noteList.title.notes')
 }
 
@@ -107,109 +88,6 @@ export function toggleSetMember<T>(set: Set<T>, member: T): Set<T> {
   if (next.has(member)) next.delete(member)
   else next.add(member)
   return next
-}
-
-export function isModifiedEntry(path: string, pathSet: Set<string>, suffixes: string[]): boolean {
-  if (pathSet.has(path)) return true
-  return suffixes.some((suffix) => path.endsWith(suffix))
-}
-
-export function isDeletedNoteEntry(entry: VaultEntry): entry is DeletedNoteEntry {
-  return '__deletedNotePreview' in entry && entry.__deletedNotePreview === true
-}
-
-function matchesModifiedFile(entry: VaultEntry, file: ModifiedFile): boolean {
-  return entry.path === file.path || entry.path.endsWith(`/${file.relativePath}`)
-}
-
-function applyChangeStats<T extends VaultEntry>(entry: T, file: ModifiedFile): T {
-  return {
-    ...entry,
-    __changeAddedLines: file.addedLines ?? null,
-    __changeDeletedLines: file.deletedLines ?? null,
-    __changeBinary: Boolean(file.binary),
-  }
-}
-
-function createDeletedNoteEntry(file: ModifiedFile): DeletedNoteEntry {
-  const filename = file.relativePath.split('/').pop() ?? file.relativePath
-  return {
-    path: file.path,
-    filename,
-    title: filenameStemToTitle(filename),
-    isA: 'Note',
-    aliases: [],
-    belongsTo: [],
-    relatedTo: [],
-    status: null,
-    archived: false,
-    modifiedAt: null,
-    createdAt: null,
-    fileSize: 0,
-    snippet: '',
-    wordCount: 0,
-    relationships: {},
-    icon: null,
-    color: null,
-    order: null,
-    sidebarLabel: null,
-    template: null,
-    sort: null,
-    view: null,
-    visible: null,
-    organized: false,
-    favorite: false,
-    favoriteIndex: null,
-    listPropertiesDisplay: [],
-    outgoingLinks: [],
-    properties: {},
-    hasH1: true,
-    fileKind: 'markdown',
-    __deletedNotePreview: true,
-    __deletedRelativePath: file.relativePath,
-    __changeAddedLines: file.addedLines ?? null,
-    __changeDeletedLines: file.deletedLines ?? null,
-    __changeBinary: Boolean(file.binary),
-  }
-}
-
-export function buildChangesEntries(entries: VaultEntry[], modifiedFiles: ModifiedFile[] | undefined): VaultEntry[] {
-  if (!modifiedFiles || modifiedFiles.length === 0) return []
-
-  const liveEntries = entries.flatMap((entry) => {
-    const file = modifiedFiles.find((candidate) => candidate.status !== 'deleted' && matchesModifiedFile(entry, candidate))
-    return file ? [applyChangeStats(entry, file)] : []
-  })
-
-  const deletedEntries = modifiedFiles
-    .filter((file) => file.status === 'deleted')
-    .filter((file) => !entries.some((entry) => matchesModifiedFile(entry, file)))
-    .map(createDeletedNoteEntry)
-
-  return [...liveEntries, ...deletedEntries]
-}
-
-export function extractDeletedContentFromDiff(diff: string): string | null {
-  const lines: string[] = []
-  let inHunk = false
-
-  for (const line of diff.split('\n')) {
-    if (line.startsWith('@@')) {
-      inHunk = true
-      continue
-    }
-    const content = deletedDiffContent(line, inHunk)
-    if (content !== null) lines.push(content)
-  }
-
-  return lines.length > 0 ? lines.join('\n') : null
-}
-
-function deletedDiffContent(line: string, inHunk: boolean): string | null {
-  if (!inHunk || line.startsWith('\\')) return null
-  if (line.startsWith('-')) return line.slice(1)
-  if (line.startsWith(' ')) return line.slice(1)
-  return null
 }
 
 function resolveFolderTitle(selection: SidebarSelection): string | null {
