@@ -55,7 +55,6 @@ export interface AppCommandHandlers {
   onOpenVault?: () => void
   onRemoveActiveVault?: () => void
   onRestoreGettingStarted?: () => void
-  onOpenInNewWindow?: () => void
   onReloadVault?: () => void
   onRepairVault?: () => void
   activeTabPathRef: MutableRefObject<string | null>
@@ -90,7 +89,6 @@ type SimpleHandlerKey = keyof Pick<
   | 'onRestoreGettingStarted'
   | 'onReloadVault'
   | 'onRepairVault'
-  | 'onOpenInNewWindow'
 >
 
 type ActiveTabHandlerKey = keyof Pick<
@@ -128,7 +126,6 @@ const SIMPLE_HANDLER_EXECUTORS: readonly [SimpleHandlerKey, SimpleHandlerExecuto
   ['onRestoreGettingStarted', (handlers) => handlers.onRestoreGettingStarted?.()],
   ['onReloadVault', (handlers) => handlers.onReloadVault?.()],
   ['onRepairVault', (handlers) => handlers.onRepairVault?.()],
-  ['onOpenInNewWindow', (handlers) => handlers.onOpenInNewWindow?.()],
 ]
 
 const ACTIVE_TAB_HANDLER_EXECUTORS: readonly [ActiveTabHandlerKey, ActiveTabHandlerExecutor][] = [

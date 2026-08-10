@@ -25,7 +25,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ActionTooltip, type ActionTooltipCopy } from '@/components/ui/action-tooltip'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { WorkspaceInitialsBadge } from './WorkspaceInitialsBadge'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -949,26 +948,6 @@ function BreadcrumbOverflowMenu(options: Pick<
   )
 }
 
-function BreadcrumbSeparator() {
-  return <span aria-hidden="true" className="shrink-0 text-border">›</span>
-}
-
-function WorkspaceCrumb({ entry }: Pick<BreadcrumbBarProps, 'entry'>) {
-  const workspace = entry.workspace
-  if (!workspace) return null
-
-  return (
-    <>
-      <WorkspaceInitialsBadge
-        className="shrink-0"
-        testId="breadcrumb-workspace-label"
-        workspace={workspace}
-      />
-      <BreadcrumbSeparator />
-    </>
-  )
-}
-
 function BreadcrumbTitle({
   content,
   entry,
@@ -978,7 +957,6 @@ function BreadcrumbTitle({
 }: Pick<BreadcrumbBarProps, 'content' | 'entry' | 'locale' | 'loadingTitle' | 'onRenameFilename'>) {
   return (
     <div className="breadcrumb-bar__title-content flex items-center gap-1.5 min-w-0 text-sm text-muted-foreground">
-      <WorkspaceCrumb entry={entry} />
       <div className="flex min-w-0 items-center gap-1 truncate">
         {loadingTitle
           ? <BreadcrumbTitleSkeleton />

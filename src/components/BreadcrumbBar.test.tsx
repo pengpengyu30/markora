@@ -314,30 +314,6 @@ describe('BreadcrumbBar — title in breadcrumb (always rendered, CSS-toggled)',
     expect(screen.getByText('test')).toBeInTheDocument()
   })
 
-  it('shows the workspace initials label before the note filename when workspace metadata is present', () => {
-    renderBreadcrumb({
-      isA: 'Responsibility',
-      workspace: {
-        id: 'brian',
-        label: 'Brian',
-        alias: 'brian',
-        path: '/brian',
-        shortLabel: 'BR',
-        color: 'purple',
-        icon: null,
-        mounted: true,
-        available: true,
-        defaultForNewNotes: false,
-      },
-    })
-
-    const workspaceLabel = screen.getByTestId('breadcrumb-workspace-label')
-    const filename = screen.getByTestId('breadcrumb-filename-trigger')
-    expect(workspaceLabel).toHaveTextContent('BR')
-    expect(workspaceLabel).toHaveAttribute('title', 'Brian (brian)')
-    expect(workspaceLabel.compareDocumentPosition(filename) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-  })
-
   it('does not render emoji note icons in the breadcrumb filename', () => {
     const entryWithEmoji = { ...baseEntry, icon: '🚀' }
     render(<BreadcrumbBar entry={entryWithEmoji} {...defaultProps} />)

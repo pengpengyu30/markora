@@ -50,16 +50,6 @@ interface RankedEntryInput {
   entry: VaultEntry
 }
 
-interface WorkspacePresentationInput {
-  entry: VaultEntry
-  showWorkspace: boolean
-}
-
-interface ResultInput {
-  entry: VaultEntry
-  showWorkspace: boolean
-}
-
 const NO_MATCH: CandidateMatch = { match: false, rank: Number.POSITIVE_INFINITY, score: 0 }
 
 function compactUnique({ values }: UniqueValuesInput): string[] {
@@ -143,15 +133,10 @@ function rankSearchEntry({ query, entry }: RankedEntryInput): CandidateMatch {
   ), NO_MATCH)
 }
 
-function workspacePresentation({ entry, showWorkspace }: WorkspacePresentationInput) {
-  return showWorkspace ? entry.workspace ?? null : null
-}
-
-function toResult({ entry, showWorkspace }: ResultInput): NoteSearchResult {
+function toResult(entry: VaultEntry): NoteSearchResult {
   return {
     entry,
     title: entry.title,
-    workspace: workspacePresentation({ entry, showWorkspace }),
   }
 }
 
@@ -159,13 +144,8 @@ export function useNoteSearch(entries: VaultEntry[], query: string, maxResults =
   const [selectedIndex, setSelectedIndex] = useState(0)
 
   const searchableEntries = entries
-  const showWorkspace = useMemo(
-    () => new Set(entries.map((entry) => entry.workspace?.alias).filter(Boolean)).size > 1,
-    [entries],
-  )
-
   const results: NoteSearchResult[] = useMemo(() => {
-    const mapResult = (entry: VaultEntry) => toResult({ entry, showWorkspace })
+    const mapResult = (entry: VaultEntry) => toResult(entry)
     if (!query.trim()) {
       return [...searchableEntries]
         .sort((a, b) => (b.modifiedAt ?? 0) - (a.modifiedAt ?? 0))
@@ -181,7 +161,7 @@ export function useNoteSearch(entries: VaultEntry[], query: string, maxResults =
       .sort((a, b) => a.rank - b.rank || b.score - a.score)
       .slice(0, maxResults)
       .map((r) => mapResult(r.entry))
-  }, [searchableEntries, query, maxResults, showWorkspace])
+  }, [searchableEntries, query, maxResults])
 
   useEffect(() => {
     void query

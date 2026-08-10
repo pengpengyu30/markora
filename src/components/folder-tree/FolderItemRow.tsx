@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import type { FolderNode } from '../../types'
 import { useFolderRowInteractions } from './useFolderRowInteractions'
 import { readDraggedNotePath } from '../../utils/noteDragDrop'
+import { WORKSPACE_COLORS } from '../../utils/workspaces'
 
 interface FolderItemRowProps {
   contentInset: number
@@ -28,28 +29,28 @@ function useFolderNoteDropHandlers({
 }: Pick<FolderItemRowProps, 'node' | 'onCanDropNote' | 'onMoveNoteToFolder'>) {
   const canMoveDraggedNote = useCallback(
     (dataTransfer: DataTransfer | null) => {
-    const notePath = readDraggedNotePath(dataTransfer)
-    return notePath && onCanDropNote?.(notePath, node.path) ? notePath : null
+      const notePath = readDraggedNotePath(dataTransfer)
+      return notePath && onCanDropNote?.(notePath, node.path) ? notePath : null
     },
     [node.path, onCanDropNote],
   )
 
   const onDragOver: DragEventHandler<HTMLButtonElement> = useCallback(
     (event) => {
-    if (!canMoveDraggedNote(event.dataTransfer)) return
-    event.preventDefault()
-    event.dataTransfer.dropEffect = 'move'
+      if (!canMoveDraggedNote(event.dataTransfer)) return
+      event.preventDefault()
+      event.dataTransfer.dropEffect = 'move'
     },
     [canMoveDraggedNote],
   )
 
   const onDrop: DragEventHandler<HTMLButtonElement> = useCallback(
     (event) => {
-    const notePath = canMoveDraggedNote(event.dataTransfer)
-    if (!notePath) return
-    event.preventDefault()
-    event.dataTransfer.dropEffect = 'move'
-    void onMoveNoteToFolder?.(notePath, node.path)
+      const notePath = canMoveDraggedNote(event.dataTransfer)
+      if (!notePath) return
+      event.preventDefault()
+      event.dataTransfer.dropEffect = 'move'
+      void onMoveNoteToFolder?.(notePath, node.path)
     },
     [canMoveDraggedNote, node.path, onMoveNoteToFolder],
   )
@@ -84,6 +85,10 @@ export function FolderItemRow(options: FolderItemRowProps) {
     onCanDropNote,
     onMoveNoteToFolder,
   })
+  const isProjectRoot = node.path === '' && !!node.rootPath
+  const projectColor = isProjectRoot && node.color && WORKSPACE_COLORS.includes(node.color as typeof WORKSPACE_COLORS[number])
+    ? `var(--accent-${node.color})`
+    : undefined
 
   return (
     <div
@@ -111,6 +116,8 @@ export function FolderItemRow(options: FolderItemRowProps) {
         onDoubleClick={handleRenameDoubleClick}
         onDragOver={noteDropHandlers.onDragOver}
         onDrop={noteDropHandlers.onDrop}
+        isProjectRoot={isProjectRoot}
+        projectColor={projectColor}
       />
     </div>
   )
@@ -127,6 +134,8 @@ function FolderSelectButton(options: {
   onDoubleClick: () => void
   onDragOver: DragEventHandler<HTMLButtonElement>
   onDrop: DragEventHandler<HTMLButtonElement>
+  isProjectRoot: boolean
+  projectColor?: string
 }) {
   const {
     contentInset,
@@ -139,6 +148,8 @@ function FolderSelectButton(options: {
     onDoubleClick,
     onDragOver,
     onDrop,
+    isProjectRoot,
+    projectColor,
   } = options
   return (
     <Button
@@ -162,11 +173,12 @@ function FolderSelectButton(options: {
       onDragOver={onDragOver}
       onDrop={onDrop}
       data-testid={`folder-row:${node.path}`}
+      data-project-root={isProjectRoot ? node.rootPath : undefined}
     >
       {isSelected || isExpanded ? (
-        <FolderOpen size={17} weight="fill" className="size-[17px] shrink-0" />
+        <FolderOpen size={17} weight="fill" className="size-[17px] shrink-0" style={{ color: projectColor }} />
       ) : (
-        <Folder size={17} className="size-[17px] shrink-0" />
+        <Folder size={17} className="size-[17px] shrink-0" style={{ color: projectColor }} />
       )}
       <span className="truncate">{node.name}</span>
     </Button>

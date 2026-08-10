@@ -10,8 +10,6 @@ import { cn } from '@/lib/utils'
 import { getDisplayDate } from '../utils/noteListHelpers'
 import { formatTimestampForDateDisplay } from '../utils/dateDisplay'
 import { filePreviewKind, type FilePreviewKind } from '../utils/filePreview'
-import { workspaceForEntry } from '../utils/workspaces'
-import { WorkspaceInitialsBadge } from './WorkspaceInitialsBadge'
 import { useDateDisplayFormat } from '../hooks/useAppPreferences'
 import { writeNoteDragData } from '../utils/noteDragDrop'
 
@@ -64,14 +62,6 @@ function StatusDot({ noteStatus }: { noteStatus: VisibleNoteStatus }) {
       title={dot.title}
     />
   )
-}
-
-function WorkspaceBadge({ entry, allEntries }: { entry: VaultEntry; allEntries: VaultEntry[] }) {
-  const workspace = workspaceForEntry(entry)
-  const hasMultipleWorkspaces =
-    new Set(allEntries.map((candidate) => candidate.workspace?.alias).filter(Boolean)).size > 1
-  if (!workspace || !hasMultipleWorkspaces) return null
-  return <WorkspaceInitialsBadge workspace={workspace} className="-mr-1.5" testId="workspace-badge" />
 }
 
 type NoteItemVisualState = {
@@ -146,18 +136,16 @@ function InteractiveNoteDetails({
   entry,
   noteStatus,
   isSelected,
-  allEntries,
 }: {
   entry: VaultEntry
   noteStatus: NoteStatus
   isSelected: boolean
-  allEntries: VaultEntry[]
 }) {
   return (
     <>
       <NoteTitleRow entry={entry} isBinary={false} isSelected={isSelected} noteStatus={noteStatus} />
       <NoteSnippet snippet={entry.snippet} />
-      <NoteDateRow entry={entry} allEntries={allEntries} />
+      <NoteDateRow entry={entry} />
     </>
   )
 }
@@ -168,7 +156,6 @@ function StandardNoteContent(options: {
   isUnavailableBinary: boolean
   noteStatus: NoteStatus
   isSelected: boolean
-  allEntries: VaultEntry[]
 }) {
   const {
     entry,
@@ -176,7 +163,6 @@ function StandardNoteContent(options: {
     isUnavailableBinary,
     noteStatus,
     isSelected,
-    allEntries,
   } = options
 
   return (
@@ -189,7 +175,6 @@ function StandardNoteContent(options: {
             entry={entry}
             noteStatus={noteStatus}
             isSelected={isSelected}
-            allEntries={allEntries}
           />
         )}
       </div>
@@ -223,7 +208,7 @@ function NoteTitleRow({
   )
 }
 
-function NoteDateRow({ entry, allEntries }: { entry: VaultEntry; allEntries: VaultEntry[] }) {
+function NoteDateRow({ entry }: { entry: VaultEntry }) {
   const dateDisplayFormat = useDateDisplayFormat()
   const modifiedLabel = formatTimestampForDateDisplay(getDisplayDate(entry), dateDisplayFormat)
   const createdLabel = entry.createdAt
@@ -240,7 +225,6 @@ function NoteDateRow({ entry, allEntries }: { entry: VaultEntry; allEntries: Vau
       <span>{modifiedLabel}</span>
       <span className="flex min-w-0 items-center justify-end gap-1.5 text-right">
         {createdLabel && <span>{createdLabel}</span>}
-        <WorkspaceBadge entry={entry} allEntries={allEntries} />
       </span>
     </div>
   )
@@ -267,7 +251,6 @@ type NoteItemProps = {
   isMultiSelected?: boolean
   isHighlighted?: boolean
   noteStatus?: NoteStatus
-  allEntries?: VaultEntry[]
   onClickNote: (entry: VaultEntry, e: ReactMouseEvent) => void
   onPrefetch?: (entry: VaultEntry) => void
   onContextMenu?: (entry: VaultEntry, e: ReactMouseEvent) => void
@@ -419,7 +402,6 @@ function NoteItemContent(options: {
   isUnavailableBinary: boolean
   isSelected: boolean
   noteStatus: NoteStatus
-  allEntries: VaultEntry[]
 }) {
   const {
     entry,
@@ -427,7 +409,6 @@ function NoteItemContent(options: {
     isUnavailableBinary,
     isSelected,
     noteStatus,
-    allEntries,
   } = options
   return (
     <StandardNoteContent
@@ -436,7 +417,6 @@ function NoteItemContent(options: {
       isUnavailableBinary={isUnavailableBinary}
       noteStatus={noteStatus}
       isSelected={isSelected}
-      allEntries={allEntries}
     />
   )
 }
@@ -448,7 +428,6 @@ export function NoteItem(options: NoteItemProps) {
     isMultiSelected = false,
     isHighlighted = false,
     noteStatus = 'clean',
-    allEntries,
     onClickNote,
     onPrefetch,
     onContextMenu,
@@ -482,7 +461,6 @@ export function NoteItem(options: NoteItemProps) {
         isUnavailableBinary={isUnavailableBinary}
         isSelected={isSelected}
         noteStatus={noteStatus}
-        allEntries={allEntries ?? [entry]}
       />
     </NoteItemRow>
   )

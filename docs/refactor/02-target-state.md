@@ -1,5 +1,7 @@
 # 02 — Target Feature Boundary
 
+> **M5 implementation overlay:** This document is the original target-state baseline. For the implemented Project behavior, single-window runtime, search scope, and the removal of the All Notes sidebar entry, read [05-m5-project-addendum.md](./05-m5-project-addendum.md). Where the baseline below still mentions a visible All Notes entry or one-vault-at-a-time behavior, the M5 addendum is the current implementation boundary.
+
 > The product shape after the refactor is complete. The implementation agent should use this document as the standard for deciding whether a piece of code should exist.
 
 ## One-sentence product definition

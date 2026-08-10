@@ -13,7 +13,6 @@ function renderNoteListWithFullActionMenu() {
     onBulkDeletePermanently: vi.fn(),
     onCopyFilePath: vi.fn(),
     onExportPdf: vi.fn(),
-    onOpenInNewWindow: vi.fn(),
     onRenameFilename: vi.fn(),
     onRevealFile: vi.fn(),
   })
@@ -30,7 +29,6 @@ function clickBuildLaputaAction(label: string) {
 
 describe('NoteList context menu', () => {
   it('opens note actions from a right-clicked note item', () => {
-    const onOpenInNewWindow = vi.fn()
     const onBulkDeletePermanently = vi.fn()
     const onExportPdf = vi.fn()
     const onRenameFilename = vi.fn()
@@ -38,7 +36,6 @@ describe('NoteList context menu', () => {
     const onCopyFilePath = vi.fn()
 
     renderNoteList({
-      onOpenInNewWindow,
       onBulkDeletePermanently,
       onExportPdf,
       onRenameFilename,
@@ -51,14 +48,10 @@ describe('NoteList context menu', () => {
     expect(screen.getByTestId('note-list-context-menu')).toBeInTheDocument()
     expect(screen.getByTestId('note-list-context-menu')).toHaveClass('z-[12000]')
     expect(screen.getByTestId('note-list-context-menu').parentElement).toBe(document.body)
-    expect(screen.getByText(getAppCommandShortcutDisplay(APP_COMMAND_IDS.noteOpenInNewWindow)!)).toBeInTheDocument()
     expect(screen.getByText(getAppCommandShortcutDisplay(APP_COMMAND_IDS.noteDelete)!)).toBeInTheDocument()
     expect(screen.queryByText('Add to Favorites')).not.toBeInTheDocument()
     expect(screen.queryByText('Mark as Organized')).not.toBeInTheDocument()
     expect(screen.queryByText('Archive this note')).not.toBeInTheDocument()
-
-    fireEvent.click(screen.getByText('Open in New Window'))
-    expect(onOpenInNewWindow).toHaveBeenCalledWith(mockEntries[0])
 
     clickBuildLaputaAction('Rename filename')
     expect(screen.getByTestId('note-list-rename-dialog')).toBeInTheDocument()
@@ -114,7 +107,6 @@ describe('NoteList context menu', () => {
   it('keeps note actions visible when opened near the bottom-right viewport edge', () => {
     setViewportSize(1024, 768)
     renderNoteList({
-      onOpenInNewWindow: vi.fn(),
       onBulkDeletePermanently: vi.fn(),
     })
 

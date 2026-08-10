@@ -77,9 +77,8 @@ function trimCommonDirectoryPrefix({ common, parts }: { common: string[]; parts:
   }
 }
 
-function resolveNoteListSearchVaultPaths(entries: VaultEntry[]): VaultPath[] {
-  const workspacePaths = unique(entries.map((entry) => entry.workspace?.path ?? ''))
-  if (workspacePaths.length > 0) return workspacePaths
+function resolveNoteListSearchVaultPaths(entries: VaultEntry[], vaultPath?: VaultPath): VaultPath[] {
+  if (vaultPath?.trim()) return [vaultPath]
 
   const root = commonDirectory(entries.map((entry) => entry.path))
   return root ? [root] : []
@@ -106,8 +105,8 @@ async function runFullTextSearch(request: FullTextSearchRequest): Promise<Set<st
   return resolveResultPaths(responses)
 }
 
-function createSearchRequest({ entries, query }: { entries: VaultEntry[]; query: NoteListSearchQuery }): FullTextSearchRequest | null {
-  const vaultPaths = resolveNoteListSearchVaultPaths(entries)
+function createSearchRequest({ entries, query, vaultPath }: { entries: VaultEntry[]; query: NoteListSearchQuery; vaultPath?: VaultPath }): FullTextSearchRequest | null {
+  const vaultPaths = resolveNoteListSearchVaultPaths(entries, vaultPath)
   if (query.length === 0 || vaultPaths.length === 0) return null
 
   return {
@@ -117,13 +116,13 @@ function createSearchRequest({ entries, query }: { entries: VaultEntry[]; query:
   }
 }
 
-function useFullTextSearchRequest(entries: VaultEntry[], query: NoteListSearchQuery): FullTextSearchRequest | null {
+function useFullTextSearchRequest(entries: VaultEntry[], query: NoteListSearchQuery, vaultPath?: VaultPath): FullTextSearchRequest | null {
   const normalizedQuery = normalizeFullTextQuery(query)
-  return useMemo(() => createSearchRequest({ entries, query: normalizedQuery }), [entries, normalizedQuery])
+  return useMemo(() => createSearchRequest({ entries, query: normalizedQuery, vaultPath }), [entries, normalizedQuery, vaultPath])
 }
 
-export function useNoteListFullTextSearch(entries: VaultEntry[], query: NoteListSearchQuery): FullTextSearchState {
-  const request = useFullTextSearchRequest(entries, query)
+export function useNoteListFullTextSearch(entries: VaultEntry[], query: NoteListSearchQuery, vaultPath?: VaultPath): FullTextSearchState {
+  const request = useFullTextSearchRequest(entries, query, vaultPath)
   const [state, setState] = useState<FullTextSearchState>(EMPTY_FULL_TEXT_SEARCH_STATE)
 
   useEffect(() => {

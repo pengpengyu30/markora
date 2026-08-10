@@ -107,7 +107,7 @@ describe('filterEntries', () => {
     expect(result.map((entry) => entry.title)).toEqual(['Root Note', 'config.json'])
   })
 
-  it('keeps same-named folders isolated by selected workspace root', () => {
+  it('keeps same-named folders isolated by their vault root', () => {
     const entries = [
       makeEntry({ path: '/Users/luca/Personal/projects/personal.md', title: 'Personal Project' }),
       makeEntry({ path: '/Users/luca/Team/projects/team.md', title: 'Team Project' }),

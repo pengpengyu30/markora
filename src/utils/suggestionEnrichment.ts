@@ -15,17 +15,9 @@ interface BaseSuggestionItem {
   entry?: VaultEntry
 }
 
-interface EnrichSuggestionOptions {
-  showWorkspace?: boolean
-}
-
-export function hasMultipleSuggestionWorkspaces(items: { entry?: VaultEntry }[]): boolean {
-  return new Set(items.map((item) => item.entry?.workspace?.alias).filter(Boolean)).size > 1
-}
-
 /** Build the canonical wikilink target: vault-relative path stem without a default alias. */
-function buildTarget(item: BaseSuggestionItem, vaultPath: string, sourceEntry?: VaultEntry): string {
-  if (item.entry) return canonicalWikilinkTargetForEntry(item.entry, vaultPath, sourceEntry)
+function buildTarget(item: BaseSuggestionItem, vaultPath: string): string {
+  if (item.entry) return canonicalWikilinkTargetForEntry(item.entry, vaultPath)
   return relativePathStem(item.path, vaultPath)
 }
 
@@ -36,19 +28,17 @@ export function attachClickHandlers(
   candidates: BaseSuggestionItem[],
   insertWikilink: (target: string) => void,
   vaultPath: string,
-  sourceEntry?: VaultEntry,
 ) {
   return candidates.map(item => ({
     ...item,
-    onItemClick: () => insertWikilink(buildTarget(item, vaultPath, sourceEntry)),
+    onItemClick: () => insertWikilink(buildTarget(item, vaultPath)),
   }))
 }
 
-/** Filter, deduplicate, disambiguate, and add workspace metadata to suggestions. */
+/** Filter, deduplicate, and disambiguate suggestions. */
 export function enrichSuggestionItems(
   items: (BaseSuggestionItem & { onItemClick: () => void })[],
   query: string,
-  options: EnrichSuggestionOptions = {},
 ): WikilinkSuggestionItem[] {
   const filtered = filterSuggestionItems(items, query)
   filtered.sort((a, b) =>
@@ -56,11 +46,9 @@ export function enrichSuggestionItems(
   )
   const sliced = filtered.slice(0, MAX_RESULTS)
   const final = disambiguateTitles(deduplicateByPath(sliced))
-  const showWorkspace = options.showWorkspace ?? hasMultipleSuggestionWorkspaces(final)
-  return final.map(({ entry, ...rest }) => {
-    return {
-      ...rest,
-      workspace: showWorkspace ? entry?.workspace ?? null : null,
-    }
+  return final.map((item) => {
+    const { entry, ...rest } = item
+    void entry
+    return rest
   })
 }

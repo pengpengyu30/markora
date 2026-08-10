@@ -134,7 +134,6 @@ describe('mockHandlers coverage', () => {
       all_notes_show_pdfs: null,
       all_notes_show_images: null,
       all_notes_show_unsupported: null,
-      multi_workspace_enabled: null,
     })
 
     const list = {

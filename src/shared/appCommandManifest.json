@@ -281,18 +281,6 @@
         "accelerator": "CmdOrCtrl+Backspace"
       }
     },
-    "noteOpenInNewWindow": {
-      "id": "note-open-in-new-window",
-      "route": { "kind": "handler", "handler": "onOpenInNewWindow" },
-      "menuOwned": true,
-      "shortcut": {
-        "combo": "command-or-ctrl-shift",
-        "key": "o",
-        "code": "KeyO",
-        "display": "⌘⇧O",
-        "accelerator": "CmdOrCtrl+Shift+O"
-      }
-    },
     "noteExportPdf": {
       "id": "note-export-pdf",
       "route": { "kind": "handler", "handler": "onExportNoteAsPdf" },
@@ -388,8 +376,6 @@
       "label": "Note",
       "items": [
         { "kind": "command", "command": "noteDelete", "label": "Delete Note" },
-        { "kind": "separator" },
-        { "kind": "command", "command": "noteOpenInNewWindow", "label": "Open in New Window" },
         { "kind": "command", "command": "noteExportPdf", "label": "Export Note as PDF" },
         { "kind": "separator" },
         { "kind": "command", "command": "editToggleRawEditor", "label": "Toggle Raw Editor" },
@@ -421,7 +407,6 @@
       { "command": "editToggleRawEditor" },
       { "command": "viewToggleTableOfContents" },
       { "command": "viewToggleBacklinks" },
-      { "command": "noteOpenInNewWindow" },
       { "command": "noteExportPdf" }
     ],
     "editorFindDependent": [

@@ -59,16 +59,6 @@ fn expand_optional_tilde_path(path: Option<String>) -> Option<String> {
     path.map(|value| expand_tilde(&value).into_owned())
 }
 
-fn normalize_vault_colors(mut list: VaultList) -> VaultList {
-    for vault in &mut list.vaults {
-        vault.color = vault
-            .color
-            .as_deref()
-            .and_then(crate::workspace_colors::normalize);
-    }
-    list
-}
-
 fn expand_vault_list_paths(mut list: VaultList) -> VaultList {
     for vault in &mut list.vaults {
         vault.path = expand_tilde(&vault.path).into_owned();
@@ -83,43 +73,12 @@ fn expand_vault_list_paths(mut list: VaultList) -> VaultList {
     list
 }
 
-fn apply_instance_launch(
-    mut list: VaultList,
-    launch: Option<&crate::vault_instance::VaultInstanceLaunch>,
-) -> VaultList {
-    if let Some(launch) = launch {
-        list.active_vault = Some(launch.vault_path.to_string_lossy().into_owned());
-    }
-    list
-}
-
-fn preserve_shared_active_vault(
-    mut next: VaultList,
-    current: &VaultList,
-    separate_instance: bool,
-) -> VaultList {
-    if separate_instance {
-        next.active_vault.clone_from(&current.active_vault);
-    }
-    next
-}
-
 pub fn load_vault_list() -> Result<VaultList, String> {
-    let launch = crate::vault_instance::current_launch();
-    load_at(&vault_list_path()?)
-        .map(expand_vault_list_paths)
-        .map(normalize_vault_colors)
-        .map(|list| apply_instance_launch(list, launch.as_ref()))
+    load_at(&vault_list_path()?).map(expand_vault_list_paths)
 }
 
 pub fn save_vault_list(list: &VaultList) -> Result<(), String> {
-    let separate_instance = crate::vault_instance::is_separate_vault_instance();
-    let current = load_at(&vault_list_path()?)?;
-    let next = preserve_shared_active_vault(list.clone(), &current, separate_instance);
-    save_at(
-        &preferred_app_config_path("vaults.json")?,
-        &normalize_vault_colors(next),
-    )
+    save_at(&preferred_app_config_path("vaults.json")?, list)
 }
 
 #[cfg(test)]
@@ -251,33 +210,6 @@ mod tests {
     }
 
     #[test]
-    fn workspace_metadata_roundtrip() {
-        let list = VaultList {
-            vaults: vec![VaultEntry {
-                label: "Team Notes".to_string(),
-                path: "/tmp/team".to_string(),
-                alias: Some("team".to_string()),
-                short_label: Some("TN".to_string()),
-                color: Some("green".to_string()),
-                icon: Some("briefcase".to_string()),
-                mounted: Some(false),
-            }],
-            active_vault: Some("/tmp/personal".to_string()),
-            default_workspace_path: Some("/tmp/team".to_string()),
-            hidden_defaults: vec![],
-        };
-
-        let loaded = save_and_reload(&list);
-
-        assert_eq!(loaded.default_workspace_path.as_deref(), Some("/tmp/team"));
-        assert_eq!(loaded.vaults[0].alias.as_deref(), Some("team"));
-        assert_eq!(loaded.vaults[0].short_label.as_deref(), Some("TN"));
-        assert_eq!(loaded.vaults[0].color.as_deref(), Some("green"));
-        assert_eq!(loaded.vaults[0].icon.as_deref(), Some("briefcase"));
-        assert_eq!(loaded.vaults[0].mounted, Some(false));
-    }
-
-    #[test]
     fn loaded_vault_list_expands_tilde_paths() {
         let home = dirs::home_dir().unwrap();
         let expected_vault = home.join("Workspace/refactoring-vault");
@@ -289,7 +221,7 @@ mod tests {
                 ..Default::default()
             }],
             active_vault: Some("~/Workspace/refactoring-vault".to_string()),
-            default_workspace_path: Some("~/Workspace/refactoring-vault".to_string()),
+            default_workspace_path: None,
             hidden_defaults: vec!["~/Workspace/tolaria/demo-vault-v2".to_string()],
         };
 
@@ -297,54 +229,7 @@ mod tests {
 
         assert_eq!(loaded.vaults[0].path, expected_vault.to_string_lossy());
         assert_eq!(loaded.active_vault.as_deref(), expected_vault.to_str());
-        assert_eq!(
-            loaded.default_workspace_path.as_deref(),
-            expected_vault.to_str()
-        );
         assert_eq!(loaded.hidden_defaults[0], expected_hidden.to_string_lossy());
-    }
-
-    #[test]
-    fn loaded_vault_list_normalizes_workspace_colors() {
-        let list = VaultList {
-            vaults: vec![
-                VaultEntry {
-                    label: "Supported".to_string(),
-                    path: "/supported".to_string(),
-                    color: Some(" Pink ".to_string()),
-                    ..Default::default()
-                },
-                VaultEntry {
-                    label: "Unknown".to_string(),
-                    path: "/unknown".to_string(),
-                    color: Some("cyan".to_string()),
-                    ..Default::default()
-                },
-            ],
-            ..VaultList::default()
-        };
-
-        let loaded = normalize_vault_colors(list);
-
-        assert_eq!(loaded.vaults[0].color.as_deref(), Some("pink"));
-        assert_eq!(loaded.vaults[1].color, None);
-    }
-
-    #[test]
-    fn separate_instance_uses_its_launch_vault_without_changing_the_registry() {
-        let persisted = VaultList {
-            active_vault: Some("/vaults/main".to_string()),
-            ..VaultList::default()
-        };
-        let launch = crate::vault_instance::VaultInstanceLaunch {
-            vault_path: PathBuf::from("/vaults/work"),
-            vault_color: Some("red".to_string()),
-        };
-
-        let loaded = apply_instance_launch(persisted.clone(), Some(&launch));
-        let saved = preserve_shared_active_vault(loaded, &persisted, true);
-
-        assert_eq!(saved.active_vault, persisted.active_vault);
     }
 
     #[test]

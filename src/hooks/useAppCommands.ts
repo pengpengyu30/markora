@@ -75,7 +75,6 @@ interface AppCommandsConfig {
   onMoveNoteToFolder?: () => void
   canMoveNoteToFolder?: boolean
   onTurnCurrentBlockInto?: (target: RichEditorBlockTypeDefinition) => void
-  onOpenInNewWindow?: () => void
   onRevealActiveFile?: (path: string) => void
   onCopyActiveFilePath?: (path: string) => void
   onCopyActiveDeepLink?: (path: string) => void
@@ -149,7 +148,6 @@ type CommandRegistryVaultActions = Pick<
   | 'onReloadVault'
   | 'onRepairVault'
   | 'onRestoreDeletedNote'
-  | 'onOpenInNewWindow'
   | 'onRevealActiveFile'
   | 'onCopyActiveFilePath'
   | 'onCopyActiveDeepLink'
@@ -190,7 +188,6 @@ function createKeyboardActions(
     onToggleTableOfContents: config.onToggleTableOfContents,
     onToggleRawEditor: config.onToggleRawEditor,
     onToggleBacklinks: config.onToggleBacklinks,
-    onOpenInNewWindow: config.onOpenInNewWindow,
     activeTabPathRef: config.activeTabPathRef,
     multiSelectionCommandRef: config.multiSelectionCommandRef,
   }
@@ -274,7 +271,6 @@ function createMenuEventVaultHandlers(
   | 'onRestoreGettingStarted'
   | 'onReloadVault'
   | 'onRepairVault'
-  | 'onOpenInNewWindow'
 > {
   return {
     onOpenVault: config.onOpenVault,
@@ -282,7 +278,6 @@ function createMenuEventVaultHandlers(
     onRestoreGettingStarted: config.onRestoreGettingStarted,
     onReloadVault: config.onReloadVault,
     onRepairVault: config.onRepairVault,
-    onOpenInNewWindow: config.onOpenInNewWindow,
   }
 }
 
@@ -374,7 +369,6 @@ function createCommandRegistryVaultConfig(
     onReloadVault: config.onReloadVault,
     onRepairVault: config.onRepairVault,
     onRestoreDeletedNote: config.onRestoreDeletedNote,
-    onOpenInNewWindow: config.onOpenInNewWindow,
     onRevealActiveFile: config.onRevealActiveFile,
     onCopyActiveFilePath: config.onCopyActiveFilePath,
     onCopyActiveDeepLink: config.onCopyActiveDeepLink,

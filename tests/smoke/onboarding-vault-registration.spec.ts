@@ -10,11 +10,7 @@ interface PersistedState {
   availablePaths: string[]
   hidden_defaults: string[]
   vaults: Array<{
-    alias: string | null
-    color: string | null
-    icon: string | null
     label: string
-    mounted: boolean
     path: string
   }>
 }
@@ -173,11 +169,7 @@ test('opening an existing vault from onboarding persists the selection and survi
 
   await expect.poll(() => readPersistedState(page)).toEqual({
     vaults: [{
-      alias: null,
-      color: null,
-      icon: null,
       label: 'Work',
-      mounted: true,
       path: vaultPath,
     }],
     active_vault: vaultPath,

@@ -39,10 +39,11 @@ impl Rgb {
         Self { red, green, blue }
     }
 
-    fn for_vault_color(value: Option<&str>, mode: AppIconMode) -> Self {
-        let [red, green, blue] =
-            crate::workspace_colors::app_icon_rgb(value, mode == AppIconMode::Dark);
-        Self::new(red, green, blue)
+    fn for_mode(mode: AppIconMode) -> Self {
+        match mode {
+            AppIconMode::Light => Self::new(21, 93, 255),
+            AppIconMode::Dark => Self::new(120, 164, 255),
+        }
     }
 }
 
@@ -78,24 +79,6 @@ fn recolor_icon(image: tauri::image::Image<'_>, accent: Rgb) -> tauri::image::Im
     }
 
     tauri::image::Image::new_owned(rgba, width, height)
-}
-
-fn active_vault_color(list: &crate::vault_list::VaultList) -> Option<&str> {
-    let active_path = list.active_vault.as_deref()?;
-    list.vaults
-        .iter()
-        .find(|vault| vault.path == active_path)
-        .and_then(|vault| vault.color.as_deref())
-}
-
-fn vault_accent_color(mode: AppIconMode) -> Rgb {
-    let launch_color =
-        crate::vault_instance::current_launch().and_then(|launch| launch.vault_color);
-    let registry = crate::vault_list::load_vault_list().ok();
-    let vault_color = launch_color
-        .as_deref()
-        .or_else(|| registry.as_ref().and_then(active_vault_color));
-    Rgb::for_vault_color(vault_color, mode)
 }
 
 #[cfg(target_os = "macos")]
@@ -172,7 +155,7 @@ pub fn update_app_icon_for_theme(
     let mode = AppIconMode::parse(theme_mode)?;
     let source = tauri::image::Image::from_bytes(mode.png_bytes())
         .map_err(|error| format!("Failed to decode app icon: {error}"))?;
-    let image = recolor_icon(source, vault_accent_color(mode));
+    let image = recolor_icon(source, Rgb::for_mode(mode));
 
     #[cfg(target_os = "macos")]
     {
@@ -193,8 +176,7 @@ pub fn update_app_icon_for_theme(
 
 #[cfg(test)]
 mod tests {
-    use super::{active_vault_color, is_droplet_pixel, recolor_icon, AppIconMode, Rgb};
-    use crate::vault_list::{VaultEntry, VaultList};
+    use super::{is_droplet_pixel, recolor_icon, AppIconMode, Rgb};
 
     #[test]
     fn parses_supported_icon_modes() {
@@ -208,39 +190,9 @@ mod tests {
     }
 
     #[test]
-    fn maps_vault_colors_to_light_and_dark_interface_accents() {
-        assert_eq!(
-            Rgb::for_vault_color(Some("red"), AppIconMode::Light),
-            Rgb::new(229, 62, 62)
-        );
-        assert_eq!(
-            Rgb::for_vault_color(Some("red"), AppIconMode::Dark),
-            Rgb::new(255, 138, 134)
-        );
-        assert_eq!(
-            Rgb::for_vault_color(None, AppIconMode::Light),
-            Rgb::new(21, 93, 255)
-        );
-        assert_eq!(
-            Rgb::for_vault_color(Some("pink"), AppIconMode::Dark),
-            Rgb::new(120, 164, 255)
-        );
-    }
-
-    #[test]
-    fn resolves_the_active_vault_color_from_the_registry() {
-        let list = VaultList {
-            vaults: vec![VaultEntry {
-                label: "Laputa".to_string(),
-                path: "/vaults/laputa".to_string(),
-                color: Some("red".to_string()),
-                ..Default::default()
-            }],
-            active_vault: Some("/vaults/laputa".to_string()),
-            ..Default::default()
-        };
-
-        assert_eq!(active_vault_color(&list), Some("red"));
+    fn maps_icon_modes_to_light_and_dark_interface_accents() {
+        assert_eq!(Rgb::for_mode(AppIconMode::Light), Rgb::new(21, 93, 255));
+        assert_eq!(Rgb::for_mode(AppIconMode::Dark), Rgb::new(120, 164, 255));
     }
 
     #[test]

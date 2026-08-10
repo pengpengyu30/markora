@@ -152,7 +152,6 @@ files:
     command.note.turnCurrentBlockInto: ffe5660e197b8cc6ea4220aef1cb8983
     command.note.copyDeepLink: 8de1795f59af124594dc4decf77909a1
     command.note.exportPdf: 7a39acf8742a59d1a4f7ae064b6219a0
-    command.note.openNewWindow: 6f67b2857093fa0fd45b1122dff4865d
     command.git.initialize: 54a57cdc7105db6fb22dca661ce01ad6
     command.git.commitPush: 8cb5faa4019716f43dd69c41496b1d46
     command.git.addRemote: 7eef951b3f909340a68dc9811be83e9e
@@ -208,22 +207,6 @@ files:
     settings.releaseAlpha: 6132295fcf5570fb8b0a944ef322a598
     settings.automaticUpdateChecks: 95e5c6aab9c42787930040ed1743a708
     settings.automaticUpdateChecksDescription: 1cecffe438411cac2f910946d0706ab1
-    settings.workspaces.title: 10075fec14fcc45a489d02bedf972e97
-    settings.workspaces.enable: f418b797fc4d13ca6b59333326ac3246
-    settings.workspaces.enableDescription: 1487bd26586b773c77c01746399cc4cd
-    settings.workspaces.name: 49ee3087348e8d44e1feda1917443987
-    settings.workspaces.label: b021df6aac4654c454f46c77646e745f
-    settings.workspaces.slug: 0c908588520b3ef787bce443fc2b507c
-    settings.workspaces.nameAria: a94a5bbfbc6bbcff81961501be487703
-    settings.workspaces.labelAria: f6a0693020980910eaa8b168b30b33c3
-    settings.workspaces.slugAria: 1d9e314005db037b4a83a220a45f3d77
-    settings.workspaces.nameTooltip: 5c12e3507377eadae5c2340462dda553
-    settings.workspaces.labelTooltip: b1b87a2affcd504e54bf97100e3d9c34
-    settings.workspaces.slugTooltip: daa690f5855e35d1cfa9dbffe1870d40
-    settings.workspaces.color: cb5feb1b7314637725a2e73bdc9f7295
-    settings.workspaces.moveUpAria: 2ade43872ef9432d14af83056304c6d7
-    settings.workspaces.moveDownAria: ed1ef4a310797ac84894a224bf4c77a6
-    settings.workspaces.removeAria: a5d2ceeeb76bfcb99015fc780ced07c2
     settings.appearance.title: a1c58e94227389415de133efdf78ea6e
     settings.appearance.description: ca7b75a4c10ab8a540707e3a96cd3592
     settings.theme.label: d721757161f7f70c5b0949fdb6ec2c30
@@ -724,23 +707,13 @@ files:
     status.vault.cloneGit: a7d0aef7c6237a36e54fd5a26e9c23fe
     status.vault.cloneGettingStarted: 9953a11a477b441976a626a9acf5d7df
     status.vault.availableHeader: 2be36e986c7859a439c30bc5696c15a9
-    status.vault.manageWorkspaces: ecce6ef1f37e975762b1413d8bc7d21d
-    status.vault.includeWorkspace: fe8ee397206a29f2d91eea7b95e9c112
     status.vault.notFound: 3119b7fa94c96209bca571b7c7ed0b7e
     status.vault.reloading: 893da50ef3a9e01d8a99ff5d3ceb55e9
     status.vault.reloadingTooltip: 4a884bd7d113797ad16f905f70742da8
     status.vault.remove: 7f3b4f76df23626170940dbc55c70728
-    status.vault.openInNewWindow: 68d716685ef7a28eeb184fe0bc60c967
     status.vault.removeConfirmTitle: 713713c6d8c4eb8b75cf12ebaca44f96
     status.vault.removeConfirmMessage: 854744291c28ea9e18bed1110b0737d9
     status.vault.removeConfirmAction: 8b064b07e2f4f1e63d1d5087aead2648
-    workspace.manager.title: ecce6ef1f37e975762b1413d8bc7d21d
-    workspace.manager.description: d0de6e81a4268a52f756f6073f938fc3
-    workspace.manager.default: 7a1920d61156abc05a60135aefe8bc67
-    workspace.manager.makeDefault: 581e972562013d920e9b4d364265829e
-    workspace.manager.label: ce0aa8f9a9fad0faf99b6185fbc09a1f
-    workspace.manager.alias: e89ff14f985995ab3af3bd8af66d019c
-    workspace.manager.mounted: 38ca22b706f01504d11883bc1984d45b
     status.remote.noneConfigured: 18a4edd4e8d862ccb343937f45585fb1
     status.remote.inSync: a56f571b4df55d88fb06e61e343b3c91
     status.remote.aheadTitle: 1516f4b92671b83c17441b4cddf25a7a

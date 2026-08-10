@@ -157,7 +157,6 @@ const mockCommandResults: Record<string, unknown> = {
   get_note_content: mockAllContent['/vault/project/test.md'] || '',
   save_note_content: null,
   reload_vault_entry: ({ path }: { path: string }) => mockEntries.find((entry) => entry.path === path) ?? null,
-  sync_vault_asset_scope_for_window: null,
   get_settings: createSettings(),
   git_workspace_info: {
     vaultRoot: '/vault',
@@ -193,7 +192,6 @@ function resetMockCommandResults() {
     get_settings: createSettings(),
     save_note_content: null,
     reload_vault_entry: ({ path }: { path: string }) => mockEntries.find((entry) => entry.path === path) ?? null,
-    sync_vault_asset_scope_for_window: null,
     git_workspace_info: {
       vaultRoot: '/vault',
       gitRoot: '/vault',
@@ -381,7 +379,7 @@ describe('App', () => {
 
   it('renders the four-panel layout', async () => {
     render(<App />)
-    expect(await screen.findByText('All Notes', {}, { timeout: 5000 })).toBeInTheDocument()
+    expect(await screen.findByTestId('status-bar', {}, { timeout: 5000 })).toBeInTheDocument()
   })
 
   it('loads and displays vault entries in sidebar', async () => {
@@ -425,32 +423,6 @@ describe('App', () => {
     })
   })
 
-  it('opens a note window after loading the active vault graph', async () => {
-    const listVault = vi.fn(() => mockEntries)
-    const reloadVaultEntry = vi.fn(({ path }: { path: string }) =>
-      mockEntries.find((entry) => entry.path === path) ?? null,
-    )
-    const getNoteContent = vi.fn(({ path }: { path: string }) => mockAllContent[path] ?? '')
-    mockCommandResults.list_vault = listVault
-    mockCommandResults.reload_vault_entry = reloadVaultEntry
-    mockCommandResults.get_note_content = getNoteContent
-    window.history.replaceState(
-      {},
-      '',
-      '/?window=note&path=%2Fvault%2Fproject%2Ftest.md&vault=%2Fvault&title=Test+Project',
-    )
-
-    render(<App />)
-
-    await waitFor(() => expect(reloadVaultEntry).toHaveBeenCalled())
-    expect(reloadVaultEntry).toHaveBeenCalledWith({ path: '/vault/project/test.md', vaultPath: '/vault' })
-    await waitFor(() => expect(getNoteContent).toHaveBeenCalled())
-    expect(getNoteContent).toHaveBeenCalledWith({ path: '/vault/project/test.md', vaultPath: '/vault' })
-    await waitFor(() => expect(window.__laputaTest?.activeTabPath).toBe('/vault/project/test.md'))
-    expect(await screen.findByTestId('blocknote-view', {}, { timeout: SLOW_APP_READY_TIMEOUT_MS })).toHaveAttribute('data-editable', 'true')
-    expect(listVault).toHaveBeenCalled()
-  }, SLOW_APP_READY_TIMEOUT_MS * 2)
-
   it('shows keyboard shortcut hints', async () => {
     const quickOpenHint = formatShortcutDisplay({ display: '⌘P / ⌘O' })
     const newNoteHint = formatShortcutDisplay({ display: '⌘N' })
@@ -467,7 +439,7 @@ describe('App', () => {
   it('registers keyboard shortcuts without error', async () => {
     render(<App />)
     await waitFor(() => {
-      expect(screen.getByText('All Notes')).toBeInTheDocument()
+      expect(screen.getByTestId('status-bar')).toBeInTheDocument()
     })
 
     // Cmd+S with no pending changes shows "Nothing to save"
@@ -485,7 +457,7 @@ describe('App', () => {
 
     try {
       render(<App />)
-      await screen.findByText('All Notes')
+      await screen.findByTestId('status-bar')
 
       fireEvent.keyDown(window, { key: 'n', code: 'KeyN', metaKey: true })
 
@@ -522,7 +494,7 @@ describe('App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByText('All Notes')).toBeInTheDocument()
+      expect(screen.getByTestId('status-bar')).toBeInTheDocument()
     })
 
     fireEvent.click(screen.getByTestId('status-build-number'))
@@ -538,7 +510,7 @@ describe('App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByText('All Notes')).toBeInTheDocument()
+      expect(screen.getByTestId('status-bar')).toBeInTheDocument()
       expect(typeof window.__laputaTest?.dispatchBrowserMenuCommand).toBe('function')
     })
 
@@ -561,7 +533,7 @@ describe('App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByText('All Notes')).toBeInTheDocument()
+      expect(screen.getByTestId('status-bar')).toBeInTheDocument()
       expect(typeof window.__laputaTest?.dispatchBrowserMenuCommand).toBe('function')
     })
 
@@ -741,7 +713,6 @@ describe('App', () => {
         list: {
           vaults: [],
           active_vault: expectedDefaultVaultPath,
-          default_workspace_path: expectedDefaultVaultPath,
           hidden_defaults: [],
         },
       })
@@ -755,11 +726,12 @@ describe('App', () => {
     promptSpy.mockRestore()
   })
 
-  it('renders sidebar with correct default selection (All Notes)', async () => {
+  it('renders sidebar without an All Notes entry', async () => {
     render(<App />)
     await waitFor(() => {
-      // "All Notes" should be rendered as the selected nav item
-      expect(screen.getByText('All Notes')).toBeInTheDocument()
+      // The left navigation intentionally has no synthetic All Notes entry.
+      expect(screen.getByTestId('status-bar')).toBeInTheDocument()
+      expect(screen.queryByText('All Notes')).not.toBeInTheDocument()
     })
   })
 
@@ -767,7 +739,7 @@ describe('App', () => {
     render(<App />)
     // StatusBar should be present
     await waitFor(() => {
-      expect(screen.getByText('All Notes')).toBeInTheDocument()
+      expect(screen.getByTestId('status-bar')).toBeInTheDocument()
     })
     // The status bar element should exist in the DOM
     const appShell = document.querySelector('.app-shell')
@@ -796,26 +768,26 @@ describe('App', () => {
       expect(screen.getByTestId('status-vault-trigger')).toHaveTextContent('Test Vault')
     })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Switch vault' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Switch Project' }))
     fireEvent.click(screen.getByTestId('vault-menu-item-Work Vault'))
 
     expect(screen.queryByTestId('startup-shell-fallback')).not.toBeInTheDocument()
-    expect(screen.getByTestId('note-list-loading-skeleton')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByTestId('status-vault-trigger')).toHaveTextContent('Work Vault')
+    })
 
     await act(async () => {
       resolveSwitchedVaultScan?.(mockEntries)
       await Promise.resolve()
     })
 
-    await waitFor(() => {
-      expect(screen.getByTestId('status-vault-trigger')).toHaveTextContent('Work Vault')
-    })
+    expect(screen.getByTestId('status-vault-trigger')).toHaveTextContent('Work Vault')
   })
 
   it('Cmd+1 hides sidebar and note list (editor-only mode)', async () => {
     render(<App />)
     await waitFor(() => {
-      expect(screen.getByText('All Notes')).toBeInTheDocument()
+      expect(screen.getByTestId('status-bar')).toBeInTheDocument()
     })
 
     // All panels visible by default
@@ -833,7 +805,7 @@ describe('App', () => {
   it('Cmd+2 shows editor + note list (sidebar hidden)', async () => {
     render(<App />)
     await waitFor(() => {
-      expect(screen.getByText('All Notes')).toBeInTheDocument()
+      expect(screen.getByTestId('status-bar')).toBeInTheDocument()
     })
 
     fireEvent.keyDown(window, { key: '2', metaKey: true })
@@ -846,7 +818,7 @@ describe('App', () => {
   it('Cmd+3 restores all panels after Cmd+1', async () => {
     render(<App />)
     await waitFor(() => {
-      expect(screen.getByText('All Notes')).toBeInTheDocument()
+      expect(screen.getByTestId('status-bar')).toBeInTheDocument()
     })
 
     // Switch to editor-only first
@@ -868,7 +840,7 @@ describe('App', () => {
 
     render(<App />)
     await waitFor(() => {
-      expect(screen.getByText('All Notes')).toBeInTheDocument()
+      expect(screen.getByTestId('status-bar')).toBeInTheDocument()
     })
 
     invoke.mockClear()

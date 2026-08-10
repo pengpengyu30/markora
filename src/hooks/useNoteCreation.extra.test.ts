@@ -118,35 +118,6 @@ describe('resolveNewNote', () => {
     expect(content).toBe('')
   })
 
-  it('uses the configured default workspace when it is available', () => {
-    const { entry } = resolveNewNote({
-      title: 'Team Brief',
-      vaultPath: '/personal',
-      defaultWorkspacePath: '/team',
-      vaults: [
-        { label: 'Personal', path: '/personal', alias: 'personal', available: true, mounted: true },
-        { label: 'Team Notes', path: '/team', alias: 'team', color: 'green', available: true, mounted: true },
-      ],
-    })
-
-    expect(entry.path).toBe('/team/team-brief.md')
-    expect(entry.workspace).toMatchObject({ alias: 'team', defaultForNewNotes: true })
-  })
-
-  it('falls back to the active workspace when the configured default is unavailable', () => {
-    const { entry } = resolveNewNote({
-      title: 'Local Brief',
-      vaultPath: '/personal',
-      defaultWorkspacePath: '/team',
-      vaults: [
-        { label: 'Personal', path: '/personal', alias: 'personal', available: true, mounted: true },
-        { label: 'Team Notes', path: '/team', alias: 'team', available: false, mounted: true },
-      ],
-    })
-
-    expect(entry.path).toBe('/personal/local-brief.md')
-    expect(entry.workspace?.alias).toBe('personal')
-  })
 })
 
 describe('planNewNoteCreation', () => {

@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { act, render, screen, fireEvent, within } from '@testing-library/react'
+import { act, render, screen, fireEvent } from '@testing-library/react'
 import { StatusBar } from './StatusBar'
 import type { VaultOption } from './StatusBar'
 
 const vaults: VaultOption[] = [
-  { label: 'Main Vault', path: '/Users/luca/Laputa', alias: 'main', mounted: true },
-  { label: 'Work Vault', path: '/Users/luca/Work', alias: 'work', mounted: false },
+  { label: 'Main Vault', path: '/Users/luca/Laputa' },
+  { label: 'Work Vault', path: '/Users/luca/Work' },
 ]
 
 const DEFAULT_WINDOW_WIDTH = 1280
@@ -54,7 +54,7 @@ describe('StatusBar', () => {
 
   it('shows the vault reload badge while a reload is active', () => {
     render(<StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} isVaultReloading />)
-    expect(screen.getByTestId('status-vault-reloading')).toHaveAccessibleName('Reloading vault from disk')
+    expect(screen.getByTestId('status-vault-reloading')).toHaveAccessibleName('Reloading Project from disk')
   })
 
   it('calls onCheckForUpdates when clicking build number', () => {
@@ -151,189 +151,71 @@ describe('StatusBar', () => {
     expect(screen.getByText('Main Vault')).toBeInTheDocument()
   })
 
-  it('shows fallback "Vault" when vault path does not match', () => {
+  it('shows fallback "Project" when vault path does not match', () => {
     render(<StatusBar noteCount={100} vaultPath="/unknown/path" vaults={vaults} onSwitchVault={vi.fn()} />)
-    expect(screen.getByText('Vault')).toBeInTheDocument()
+    expect(screen.getByText('Project')).toBeInTheDocument()
   })
 
   it('opens vault menu on click and shows all vault options', () => {
     render(<StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} />)
 
     // Click the vault button to open menu
-    fireEvent.click(screen.getByRole('button', { name: 'Switch vault' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Switch Project' }))
 
     expect(screen.getByText('Work Vault')).toBeInTheDocument()
   })
 
-  it('does not show workspace management or mount controls before opt-in', () => {
-    render(
-      <StatusBar
-        noteCount={100}
-        vaultPath="/Users/luca/Laputa"
-        vaults={vaults}
-        onSwitchVault={vi.fn()}
-        onUpdateWorkspaceIdentity={vi.fn()}
-      />,
-    )
+  it('exposes only single-vault switching actions', () => {
+    render(<StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Switch vault' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Switch Project' }))
 
-    expect(screen.queryByTestId('vault-menu-manage-vaults')).not.toBeInTheDocument()
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('vault-menu-manage-vaults')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('vault-menu-open-window-Main Vault')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('vault-menu-open-window-Work Vault')).not.toBeInTheDocument()
   })
 
-  it('mounts and unmounts workspaces from the vault menu after opt-in', () => {
-    const onSwitchVault = vi.fn()
-    const onUpdateWorkspaceIdentity = vi.fn()
-    render(
-      <StatusBar
-        noteCount={100}
-        vaultPath="/Users/luca/Laputa"
-        vaults={vaults}
-        multiWorkspaceEnabled={true}
-        onSwitchVault={onSwitchVault}
-        onUpdateWorkspaceIdentity={onUpdateWorkspaceIdentity}
-      />,
-    )
-
-    fireEvent.click(screen.getByRole('button', { name: 'Switch vault' }))
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Include Work Vault in the unified graph' }))
-
-    expect(onUpdateWorkspaceIdentity).toHaveBeenCalledWith('/Users/luca/Work', { mounted: true })
-    expect(onSwitchVault).not.toHaveBeenCalled()
-    expect(screen.getByText('Work Vault')).toBeInTheDocument()
-  })
-
-  it('shows the active workspace real mount state so stale unmounted defaults can be repaired', () => {
-    render(
-      <StatusBar
-        noteCount={100}
-        vaultPath="/Users/luca/Laputa"
-        vaults={[
-          { ...vaults[0], mounted: false },
-          vaults[1],
-        ]}
-        multiWorkspaceEnabled={true}
-        onSwitchVault={vi.fn()}
-        onUpdateWorkspaceIdentity={vi.fn()}
-      />,
-    )
-
-    fireEvent.click(screen.getByRole('button', { name: 'Switch vault' }))
-
-    const activeCheckbox = screen.getByRole('checkbox', { name: 'Include Main Vault in the unified graph' })
-    expect(activeCheckbox).not.toBeChecked()
-    expect(activeCheckbox).not.toBeDisabled()
-  })
-
-  it('uses readable bottom-bar typography in the expanded multi-workspace vault picker', () => {
+  it('shows Project management controls when multiple Projects are enabled', () => {
     const onOpenVaultSettings = vi.fn()
     render(
       <StatusBar
         noteCount={100}
         vaultPath="/Users/luca/Laputa"
-        vaults={[
-          { ...vaults[0], color: 'purple' },
-          { ...vaults[1], color: 'green' },
-        ]}
-        multiWorkspaceEnabled={true}
+        defaultWorkspacePath="/Users/luca/Laputa"
+        vaults={vaults}
+        multiWorkspaceEnabled
         onSwitchVault={vi.fn()}
         onOpenVaultSettings={onOpenVaultSettings}
-        onCreateEmptyVault={vi.fn()}
-        onUpdateWorkspaceIdentity={vi.fn()}
       />,
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Switch vault' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Switch Project' }))
 
-    expect(screen.getByTestId('vault-menu-popover')).toHaveStyle({ minWidth: '340px' })
-    expect(screen.getByText('Available vaults')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Manage vaults' }))
+    expect(screen.getByText('Available Projects')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Manage Projects' })).toBeInTheDocument()
+    expect(screen.getAllByRole('checkbox')).toHaveLength(2)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Manage Projects' }))
     expect(onOpenVaultSettings).toHaveBeenCalledOnce()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Switch vault' }))
-    const activeItem = screen.getByTestId('vault-menu-item-Main Vault')
-    const defaultLabel = within(activeItem).getByTestId('vault-menu-default-label')
-    const activeBadge = within(activeItem).getByTestId('vault-menu-workspace-badge-Main Vault')
-    expect(within(activeItem).getByTestId('vault-menu-item-label-Main Vault').className).toContain('text-sm')
-    expect(within(activeItem).getByTestId('vault-menu-item-label-Main Vault').getAttribute('style')).toContain('background: transparent')
-    expect(defaultLabel).toHaveTextContent('Default')
-    expect(activeBadge).toHaveTextContent('MV')
-    expect(defaultLabel.compareDocumentPosition(activeBadge) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-
-    const workBadge = screen.getByTestId('vault-menu-workspace-badge-Work Vault')
-    expect(workBadge).toHaveTextContent('WV')
-    expect(workBadge.getAttribute('style')).toContain('border-color: var(--accent-green)')
-
-    const createAction = screen.getByTestId('vault-menu-create-empty')
-    expect(createAction.className).toContain('text-sm')
-    expect(createAction.getAttribute('style')).toContain('color: var(--muted-foreground)')
   })
+
 
   it('calls onSwitchVault when selecting a different vault', () => {
     const onSwitchVault = vi.fn()
     render(<StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={onSwitchVault} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Switch vault' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Switch Project' }))
     // Click "Work Vault"
     fireEvent.click(screen.getByText('Work Vault'))
 
     expect(onSwitchVault).toHaveBeenCalledWith('/Users/luca/Work')
   })
 
-  it('sets the default workspace instead of switching vaults after multi-workspace opt-in', () => {
-    const onSetDefaultWorkspace = vi.fn()
-    const onSwitchVault = vi.fn()
-    render(
-      <StatusBar
-        noteCount={100}
-        vaultPath="/Users/luca/Laputa"
-        defaultWorkspacePath="/Users/luca/Laputa"
-        vaults={vaults}
-        multiWorkspaceEnabled={true}
-        onSwitchVault={onSwitchVault}
-        onSetDefaultWorkspace={onSetDefaultWorkspace}
-        onUpdateWorkspaceIdentity={vi.fn()}
-      />,
-    )
-
-    fireEvent.click(screen.getByRole('button', { name: 'Switch vault' }))
-    fireEvent.click(screen.getByText('Work Vault'))
-
-    expect(onSetDefaultWorkspace).toHaveBeenCalledWith('/Users/luca/Work')
-    expect(onSwitchVault).not.toHaveBeenCalled()
-  })
-
-  it('unmounts the current default by moving the default to another included workspace first', () => {
-    const onSetDefaultWorkspace = vi.fn()
-    const onUpdateWorkspaceIdentity = vi.fn()
-    render(
-      <StatusBar
-        noteCount={100}
-        vaultPath="/Users/luca/Laputa"
-        defaultWorkspacePath="/Users/luca/Laputa"
-        vaults={[
-          { ...vaults[0], mounted: true },
-          { ...vaults[1], mounted: true },
-        ]}
-        multiWorkspaceEnabled={true}
-        onSwitchVault={vi.fn()}
-        onSetDefaultWorkspace={onSetDefaultWorkspace}
-        onUpdateWorkspaceIdentity={onUpdateWorkspaceIdentity}
-      />,
-    )
-
-    fireEvent.click(screen.getByRole('button', { name: 'Switch vault' }))
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Include Main Vault in the unified graph' }))
-
-    expect(onSetDefaultWorkspace).toHaveBeenCalledWith('/Users/luca/Work')
-    expect(onUpdateWorkspaceIdentity).toHaveBeenCalledWith('/Users/luca/Laputa', { mounted: false })
-  })
-
   it('closes vault menu when clicking outside', () => {
     render(<StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Switch vault' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Switch Project' }))
     expect(screen.getByText('Work Vault')).toBeInTheDocument()
 
     // Click outside the menu
@@ -345,7 +227,7 @@ describe('StatusBar', () => {
   it('toggles vault menu open and closed', () => {
     render(<StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} />)
 
-    const vaultButton = screen.getByRole('button', { name: 'Switch vault' })
+    const vaultButton = screen.getByRole('button', { name: 'Switch Project' })
     fireEvent.click(vaultButton)
     expect(screen.getByText('Work Vault')).toBeInTheDocument()
 
@@ -358,7 +240,7 @@ describe('StatusBar', () => {
     render(
       <StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} onOpenLocalFolder={vi.fn()} />
     )
-    fireEvent.click(screen.getByRole('button', { name: 'Switch vault' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Switch Project' }))
     expect(screen.getByText('Open local folder')).toBeInTheDocument()
   })
 
@@ -367,26 +249,26 @@ describe('StatusBar', () => {
     render(
       <StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} onOpenLocalFolder={onOpenLocalFolder} />
     )
-    fireEvent.click(screen.getByRole('button', { name: 'Switch vault' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Switch Project' }))
     fireEvent.click(screen.getByText('Open local folder'))
     expect(onOpenLocalFolder).toHaveBeenCalledOnce()
   })
 
-  it('shows "Create empty vault" option in vault menu', () => {
+  it('shows "Create empty Project" option in vault menu', () => {
     render(
       <StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} onCreateEmptyVault={vi.fn()} />
     )
-    fireEvent.click(screen.getByRole('button', { name: 'Switch vault' }))
-    expect(screen.getByText('Create empty vault')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Switch Project' }))
+    expect(screen.getByText('Create empty Project')).toBeInTheDocument()
   })
 
-  it('calls onCreateEmptyVault when clicking "Create empty vault"', () => {
+  it('calls onCreateEmptyVault when clicking "Create empty Project"', () => {
     const onCreateEmptyVault = vi.fn()
     render(
       <StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} onCreateEmptyVault={onCreateEmptyVault} />
     )
-    fireEvent.click(screen.getByRole('button', { name: 'Switch vault' }))
-    fireEvent.click(screen.getByText('Create empty vault'))
+    fireEvent.click(screen.getByRole('button', { name: 'Switch Project' }))
+    fireEvent.click(screen.getByText('Create empty Project'))
     expect(onCreateEmptyVault).toHaveBeenCalledOnce()
   })
 
@@ -401,8 +283,8 @@ describe('StatusBar', () => {
         onOpenLocalFolder={vi.fn()}
       />
     )
-    fireEvent.click(screen.getByRole('button', { name: 'Switch vault' }))
-    expect(screen.getByText('Create empty vault')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Switch Project' }))
+    expect(screen.getByText('Create empty Project')).toBeInTheDocument()
     expect(screen.getByText('Open local folder')).toBeInTheDocument()
   })
 
@@ -417,8 +299,8 @@ describe('StatusBar', () => {
       />
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Switch vault' }))
-    expect(screen.getByText('Clone Getting Started Vault')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Switch Project' }))
+    expect(screen.getByText('Clone Getting Started Project')).toBeInTheDocument()
   })
 
   it('calls onCloneGettingStarted when clicking the vault menu action', () => {
@@ -433,8 +315,8 @@ describe('StatusBar', () => {
       />
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Switch vault' }))
-    fireEvent.click(screen.getByText('Clone Getting Started Vault'))
+    fireEvent.click(screen.getByRole('button', { name: 'Switch Project' }))
+    fireEvent.click(screen.getByText('Clone Getting Started Project'))
     expect(onCloneGettingStarted).toHaveBeenCalledOnce()
   })
 
@@ -449,14 +331,11 @@ describe('StatusBar', () => {
       />
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Switch vault' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Switch Project' }))
 
     const item = screen.getByTestId('vault-menu-item-Work Vault')
     const removeAction = screen.getByTestId('vault-menu-remove-Work Vault')
-    const openAction = screen.getByRole('button', { name: 'Open Work Vault in a new window' })
-
     expect(item.className).toContain('hover:bg-[var(--hover)]')
-    expect(openAction.compareDocumentPosition(removeAction) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(item.lastElementChild).toBe(removeAction)
     expect(removeAction.className).not.toContain('absolute')
     expect(removeAction.className).not.toContain('right-1')
@@ -464,35 +343,6 @@ describe('StatusBar', () => {
     expect(removeAction.className).toContain('group-focus-within:opacity-100')
     expect(removeAction.className).toContain('pointer-events-none')
     expect(screen.getByRole('button', { name: 'Remove Work Vault from list' })).toBeInTheDocument()
-  })
-
-  it('opens a vault in a separate app window with its configured accent color', async () => {
-    const openVaultWindow = vi.fn()
-    window.__mockHandlers = {
-      ...window.__mockHandlers,
-      open_vault_in_new_window: openVaultWindow,
-    }
-    render(
-      <StatusBar
-        noteCount={100}
-        vaultPath="/Users/luca/Laputa"
-        vaults={[
-          vaults[0],
-          { ...vaults[1], color: 'red' },
-        ]}
-        onSwitchVault={vi.fn()}
-      />,
-    )
-
-    fireEvent.click(screen.getByRole('button', { name: 'Switch vault' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Open Work Vault in a new window' }))
-
-    await vi.waitFor(() => {
-      expect(openVaultWindow).toHaveBeenCalledWith({
-        vaultPath: '/Users/luca/Work',
-        vaultColor: 'red',
-      })
-    })
   })
 
   it('confirms before removing a vault from the vault menu', () => {
@@ -507,12 +357,12 @@ describe('StatusBar', () => {
       />
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Switch vault' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Switch Project' }))
     fireEvent.click(screen.getByRole('button', { name: 'Remove Work Vault from list' }))
 
     expect(onRemoveVault).not.toHaveBeenCalled()
     expect(screen.getByTestId('confirm-delete-dialog')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Remove vault' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Project' }))
 
     expect(onRemoveVault).toHaveBeenCalledWith('/Users/luca/Work')
   })
@@ -521,7 +371,7 @@ describe('StatusBar', () => {
     render(
       <StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} onOpenLocalFolder={vi.fn()} />
     )
-    fireEvent.click(screen.getByRole('button', { name: 'Switch vault' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Switch Project' }))
     fireEvent.click(screen.getByText('Open local folder'))
     // Menu should close after clicking an action
     expect(screen.queryByText('Open local folder')).not.toBeInTheDocument()

@@ -5,26 +5,26 @@ import type { VaultOption } from './status-bar/types'
 import type { VaultMoveDirection } from '../utils/vaultOrdering'
 import type { workspaceIdentityFromVault } from '../utils/workspaces'
 
-interface WorkspaceMoveButtonsProps {
+interface ProjectMoveButtonsProps {
   canMoveDown: boolean
   canMoveUp: boolean
   locale: AppLocale
   onMoveVault?: (path: string, direction: VaultMoveDirection) => void
-  vault: VaultOption
+  project: VaultOption
   workspace: ReturnType<typeof workspaceIdentityFromVault>
 }
 
-export function WorkspaceMoveButtons({
+export function ProjectMoveButtons({
   canMoveDown,
   canMoveUp,
   locale,
   onMoveVault,
-  vault,
+  project,
   workspace,
-}: WorkspaceMoveButtonsProps) {
+}: ProjectMoveButtonsProps) {
   const t = createTranslator(locale)
-  const moveUpLabel = t('settings.workspaces.moveUpAria', { label: workspace.label })
-  const moveDownLabel = t('settings.workspaces.moveDownAria', { label: workspace.label })
+  const moveUpLabel = t('settings.projects.moveUpAria', { label: workspace.label })
+  const moveDownLabel = t('settings.projects.moveDownAria', { label: workspace.label })
 
   return (
     <div className="flex items-center gap-1">
@@ -32,11 +32,11 @@ export function WorkspaceMoveButtons({
         type="button"
         variant="ghost"
         size="icon-sm"
-        onClick={() => onMoveVault?.(vault.path, 'up')}
+        onClick={() => onMoveVault?.(project.path, 'up')}
         disabled={!onMoveVault || !canMoveUp}
         aria-label={moveUpLabel}
         title={moveUpLabel}
-        data-testid={`settings-workspace-move-up-${workspace.alias}`}
+        data-testid={`settings-project-move-up-${workspace.alias}`}
         className="text-muted-foreground hover:text-foreground"
       >
         <CaretUp size={15} />
@@ -45,11 +45,11 @@ export function WorkspaceMoveButtons({
         type="button"
         variant="ghost"
         size="icon-sm"
-        onClick={() => onMoveVault?.(vault.path, 'down')}
+        onClick={() => onMoveVault?.(project.path, 'down')}
         disabled={!onMoveVault || !canMoveDown}
         aria-label={moveDownLabel}
         title={moveDownLabel}
-        data-testid={`settings-workspace-move-down-${workspace.alias}`}
+        data-testid={`settings-project-move-down-${workspace.alias}`}
         className="text-muted-foreground hover:text-foreground"
       >
         <CaretDown size={15} />

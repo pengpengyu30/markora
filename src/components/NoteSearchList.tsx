@@ -2,12 +2,9 @@ import { useRef, useEffect, type MouseEvent, type PointerEvent } from 'react'
 import { cn } from '@/lib/utils'
 import { scrollSelectedHTMLChildIntoView } from '../utils/domScroll'
 import { detectIntentionalMouseMovement, type MouseMovementSnapshot } from '../utils/mouseMovement'
-import { WorkspaceInitialsBadge } from './WorkspaceInitialsBadge'
-import type { WorkspaceIdentity } from '../types'
 
 export interface NoteSearchResultItem {
   title: string
-  workspace?: WorkspaceIdentity | null
 }
 
 interface NoteSearchListProps<T extends NoteSearchResultItem> {
@@ -104,11 +101,6 @@ function NoteSearchListItem<T extends NoteSearchResultItem>({
         <span className="flex min-w-0 flex-1 items-center gap-1.5 truncate text-sm text-foreground">
           <span className="truncate">{item.title}</span>
         </span>
-        {item.workspace && (
-          <span className="ml-2 flex shrink-0 items-center gap-1.5">
-            <WorkspaceInitialsBadge workspace={item.workspace} testId="note-search-workspace-badge" />
-          </span>
-        )}
       </button>
     </div>
   )

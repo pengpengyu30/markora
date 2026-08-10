@@ -71,6 +71,8 @@ Inbox plus the organized/unorganized state flow, Archive, Favorites, note icons,
 
 **Decision**: Remove standalone note windows and the entire cross-window mechanism. Remove Workspaces (the unified graph for mounting multiple vaults). **Keep simple multi-vault switching** (one vault at a time, switched from the status bar or menu).
 
+> **M5 implementation addendum:** The standalone-window decision remains unchanged. During implementation, the owner requested that the retained multi-vault capability use the previous visible multi-list interaction, exposed as **Projects**, and be configurable between multiple visible Projects and one current Project. The “one vault at a time” wording above is historical and is superseded only for the Project UI/data-loading behavior; see [05-m5-project-addendum.md](./05-m5-project-addendum.md). Internal `vault`/`workspace` names remain for compatibility.
+
 ## Q9 — Telemetry, Feedback, deep links, and automatic updates
 
 **Decision**:

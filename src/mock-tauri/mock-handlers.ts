@@ -70,7 +70,6 @@ let mockSettings: Settings = {
   all_notes_show_pdfs: null,
   all_notes_show_images: null,
   all_notes_show_unsupported: null,
-  multi_workspace_enabled: null,
 }
 
 const DEFAULT_MOCK_VAULT_PATH = '/Users/mock/demo-vault-v2'
@@ -81,9 +80,24 @@ const DEFAULT_MOCK_VAULT = {
 
 let mockLastVaultPath: string | null = DEFAULT_MOCK_VAULT_PATH
 
-let mockVaultList: { vaults: Array<{ label: string; path: string }>; active_vault: string | null } = {
+let mockVaultList: {
+  vaults: Array<{
+    label: string
+    path: string
+    alias?: string | null
+    shortLabel?: string | null
+    color?: string | null
+    icon?: string | null
+    mounted?: boolean | null
+  }>
+  active_vault: string | null
+  default_workspace_path?: string | null
+  hidden_defaults?: string[]
+} = {
   vaults: [DEFAULT_MOCK_VAULT],
   active_vault: DEFAULT_MOCK_VAULT_PATH,
+  default_workspace_path: DEFAULT_MOCK_VAULT_PATH,
+  hidden_defaults: [],
 }
 
 type MockContentPath = { path: string }
@@ -282,43 +296,6 @@ function handleMoveNoteToFolder(args: {
   return { new_path: newPath, updated_files: updatedFiles, failed_updates: 0 }
 }
 
-function handleMoveNoteToWorkspace(args: {
-  source_vault_path: string
-  destination_vault_path: string
-  old_path: string
-  replacement_target?: string | null
-}) {
-  const oldEntry = MOCK_ENTRIES.find(e => e.path === args.old_path)
-  const oldContent = readMockContent({ path: args.old_path })
-  const oldTitle = oldEntry?.title ?? ''
-  const oldFilename = args.old_path.split('/').pop() ?? ''
-  const sourceRoot = args.source_vault_path.replace(/\/+$/, '')
-  const destinationRoot = args.destination_vault_path.replace(/\/+$/, '')
-  const relativePath = args.old_path.startsWith(`${sourceRoot}/`)
-    ? args.old_path.slice(sourceRoot.length + 1)
-    : oldFilename
-  const newPath = `${destinationRoot}/${relativePath}`
-
-  if (newPath === args.old_path) {
-    return { new_path: args.old_path, updated_files: 0, failed_updates: 0 }
-  }
-  if (Object.hasOwn(MOCK_CONTENT, newPath)) {
-    throw new Error('A note with that name already exists')
-  }
-
-  deleteMockContent({ path: args.old_path })
-  writeMockContent({ path: newPath, content: oldContent })
-
-  const oldPathStem = relativePathStem({ path: args.old_path, vaultPath: args.source_vault_path })
-  const newPathStem = args.replacement_target
-    ?? relativePathStem({ path: newPath, vaultPath: args.destination_vault_path })
-  const oldTargets = canonicalRenameTargets({ oldTitle, oldPathStem })
-  const updatedFiles = updateMockRenameReferences({ newPath, newPathStem, oldTargets })
-
-  syncWindowContent()
-  return { new_path: newPath, updated_files: updatedFiles, failed_updates: 0 }
-}
-
 export const mockHandlers = {
   read_vault_snapshot: () => MOCK_ENTRIES,
   record_startup_milestone: ({ name, detail }: { name: string; detail?: number | null }) => ({
@@ -420,7 +397,9 @@ export const mockHandlers = {
       all_notes_show_pdfs: s.all_notes_show_pdfs ?? null,
       all_notes_show_images: s.all_notes_show_images ?? null,
       all_notes_show_unsupported: s.all_notes_show_unsupported ?? null,
-      multi_workspace_enabled: s.multi_workspace_enabled ?? null,
+      ...(s.multi_workspace_enabled !== undefined
+        ? { multi_workspace_enabled: s.multi_workspace_enabled ?? null }
+        : {}),
     }
     return null
   },
@@ -429,7 +408,6 @@ export const mockHandlers = {
   rename_note: handleRenameNote,
   rename_note_filename: handleRenameNoteFilename,
   move_note_to_folder: handleMoveNoteToFolder,
-  move_note_to_workspace: handleMoveNoteToWorkspace,
   clone_repo: (args: { url: string; localPath?: string; local_path?: string }) => {
     const localPath = args.localPath ?? args.local_path ?? ''
     return `Cloned to ${localPath}`

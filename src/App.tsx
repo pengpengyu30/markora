@@ -43,10 +43,7 @@ import { UpdateBanner } from './components/UpdateBanner'
 import { invoke } from '@tauri-apps/api/core'
 import { isTauri, mockInvoke } from './mock-tauri'
 import type { SidebarSelection, VaultEntry } from './types'
-import { openNoteInNewWindow } from './utils/openNoteWindow'
 import { refreshPulledVaultState } from './utils/pulledVaultRefresh'
-import { refreshNoteWindowVaultChanges } from './utils/noteWindowVaultRefresh'
-import { isNoteWindow, getNoteWindowParams, type NoteWindowParams } from './utils/windowMode'
 import { RenameDetectedBanner } from './components/RenameDetectedBanner'
 import type { NoteListMultiSelectionCommands } from './components/note-list/multiSelectionCommands'
 import { areAutomaticUpdateChecksEnabled } from './lib/automaticUpdateChecks'
@@ -58,17 +55,14 @@ import {
 import { normalizeReleaseChannel } from './lib/releaseChannel'
 import { requestPlainTextPaste } from './utils/plainTextPaste'
 import { SETTINGS_SECTION_IDS } from './components/settingsSectionIds'
-import {
-  vaultPathForEntry,
-} from './utils/workspaces'
+import { vaultPathForEntry } from './utils/workspaces'
 import { notePathsMatch } from './utils/notePathIdentity'
 import { entrySupportsPreviewSourceToggle } from './utils/filePreview'
 import { isMarkdownEntry } from './utils/typeDefinitions'
 import type { RichEditorBlockTypeDefinition } from './utils/richEditorBlockTypes'
-import { useVisibleWorkspaceEntries, useWorkspaceGraphState } from './hooks/useWorkspaceGraphState'
 import { useManagedGit } from './hooks/useManagedGit'
+import { useVisibleWorkspaceEntries, useWorkspaceGraphState } from './hooks/useWorkspaceGraphState'
 import { AppPreferencesProvider, useAppPreferences } from './hooks/useAppPreferences'
-import { syncVaultAssetScope, useNoteWindowLifecycle } from './hooks/useNoteWindowLifecycle'
 import { useVaultRenameDetection } from './hooks/useVaultRenameDetection'
 import { useVaultOpenedTelemetry } from './hooks/useVaultOpenedTelemetry'
 import { useStartupScreenState } from './hooks/useStartupScreenState'
@@ -93,18 +87,16 @@ const DEFAULT_SELECTION: SidebarSelection = { kind: 'filter', filter: 'all' }
 
 /** Wraps useEditorSave to also keep outgoingLinks in sync on save and on content change. */
 function App() {
-  const noteWindowParams = useMemo(() => isNoteWindow() ? getNoteWindowParams() : null, [])
-
-  return <MainApp noteWindowParams={noteWindowParams} />
+  return <MainApp />
 }
 
-function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | null }) {
+function MainApp() {
   const [selection, setSelection] = useState<SidebarSelection>(DEFAULT_SELECTION)
   const [pendingNoteListPdfExportPath, setPendingNoteListPdfExportPath] = useState<string | null>(null)
   const handleSetSelection = useCallback((sel: SidebarSelection) => {
     setSelection(sel)
   }, [])
-  const layout = useLayoutPanels(noteWindowParams ? { initialRightPanelCollapsed: true } : undefined)
+  const layout = useLayoutPanels()
   const visibleNotesRef = useRef<VaultEntry[]>([])
   const multiSelectionCommandRef = useRef<NoteListMultiSelectionCommands | null>(null)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
@@ -123,7 +115,6 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
   // guarantee the latest closure is always used).
   const vaultSwitcher = useVaultSwitcher({
     onSwitch: () => {
-      if (noteWindowParams) return
       handleSetSelection(DEFAULT_SELECTION)
       notes.closeAllTabs()
     },
@@ -172,11 +163,9 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
   // Onboarding can briefly own the vault path for a newly created/opened vault
   // before the persisted switcher catches up, but once the path is already in
   // the switcher list we should trust the explicit switcher state.
-  const resolvedPath = noteWindowParams?.vaultPath ?? (
-    shouldPreferOnboardingVaultPath(onboarding.state, vaultSwitcher.allVaults)
-      ? onboarding.state.vaultPath
-      : vaultSwitcher.vaultPath
-  )
+  const resolvedPath = shouldPreferOnboardingVaultPath(onboarding.state, vaultSwitcher.allVaults)
+    ? onboarding.state.vaultPath
+    : vaultSwitcher.vaultPath
   const [settingsInitialSectionId, setSettingsInitialSectionId] = useState<string | null>(null)
   const {
     folderVaults,
@@ -189,19 +178,19 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
     defaultWorkspacePath,
     resolvedPath,
     settings,
-    windowMode: Boolean(noteWindowParams),
+    windowMode: false,
   })
-  const managedGit = useManagedGit(resolvedPath, vaultSwitcher.loaded && !noteWindowParams)
-  const automaticGitEnabled = !noteWindowParams && managedGit.mode === 'managed'
+  const managedGit = useManagedGit(resolvedPath, vaultSwitcher.loaded)
+  const automaticGitEnabled = managedGit.mode === 'managed'
 
   const vault = useVaultLoader(
     vaultSwitcher.loaded ? resolvedPath : '',
     graphVaults,
     multiWorkspaceEnabled ? defaultWorkspacePath : null,
     folderVaults,
-    { loadModifiedFiles: !noteWindowParams },
+    { loadModifiedFiles: true },
   )
-  const watchedVaultPaths = useMemo(() => {
+  const visibleWorkspaceRoots = useMemo(() => {
     if (visibleWorkspacePathList && visibleWorkspacePathList.length > 0) return visibleWorkspacePathList
     return resolvedPath.trim() ? [resolvedPath] : []
   }, [resolvedPath, visibleWorkspacePathList])
@@ -216,7 +205,7 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
     filterExternalPaths: filterExternalVaultPaths,
   } = useRecentVaultWrites({
     vaultPath: resolvedPath,
-    vaultPaths: watchedVaultPaths,
+    vaultPaths: visibleWorkspaceRoots,
   })
   const effectiveSelection = selection
 
@@ -248,9 +237,8 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
   })
   const loadDefaultVaultModifiedFiles = vault.loadModifiedFiles
   const refreshGitModifiedFiles = useCallback(async () => {
-    if (noteWindowParams) return
     await loadDefaultVaultModifiedFiles()
-  }, [loadDefaultVaultModifiedFiles, noteWindowParams])
+  }, [loadDefaultVaultModifiedFiles])
   const reloadVault = vault.reloadVault
 
   const handleDeletedNoteRestored = useCallback(async () => {
@@ -263,8 +251,8 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
     dialogs.openSettings()
   }, [dialogs])
 
-  const handleOpenVaultSettings = useCallback(() => {
-    setSettingsInitialSectionId(SETTINGS_SECTION_IDS.workspaces)
+  const handleOpenProjectSettings = useCallback(() => {
+    setSettingsInitialSectionId(SETTINGS_SECTION_IDS.projects)
     dialogs.openSettings()
   }, [dialogs])
 
@@ -295,8 +283,8 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
     void refreshGitModifiedFiles()
   }, [markRecentVaultWrite, refreshGitModifiedFiles])
   const handleMissingActiveVault = useCallback(() => {
-    if (!noteWindowParams && resolvedPath) vault.markVaultUnavailable(resolvedPath)
-  }, [noteWindowParams, resolvedPath, vault])
+    if (resolvedPath) vault.markVaultUnavailable(resolvedPath)
+  }, [resolvedPath, vault])
 
   const notes = useNoteActions({
     addEntry: vault.addEntry,
@@ -328,13 +316,12 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
     handleSelectNote,
     handleReplaceActiveTab,
     closeAllTabs,
-    openTabWithContent,
   } = notes
   const noteActiveTabPath = notes.activeTabPath
   const noteActiveTabPathRef = notes.activeTabPathRef
   useLastActiveNote({
     activeTabPath: noteActiveTabPath,
-    enabled: !noteWindowParams,
+    enabled: true,
     entries: visibleEntries,
     isVaultLoading: vault.isLoading || !vaultSwitcher.loaded || !resolvedPath,
     openNote: handleSelectNote,
@@ -365,19 +352,7 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
       return false
     }
   }, [resolvedPath])
-  useNoteWindowLifecycle({
-    activeTabPath: notes.activeTabPath,
-    handleSelectNote,
-    noteWindowParams,
-    openTabWithContent,
-    setToastMessage,
-    tabs: notes.tabs,
-  })
-  const handleVaultUpdate = useCallback(async (
-    updatedFiles: string[],
-    options: { vaultPath?: string } = {},
-  ) => {
-    const updateVaultPath = options.vaultPath ?? resolvedPath
+  const handleVaultUpdate = useCallback(async (updatedFiles: string[]) => {
     const entries = await refreshPulledVaultState({
       activeTabPath: noteActiveTabPath,
       closeAllTabs,
@@ -390,7 +365,7 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
       refocusActiveEditor,
       shouldRefocusActiveEditor: isActiveElementInsideEditorSurface,
       updatedFiles,
-      vaultPath: updateVaultPath,
+      vaultPath: resolvedPath,
     })
     await refreshGitModifiedFiles()
     return entries
@@ -407,67 +382,12 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
       vault.reloadVault,
       vault.unsavedPaths,
     ])
-  const handleFocusedVaultUpdate = useCallback(async (updatedFiles: string[]) => {
-    if (!noteWindowParams) {
-      await handleVaultUpdate(updatedFiles)
-      return
-    }
-
-    await refreshNoteWindowVaultChanges({
-      activeTabPath: noteActiveTabPath,
-      applyEntry: (entry) => {
-        if (visibleEntries.some((current) => notePathsMatch(current.path, entry.path))) {
-          vault.updateEntry(entry.path, entry)
-        } else {
-          vault.addEntry(entry)
-        }
-      },
-      closeAllTabs,
-      currentEntries: visibleEntries,
-      getActiveTabPath: () => noteActiveTabPathRef.current,
-      hasUnsavedChanges: (path) => vault.unsavedPaths.has(path),
-      isActiveTabContentCurrent,
-      paths: updatedFiles,
-      refreshFullVault: handleVaultUpdate,
-      reloadEntry: async (path) => {
-        const request = { path, vaultPath: resolvedPath }
-        return isTauri()
-          ? invoke<VaultEntry>('reload_vault_entry', request)
-          : mockInvoke<VaultEntry>('reload_vault_entry', request)
-      },
-      replaceActiveTab: handleReplaceActiveTab,
-      refocusActiveEditor,
-      shouldRefocusActiveEditor: isActiveElementInsideEditorSurface,
-      vaultPath: resolvedPath,
-    })
-  }, [
-    closeAllTabs,
-    handleReplaceActiveTab,
-    handleVaultUpdate,
-    isActiveTabContentCurrent,
-    noteActiveTabPath,
-    noteActiveTabPathRef,
-    noteWindowParams,
-    refocusActiveEditor,
-    resolvedPath,
-    vault,
-    visibleEntries,
-  ])
-  useEffect(() => {
-    if (watchedVaultPaths.length === 0) return
-    let cancelled = false
-    for (const vaultPath of watchedVaultPaths) {
-      void syncVaultAssetScope(vaultPath).catch((err) => {
-        if (!cancelled) console.warn('[vault] Failed to sync asset scope:', err)
-      })
-    }
-    return () => {
-      cancelled = true
-    }
-  }, [watchedVaultPaths])
+  const handleFocusedVaultUpdate = useCallback((updatedFiles: string[]) => {
+    void handleVaultUpdate(updatedFiles)
+  }, [handleVaultUpdate])
   useVaultWatcher({
     vaultPath: resolvedPath,
-    vaultPaths: watchedVaultPaths,
+    vaultPaths: visibleWorkspaceRoots,
     onVaultChanged: handleFocusedVaultUpdate,
     filterChangedPaths: filterExternalVaultPaths,
   })
@@ -544,21 +464,6 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
     reloadFolders: vault.reloadFolders,
     setToastMessage,
   })
-  const handleOpenInNewWindow = useCallback(() => {
-    const activeTab = notes.tabs.find(t => t.entry.path === notes.activeTabPath)
-    if (activeTab) {
-      openNoteInNewWindow(
-        activeTab.entry.path,
-        vaultPathForEntry(activeTab.entry, resolvedPath),
-        activeTab.entry.title,
-      )
-    }
-  }, [notes.tabs, notes.activeTabPath, resolvedPath])
-
-  const handleOpenEntryInNewWindow = useCallback((entry: Pick<VaultEntry, 'path' | 'title' | 'workspace'>) => {
-    openNoteInNewWindow(entry.path, vaultPathForEntry(entry, resolvedPath), entry.title)
-  }, [resolvedPath])
-
   const autoGit = useAutoGit({
     enabled: automaticGitEnabled,
     idleThresholdSeconds: 90,
@@ -624,7 +529,7 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
     }
 
     const saveNoteContent = window.__mockHandlers?.save_note_content
-    const activeVaultPath = vaultPathForEntry(activeTab.entry, resolvedPath)
+    const activeVaultPath = resolvedPath
     if (typeof saveNoteContent === 'function') {
       await Promise.resolve(saveNoteContent({ path: activePath, content: activeTab.content, vaultPath: activeVaultPath }))
     } else {
@@ -650,7 +555,7 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
   }, [notes.activeTabPath, seedAutoGitSavedChange])
 
   const resolveVaultPathForNotePath = useCallback((path: string) => {
-    const entry = vault.entries.find((candidate) => candidate.path === path)
+    const entry = vault.entries.find((candidate) => notePathsMatch(candidate.path, path))
     return entry ? vaultPathForEntry(entry, resolvedPath) : resolvedPath
   }, [resolvedPath, vault.entries])
 
@@ -679,7 +584,6 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
     zoom,
   } = useAppWindowControls({
     layout,
-    windowMode: Boolean(noteWindowParams),
   })
   const turnCurrentBlockIntoRef = useRef<((target: RichEditorBlockTypeDefinition) => void) | null>(null)
 
@@ -827,7 +731,6 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
     shouldResumeFreshStartOnboarding,
     shouldShowStartupScreen,
   } = useStartupScreenState({
-    isNoteWindow: Boolean(noteWindowParams),
     onboardingState: onboarding.state,
     runtimeMissingVaultPath,
     selectedVaultPath,
@@ -845,7 +748,7 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
   const deepLinks = useDeepLinks({
     activeEntry: activeTab?.entry ?? null,
     currentVaultPath: resolvedPath,
-    enabled: !noteWindowParams,
+    enabled: true,
     entries: visibleEntries,
     isVaultContentLoading,
     locale: appLocale,
@@ -926,7 +829,6 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
     onRestoreDeletedNote: automaticGitEnabled ? dialogs.openRestoreDeletedNote : undefined,
     onMoveNoteToFolder: moveNoteToFolderCommand,
     canMoveNoteToFolder: noteRetargetingUi.canMoveActiveNoteToFolder,
-    onOpenInNewWindow: handleOpenInNewWindow,
     onRevealActiveFile: fileActions.revealFile,
     onCopyActiveFilePath: fileActions.copyFilePath,
     onCopyActiveDeepLink: deepLinks.copyPathDeepLink,
@@ -942,7 +844,6 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
         isOffline={networkStatus.isOffline}
         isStartupLoading={isStartupLoading}
         locale={appLocale}
-        noteWindowParams={noteWindowParams}
         onboarding={onboarding}
         runtimeMissingVaultPath={runtimeMissingVaultPath}
         saveSettings={saveSettings}
@@ -994,7 +895,7 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
           {noteListVisible && (
             <>
               <div className="app__note-list" style={{ width: layout.noteListWidth }}>
-                <NoteList entries={visibleEntries} selection={effectiveSelection} selectedNote={activeTab?.entry ?? null} loading={isVaultContentLoading} modifiedFiles={vault.modifiedFiles} getNoteStatus={vault.getNoteStatus} sidebarCollapsed={!sidebarVisible} onSelectNote={notes.handleSelectNote} onReplaceActiveTab={notes.handleReplaceActiveTab} onCreateNote={notes.handleCreateNoteImmediate} onBulkDeletePermanently={deleteActions.handleBulkDeletePermanently} onOpenInNewWindow={handleOpenEntryInNewWindow} onRenameFilename={appSave.handleFilenameRename} onExportPdf={handleExportNotePdfFromList} onRevealFile={fileActions.revealFile} onCopyFilePath={fileActions.copyFilePath} visibleNotesRef={visibleNotesRef} allNotesFileVisibility={allNotesFileVisibility} multiSelectionCommandRef={multiSelectionCommandRef} locale={appLocale} />
+                <NoteList vaultPath={resolvedPath} entries={visibleEntries} selection={effectiveSelection} selectedNote={activeTab?.entry ?? null} loading={isVaultContentLoading} modifiedFiles={vault.modifiedFiles} getNoteStatus={vault.getNoteStatus} sidebarCollapsed={!sidebarVisible} onSelectNote={notes.handleSelectNote} onReplaceActiveTab={notes.handleReplaceActiveTab} onCreateNote={notes.handleCreateNoteImmediate} onBulkDeletePermanently={deleteActions.handleBulkDeletePermanently} onRenameFilename={appSave.handleFilenameRename} onExportPdf={handleExportNotePdfFromList} onRevealFile={fileActions.revealFile} onCopyFilePath={fileActions.copyFilePath} visibleNotesRef={visibleNotesRef} allNotesFileVisibility={allNotesFileVisibility} multiSelectionCommandRef={multiSelectionCommandRef} locale={appLocale} />
               </div>
               <ResizeHandle onResize={layout.handleNoteListResize} />
             </>
@@ -1044,7 +945,7 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
         </div>
         <UpdateBanner status={updateStatus} actions={updateActions} locale={appLocale} />
         <RenameDetectedBanner renames={detectedRenames} onUpdate={handleUpdateWikilinks} onDismiss={handleDismissRenames} />
-        <StatusBar noteCount={visibleEntries.length} vaultPath={resolvedPath} defaultWorkspacePath={defaultWorkspacePath} vaults={vaultSwitcher.allVaults} multiWorkspaceEnabled={multiWorkspaceEnabled} onSwitchVault={vaultSwitcher.switchVault} onSetDefaultWorkspace={vaultSwitcher.setDefaultWorkspace} onOpenSettings={handleOpenSettings} onOpenVaultSettings={handleOpenVaultSettings} onOpenFeedback={openFeedback} onOpenDocs={openDocs} onOpenLocalFolder={vaultSwitcher.handleOpenLocalFolder} onCreateEmptyVault={vaultSwitcher.handleCreateEmptyVault} onCloneGettingStarted={cloneGettingStartedVault} isOffline={networkStatus.isOffline} isVaultReloading={vault.isReloading || isVaultContentLoading} zoomLevel={zoom.zoomLevel} themeMode={documentThemeMode} onZoomReset={zoom.zoomReset} onToggleThemeMode={settingsLoaded ? handleToggleThemeMode : undefined} buildNumber={buildNumber} onCheckForUpdates={handleCheckForUpdates} onRemoveVault={vaultSwitcher.removeVault} onReorderVaults={vaultSwitcher.reorderVaults} onUpdateWorkspaceIdentity={vaultSwitcher.updateWorkspaceIdentity} locale={appLocale} />
+        <StatusBar noteCount={visibleEntries.length} vaultPath={resolvedPath} defaultWorkspacePath={defaultWorkspacePath} vaults={vaultSwitcher.allVaults} multiWorkspaceEnabled={multiWorkspaceEnabled} onSwitchVault={vaultSwitcher.switchVault} onSetDefaultWorkspace={vaultSwitcher.setDefaultWorkspace} onOpenSettings={handleOpenSettings} onOpenVaultSettings={handleOpenProjectSettings} onOpenFeedback={openFeedback} onOpenDocs={openDocs} onOpenLocalFolder={vaultSwitcher.handleOpenLocalFolder} onCreateEmptyVault={vaultSwitcher.handleCreateEmptyVault} onCloneGettingStarted={cloneGettingStartedVault} isOffline={networkStatus.isOffline} isVaultReloading={vault.isReloading || isVaultContentLoading} zoomLevel={zoom.zoomLevel} themeMode={documentThemeMode} onZoomReset={zoom.zoomReset} onToggleThemeMode={settingsLoaded ? handleToggleThemeMode : undefined} buildNumber={buildNumber} onCheckForUpdates={handleCheckForUpdates} onRemoveVault={vaultSwitcher.removeVault} onReorderVaults={vaultSwitcher.reorderVaults} onUpdateWorkspaceIdentity={vaultSwitcher.updateWorkspaceIdentity} locale={appLocale} />
         <DeleteProgressNotice count={deleteActions.pendingDeleteCount} />
         <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />
         <QuickOpenPalette open={dialogs.showQuickOpen} entries={visibleEntries} isLoading={vault.isLoading} onSelect={notes.handleSelectNote} onCreateNote={(title) => notes.handleCreateNote(title, 'quick_open')} onClose={dialogs.closeQuickOpen} locale={appLocale} />
@@ -1071,7 +972,7 @@ function MainApp({ noteWindowParams }: { noteWindowParams: NoteWindowParams | nu
           onClose={noteRetargetingUi.closeDialog}
           onSelectFolder={noteRetargetingUi.selectFolder}
         />
-        <SettingsPanel open={dialogs.showSettings} initialSectionId={settingsInitialSectionId} settings={settings} locale={appLocale} systemLocale={systemLocale} vaults={vaultSwitcher.allVaults} defaultWorkspacePath={vaultSwitcher.defaultWorkspacePath} onSetDefaultWorkspace={vaultSwitcher.setDefaultWorkspace} onRemoveVault={vaultSwitcher.removeVault} onReorderVaults={vaultSwitcher.reorderVaults} onUpdateWorkspaceIdentity={vaultSwitcher.updateWorkspaceIdentity} onSave={saveSettings} onClose={dialogs.closeSettings} />
+        <SettingsPanel open={dialogs.showSettings} initialSectionId={settingsInitialSectionId} settings={settings} locale={appLocale} systemLocale={systemLocale} projects={vaultSwitcher.allVaults} defaultProjectPath={vaultSwitcher.defaultWorkspacePath} onSetDefaultProject={vaultSwitcher.setDefaultWorkspace} onRemoveProject={vaultSwitcher.removeVault} onReorderProjects={vaultSwitcher.reorderVaults} onUpdateProjectIdentity={vaultSwitcher.updateWorkspaceIdentity} onSave={saveSettings} onClose={dialogs.closeSettings} />
         <FeedbackDialog open={showFeedback} onClose={closeFeedback} locale={appLocale} />
         {deleteActions.confirmDelete && (
           <ConfirmDeleteDialog

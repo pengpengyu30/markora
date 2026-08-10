@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { invoke } from '@tauri-apps/api/core'
 import { isTauri, mockInvoke } from '../mock-tauri'
 import type { VaultEntry } from '../types'
 import {
@@ -429,92 +428,6 @@ describe('useTabManagement (single-note model)', () => {
       })
     })
 
-    it('uses the note-window vault path when Tauri reloads the selected note', async () => {
-      vi.mocked(isTauri).mockReturnValue(true)
-      vi.mocked(invoke).mockResolvedValue('# Window content')
-      window.history.replaceState(
-        {},
-        '',
-        '/?window=note&path=%2Fvault%2Fnote%2Ftest.md&vault=%2Fvault&title=Test+Note',
-      )
-
-      const { result } = renderHook(() => useTabManagement())
-      await selectNote(result, { path: '/vault/note/test.md', title: 'Test Note' })
-
-      expect(vi.mocked(invoke)).toHaveBeenCalledWith('get_note_content', {
-        path: '/vault/note/test.md',
-        vaultPath: '/vault',
-      })
-      expect(result.current.tabs[0].content).toBe('# Window content')
-    })
-
-    it('uses the entry workspace vault path when Tauri opens a mounted workspace note', async () => {
-      vi.mocked(isTauri).mockReturnValue(true)
-      vi.mocked(invoke).mockResolvedValue('# Workspace content')
-
-      const { result } = renderHook(() => useTabManagement())
-      await selectNote(result, {
-        path: '/team/tolaria-app.md',
-        title: 'Tolaria',
-        workspace: {
-          id: 'team',
-          label: 'Team',
-          alias: 'team',
-          path: '/team',
-          shortLabel: 'TE',
-          color: null,
-          icon: null,
-          mounted: true,
-          available: true,
-          defaultForNewNotes: false,
-        },
-      })
-
-      expect(vi.mocked(invoke)).toHaveBeenCalledWith('get_note_content', {
-        path: '/team/tolaria-app.md',
-        vaultPath: '/team',
-      })
-      expect(result.current.tabs[0].content).toBe('# Workspace content')
-    })
-
-    it('does not reuse cached content across workspaces with the same relative note path', async () => {
-      vi.mocked(isTauri).mockReturnValue(true)
-      vi.mocked(invoke).mockImplementation((_cmd: string, args?: { vaultPath?: string }) => (
-        Promise.resolve(args?.vaultPath === '/team' ? '# Team content' : '# Personal content')
-      ))
-
-      const personalWorkspace = {
-        id: 'personal',
-        label: 'Personal',
-        alias: 'personal',
-        path: '/personal',
-        shortLabel: 'PE',
-        color: null,
-        icon: null,
-        mounted: true,
-        available: true,
-        defaultForNewNotes: false,
-      }
-      const teamWorkspace = { ...personalWorkspace, id: 'team', label: 'Team', alias: 'team', path: '/team', shortLabel: 'TE' }
-      prefetchNoteContent(makeEntry({ path: 'shared.md', workspace: personalWorkspace }))
-      await vi.waitFor(() => expect(vi.mocked(invoke)).toHaveBeenCalledWith('get_note_content', {
-        path: 'shared.md',
-        vaultPath: '/personal',
-      }))
-
-      const { result } = renderHook(() => useTabManagement())
-      await selectNote(result, {
-        path: 'shared.md',
-        title: 'Shared',
-        workspace: teamWorkspace,
-      })
-
-      expect(vi.mocked(invoke)).toHaveBeenCalledWith('get_note_content', {
-        path: 'shared.md',
-        vaultPath: '/team',
-      })
-      expect(result.current.tabs[0].content).toBe('# Team content')
-    })
   })
 
   describe('handleReplaceActiveTab', () => {

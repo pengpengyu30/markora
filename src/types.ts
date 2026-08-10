@@ -11,6 +11,7 @@ export interface VaultEntry {
   path: string
   filename: string
   title: string
+  /** Project identity used when more than one registered Project is mounted. */
   workspace?: WorkspaceIdentity
   isA: string | null
   aliases: string[]
@@ -138,6 +139,7 @@ export interface Settings {
   all_notes_show_pdfs?: boolean | null
   all_notes_show_images?: boolean | null
   all_notes_show_unsupported?: boolean | null
+  /** When true, all mounted Projects are loaded into one note graph. */
   multi_workspace_enabled?: boolean | null
 }
 
@@ -278,13 +280,16 @@ export interface FolderNode {
   name: string
   path: string
   rootPath?: string
+  /** Optional Project accent metadata for root rows in the unified sidebar. */
+  color?: string | null
+  icon?: string | null
   children: FolderNode[]
 }
 
 /**
  * Context for a folder-create request: where the new folder should land.
  * `path` is vault-relative (`''` means vault root); `rootPath` identifies the
- * target vault when multiple workspaces are mounted.
+ * target vault when a folder path is resolved from a vault root.
  */
 export interface FolderCreationParent {
   path: string

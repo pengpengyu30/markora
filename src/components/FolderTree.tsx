@@ -205,11 +205,12 @@ export const FolderTree = memo(function FolderTree(options: FolderTreeProps) {
       const { displayedExpanded, displayedFolders } = useDisplayedFolders(folders, expanded, vaultRootPath, locale)
 
       if (displayedFolders.length === 0 && !isCreating) return null
+      const hasProjectRoots = displayedFolders.some((folder) => folder.path === '' && !!folder.rootPath)
 
       return (
         <div className="border-b border-border" style={{ padding: '0 6px' }}>
           <SidebarGroupHeader
-            label={translate(locale, 'sidebar.group.folders')}
+            label={translate(locale, hasProjectRoots ? 'sidebar.group.projects' : 'sidebar.group.folders')}
             collapsed={sectionCollapsed}
             onToggle={handleToggleSection}
           >

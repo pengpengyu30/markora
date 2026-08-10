@@ -17,7 +17,6 @@ function makeEntry(path = '/test.md') {
 function makeActions() {
   return {
     onReplace: vi.fn(),
-    onOpenInNewWindow: vi.fn(),
     multiSelect: {
       selectRange: vi.fn(),
       clear: vi.fn(),
@@ -55,21 +54,6 @@ describe('routeNoteClick', () => {
     expect(actions.multiSelect.selectRange).toHaveBeenCalledWith(entry.path)
   })
 
-  it('Cmd+Shift+click opens in new window', () => {
-    const entry = makeEntry()
-    const actions = makeActions()
-    routeNoteClick(entry, makeMouseEvent({ metaKey: true, shiftKey: true }), actions)
-    expect(actions.onOpenInNewWindow).toHaveBeenCalledWith(entry)
-    expect(actions.onReplace).not.toHaveBeenCalled()
-  })
-
-  it('Cmd+Shift+click is a no-op when handler is undefined', () => {
-    const entry = makeEntry()
-    const actions = makeActions()
-    actions.onOpenInNewWindow = undefined
-    routeNoteClick(entry, makeMouseEvent({ metaKey: true, shiftKey: true }), actions)
-    expect(actions.onReplace).not.toHaveBeenCalled()
-  })
 })
 
 describe('createNoteStatusResolver', () => {

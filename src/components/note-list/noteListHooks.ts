@@ -227,7 +227,6 @@ interface UseNoteListInteractionsParams {
   searchVisible: boolean
   toggleSearch: () => void
   onReplaceActiveTab: (entry: VaultEntry) => void
-  onOpenInNewWindow?: (entry: VaultEntry) => void
   onCreateNote: (options?: ImmediateCreateOptions) => void
 }
 
@@ -289,25 +288,21 @@ function useKeyboardInteractionState(
 
 function useNoteClickHandler({
   onReplaceActiveTab,
-  onOpenInNewWindow,
   multiSelect,
 }: {
   onReplaceActiveTab: (entry: VaultEntry) => void
-  onOpenInNewWindow?: (entry: VaultEntry) => void
   multiSelect: MultiSelectState
 }) {
   return useCallback(
     (entry: VaultEntry, event: React.MouseEvent) => {
     routeNoteClick(entry, event, {
       onReplace: onReplaceActiveTab,
-      onOpenInNewWindow,
       multiSelect,
     })
 
     },
     [
     multiSelect,
-    onOpenInNewWindow,
     onReplaceActiveTab,
     ],
   )
@@ -322,7 +317,7 @@ function useListKeyDownHandler({
 }
 
 export function useNoteListInteractions(options: UseNoteListInteractionsParams) {
-  const { searched, selectedNotePath, selection, searchVisible, toggleSearch, onReplaceActiveTab, onOpenInNewWindow, onCreateNote } = options
+  const { searched, selectedNotePath, selection, searchVisible, toggleSearch, onReplaceActiveTab, onCreateNote } = options
   const { multiSelect, noteListKeyboard } = useKeyboardInteractionState({
     searched,
     selectedNotePath,
@@ -338,7 +333,6 @@ export function useNoteListInteractions(options: UseNoteListInteractionsParams) 
 
   const handleClickNote = useNoteClickHandler({
     onReplaceActiveTab,
-    onOpenInNewWindow,
     multiSelect,
   })
 

@@ -45,7 +45,6 @@ function makeHandlers(): MenuEventHandlers {
     onRestoreGettingStarted: vi.fn(),
     onReloadVault: vi.fn(),
     onRepairVault: vi.fn(),
-    onOpenInNewWindow: vi.fn(),
     activeTabPathRef: { current: '/vault/test.md' } as React.MutableRefObject<string | null>,
     multiSelectionCommandRef: { current: null },
     activeTabPath: '/vault/test.md',
@@ -282,13 +281,6 @@ describe('dispatchMenuEvent', () => {
     const h = makeHandlers()
     dispatchMenuEvent('vault-repair', h)
     expect(h.onRepairVault).toHaveBeenCalled()
-  })
-
-  // Note: open in new window
-  it('note-open-in-new-window triggers open in new window', () => {
-    const h = makeHandlers()
-    dispatchMenuEvent('note-open-in-new-window', h)
-    expect(h.onOpenInNewWindow).toHaveBeenCalled()
   })
 
   // Edge cases

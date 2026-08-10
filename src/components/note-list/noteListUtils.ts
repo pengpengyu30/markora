@@ -32,16 +32,7 @@ export function filterByQuery<T extends { title?: unknown }>(items: T[], query: 
 
 export interface ClickActions {
   onReplace: (entry: VaultEntry) => void
-  onOpenInNewWindow?: (entry: VaultEntry) => void
   multiSelect: { selectRange: (path: string) => void; clear: () => void; setAnchor: (path: string) => void }
-}
-
-function usesCommandModifier(event: Pick<React.MouseEvent, 'metaKey' | 'ctrlKey'>): boolean {
-  return event.metaKey || event.ctrlKey
-}
-
-function isOpenInNewWindowClick(event: Pick<React.MouseEvent, 'metaKey' | 'ctrlKey' | 'shiftKey'>): boolean {
-  return usesCommandModifier(event) && event.shiftKey
 }
 
 function isRangeSelectionClick(event: Pick<React.MouseEvent, 'shiftKey'>): boolean {
@@ -49,11 +40,6 @@ function isRangeSelectionClick(event: Pick<React.MouseEvent, 'shiftKey'>): boole
 }
 
 export function routeNoteClick(entry: VaultEntry, e: React.MouseEvent, actions: ClickActions) {
-  if (isOpenInNewWindowClick(e)) {
-    actions.onOpenInNewWindow?.(entry)
-    return
-  }
-
   if (isRangeSelectionClick(e)) {
     actions.multiSelect.selectRange(entry.path)
     return

@@ -18,7 +18,6 @@ import {
   tauriCall,
 } from './vaultLoaderCommands'
 import { normalizeVaultEntry } from '../utils/vaultMetadataNormalization'
-import { isNoteWindow } from '../utils/windowMode'
 import {
   recordActiveVaultSnapshot,
   recordActiveVaultUsable,
@@ -1162,7 +1161,7 @@ export function useVaultLoader(
   useVaultLoaderStartup({
     defaultWorkspacePath,
     folderVaults,
-    reloadIfEmpty: !isNoteWindow(),
+    reloadIfEmpty: true,
     setInitialFolders,
     state,
     unavailableVault,

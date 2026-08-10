@@ -92,6 +92,7 @@ function useBulkActions(
 
 interface UseNoteListContentParams {
   entries: VaultEntry[]
+  vaultPath?: string
   selection: SidebarSelection
   selectedNotePath: string | null
   visibleNotesRef?: React.MutableRefObject<VaultEntry[]>
@@ -102,14 +103,16 @@ function useFilteredNoteListSearch({
   entries,
   sortedEntries,
   query,
+  vaultPath,
   dateDisplayFormat,
 }: {
   entries: VaultEntry[]
   sortedEntries: VaultEntry[]
   query: string
+  vaultPath?: string
   dateDisplayFormat: ReturnType<typeof useDateDisplayFormat>
 }) {
-  const fullTextSearch = useNoteListFullTextSearch(entries, query)
+  const fullTextSearch = useNoteListFullTextSearch(entries, query, vaultPath)
   const searchContext = useMemo(
     () => ({
     allEntries: entries,
@@ -129,7 +132,7 @@ function useFilteredNoteListSearch({
 }
 
 function useNoteListContent(options: UseNoteListContentParams) {
-  const { entries, selection, selectedNotePath, visibleNotesRef, allNotesFileVisibility } = options
+  const { entries, vaultPath, selection, selectedNotePath, visibleNotesRef, allNotesFileVisibility } = options
   const dateDisplayFormat = useDateDisplayFormat()
   const { listSort, listDirection, handleSortChange, sortPrefs } = useNoteListSort()
   const {
@@ -156,6 +159,7 @@ function useNoteListContent(options: UseNoteListContentParams) {
         entries,
         sortedEntries,
         query,
+        vaultPath,
         dateDisplayFormat,
       })
       useVisibleNotesSync({
@@ -188,7 +192,6 @@ interface UseNoteListInteractionStateParams {
   searchVisible: boolean
   toggleSearch: () => void
   onReplaceActiveTab: (entry: VaultEntry) => void
-  onOpenInNewWindow?: (entry: VaultEntry) => void
   onRenameFilename?: (path: string, newFilenameStem: string) => void
   onExportPdf?: (entry: VaultEntry) => void
   onRevealFile?: (path: string) => void
@@ -199,10 +202,9 @@ interface UseNoteListInteractionStateParams {
 }
 
 function useNoteListInteractionState(options: UseNoteListInteractionStateParams) {
-  const { searched, selectedNotePath, selection, searchVisible, toggleSearch, onReplaceActiveTab, onOpenInNewWindow, onRenameFilename, onExportPdf, onRevealFile, onCopyFilePath, onCreateNote, onBulkDeletePermanently, locale } = options
+  const { searched, selectedNotePath, selection, searchVisible, toggleSearch, onReplaceActiveTab, onRenameFilename, onExportPdf, onRevealFile, onCopyFilePath, onCreateNote, onBulkDeletePermanently, locale } = options
   const noteListContextMenu = useNoteListContextMenu({
     locale,
-    onOpenInNewWindow,
     onRenameFilename,
     onExportPdf,
     onDeletePaths: onBulkDeletePermanently,
@@ -222,7 +224,6 @@ function useNoteListInteractionState(options: UseNoteListInteractionStateParams)
         searchVisible,
         toggleSearch,
         onReplaceActiveTab,
-        onOpenInNewWindow,
         onCreateNote,
       })
       const { handleBulkDeletePermanently } = useBulkActions(
@@ -242,7 +243,6 @@ function useNoteListInteractionState(options: UseNoteListInteractionStateParams)
     }
 
     interface UseRenderItemParams {
-      entries: VaultEntry[]
       selectedNotePath: string | null
       resolvedGetNoteStatus: (path: string) => NoteStatus
       handleClickNote: (entry: VaultEntry, event: React.MouseEvent) => void
@@ -253,7 +253,6 @@ function useNoteListInteractionState(options: UseNoteListInteractionStateParams)
 
     function useRenderItem(functionOptions: UseRenderItemParams) {
       const {
-      entries,
       selectedNotePath,
       resolvedGetNoteStatus,
       handleClickNote,
@@ -271,14 +270,12 @@ function useNoteListInteractionState(options: UseNoteListInteractionStateParams)
         isMultiSelected={multiSelect.selectedPaths.has(entry.path)}
         isHighlighted={entry.path === noteListKeyboard.highlightedPath}
         noteStatus={resolvedGetNoteStatus(entry.path)}
-        allEntries={entries}
         onClickNote={handleClickNote}
         onPrefetch={prefetchNoteContent}
         onContextMenu={noteListContextMenu}
       />
     ),
     [
-    entries,
     handleClickNote,
     multiSelect.selectedPaths,
     noteListKeyboard.highlightedPath,
@@ -291,6 +288,7 @@ function useNoteListInteractionState(options: UseNoteListInteractionStateParams)
 
 export interface NoteListProps {
   entries: VaultEntry[]
+  vaultPath?: string
   selection: SidebarSelection
   selectedNote: VaultEntry | null
   loading?: boolean
@@ -301,7 +299,6 @@ export interface NoteListProps {
   onReplaceActiveTab: (entry: VaultEntry) => void
   onCreateNote: (options?: ImmediateCreateOptions) => void
   onBulkDeletePermanently?: (paths: string[]) => void
-  onOpenInNewWindow?: (entry: VaultEntry) => void
   onRenameFilename?: (path: string, newFilenameStem: string) => void
   onExportPdf?: (entry: VaultEntry) => void
   onRevealFile?: (path: string) => void
@@ -361,7 +358,7 @@ function buildNoteListLayoutModel(params: {
 }
 
 export function useNoteListModel(options: NoteListProps) {
-  const { entries, selection, selectedNote, loading = false, modifiedFiles, getNoteStatus, sidebarCollapsed, onReplaceActiveTab, onCreateNote, onBulkDeletePermanently, onOpenInNewWindow, onRenameFilename, onExportPdf, onRevealFile, onCopyFilePath, visibleNotesRef, allNotesFileVisibility, locale = 'en' } = options
+  const { entries, vaultPath, selection, selectedNote, loading = false, modifiedFiles, getNoteStatus, sidebarCollapsed, onReplaceActiveTab, onCreateNote, onBulkDeletePermanently, onRenameFilename, onExportPdf, onRevealFile, onCopyFilePath, visibleNotesRef, allNotesFileVisibility, locale = 'en' } = options
   const selectedNotePath = selectedNote?.path ?? null
   const { resolvedGetNoteStatus } = useModifiedFilesState(
     modifiedFiles,
@@ -369,6 +366,7 @@ export function useNoteListModel(options: NoteListProps) {
   )
   const content = useNoteListContent({
     entries,
+    vaultPath,
     selection,
     selectedNotePath,
     visibleNotesRef,
@@ -381,7 +379,6 @@ export function useNoteListModel(options: NoteListProps) {
     searchVisible: content.searchVisible,
     toggleSearch: content.toggleSearch,
     onReplaceActiveTab,
-    onOpenInNewWindow,
     onRenameFilename,
     onExportPdf,
     onRevealFile,
@@ -391,7 +388,6 @@ export function useNoteListModel(options: NoteListProps) {
     locale,
   })
   const renderItem = useRenderItem({
-    entries,
     selectedNotePath,
     resolvedGetNoteStatus,
     handleClickNote: interaction.handleClickNote,

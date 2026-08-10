@@ -52,10 +52,6 @@ impl VaultBoundary {
         })
     }
 
-    pub(crate) fn requested_root(&self) -> &Path {
-        &self.requested_root
-    }
-
     fn requested_root_str(&self) -> String {
         path_to_string(&self.requested_root)
     }

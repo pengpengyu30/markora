@@ -31,7 +31,6 @@ export type KeyboardActions = Pick<
   | 'onToggleTableOfContents'
   | 'onToggleRawEditor'
   | 'onToggleBacklinks'
-  | 'onOpenInNewWindow'
   | 'activeTabPathRef'
   | 'multiSelectionCommandRef'
 > & {

@@ -1,7 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  ArrowSquareOut,
   ClipboardText,
   FilePdf,
   FolderOpen,
@@ -35,7 +34,6 @@ interface NoteListContextMenuNodeProps {
   ctxMenu: NoteListContextMenuState | null
   ctxMenuRef: RefObject<HTMLDivElement | null>
   locale: AppLocale
-  onOpenInNewWindow?: (entry: VaultEntry) => void
   onRequestRename?: (entry: VaultEntry) => void
   onDeletePaths?: (paths: string[]) => void
   onExportPdf?: (entry: VaultEntry) => void
@@ -47,28 +45,12 @@ interface NoteListContextMenuNodeProps {
 type BuildContextMenuItemsParams = Pick<
   NoteListContextMenuNodeProps,
   | 'locale'
-  | 'onOpenInNewWindow'
   | 'onRequestRename'
   | 'onDeletePaths'
   | 'onExportPdf'
   | 'onRevealFile'
   | 'onCopyFilePath'
 >
-
-function openWindowItem(
-  entry: VaultEntry,
-  locale: AppLocale,
-  onOpenInNewWindow: ((entry: VaultEntry) => void) | undefined,
-  selectAction: SelectContextAction,
-) {
-  if (!onOpenInNewWindow) return []
-  return [{
-    icon: ArrowSquareOut,
-    label: translate(locale, 'command.note.openNewWindow'),
-    onSelect: () => { selectAction('open_new_window', () => { onOpenInNewWindow(entry); }); },
-    shortcut: getAppCommandShortcutDisplay(APP_COMMAND_IDS.noteOpenInNewWindow),
-  }]
-}
 
 function renameItem(
   entry: VaultEntry,
@@ -149,7 +131,6 @@ function buildContextMenuItems(
   selectAction: SelectContextAction,
 ): NoteListContextMenuItem[] {
   return [
-    ...openWindowItem(entry, props.locale, props.onOpenInNewWindow, selectAction),
     ...renameItem(entry, props.locale, props.onRequestRename, selectAction),
     ...revealFileItem(entry, props.locale, props.onRevealFile, selectAction),
     ...copyFilePathItem(entry, props.locale, props.onCopyFilePath, selectAction),
@@ -179,7 +160,6 @@ export function NoteListContextMenuNode(props: NoteListContextMenuNodeProps) {
     ctxMenu,
     ctxMenuRef,
     locale,
-    onOpenInNewWindow,
     onRequestRename,
     onDeletePaths,
     onExportPdf,
@@ -198,7 +178,6 @@ export function NoteListContextMenuNode(props: NoteListContextMenuNodeProps) {
   }
   const items = buildContextMenuItems({
     locale,
-    onOpenInNewWindow,
     onRequestRename,
     onDeletePaths,
     onExportPdf,

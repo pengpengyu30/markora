@@ -23,6 +23,9 @@ The owner's actual need is a **simple, Typora-style Markdown notebook** that ret
 | [02-target-state.md](./02-target-state.md) | Target feature boundary: keep/delete lists, final UI shape, and the final settings panel |
 | [03-phase-plan.md](./03-phase-plan.md) | P0–P8 phase plan: scope, affected modules, risks, and validation gates for each phase |
 | [04-invisible-git.md](./04-invisible-git.md) | Dedicated invisible-Git design, including the three-part rule for directories that are already Git repositories |
+| [05-m5-project-addendum.md](./05-m5-project-addendum.md) | **M5 implementation addendum**: single-window runtime, the restored multi-Project model, persistence rules, search scope, and handoff notes for later agents |
+
+> **Current implementation note (M5):** The original target-state text still contains the earlier “one vault at a time” and “All Notes in the sidebar” wording. The user-confirmed implementation keeps the multi-vault capability as a visible/configurable **Project** model and removes the All Notes sidebar entry. Read [05-m5-project-addendum.md](./05-m5-project-addendum.md) before continuing M5+ work; it is the effective implementation boundary for this area.
 
 ## Guardrails for the implementation agent (must follow)
 
@@ -49,6 +52,6 @@ After the refactor is complete:
 
 - The `pnpm build` output and `pnpm tauri build` installer are substantially smaller than the baseline recorded in P0.
 - The startup path no longer loads AI, Sheet, tldraw, or telemetry code.
-- The final sidebar is: folder tree → Tags → All Notes → search box.
+- The target-state sidebar is folder tree → Tags → All Notes → search box; the current M5 implementation overlay intentionally removes the All Notes sidebar entry and adds visible/configurable Project roots (see `05-m5-project-addendum.md`).
 - The settings panel contains only five items (see `02-target-state.md`).
 - All tests are green, and smoke tests cover the core flows.

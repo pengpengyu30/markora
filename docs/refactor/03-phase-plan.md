@@ -126,16 +126,18 @@ pnpm playwright:smoke
 
 **Goal**: Remove standalone note windows and Workspaces (Q8).
 
+> **M5 implementation addendum:** Read [05-m5-project-addendum.md](./05-m5-project-addendum.md) before changing this phase. Remove the legacy standalone Workspace/user-facing management concept, but retain the owner-approved Project list, Project settings, multi-Project loading, and compatibility helpers described there. The representative deletion list below must not be applied blindly to current Project modules whose filenames still contain `Workspace`.
+
 **Delete** (representative paths):
 - Note windows: `useNoteWindowLifecycle`, the window-specific portion of `useEditorContentPathSignal`, `AiWorkspaceWindowApp` (already removed in P1), window registration/lifecycle code on the Rust side (`window_state.rs` note-window portion and mechanisms related to ADR-0031/0118/0123/0124/0165), the `openNewWindow` command, and deep-link paths to windows (deep links are removed as a whole in P6).
-- Workspaces: `WorkspaceSelector`, `WorkspaceSettingsSection`, `WorkspaceSettingsRows`, `WorkspaceMoveButtons`, `WorkspaceInitialsBadge`, `useWorkspaceGraphState`, `useWorkspaceIdentityActions`, `workspace_colors.rs`, mount/unified-graph logic (ADR-0114), `workspaceProgressiveLoader`, and the Workspaces settings page.
+- Legacy Workspaces: old `WorkspaceSelector`, old `WorkspaceSettingsSection`, old `WorkspaceSettingsRows`, old `WorkspaceMoveButtons`, old `WorkspaceInitialsBadge`, obsolete workspace-only settings/UI, and any standalone workspace-management page. Do **not** delete the current Project implementations (`ProjectSettings*`, `ProjectMoveButtons`, `useWorkspaceGraphState`, `useWorkspaceIdentityActions`, `workspaceProgressiveLoader`) merely because their compatibility names contain `Workspace`; their retained scope is defined in the M5 addendum.
 - Cross-window persistence: delete `crossWindowPersistedStore` if it has no other consumers.
 
 **Keep**: Multi-vault switching (`useVaultSwitcher` and the vault portion of the status-bar menu), main-window state restoration, and multiple tabs.
 
 **Risk**: Vault watchers used to be split by window (ADR-0165). Consolidate them into one watcher for the single main window. Collapse the `App.tsx` startup branches (main window vs. note window vs. AI window) into one entry point.
 
-**Validation**: Gates plus smoke tests.
+**Validation**: Gates plus smoke tests. Also verify multiple Project roots can be displayed and configured, the Settings switch can opt into single-Project mode, Project settings survive restart, and the left sidebar has no All Notes entry.
 
 ---
 

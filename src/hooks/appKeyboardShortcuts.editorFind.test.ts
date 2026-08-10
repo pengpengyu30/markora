@@ -12,7 +12,6 @@ function makeActions(): KeyboardActions {
     onFindInNote: vi.fn(),
     onGoBack: vi.fn(),
     onGoForward: vi.fn(),
-    onOpenInNewWindow: vi.fn(),
     onOpenSettings: vi.fn(),
     onPastePlainText: vi.fn(),
     onQuickOpen: vi.fn(),

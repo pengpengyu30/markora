@@ -1,6 +1,7 @@
-import { Cube, Monitor, Moon, Sun, X } from '@phosphor-icons/react'
+import { Monitor, Moon, Sun, X } from '@phosphor-icons/react'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Settings } from '../types'
+import type { VaultOption } from './status-bar/types'
 import {
   APP_LOCALES,
   SYSTEM_UI_LANGUAGE,
@@ -23,6 +24,7 @@ import { shouldHideGitignoredFiles } from '../lib/gitignoredVisibility'
 import { areAutomaticUpdateChecksEnabled } from '../lib/automaticUpdateChecks'
 import { trackAllNotesVisibilityChanged } from '../lib/productAnalytics'
 import { PrivacySettingsSection } from './PrivacySettingsSection'
+import { ProjectSettingsSection } from './ProjectSettingsSection'
 import { SettingsBodyNav } from './SettingsBodyNav'
 import {
   SectionHeading,
@@ -34,7 +36,6 @@ import {
 } from './SettingsControls'
 import { SettingsFooter } from './SettingsFooter'
 import { VaultContentSettingsSection } from './VaultContentSettingsSection'
-import { WorkspaceSettingsSection } from './WorkspaceSettingsSection'
 import {
   resolveAllNotesFileVisibility,
   settingsWithAllNotesFileVisibility,
@@ -44,7 +45,6 @@ import { DEFAULT_NOTE_WIDTH_MODE, normalizeNoteWidthMode } from '../utils/noteWi
 import { DEFAULT_DATE_DISPLAY_FORMAT, normalizeDateDisplayFormat, type DateDisplayFormat } from '../utils/dateDisplay'
 import { Button } from './ui/button'
 import type { NoteWidthMode } from '../types'
-import type { VaultOption } from './status-bar/types'
 import { SETTINGS_SECTION_IDS } from './settingsSectionIds'
 import { trackSettingsPreferenceChanges, trackTelemetryConsentChange } from './settingsPreferenceTracking'
 import { useSettingsPanelAutofocus, useSettingsPanelFocusTrap } from './useSettingsPanelFocus'
@@ -57,13 +57,13 @@ interface SettingsPanelProps {
   locale?: AppLocale
   systemLocale?: AppLocale
   onSave: (settings: Settings) => void
-  vaults?: VaultOption[]
-  defaultWorkspacePath?: string | null
-  onRemoveVault?: (path: string) => void
-  onReorderVaults?: (orderedPaths: string[]) => void
-  onSetDefaultWorkspace?: (path: string) => void
-  onUpdateWorkspaceIdentity?: (path: string, patch: Partial<VaultOption>) => void
   onClose: () => void
+  projects?: VaultOption[]
+  defaultProjectPath?: string | null
+  onSetDefaultProject?: (path: string) => void
+  onRemoveProject?: (path: string) => void
+  onReorderProjects?: (orderedPaths: string[]) => void
+  onUpdateProjectIdentity?: (path: string, patch: Partial<VaultOption>) => void
 }
 
 interface SettingsDraft {
@@ -76,9 +76,9 @@ interface SettingsDraft {
   initialH1AutoRename: boolean
   hideGitignoredFiles: boolean
   allNotesFileVisibility: AllNotesFileVisibility
-  multiWorkspaceEnabled: boolean
   crashReporting: boolean
   analytics: boolean
+  multiProjectEnabled: boolean
 }
 
 interface SettingsBodyProps {
@@ -103,18 +103,18 @@ interface SettingsBodyProps {
   setHideGitignoredFiles: (value: boolean) => void
   allNotesFileVisibility: AllNotesFileVisibility
   setAllNotesFileVisibility: (value: AllNotesFileVisibility) => void
-  multiWorkspaceEnabled: boolean
-  setMultiWorkspaceEnabled: (value: boolean) => void
-  vaults: VaultOption[]
-  defaultWorkspacePath?: string | null
-  onRemoveVault?: (path: string) => void
-  onReorderVaults?: (orderedPaths: string[]) => void
-  onSetDefaultWorkspace?: (path: string) => void
-  onUpdateWorkspaceIdentity?: (path: string, patch: Partial<VaultOption>) => void
   crashReporting: boolean
   setCrashReporting: (value: boolean) => void
   analytics: boolean
   setAnalytics: (value: boolean) => void
+  multiProjectEnabled: boolean
+  setMultiProjectEnabled: (value: boolean) => void
+  projects: VaultOption[]
+  defaultProjectPath?: string | null
+  onSetDefaultProject?: (path: string) => void
+  onRemoveProject?: (path: string) => void
+  onReorderProjects?: (orderedPaths: string[]) => void
+  onUpdateProjectIdentity?: (path: string, patch: Partial<VaultOption>) => void
 }
 
 type Translate = ReturnType<typeof createTranslator>
@@ -134,9 +134,9 @@ function createSettingsDraft(settings: Settings): SettingsDraft {
     initialH1AutoRename: settings.initial_h1_auto_rename_enabled ?? true,
     hideGitignoredFiles: shouldHideGitignoredFiles(settings),
     allNotesFileVisibility: resolveAllNotesFileVisibility(settings),
-    multiWorkspaceEnabled: settings.multi_workspace_enabled === true,
     crashReporting: settings.crash_reporting_enabled ?? false,
     analytics: settings.analytics_enabled ?? false,
+    multiProjectEnabled: settings.multi_workspace_enabled !== false,
   }
 }
 
@@ -174,7 +174,7 @@ function buildSettingsFromDraft(settings: Settings, draft: SettingsDraft): Setti
     note_width_mode: draft.defaultNoteWidth,
     initial_h1_auto_rename_enabled: draft.initialH1AutoRename,
     hide_gitignored_files: draft.hideGitignoredFiles,
-    multi_workspace_enabled: draft.multiWorkspaceEnabled,
+    multi_workspace_enabled: draft.multiProjectEnabled,
   }
   return settingsWithAllNotesFileVisibility(nextSettings, draft.allNotesFileVisibility)
 }
@@ -186,7 +186,21 @@ function applyThemeModeSelection(value: ThemeMode): void {
 }
 
 export function SettingsPanel(options: SettingsPanelProps) {
-  const { open, settings, initialSectionId = null, locale = 'en', systemLocale = locale, onSave, vaults = [], defaultWorkspacePath = null, onRemoveVault, onReorderVaults, onSetDefaultWorkspace, onUpdateWorkspaceIdentity, onClose } = options
+  const {
+    open,
+    settings,
+    initialSectionId = null,
+    locale = 'en',
+    systemLocale = locale,
+    onSave,
+    onClose,
+    projects = [],
+    defaultProjectPath = null,
+    onSetDefaultProject,
+    onRemoveProject,
+    onReorderProjects,
+    onUpdateProjectIdentity,
+  } = options
   if (!open) return null
   const initialDraft = createSettingsDraft(settings)
 
@@ -199,15 +213,13 @@ export function SettingsPanel(options: SettingsPanelProps) {
       locale={locale}
       systemLocale={systemLocale}
       onSave={onSave}
-      vaults={vaults}
-      defaultWorkspacePath={defaultWorkspacePath}
-      {...{
-        onRemoveVault,
-        onReorderVaults,
-        onSetDefaultWorkspace,
-        onUpdateWorkspaceIdentity,
-      }}
       onClose={onClose}
+      projects={projects}
+      defaultProjectPath={defaultProjectPath}
+      onSetDefaultProject={onSetDefaultProject}
+      onRemoveProject={onRemoveProject}
+      onReorderProjects={onReorderProjects}
+      onUpdateProjectIdentity={onUpdateProjectIdentity}
     />
   )
 }
@@ -292,7 +304,20 @@ function useSettingsPanelInteractions(options: {
 }
 
 function SettingsPanelInner(options: SettingsPanelInnerProps) {
-  const { settings, initialDraft, initialSectionId, systemLocale, onSave, vaults, defaultWorkspacePath, onRemoveVault, onReorderVaults, onSetDefaultWorkspace, onUpdateWorkspaceIdentity, onClose } = options
+  const {
+    settings,
+    initialDraft,
+    initialSectionId,
+    systemLocale,
+    onSave,
+    onClose,
+    projects,
+    defaultProjectPath,
+    onSetDefaultProject,
+    onRemoveProject,
+    onReorderProjects,
+    onUpdateProjectIdentity,
+  } = options
   const backdropRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
   const { draft, updateDraft, handleGitignoredVisibilityChange, handleAllNotesFileVisibilityChange, handleThemeModeChange, handleSave } = useSettingsDraftActions({ initialDraft, onClose, onSave, settings })
@@ -325,17 +350,15 @@ function SettingsPanelInner(options: SettingsPanelInnerProps) {
           locale={draftLocale}
           systemLocale={systemLocale}
           updateDraft={updateDraft}
-          vaults={vaults ?? []}
-          defaultWorkspacePath={defaultWorkspacePath}
-          {...{
-            onRemoveVault,
-            onReorderVaults,
-            onSetDefaultWorkspace,
-            onUpdateWorkspaceIdentity,
-          }}
-          setThemeMode={handleThemeModeChange}
-          setHideGitignoredFiles={handleGitignoredVisibilityChange}
-          setAllNotesFileVisibility={handleAllNotesFileVisibilityChange}
+        setThemeMode={handleThemeModeChange}
+        setHideGitignoredFiles={handleGitignoredVisibilityChange}
+        setAllNotesFileVisibility={handleAllNotesFileVisibilityChange}
+        projects={projects ?? []}
+        defaultProjectPath={defaultProjectPath}
+        onSetDefaultProject={onSetDefaultProject}
+        onRemoveProject={onRemoveProject}
+        onReorderProjects={onReorderProjects}
+        onUpdateProjectIdentity={onUpdateProjectIdentity}
         />
         <SettingsFooter onClose={onClose} onSave={handleSave} t={t} />
       </div>
@@ -384,19 +407,34 @@ interface SettingsBodyFromDraftProps {
   locale: AppLocale
   systemLocale: AppLocale
   updateDraft: <Key extends keyof SettingsDraft>(key: Key, value: SettingsDraft[Key]) => void
-  vaults: VaultOption[]
-  defaultWorkspacePath?: string | null
-  onRemoveVault?: (path: string) => void
-  onReorderVaults?: (orderedPaths: string[]) => void
-  onSetDefaultWorkspace?: (path: string) => void
-  onUpdateWorkspaceIdentity?: (path: string, patch: Partial<VaultOption>) => void
   setThemeMode: (value: ThemeMode) => void
   setHideGitignoredFiles: (value: boolean) => void
   setAllNotesFileVisibility: (value: AllNotesFileVisibility) => void
+  projects: VaultOption[]
+  defaultProjectPath?: string | null
+  onSetDefaultProject?: (path: string) => void
+  onRemoveProject?: (path: string) => void
+  onReorderProjects?: (orderedPaths: string[]) => void
+  onUpdateProjectIdentity?: (path: string, patch: Partial<VaultOption>) => void
 }
 
 function SettingsBodyFromDraft(options: SettingsBodyFromDraftProps) {
-  const { t, draft, locale, systemLocale, updateDraft, vaults, defaultWorkspacePath, onRemoveVault, onReorderVaults, onSetDefaultWorkspace, onUpdateWorkspaceIdentity, setThemeMode, setHideGitignoredFiles, setAllNotesFileVisibility } = options
+  const {
+    t,
+    draft,
+    locale,
+    systemLocale,
+    updateDraft,
+    setThemeMode,
+    setHideGitignoredFiles,
+    setAllNotesFileVisibility,
+    projects,
+    defaultProjectPath,
+    onSetDefaultProject,
+    onRemoveProject,
+    onReorderProjects,
+    onUpdateProjectIdentity,
+  } = options
   return (
     <SettingsBody
       t={t}
@@ -420,20 +458,18 @@ function SettingsBodyFromDraft(options: SettingsBodyFromDraftProps) {
       setHideGitignoredFiles={setHideGitignoredFiles}
       allNotesFileVisibility={draft.allNotesFileVisibility}
       setAllNotesFileVisibility={setAllNotesFileVisibility}
-      multiWorkspaceEnabled={draft.multiWorkspaceEnabled}
-      setMultiWorkspaceEnabled={(value) => updateDraft('multiWorkspaceEnabled', value)}
-      vaults={vaults}
-      defaultWorkspacePath={defaultWorkspacePath}
-      {...{
-        onRemoveVault,
-        onReorderVaults,
-        onSetDefaultWorkspace,
-        onUpdateWorkspaceIdentity,
-      }}
       crashReporting={draft.crashReporting}
       setCrashReporting={(value) => updateDraft('crashReporting', value)}
       analytics={draft.analytics}
       setAnalytics={(value) => updateDraft('analytics', value)}
+      multiProjectEnabled={draft.multiProjectEnabled}
+      setMultiProjectEnabled={(value) => updateDraft('multiProjectEnabled', value)}
+      projects={projects}
+      defaultProjectPath={defaultProjectPath}
+      onSetDefaultProject={onSetDefaultProject}
+      onRemoveProject={onRemoveProject}
+      onReorderProjects={onReorderProjects}
+      onUpdateProjectIdentity={onUpdateProjectIdentity}
     />
   )
 }
@@ -443,6 +479,7 @@ function SettingsBody(props: SettingsBodyProps) {
     <div className="flex min-h-0 flex-1 overflow-hidden">
       <SettingsBodyNav t={props.t} />
       <div className="min-w-0 flex-1 overflow-auto px-6 py-4">
+        <SettingsProjectSections {...props} />
         <SettingsSyncAndAppearanceSections {...props} />
         <SettingsContentSections {...props} />
         <SettingsPrivacySections {...props} />
@@ -451,8 +488,40 @@ function SettingsBody(props: SettingsBodyProps) {
   )
 }
 
+function SettingsProjectSections(options: SettingsBodyProps) {
+  const {
+    t,
+    locale,
+    multiProjectEnabled,
+    setMultiProjectEnabled,
+    projects,
+    defaultProjectPath,
+    onSetDefaultProject,
+    onRemoveProject,
+    onReorderProjects,
+    onUpdateProjectIdentity,
+  } = options
+
+  return (
+    <SettingsSection id={SETTINGS_SECTION_IDS.projects} showDivider={false}>
+      <SectionHeading title={t('settings.projects.title')} />
+      <ProjectSettingsSection
+        defaultProjectPath={defaultProjectPath}
+        enabled={multiProjectEnabled}
+        locale={locale}
+        onEnabledChange={setMultiProjectEnabled}
+        onRemoveProject={onRemoveProject}
+        onReorderProjects={onReorderProjects}
+        onSetDefaultProject={onSetDefaultProject}
+        onUpdateProjectIdentity={onUpdateProjectIdentity}
+        projects={projects}
+      />
+    </SettingsSection>
+  )
+}
+
 function SettingsSyncAndAppearanceSections(options: SettingsBodyProps) {
-  const { t, locale, systemLocale, releaseChannel, setReleaseChannel, automaticUpdateChecksEnabled, setAutomaticUpdateChecksEnabled, multiWorkspaceEnabled, setMultiWorkspaceEnabled, vaults, defaultWorkspacePath, onRemoveVault, onReorderVaults, onSetDefaultWorkspace, onUpdateWorkspaceIdentity, themeMode, setThemeMode, uiLanguage, setUiLanguage } = options
+  const { t, locale, systemLocale, releaseChannel, setReleaseChannel, automaticUpdateChecksEnabled, setAutomaticUpdateChecksEnabled, themeMode, setThemeMode, uiLanguage, setUiLanguage } = options
   return (
     <>
       <SettingsSection id={SETTINGS_SECTION_IDS.sync} showDivider={false}>
@@ -462,22 +531,6 @@ function SettingsSyncAndAppearanceSections(options: SettingsBodyProps) {
           setReleaseChannel={setReleaseChannel}
           automaticUpdateChecksEnabled={automaticUpdateChecksEnabled}
           setAutomaticUpdateChecksEnabled={setAutomaticUpdateChecksEnabled}
-        />
-      </SettingsSection>
-      <SettingsSection id={SETTINGS_SECTION_IDS.workspaces}>
-        <SectionHeading icon={<Cube size={16} aria-hidden="true" />} title={t('settings.workspaces.title')} />
-        <WorkspaceSettingsSection
-          defaultWorkspacePath={defaultWorkspacePath}
-          enabled={multiWorkspaceEnabled}
-          locale={locale}
-          onEnabledChange={setMultiWorkspaceEnabled}
-          {...{
-            onRemoveVault,
-            onReorderVaults,
-            onSetDefaultWorkspace,
-            onUpdateWorkspaceIdentity,
-          }}
-          vaults={vaults}
         />
       </SettingsSection>
       <SettingsSection id={SETTINGS_SECTION_IDS.appearance}>

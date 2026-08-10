@@ -293,7 +293,7 @@ describe('NoteList rendering', () => {
     }
   })
 
-  it('runs full-content note-list search across visible workspaces', async () => {
+  it('runs full-content note-list search against the active vault only', async () => {
     const { getNoteContent, restore, searchVault } = installFullTextSearchMocks({
       resultsByVault: {
         '/team': [{
@@ -314,24 +314,23 @@ describe('NoteList rendering', () => {
             filename: 'personal-note.md',
             title: 'Personal Note',
             snippet: 'No body token here.',
-            workspace: { id: 'personal', label: 'Personal', alias: 'PE', path: '/personal', shortLabel: 'PE', color: null, icon: null, mounted: true, available: true, defaultForNewNotes: true },
           }),
           makeEntry({
             path: '/team/team-body-hit.md',
             filename: 'team-body-hit.md',
             title: 'Team Body Hit',
             snippet: 'No body token here either.',
-            workspace: { id: 'team', label: 'Team', alias: 'TE', path: '/team', shortLabel: 'TE', color: null, icon: null, mounted: true, available: true, defaultForNewNotes: false },
           }),
         ],
+        vaultPath: '/team',
       })
 
       await searchNoteList('workspace-only-keyword')
 
       await waitFor(() => {
-        expect(searchVault).toHaveBeenCalledWith(expect.objectContaining({ vaultPath: '/personal', excludeFrontmatter: true }))
         expect(searchVault).toHaveBeenCalledWith(expect.objectContaining({ vaultPath: '/team', excludeFrontmatter: true }))
       })
+      expect(searchVault).not.toHaveBeenCalledWith(expect.objectContaining({ vaultPath: '/personal' }))
       expect(getNoteContent).not.toHaveBeenCalled()
       expect(screen.getByText('Team Body Hit')).toBeInTheDocument()
       expect(screen.queryByText('Personal Note')).not.toBeInTheDocument()

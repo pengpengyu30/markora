@@ -43,12 +43,6 @@ describe('shouldReplaceSyncedTabEntry', () => {
     expect(shouldReplaceSyncedTabEntry(baseEntry, { ...baseEntry })).toBe(false)
   })
 
-  it('treats omitted and undefined workspace metadata as equivalent', () => {
-    const rebuiltEntry = { ...baseEntry, workspace: undefined }
-
-    expect(shouldReplaceSyncedTabEntry(baseEntry, rebuiltEntry)).toBe(false)
-  })
-
   it('replaces the tab entry when visible metadata changes', () => {
     expect(shouldReplaceSyncedTabEntry(baseEntry, { ...baseEntry, title: 'Renamed Alpha' })).toBe(true)
   })

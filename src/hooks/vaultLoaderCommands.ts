@@ -165,6 +165,15 @@ function attachFolderRootPath(folders: FolderNode[], rootPath: string): FolderNo
   }))
 }
 
+async function reloadEmptyVaultEntries(vaultPath: string): Promise<VaultEntry[]> {
+  const entries = await loadVaultEntriesWithCommand({ vaultPath, command: 'reload_vault' })
+  // A Tauri startup scan can observe the repository before its watcher/cache
+  // is ready. Give the second scan a chance to return the real initial graph.
+  return entries.length === 0
+    ? loadVaultEntriesWithCommand({ vaultPath, command: 'reload_vault' })
+    : entries
+}
+
 function loadVaultEntries({
   vaultPath,
   forceReload = true,
@@ -173,7 +182,7 @@ function loadVaultEntries({
   const command = forceReload && isTauri() ? 'reload_vault' : 'list_vault'
   return loadVaultEntriesWithCommand({ vaultPath, command })
     .then((entries) => shouldReloadEmptyResult(entries, { forceReload, reloadIfEmpty })
-      ? loadVaultEntriesWithCommand({ vaultPath, command: 'reload_vault' })
+      ? reloadEmptyVaultEntries(vaultPath)
       : entries)
 }
 
@@ -191,8 +200,6 @@ export async function loadMountedVaultFolders(options: MountedVaultFoldersOption
   if (mountedVaults.length === 0) return []
   if (mountedVaults.length === 1) {
     const [vault] = mountedVaults
-    if (vault.path === options.vaultPath) return loadVaultFolders({ vaultPath: vault.path })
-
     const identity = workspaceIdentityFromVault(vault, { defaultWorkspacePath: options.defaultWorkspacePath })
     const children = await loadVaultFolders({ vaultPath: vault.path })
       .then((folders) => attachFolderRootPath(folders ?? [], vault.path))
@@ -201,6 +208,8 @@ export async function loadMountedVaultFolders(options: MountedVaultFoldersOption
       name: identity.label,
       path: '',
       rootPath: vault.path,
+      color: vault.color ?? null,
+      icon: vault.icon ?? null,
       children,
     }]
   }
@@ -214,6 +223,8 @@ export async function loadMountedVaultFolders(options: MountedVaultFoldersOption
       name: identity.label,
       path: '',
       rootPath: vault.path,
+      color: vault.color ?? null,
+      icon: vault.icon ?? null,
       children,
     }
   }))
@@ -267,7 +278,9 @@ async function loadListOrEmpty<T>(loader: () => Promise<T[]>): Promise<T[]> {
 }
 
 export async function loadVaultChrome(options: MountedVaultEntriesOptions): Promise<LoadedVaultChrome> {
-  const folders = await loadListOrEmpty<FolderNode>(() => loadVaultFolders({ vaultPath: options.vaultPath }))
+  const folders = options.vaults?.length
+    ? await loadMountedVaultFolders(options)
+    : await loadListOrEmpty<FolderNode>(() => loadVaultFolders({ vaultPath: options.vaultPath }))
 
   return {
     folders: folders ?? [],

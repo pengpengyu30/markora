@@ -14,12 +14,10 @@ pub mod search;
 pub mod settings;
 pub mod telemetry;
 pub mod vault;
-mod vault_instance;
 pub mod vault_list;
 pub mod vault_watcher;
 #[cfg(desktop)]
 mod window_state;
-mod workspace_colors;
 
 #[cfg(desktop)]
 pub(crate) use asset_scope::sync_vault_asset_scope;
@@ -72,14 +70,11 @@ fn focus_main_window(app_handle: &tauri::AppHandle) {
 
 #[cfg(desktop)]
 fn with_desktop_entry_plugins(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<tauri::Wry> {
-    let builder = if vault_instance::is_separate_vault_instance() {
-        builder
-    } else {
-        builder.plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+    builder
+        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
             focus_main_window(app);
         }))
-    };
-    builder.plugin(tauri_plugin_deep_link::init())
+        .plugin(tauri_plugin_deep_link::init())
 }
 
 #[cfg(desktop)]
@@ -229,7 +224,6 @@ macro_rules! app_invoke_handler {
             commands::rename_note,
             commands::rename_note_filename,
             commands::move_note_to_folder,
-            commands::move_note_to_workspace,
             commands::auto_rename_untitled,
             commands::detect_renames,
             commands::update_wikilinks_for_renames,
@@ -243,7 +237,6 @@ macro_rules! app_invoke_handler {
             commands::restore_deleted_note,
             commands::reload_vault,
             commands::reload_vault_entry,
-            commands::sync_vault_asset_scope_for_window,
             commands::open_vault_file_external,
             commands::reveal_path_in_file_manager,
             commands::sync_note_title,
@@ -261,7 +254,6 @@ macro_rules! app_invoke_handler {
             commands::check_for_app_update,
             commands::update_menu_state,
             commands::update_app_icon,
-            commands::open_vault_in_new_window,
             commands::trigger_menu_command,
             commands::update_current_window_min_size,
             commands::perform_current_window_titlebar_double_click,

@@ -30,7 +30,6 @@ interface CommandRegistryConfig {
   onMoveNoteToFolder?: () => void
   canMoveNoteToFolder?: boolean
   onTurnCurrentBlockInto?: (target: RichEditorBlockTypeDefinition) => void
-  onOpenInNewWindow?: () => void
   onRevealActiveFile?: (path: string) => void
   onCopyActiveFilePath?: (path: string) => void
   onCopyActiveDeepLink?: (path: string) => void
@@ -107,7 +106,7 @@ export function useCommandRegistry(config: CommandRegistryConfig): import('./com
     onReloadVault, onRepairVault, onRestoreDeletedNote,
     locale, systemLocale, selectedUiLanguage, onSetUiLanguage, onSetThemeMode,
     onMoveNoteToFolder, canMoveNoteToFolder, onTurnCurrentBlockInto,
-    onOpenInNewWindow, onRevealActiveFile, onCopyActiveFilePath, onCopyActiveDeepLink, onOpenActiveFileExternal, onExportNoteAsPdf,
+    onRevealActiveFile, onCopyActiveFilePath, onCopyActiveDeepLink, onOpenActiveFileExternal, onExportNoteAsPdf,
     
     selection,
   } = config
@@ -145,7 +144,6 @@ export function useCommandRegistry(config: CommandRegistryConfig): import('./com
     onDeleteNote,
     onMoveNoteToFolder, canMoveNoteToFolder,
     onTurnCurrentBlockInto,
-    onOpenInNewWindow,
     onRevealActiveFile, onCopyActiveFilePath, onOpenActiveFileExternal,
     onCopyActiveDeepLink, onExportNoteAsPdf,
   }), [
@@ -153,7 +151,6 @@ export function useCommandRegistry(config: CommandRegistryConfig): import('./com
     folderCreateOptions, onCreateNote, onSave, onUndo, onRedo, canUndo, canRedo, undoLabel, redoLabel,
     onFindInNote, onReplaceInNote, onPastePlainText, onDeleteNote,
     onMoveNoteToFolder, canMoveNoteToFolder, onTurnCurrentBlockInto,
-    onOpenInNewWindow,
     onRevealActiveFile, onCopyActiveFilePath, onOpenActiveFileExternal,
     onCopyActiveDeepLink, onExportNoteAsPdf,
   ])

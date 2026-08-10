@@ -1,5 +1,4 @@
 import { NoteSearchList } from './NoteSearchList'
-import type { WorkspaceIdentity } from '../types'
 import './WikilinkSuggestionMenu.css'
 
 export interface WikilinkSuggestionItem {
@@ -8,7 +7,6 @@ export interface WikilinkSuggestionItem {
   aliases?: string[]
   entryTitle?: string
   path?: string
-  workspace?: WorkspaceIdentity | null
 }
 
 interface WikilinkSuggestionMenuProps {

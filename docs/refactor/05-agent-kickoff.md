@@ -23,8 +23,9 @@
 | [02-target-state.md](./02-target-state.md) | Feature boundary — the standard for deciding whether a piece of code should exist |
 | [03-phase-plan.md](./03-phase-plan.md) | Detailed list of modules affected in each phase; companion index for this handbook |
 | [04-invisible-git.md](./04-invisible-git.md) | Complete technical specification for M3 |
+| [05-m5-project-addendum.md](./05-m5-project-addendum.md) | M5 implementation overlay — read before touching the single-window or Project code |
 
-Also review `docs/ARCHITECTURE.md` and `docs/ABSTRACTIONS.md` (they describe the pre-refactor shape; when they conflict with document 02, document 02 wins).
+Also review `docs/ARCHITECTURE.md` and `docs/ABSTRACTIONS.md` (they describe the pre-refactor shape; when they conflict with document 02, document 02 wins, except that the M5 implementation overlay is authoritative for the current single-window and Project behavior).
 
 ## 2. The task in one sentence
 
@@ -199,20 +200,24 @@ BASE_URL="http://localhost:5201" pnpm playwright:smoke
 
 ## M5 — Remove windows and Workspaces
 
-**Goal**: Remove standalone note windows and Workspaces while keeping simple multi-vault switching (decision Q8).
+> **Implementation boundary (owner-confirmed after M5 development):** Read [05-m5-project-addendum.md](./05-m5-project-addendum.md) before executing or extending M5. Standalone note windows and cross-window state are removed, but the retained multi-vault capability is intentionally exposed as a visible/configurable Project model. Do not delete the current Project implementation or its compatibility helpers based only on the old Workspace deletion list.
+
+**Goal**: Remove standalone note windows and the legacy Workspace management concept while retaining the configurable multi-Project model and the single-Project fallback.
 
 **Steps** (in order):
 1. Consolidate the `App.tsx` startup branches: delete note-window and AI-window branches, leaving a single main-window entry point.
 2. Delete the note-window mechanism: `useNoteWindowLifecycle`, the `openNewWindow` command and its menu/command-catalog entries, Rust window registration, and the note-window portion of `window_state.rs`.
 3. Consolidate watchers: per-window watchers (ADR-0165) → one watcher for the main window.
-4. Delete Workspaces: `WorkspaceSelector`, `WorkspaceSettingsSection`, `WorkspaceSettingsRows`, `WorkspaceMoveButtons`, `WorkspaceInitialsBadge`, `useWorkspaceGraphState`, `useWorkspaceIdentityActions`, `workspace_colors.rs`, mount/unified-graph logic (ADR-0114), `workspaceProgressiveLoader`, and the Workspaces settings page.
+4. Delete the legacy Workspace selector/settings/management surface; retain the current Project list, Project settings, multi-Project graph/loading, and their compatibility helpers described in the addendum.
 5. Delete `crossWindowPersistedStore` if it has no other consumers.
 6. **Keep verified**: `useVaultSwitcher` and the vault-switching menu in the status bar remain intact.
 7. **Validate**: full gates → smoke tests.
 
 **Acceptance**:
-- [ ] A global grep finds no `openNewWindow` or Workspace-mount residue.
-- [ ] Creating, opening, and switching multiple vaults works (covered by smoke tests).
+- [ ] A global grep finds no `openNewWindow` or legacy standalone Workspace-mount residue; current Project mounted state and compatibility helpers are expected and documented.
+- [ ] Creating, opening, and switching multiple Projects works, and the Project list can be configured to show one or multiple Projects.
+- [ ] Project name, short label, color, order, mount state, default new-note target, and multi-Project setting survive restart.
+- [ ] The left sidebar does not show an All Notes entry.
 - [ ] An externally modified file refreshes the editor through the single watcher.
 - [ ] Full gates + smoke tests are green.
 

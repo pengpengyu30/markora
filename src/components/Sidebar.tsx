@@ -1,9 +1,9 @@
 import { memo } from 'react'
 import type { FolderCreationParent, FolderNode, SidebarSelection, VaultEntry } from '../types'
 import { FolderTree } from './FolderTree'
-import { SidebarTitleBar, SidebarTopNav } from './sidebar/SidebarSections'
+import { SidebarTitleBar } from './sidebar/SidebarSections'
 import { SidebarFolderLoadingSection } from './sidebar/SidebarLoadingSections'
-import { useEntryCounts, useSidebarCollapsed } from './sidebar/sidebarHooks'
+import { useSidebarCollapsed } from './sidebar/sidebarHooks'
 import type { AppLocale } from '../lib/i18n'
 import type { FolderFileActions } from '../hooks/useFileActions'
 import type { AllNotesFileVisibility } from '../utils/allNotesFileVisibility'
@@ -36,7 +36,6 @@ interface SidebarProps {
 interface SidebarNavigationProps
   extends Pick<
     SidebarProps,
-    | 'entries'
     | 'selection'
     | 'onSelect'
     | 'folders'
@@ -53,7 +52,6 @@ interface SidebarNavigationProps
     | 'locale'
     | 'loading'
   > {
-  activeCount: number
   groupCollapsed: ReturnType<typeof useSidebarCollapsed>['collapsed']
   toggleGroup: ReturnType<typeof useSidebarCollapsed>['toggle']
 }
@@ -129,28 +127,20 @@ function SidebarFoldersNavigation(options: SidebarFoldersNavigationProps) {
 function SidebarNavigation(props: SidebarNavigationProps) {
   return (
     <nav className="flex-1 overflow-y-auto">
-      <SidebarTopNav
-        selection={props.selection}
-        onSelect={props.onSelect}
-        activeCount={props.activeCount}
-        locale={props.locale ?? 'en'}
-        loading={props.loading ?? false}
-      />
       <SidebarFoldersNavigation {...props} />
     </nav>
   )
 }
 
-function useSidebarRuntime(options: Pick<SidebarProps, 'entries' | 'allNotesFileVisibility'>) {
-  const { activeCount } = useEntryCounts(options.entries, options.allNotesFileVisibility)
+function useSidebarRuntime() {
   const { collapsed: groupCollapsed, toggle: toggleGroup } = useSidebarCollapsed()
 
-  return { activeCount, groupCollapsed, toggleGroup }
+  return { groupCollapsed, toggleGroup }
 }
 
 export const Sidebar = memo(function Sidebar(props: SidebarProps) {
   const locale = props.locale ?? 'en'
-  const runtime = useSidebarRuntime(props)
+  const runtime = useSidebarRuntime()
 
   return (
     <aside className="flex h-full flex-col overflow-hidden border-r border-[var(--sidebar-border)] bg-sidebar text-sidebar-foreground">

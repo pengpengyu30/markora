@@ -28,7 +28,6 @@ import { preFilterWikilinks, deduplicateByPath, MIN_QUERY_LENGTH } from '../util
 import {
   attachClickHandlers,
   enrichSuggestionItems,
-  hasMultipleSuggestionWorkspaces,
 } from '../utils/suggestionEnrichment'
 import { observeNativeTextAssistanceDisabled } from '../lib/nativeTextAssistance'
 import { getRuntimeStyleNonce } from '../lib/runtimeStyleNonce'
@@ -929,10 +928,9 @@ function useSuggestionMenuItems(options: {
   insertWikilink: (target: string, triggerCharacter: WikilinkAutocompleteTrigger) => void
   locale: AppLocale
   runEditorAction: (action: SuggestionAction) => void
-  sourceEntry?: VaultEntry
   vaultPath?: string
 }) {
-  const { baseItems, editor, insertWikilink, locale, runEditorAction, sourceEntry, vaultPath } = options
+  const { baseItems, editor, insertWikilink, locale, runEditorAction, vaultPath } = options
   const t = useMemo(() => createTranslator(locale), [locale])
 
   const buildItems = useCallback(
@@ -945,16 +943,13 @@ function useSuggestionMenuItems(options: {
       candidates,
       (target) => insertWikilink(target, triggerCharacter),
       vaultPath ?? '',
-      sourceEntry,
     )
     return guardSuggestionMenuItems(
-      enrichSuggestionItems(items, normalizedQuery, {
-        showWorkspace: hasMultipleSuggestionWorkspaces(baseItems),
-      }),
+      enrichSuggestionItems(items, normalizedQuery),
       runEditorAction,
     )
     },
-    [baseItems, insertWikilink, runEditorAction, sourceEntry, vaultPath],
+    [baseItems, insertWikilink, runEditorAction, vaultPath],
   )
 
   const getWikilinkItems = useCallback(
@@ -1313,7 +1308,6 @@ export function SingleEditorView(options: {
     insertWikilink,
     locale,
     runEditorAction,
-    sourceEntry: sourceEntry ?? undefined,
     vaultPath,
   })
 

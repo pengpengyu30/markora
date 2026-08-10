@@ -57,7 +57,6 @@ type SimpleHandlerKey =
   | 'onRestoreGettingStarted'
   | 'onReloadVault'
   | 'onRepairVault'
-  | 'onOpenInNewWindow'
 
 type ActiveTabHandlerKey =
   | 'onDeleteNote'
@@ -182,7 +181,6 @@ const MENU_LABEL_KEYS = {
   'Go Back': 'command.navigation.goBack',
   'Go Forward': 'command.navigation.goForward',
   'Delete Note': 'command.note.deleteNote',
-  'Open in New Window': 'command.note.openNewWindow',
   'Export Note as PDF': 'command.note.exportPdf',
   'Toggle Raw Editor': 'command.view.toggleRaw',
   'Toggle Table of Contents': 'menu.note.toggleTableOfContents',

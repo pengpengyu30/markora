@@ -11,9 +11,8 @@ import {
   type SetStateAction,
 } from 'react'
 import { Input } from '@/components/ui/input'
-import type { VaultEntry, WorkspaceIdentity } from '../types'
+import type { VaultEntry } from '../types'
 import { scrollSelectedHTMLChildIntoView } from '../utils/domScroll'
-import { WorkspaceInitialsBadge } from './WorkspaceInitialsBadge'
 import './WikilinkSuggestionMenu.css'
 
 const MIN_QUERY_LENGTH = 2
@@ -41,7 +40,6 @@ interface NoteAutocompleteProps {
 
 interface MatchedEntry {
   title: string
-  workspace?: WorkspaceIdentity | null
 }
 
 interface OpenAutocompleteKeyContext {
@@ -62,28 +60,13 @@ function entryMatchesQuery(entry: VaultEntry, lowerQuery: string): boolean {
   )
 }
 
-function shouldShowWorkspaceBadge(entries: VaultEntry[]): boolean {
-  return new Set(entries.map((entry) => entry.workspace?.alias).filter(Boolean)).size > 1
-}
-
-function buildMatchedEntry(
-  entry: VaultEntry,
-  showWorkspace: boolean,
-): MatchedEntry {
-  return {
-    title: entry.title,
-    workspace: showWorkspace ? (entry.workspace ?? null) : null,
-  }
-}
-
 function matchEntries(entries: VaultEntry[], query: string): MatchedEntry[] {
   if (query.length < MIN_QUERY_LENGTH) return []
   const lowerQuery = query.toLowerCase()
-  const showWorkspace = shouldShowWorkspaceBadge(entries)
   return entries
     .filter((entry) => entryMatchesQuery(entry, lowerQuery))
     .slice(0, MAX_RESULTS)
-    .map((entry) => buildMatchedEntry(entry, showWorkspace))
+    .map((entry) => ({ title: entry.title }))
 }
 
 function resolveOpenAutocompleteKeyAction(key: string): AutocompleteKeyAction | null {
@@ -207,7 +190,6 @@ function NoteAutocompleteMenuItem({ item, selected, onSelect, onHover }: NoteAut
       >
         {item.title}
       </span>
-      <WorkspaceInitialsBadge workspace={item.workspace} testId="note-autocomplete-workspace-badge" />
     </button>
   )
 }

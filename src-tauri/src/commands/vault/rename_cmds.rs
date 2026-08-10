@@ -4,7 +4,7 @@ use serde::Deserialize;
 use std::path::Path;
 
 use super::boundary::{
-    with_boundary, with_existing_path_in_requested_vault, with_validated_path, ValidatedPathMode,
+    with_existing_path_in_requested_vault, with_validated_path, ValidatedPathMode,
 };
 
 struct RequestedNotePath<'a> {
@@ -40,15 +40,6 @@ fn with_note_path_in_vault<T>(
             })
         },
     )
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct MoveNoteToWorkspaceCommandArgs {
-    source_vault_path: String,
-    destination_vault_path: String,
-    old_path: String,
-    replacement_target: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -218,37 +209,6 @@ pub fn move_note_to_folder(args: MoveNoteToFolderCommandArgs) -> Result<RenameRe
 }
 
 #[tauri::command]
-pub fn move_note_to_workspace(
-    args: MoveNoteToWorkspaceCommandArgs,
-) -> Result<RenameResult, String> {
-    let request = RequestedNotePath::new(&args.source_vault_path, &args.old_path);
-    with_note_path_in_vault(request, |note| {
-        let source_root_path = Path::new(note.vault_path);
-        let old_file = Path::new(note.note_path);
-        let relative_path = old_file
-            .strip_prefix(source_root_path)
-            .map_err(|_| "Path must stay inside the source vault".to_string())?;
-        let relative_path = relative_path.to_string_lossy();
-
-        with_boundary(Some(&args.destination_vault_path), |destination_boundary| {
-            let destination_path = destination_boundary.child_path(relative_path.as_ref())?;
-            let destination_root = destination_boundary
-                .requested_root()
-                .to_string_lossy()
-                .into_owned();
-            let destination_path = destination_path.to_string_lossy().into_owned();
-            vault::move_note_to_workspace(vault::MoveNoteToWorkspaceRequest {
-                source_vault_path: note.vault_path,
-                destination_vault_path: &destination_root,
-                old_path: note.note_path,
-                destination_path: &destination_path,
-                replacement_target: args.replacement_target.as_deref(),
-            })
-        })
-    })
-}
-
-#[tauri::command]
 pub fn auto_rename_untitled(
     args: AutoRenameUntitledCommandArgs,
 ) -> Result<Option<RenameResult>, String> {
@@ -355,38 +315,6 @@ mod tests {
         assert!(fs::read_to_string(moved.new_path)
             .unwrap()
             .contains("Draft Title"));
-    }
-
-    #[test]
-    fn move_note_to_workspace_command_preserves_relative_path() {
-        let source = TempDir::new().unwrap();
-        let destination = TempDir::new().unwrap();
-        let source_vault = vault_path(&source);
-        let destination_vault = vault_path(&destination);
-        let old_path = write_note(
-            &source,
-            "Projects/draft.md",
-            "---\ntitle: Draft Title\n---\n# Draft Title\n",
-        );
-        let linked_path = write_note(&source, "linked.md", "See [[Draft Title]].\n");
-
-        let moved = move_note_to_workspace(MoveNoteToWorkspaceCommandArgs {
-            source_vault_path: source_vault,
-            destination_vault_path: destination_vault.clone(),
-            old_path: old_path.clone(),
-            replacement_target: Some("team/Projects/draft".to_string()),
-        })
-        .unwrap();
-
-        assert!(!Path::new(&old_path).exists());
-        assert!(moved.new_path.ends_with("Projects/draft.md"));
-        assert!(moved.new_path.starts_with(&destination_vault));
-        assert!(fs::read_to_string(moved.new_path)
-            .unwrap()
-            .contains("Draft Title"));
-        assert!(fs::read_to_string(linked_path)
-            .unwrap()
-            .contains("[[team/Projects/draft]]"));
     }
 
     #[test]

@@ -325,7 +325,7 @@ describe('countWords', () => {
     const content = [
       '---',
       'type: Note',
-      'workspace: personal',
+      'legacy_scope: personal',
       'notion_id: 63aeb735-e6f4-4a32-b7b6-d34276a26dee',
       'status: Active',
       'owner: Luca Rossi',

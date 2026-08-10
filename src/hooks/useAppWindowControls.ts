@@ -22,7 +22,6 @@ type WindowConstraintUpdater = (
 
 interface UseAppWindowControlsParams {
   layout: ReturnType<typeof useLayoutPanels>
-  windowMode: boolean
 }
 
 interface AppWindowActionRefs {
@@ -60,15 +59,12 @@ function useAppWindowActionRefs(): AppWindowActionRefs {
 
 function useMainWindowConstraintUpdater(
   layout: ReturnType<typeof useLayoutPanels>,
-  windowMode: boolean,
 ): WindowConstraintUpdater {
   return useCallback((
     nextSidebarVisible: boolean,
     nextNoteListVisible: boolean,
     nextRightPanelCollapsed: boolean = layout.rightPanelCollapsed,
   ) => {
-    if (windowMode) return
-
     const minWidth = getMainWindowMinWidth({
       sidebarVisible: nextSidebarVisible,
       noteListVisible: nextNoteListVisible,
@@ -85,13 +81,11 @@ function useMainWindowConstraintUpdater(
     layout.rightPanelWidth,
     layout.noteListWidth,
     layout.sidebarWidth,
-    windowMode,
   ])
 }
 
 export function useAppWindowControls({
   layout,
-  windowMode,
 }: UseAppWindowControlsParams): AppWindowControls {
   const {
     backlinksToggleRef,
@@ -101,12 +95,10 @@ export function useAppWindowControls({
     tableOfContentsToggleRef,
   } = useAppWindowActionRefs()
 
-  const { setViewMode, sidebarVisible, noteListVisible } = useViewMode(
-    windowMode ? 'editor-only' : undefined,
-  )
+  const { setViewMode, sidebarVisible, noteListVisible } = useViewMode()
   const zoom = useZoom()
   const buildNumber = useBuildNumber()
-  const updateMainWindowConstraints = useMainWindowConstraintUpdater(layout, windowMode)
+  const updateMainWindowConstraints = useMainWindowConstraintUpdater(layout)
 
   const handleSetViewMode = useCallback((mode: ViewMode) => {
     setViewMode(mode)
@@ -129,7 +121,7 @@ export function useAppWindowControls({
   ])
 
   useMainWindowSizeConstraints({
-    enabled: !windowMode,
+    enabled: true,
     sidebarVisible,
     noteListVisible,
     rightPanelCollapsed: layout.rightPanelCollapsed,

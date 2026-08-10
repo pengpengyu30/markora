@@ -1,10 +1,8 @@
 import { invoke } from '@tauri-apps/api/core'
 import { isTauri, mockInvoke } from '../mock-tauri'
 import type { VaultEntry } from '../types'
-import { workspacePathForEntry } from '../utils/workspaces'
 import { markNoteOpenTrace } from '../utils/noteOpenPerformance'
 import { errorMessage, isActiveVaultUnavailableError } from '../utils/vaultErrors'
-import { getNoteWindowParams, isNoteWindow } from '../utils/windowMode'
 
 type NotePath = VaultEntry['path']
 
@@ -106,8 +104,8 @@ function targetEntry(target: string | VaultEntry): VaultEntry | null {
 }
 
 function targetVaultPath(target: string | VaultEntry): string | undefined {
-  const entry = targetEntry(target)
-  return entry ? workspacePathForEntry(entry) : undefined
+  void target
+  return undefined
 }
 
 function targetIdentity(target: string | VaultEntry): NoteContentIdentity | null {
@@ -176,10 +174,7 @@ function retainResolvedNoteContent(entry: NoteContentCacheEntry, content: string
 
 function getNoteContentCommandPayload(path: string, vaultPath?: string): { path: string; vaultPath?: string } {
   if (vaultPath) return { path, vaultPath }
-  if (!isNoteWindow()) return { path }
-
-  const noteWindowParams = getNoteWindowParams()
-  return noteWindowParams ? { path, vaultPath: noteWindowParams.vaultPath } : { path }
+  return { path }
 }
 
 function runGetNoteContentCommand(path: string, vaultPath?: string): Promise<string> {
@@ -386,7 +381,7 @@ export function cacheNoteContent(
     value: content,
     byteSize,
     identity: entry ? noteContentIdentity(entry) : null,
-    vaultPath: entry ? workspacePathForEntry(entry) : undefined,
+    vaultPath: undefined,
     parsedBlockPreload: shouldRequestParsedBlockPreload(options),
     parsedBlockPreloadNotified: false,
   })

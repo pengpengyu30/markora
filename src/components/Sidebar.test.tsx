@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import { describe, expect, it } from 'vitest'
 import { Sidebar } from './Sidebar'
 import type { SidebarSelection, VaultEntry } from '../types'
 
@@ -39,10 +39,11 @@ function makeEntry(overrides: Partial<VaultEntry> = {}): VaultEntry {
 }
 
 describe('Sidebar', () => {
-  it('renders the remaining top navigation without removed groups', () => {
+  it('does not render the removed all-notes navigation entry', () => {
     render(<Sidebar entries={[]} selection={defaultSelection} onSelect={() => {}} />)
 
-    expect(screen.getByText('All Notes')).toBeInTheDocument()
+    expect(screen.queryByText('All Notes')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('sidebar-top-nav')).not.toBeInTheDocument()
     expect(screen.queryByText('Inbox')).not.toBeInTheDocument()
     expect(screen.queryByText('Archive')).not.toBeInTheDocument()
     expect(screen.queryByText('Types')).not.toBeInTheDocument()
@@ -59,21 +60,29 @@ describe('Sidebar', () => {
     expect(screen.queryByText('Projects')).not.toBeInTheDocument()
   })
 
-  it('selects a top navigation filter', () => {
-    const onSelect = vi.fn()
-    render(<Sidebar entries={[]} selection={defaultSelection} onSelect={onSelect} />)
+  it('renders registered project roots in the folders section', () => {
+    render(
+      <Sidebar
+        entries={[]}
+        folders={[
+          { name: 'Edge', path: '', rootPath: '/projects/edge', children: [] },
+          { name: 'Tolaria', path: '', rootPath: '/projects/tolaria', children: [] },
+        ]}
+        selection={defaultSelection}
+        onSelect={() => {}}
+      />,
+    )
 
-    fireEvent.click(screen.getByText('All Notes'))
-
-    expect(onSelect).toHaveBeenCalledWith({ kind: 'filter', filter: 'all' })
+    expect(screen.getByText('Edge')).toBeInTheDocument()
+    expect(screen.getByText('Tolaria')).toBeInTheDocument()
+    expect(screen.getByText('Projects')).toBeInTheDocument()
   })
 
-  it('counts all visible notes without a separate archive count', () => {
+  it('does not show a separate all-notes count', () => {
     const entries = [makeEntry(), makeEntry({ path: '/vault/archive.md', filename: 'archive.md', archived: true })]
 
     render(<Sidebar entries={entries} selection={defaultSelection} onSelect={() => {}} />)
 
-    expect(screen.getByText('2')).toBeInTheDocument()
-    expect(screen.queryByText('1')).not.toBeInTheDocument()
+    expect(screen.queryByText('2')).not.toBeInTheDocument()
   })
 })

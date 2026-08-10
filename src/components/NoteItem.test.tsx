@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { NoteItem } from './NoteItem'
 import { makeEntry } from '../test-utils/noteListTestUtils'
@@ -133,63 +133,6 @@ describe('NoteItem', () => {
     const dateRow = screen.getByTestId('note-date-row')
     expect(dateRow).toHaveTextContent('April 8, 2025')
     expect(dateRow).toHaveTextContent('Created April 5, 2025')
-  })
-
-  it('shows the workspace badge after the creation date when multiple workspaces are present', () => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date(NOW_SECONDS * 1000))
-    const launchWorkspace = {
-      id: 'launch',
-      label: 'Launch',
-      alias: 'launch',
-      path: '/launch',
-      shortLabel: 'LA',
-      color: 'red',
-      icon: null,
-      mounted: true,
-      available: true,
-      defaultForNewNotes: false,
-    }
-    const personalWorkspace = {
-      id: 'personal',
-      label: 'Personal',
-      alias: 'personal',
-      path: '/personal',
-      shortLabel: 'PE',
-      color: 'blue',
-      icon: null,
-      mounted: true,
-      available: true,
-      defaultForNewNotes: true,
-    }
-    const entry = makeEntry({
-      title: 'Campaigns',
-      createdAt: NOW_SECONDS - 600,
-      modifiedAt: NOW_SECONDS - 600,
-      workspace: launchWorkspace,
-    })
-    const otherEntry = makeEntry({
-      path: '/personal/other.md',
-      filename: 'other.md',
-      title: 'Other',
-      workspace: personalWorkspace,
-    })
-
-    render(
-      <NoteItem
-        entry={entry}
-        isSelected={false}
-        allEntries={[entry, otherEntry]}
-        onClickNote={vi.fn()}
-      />,
-    )
-
-    const dateRow = screen.getByTestId('note-date-row')
-    const badge = within(dateRow).getByTestId('workspace-badge')
-    expect(screen.getByTestId('note-title-row')).not.toContainElement(badge)
-    expect(dateRow).toHaveTextContent('Created April 10, 2025')
-    expect(badge).toHaveTextContent('LA')
-    expect(badge).toHaveClass('-mr-1.5', 'border', 'bg-transparent', 'opacity-75')
   })
 
   it('leaves the created-date label hidden when no creation date exists', () => {

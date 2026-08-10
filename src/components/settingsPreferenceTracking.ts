@@ -17,7 +17,6 @@ export interface SettingsPreferenceDraft {
   automaticUpdateChecksEnabled: boolean
   dateDisplayFormat: DateDisplayFormat
   defaultNoteWidth: NoteWidthMode
-  multiWorkspaceEnabled: boolean
 }
 
 function numericFlag(value: boolean): number {
@@ -62,10 +61,5 @@ export function trackSettingsPreferenceChanges(settings: Settings, draft: Settin
     normalizeNoteWidthMode(settings.note_width_mode) ?? DEFAULT_NOTE_WIDTH_MODE,
     draft.defaultNoteWidth,
     trackDefaultNoteWidthChanged,
-  )
-  trackEnabledPreferenceChange(
-    settings.multi_workspace_enabled === true,
-    draft.multiWorkspaceEnabled,
-    'multi_workspace_mode_changed',
   )
 }

@@ -55,7 +55,6 @@ const EMPTY_SETTINGS: Settings = {
   all_notes_show_pdfs: null,
   all_notes_show_images: null,
   all_notes_show_unsupported: null,
-  multi_workspace_enabled: null,
 }
 
 function nullableBoolean(value: boolean | null | undefined): boolean | null {
@@ -81,7 +80,6 @@ function normalizeSettings(settings: Settings): Settings {
     all_notes_show_pdfs: nullableBoolean(settings.all_notes_show_pdfs),
     all_notes_show_images: nullableBoolean(settings.all_notes_show_images),
     all_notes_show_unsupported: nullableBoolean(settings.all_notes_show_unsupported),
-    multi_workspace_enabled: nullableBoolean(settings.multi_workspace_enabled),
   }
 }
 

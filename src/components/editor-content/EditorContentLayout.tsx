@@ -103,7 +103,6 @@ function RawModeEditorSection(
         content={rawModeContent ?? activeTab.content}
         path={activeTab.entry.path}
         entries={entries}
-        sourceEntry={activeTab.entry}
         findRequest={findRequest}
         onContentChange={onRawContentChange ?? (() => {})}
         onImageImportResult={({ failedCount, totalCount }) => {

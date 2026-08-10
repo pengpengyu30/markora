@@ -43,7 +43,6 @@ function makeHandlers(): MenuEventHandlers {
     onRemoveActiveVault: vi.fn(),
     onRestoreGettingStarted: vi.fn(),
     onReloadVault: vi.fn(),
-    onOpenInNewWindow: vi.fn(),
     activeTabPathRef: { current: '/vault/test.md' } as React.MutableRefObject<string | null>,
     multiSelectionCommandRef: { current: null },
     activeTabPath: '/vault/test.md',

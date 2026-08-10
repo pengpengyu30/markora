@@ -160,8 +160,11 @@ export function hideWorkspaceMetadata(entries: VaultEntry[]): VaultEntry[] {
 }
 
 export function useWorkspaceGraphState({ allVaults, defaultWorkspacePath, resolvedPath, settings, windowMode }: WorkspaceGraphConfig): WorkspaceGraphState {
-  const multiWorkspaceEnabled = settings.multi_workspace_enabled === true
-  const workspaceGraphLoadingEnabled = !windowMode
+  // Preserve the historical multi-Project view for existing installations.
+  // The setting is opt-out so older settings records without this field keep
+  // showing all registered Projects.
+  const multiWorkspaceEnabled = settings.multi_workspace_enabled !== false
+  const workspaceGraphLoadingEnabled = !windowMode && multiWorkspaceEnabled
   const graphDefaultWorkspacePath = workspaceGraphDefaultPath({
     defaultWorkspacePath,
     multiWorkspaceEnabled,

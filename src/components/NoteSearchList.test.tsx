@@ -16,19 +16,6 @@ const items: TestItem[] = [
   { id: '3', title: 'Gamma Experiment' },
 ]
 
-const teamWorkspace = {
-  id: 'team',
-  label: 'Team',
-  alias: 'team',
-  path: '/team',
-  shortLabel: 'TE',
-  color: 'green',
-  icon: null,
-  mounted: true,
-  available: true,
-  defaultForNewNotes: false,
-}
-
 describe('NoteSearchList', () => {
   const onItemClick = vi.fn()
   const onItemHover = vi.fn()
@@ -77,25 +64,6 @@ describe('NoteSearchList', () => {
     expect(screen.getByText('Alpha Project')).toBeInTheDocument()
     expect(screen.getByText('Beta Notes')).toBeInTheDocument()
     expect(screen.getByText('Gamma Experiment')).toBeInTheDocument()
-  })
-
-  it('shows workspace initials at the far right when workspace metadata is present', () => {
-    render(
-      <NoteSearchList
-        items={[{ ...items[0], workspace: teamWorkspace }]}
-        selectedIndex={0}
-        getItemKey={(item) => item.id}
-        onItemClick={onItemClick}
-      />,
-    )
-
-    const title = screen.getByText('Alpha Project')
-    const workspaceBadge = screen.getByTestId('note-search-workspace-badge')
-    const row = workspaceBadge.closest('div')!
-    expect(workspaceBadge).toHaveTextContent('TE')
-    expect(title.compareDocumentPosition(workspaceBadge) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(row).toContainElement(workspaceBadge)
-    expect(workspaceBadge.getAttribute('style')).toContain('border-color: var(--accent-green)')
   })
 
   it('shows empty message when no items', () => {

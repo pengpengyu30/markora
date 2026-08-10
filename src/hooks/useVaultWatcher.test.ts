@@ -51,21 +51,18 @@ async function settleWatcherSubscription() {
 
 type RecentWritesProps = {
   vaultPath: string
-  vaultPaths?: string[]
 }
 
 type WatcherBatchScenario = {
   events: Array<{ vaultPath: string; paths: string[] }>
   expectedPaths: string[]
   vaultPath: string
-  vaultPaths?: string[]
 }
 
 async function expectBatchedVaultChanges(scenario: WatcherBatchScenario) {
   const onVaultChanged = vi.fn()
   renderHook(() => useVaultWatcher({
     vaultPath: scenario.vaultPath,
-    vaultPaths: scenario.vaultPaths,
     onVaultChanged,
   }))
 
@@ -112,67 +109,18 @@ describe('useRecentVaultWrites', () => {
     expect(result.current.filterExternalPaths(['/vault/notes/self.md'])).toEqual(['/vault/notes/self.md'])
   })
 
-  it('filters recent app-owned writes across mounted vault roots', () => {
-    const { result } = renderHook(() => useRecentVaultWrites({
-      vaultPath: '/vault-a',
-      vaultPaths: ['/vault-a', '/vault-b'],
-      now: () => 1000,
-    }))
-
-    act(() => {
-      result.current.markInternalWrite('/vault-b/notes/self.md')
-    })
-
-    expect(result.current.filterExternalPaths([
-      '/vault-a/notes/external.md',
-      '/vault-b/notes/self.md',
-    ])).toEqual(['/vault-a/notes/external.md'])
-  })
-
-  it('filters recent app-owned writes for tilde-mounted vault roots', () => {
-    const { result } = renderHook(() => useRecentVaultWrites({
-      vaultPath: '/Users/luca/Workspace/laputa',
-      vaultPaths: ['/Users/luca/Workspace/laputa', '~/Workspace/refactoring-vault'],
-      now: () => 1000,
-    }))
-
-    act(() => {
-      result.current.markInternalWrite('/Users/luca/Workspace/refactoring-vault/notes/self.md')
-    })
-
-    expect(result.current.filterExternalPaths([
-      '/Users/luca/Workspace/laputa/notes/external.md',
-      '/Users/luca/Workspace/refactoring-vault/notes/self.md',
-    ])).toEqual(['/Users/luca/Workspace/laputa/notes/external.md'])
-  })
-
-  it.each([
-    {
-      description: 'the active vault changes',
-      initialProps: { vaultPath: '/vault-a' },
-      markedPath: '/vault-a/note.md',
-      nextProps: { vaultPath: '/vault-b' },
-      expectedPath: '/vault-a/note.md',
-    },
-    {
-      description: 'the mounted vault root set changes',
-      initialProps: { vaultPath: '/vault-a', vaultPaths: ['/vault-a', '/vault-b'] },
-      markedPath: '/vault-b/note.md',
-      nextProps: { vaultPath: '/vault-a', vaultPaths: ['/vault-a'] },
-      expectedPath: '/vault-b/note.md',
-    },
-  ])('clears recent writes when $description', ({ initialProps, markedPath, nextProps, expectedPath }) => {
+  it('clears recent writes when the active vault changes', () => {
     const { result, rerender } = renderHook(
-      ({ vaultPath, vaultPaths }: RecentWritesProps) => useRecentVaultWrites({ vaultPath, vaultPaths, now: () => 1000 }),
-      { initialProps },
+      ({ vaultPath }: RecentWritesProps) => useRecentVaultWrites({ vaultPath, now: () => 1000 }),
+      { initialProps: { vaultPath: '/vault-a' } },
     )
 
     act(() => {
-      result.current.markInternalWrite(markedPath)
+      result.current.markInternalWrite('/vault-a/note.md')
     })
-    rerender(nextProps)
+    rerender({ vaultPath: '/vault-b' })
 
-    expect(result.current.filterExternalPaths([expectedPath])).toEqual([expectedPath])
+    expect(result.current.filterExternalPaths(['/vault-a/note.md'])).toEqual(['/vault-a/note.md'])
   })
 })
 
@@ -225,20 +173,6 @@ describe('useVaultWatcher', () => {
     expect(mocks.invoke).toHaveBeenCalledWith('stop_vault_watcher')
   })
 
-  it('starts a native watcher for every mounted vault root', async () => {
-    renderHook(() => useVaultWatcher({
-      vaultPath: '/vault-a',
-      vaultPaths: ['/vault-a', '/vault-b', '/vault-a/'],
-      onVaultChanged: vi.fn(),
-    }))
-
-    await settleWatcherSubscription()
-    expect(mocks.listen).toHaveBeenCalledWith(VAULT_CHANGED_EVENT, expect.any(Function))
-    expect(mocks.invoke).toHaveBeenCalledWith('start_vault_watcher', { path: '/vault-a' })
-    expect(mocks.invoke).toHaveBeenCalledWith('start_vault_watcher', { path: '/vault-b' })
-    expect(mocks.invoke.mock.calls.filter(([command]) => command === 'start_vault_watcher')).toHaveLength(2)
-  })
-
   it('swallows stale native watcher unlisten failures and still stops the watcher', async () => {
     mocks.unlisten.mockImplementationOnce(() => {
       throw new TypeError("undefined is not an object (evaluating 'listeners[eventId].handlerId')")
@@ -288,16 +222,6 @@ describe('useVaultWatcher', () => {
         { vaultPath: '/vault', paths: ['/vault/notes/b.md'] },
       ],
       expectedPaths: ['/vault/notes/a.md', '/vault/notes/b.md'],
-    },
-    {
-      description: 'every watched vault root',
-      vaultPath: '/vault-a',
-      vaultPaths: ['/vault-a', '/vault-b'],
-      events: [
-        { vaultPath: '/vault-a', paths: ['notes/a.md'] },
-        { vaultPath: '/vault-b', paths: ['notes/b.md'] },
-      ],
-      expectedPaths: ['/vault-a/notes/a.md', '/vault-b/notes/b.md'],
     },
   ])('batches changed paths from $description', expectBatchedVaultChanges)
 

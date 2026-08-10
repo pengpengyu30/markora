@@ -231,8 +231,8 @@ interface NavigateWikilinkParams {
   selectNote: (entry: VaultEntry) => void
 }
 
-function navigateWikilink({ entries, sourceEntry, target, selectNote }: NavigateWikilinkParams): void {
-  const found = resolveEntry(entries, target, sourceEntry)
+function navigateWikilink({ entries, target, selectNote }: NavigateWikilinkParams): void {
+  const found = resolveEntry(entries, target)
   if (found) selectNote(found)
   else console.warn(`Navigation target not found: ${target}`)
 }

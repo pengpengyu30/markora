@@ -126,35 +126,6 @@ describe('resolveNewNote', () => {
     expect(content).toBe('')
   })
 
-  it('uses an available configured default workspace', () => {
-    const { entry } = resolveNewNote({
-      title: 'Team Brief',
-      vaultPath: '/personal',
-      defaultWorkspacePath: '/team',
-      vaults: [
-        { label: 'Personal', path: '/personal', alias: 'personal', available: true, mounted: true },
-        { label: 'Team Notes', path: '/team', alias: 'team', available: true, mounted: true },
-      ],
-    })
-
-    expect(entry.path).toBe('/team/team-brief.md')
-    expect(entry.workspace).toMatchObject({ alias: 'team', defaultForNewNotes: true })
-  })
-
-  it('falls back to the active workspace when the default is unavailable', () => {
-    const { entry } = resolveNewNote({
-      title: 'Local Brief',
-      vaultPath: '/personal',
-      defaultWorkspacePath: '/team',
-      vaults: [
-        { label: 'Personal', path: '/personal', alias: 'personal', available: true, mounted: true },
-        { label: 'Team Notes', path: '/team', alias: 'team', available: false, mounted: true },
-      ],
-    })
-
-    expect(entry.path).toBe('/personal/local-brief.md')
-    expect(entry.workspace?.alias).toBe('personal')
-  })
 })
 
 describe('planNewNoteCreation', () => {
@@ -241,20 +212,19 @@ describe('useNoteCreation hook', () => {
       result.current.handleCreateNoteImmediate({
         creationPath: 'folder_header',
         folderPath: 'Projects/2026 Planning',
-        vaultPath: '/Users/luca/Team',
+        vaultPath: '/test/vault',
       })
       await flushImmediateCreate()
     })
 
-    const createdPath = '/Users/luca/Team/Projects/2026 Planning/untitled-note-1700000000.md'
+    const createdPath = '/test/vault/Projects/2026 Planning/untitled-note-1700000000.md'
     expect(invoke).toHaveBeenCalledWith('create_note_content', {
       path: createdPath,
       content: '\n# \n\n',
-      vaultPath: '/Users/luca/Team',
+      vaultPath: '/test/vault',
     })
     expect(addEntry).toHaveBeenCalledWith(expect.objectContaining({
       path: createdPath,
-      workspace: expect.objectContaining({ path: '/Users/luca/Team' }),
     }))
     vi.restoreAllMocks()
   })

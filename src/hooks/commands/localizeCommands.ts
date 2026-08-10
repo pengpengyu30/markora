@@ -28,7 +28,6 @@ const STATIC_LABEL_KEYS: Partial<Record<string, TranslationKey>> = {
   'move-note-to-folder': 'command.note.moveToFolder',
   'copy-active-deep-link': 'command.note.copyDeepLink',
   'export-note-pdf': 'command.note.exportPdf',
-  'open-in-new-window': 'command.note.openNewWindow',
   'view-editor': 'command.view.editorOnly',
   'view-editor-list': 'command.view.editorNoteList',
   'view-all': 'command.view.fullLayout',

@@ -39,11 +39,6 @@ interface InstallVaultSwitcherMocksOptions {
   defaultVaultExists?: boolean
 }
 
-interface OpenedVaultWindow {
-  vaultPath: string
-  vaultColor: string | null
-}
-
 function createVaultSwitcherPaths(): VaultSwitcherPaths {
   return {
     gettingStartedPath: '/Users/mock/Documents/Getting Started',
@@ -112,9 +107,6 @@ async function installVaultSwitcherMocks(
 
   await page.addInitScript((data: VaultSwitcherInitData) => {
     localStorage.clear()
-    const openedVaultWindows: OpenedVaultWindow[] = []
-    Object.assign(window, { __openedVaultWindows: openedVaultWindows })
-
     let ref: Record<string, unknown> | null = null
 
     Object.defineProperty(window, '__mockHandlers', {
@@ -150,9 +142,6 @@ async function installVaultSwitcherMocks(
         ref.get_note_content = (args: { path?: string }) => data.allContent[args?.path ?? ''] ?? ''
         ref.get_modified_files = () => []
         ref.get_file_history = () => []
-        ref.open_vault_in_new_window = (args: OpenedVaultWindow) => {
-          openedVaultWindows.push(args)
-        }
       },
       get() {
         return ref
@@ -192,18 +181,6 @@ test('bottom bar vault switching works with keyboard and mouse @smoke', async ({
   await expect(noteList.getByText('Work Home', { exact: true })).toBeVisible()
   await expect(noteList.getByText('Personal Home', { exact: true })).toHaveCount(0)
 
-  await trigger.click()
-  const openPersonalWindow = page.getByRole('button', { name: 'Open Personal Vault in a new window' })
-  await page.getByTestId('vault-menu-item-Personal Vault').hover()
-  await expect(openPersonalWindow).toHaveCSS('opacity', '1')
-  await openPersonalWindow.click()
-  await expect.poll(() => page.evaluate(() => (
-    (window as typeof window & { __openedVaultWindows?: OpenedVaultWindow[] })
-      .__openedVaultWindows ?? []
-  ))).toEqual([{
-    vaultPath: '/Users/mock/Personal',
-    vaultColor: null,
-  }])
 })
 
 test('missing Getting Started vault stays hidden while remove actions still work @smoke', async ({ page }) => {

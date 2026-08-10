@@ -5,7 +5,6 @@ import { useUnifiedSearch } from '../hooks/useUnifiedSearch'
 import { formatSearchSubtitle } from '../utils/noteListHelpers'
 import type { DateDisplayFormat } from '../utils/dateDisplay'
 import { scrollSelectedHTMLChildIntoView } from '../utils/domScroll'
-import { WorkspaceInitialsBadge } from './WorkspaceInitialsBadge'
 import { useDateDisplayFormat } from '../hooks/useAppPreferences'
 
 interface SearchPanelProps {
@@ -176,15 +175,6 @@ function useSearchKeyboardDocumentListeners({
   }, [handleKeyDown, handleKeyUp, open, pressedKeysRef])
 }
 
-function searchVaultPathsForEntries(entries: VaultEntry[], fallbackVaultPath: string): string | string[] {
-  const paths = entries.map((entry) => entry.workspace?.path).filter((path): path is string => !!path)
-  return paths.length > 0 ? [...new Set(paths)] : fallbackVaultPath
-}
-
-function shouldShowWorkspace(entries: VaultEntry[]): boolean {
-  return new Set(entries.map((entry) => entry.workspace?.alias).filter(Boolean)).size > 1
-}
-
 function useSearchSelectionRefs(results: SearchResult[], selectedIndex: number) {
   const resultsRef = useRef(results)
   const selectedIndexRef = useRef(selectedIndex)
@@ -203,9 +193,7 @@ function useSearchEntryData(entries: VaultEntry[]) {
     for (const e of entries) map.set(e.path, e)
     return map
   }, [entries])
-  const showWorkspace = useMemo(() => shouldShowWorkspace(entries), [entries])
-
-  return { entryLookup, showWorkspace }
+  return { entryLookup }
 }
 
 function useSearchKeyboard({
@@ -259,9 +247,8 @@ function useSearchKeyboard({
 }
 
 function useSearchPanelController({ open, vaultPath, entries, onSelectNote, onClose }: SearchPanelProps) {
-  const searchVaultPaths = useMemo(() => searchVaultPathsForEntries(entries, vaultPath), [entries, vaultPath])
   const { query, setQuery, results, selectedIndex, setSelectedIndex, loading, elapsedMs } = useUnifiedSearch(
-    searchVaultPaths,
+    vaultPath,
     open,
   )
 
@@ -328,7 +315,6 @@ export function SearchPanel({ open, vaultPath, entries, onSelectNote, onClose }:
         selectedIndex,
         setQuery,
         setSelectedIndex,
-        showWorkspace,
       } = useSearchPanelController({
         open,
         vaultPath,
@@ -375,7 +361,6 @@ export function SearchPanel({ open, vaultPath, entries, onSelectNote, onClose }:
               loading={loading}
               elapsedMs={elapsedMs}
               entryLookup={entryLookup}
-              showWorkspace={showWorkspace}
               dateDisplayFormat={dateDisplayFormat}
               listRef={listRef}
               onSelect={handleSelect}
@@ -440,7 +425,6 @@ export function SearchPanel({ open, vaultPath, entries, onSelectNote, onClose }:
       loading: boolean
       elapsedMs: number | null
       entryLookup: Map<string, VaultEntry>
-      showWorkspace: boolean
       dateDisplayFormat: DateDisplayFormat
       listRef: React.RefObject<HTMLDivElement | null>
       onSelect: (result: SearchResult) => void
@@ -452,7 +436,6 @@ export function SearchPanel({ open, vaultPath, entries, onSelectNote, onClose }:
       entry: VaultEntry | undefined
       selected: boolean
       index: number
-      showWorkspace: boolean
       dateDisplayFormat: DateDisplayFormat
       onSelect: (result: SearchResult) => void
       onHover: (index: number, event: React.MouseEvent<HTMLDivElement>) => void
@@ -461,38 +444,27 @@ export function SearchPanel({ open, vaultPath, entries, onSelectNote, onClose }:
     interface SearchResultPresentation {
       subtitle: string | null
       title: string
-      workspace: VaultEntry['workspace'] | null
     }
 
     function resolveSearchResultPresentation({
       result,
       entry,
-      showWorkspace,
       dateDisplayFormat,
     }: Pick<
       SearchResultRowProps,
-      'result' | 'entry' | 'showWorkspace' | 'dateDisplayFormat'
+      'result' | 'entry' | 'dateDisplayFormat'
     >): SearchResultPresentation {
       return {
         subtitle: entry ? formatSearchSubtitle(entry, dateDisplayFormat) : null,
         title: entry?.title ?? result.title,
-        workspace: resolveSearchResultWorkspace(showWorkspace, entry),
       }
     }
 
-    function resolveSearchResultWorkspace(
-      showWorkspace: boolean,
-      entry: VaultEntry | undefined,
-    ): VaultEntry['workspace'] | null {
-      return showWorkspace ? (entry?.workspace ?? null) : null
-    }
-
     function SearchResultRow(options: SearchResultRowProps) {
-      const { result, entry, selected, index, showWorkspace, dateDisplayFormat, onSelect, onHover } = options
+      const { result, entry, selected, index, dateDisplayFormat, onSelect, onHover } = options
       const presentation = resolveSearchResultPresentation({
         result,
         entry,
-        showWorkspace,
         dateDisplayFormat,
       })
 
@@ -513,7 +485,6 @@ export function SearchPanel({ open, vaultPath, entries, onSelectNote, onClose }:
         >
           <div className="flex items-center gap-2">
             <SearchResultTitle title={presentation.title} />
-            <WorkspaceInitialsBadge workspace={presentation.workspace} testId="search-result-workspace-badge" />
           </div>
           <SearchResultSubtitle subtitle={presentation.subtitle} />
         </div>
@@ -572,7 +543,6 @@ export function SearchPanel({ open, vaultPath, entries, onSelectNote, onClose }:
         loading,
         elapsedMs,
         entryLookup,
-        showWorkspace,
         dateDisplayFormat,
         listRef,
         onSelect,
@@ -596,7 +566,6 @@ export function SearchPanel({ open, vaultPath, entries, onSelectNote, onClose }:
                 entry={entryLookup.get(result.path)}
                 selected={i === selectedIndex}
                 index={i}
-                showWorkspace={showWorkspace}
                 dateDisplayFormat={dateDisplayFormat}
                 onSelect={onSelect}
                 onHover={onHover}

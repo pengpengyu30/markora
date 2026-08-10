@@ -339,10 +339,10 @@ mod tests {
             note_width_mode: Some("wide".to_string()),
             initial_h1_auto_rename_enabled: Some(false),
             hide_gitignored_files: Some(false),
-            multi_workspace_enabled: Some(true),
             all_notes_show_pdfs: Some(true),
             all_notes_show_images: Some(true),
             all_notes_show_unsupported: Some(false),
+            multi_workspace_enabled: Some(true),
         };
         let json = serde_json::to_string(&settings).unwrap();
         let parsed: Settings = serde_json::from_str(&json).unwrap();
@@ -373,7 +373,6 @@ mod tests {
             note_width_mode: Some("wide".to_string()),
             initial_h1_auto_rename_enabled: Some(false),
             hide_gitignored_files: Some(false),
-            multi_workspace_enabled: Some(true),
             all_notes_show_pdfs: Some(true),
             all_notes_show_images: Some(false),
             all_notes_show_unsupported: Some(true),
@@ -392,7 +391,6 @@ mod tests {
         assert_eq!(loaded.note_width_mode.as_deref(), Some("wide"));
         assert_eq!(loaded.initial_h1_auto_rename_enabled, Some(false));
         assert_eq!(loaded.hide_gitignored_files, Some(false));
-        assert_eq!(loaded.multi_workspace_enabled, Some(true));
         assert_eq!(loaded.all_notes_show_pdfs, Some(true));
         assert_eq!(loaded.all_notes_show_images, Some(false));
         assert_eq!(loaded.all_notes_show_unsupported, Some(true));

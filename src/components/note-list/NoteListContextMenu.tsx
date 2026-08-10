@@ -13,7 +13,6 @@ export type NoteListContextMenuState = {
 
 interface NoteListContextMenuParams {
   locale?: AppLocale
-  onOpenInNewWindow?: (entry: VaultEntry) => void
   onRenameFilename?: (path: string, newFilenameStem: string) => void
   onDeletePaths?: (paths: string[]) => void
   onExportPdf?: (entry: VaultEntry) => void
@@ -24,7 +23,6 @@ interface NoteListContextMenuParams {
 function hasNoteListContextActions(options: NoteListContextMenuParams & { entry: VaultEntry }) {
   const {
     entry,
-    onOpenInNewWindow,
     onRenameFilename,
     onDeletePaths,
     onExportPdf,
@@ -32,7 +30,6 @@ function hasNoteListContextActions(options: NoteListContextMenuParams & { entry:
     onCopyFilePath,
   } = options
   return [
-    onOpenInNewWindow,
     onRenameFilename && isMarkdownEntry(entry),
     onExportPdf && isMarkdownEntry(entry),
     onDeletePaths,
@@ -44,7 +41,6 @@ function hasNoteListContextActions(options: NoteListContextMenuParams & { entry:
 export function useNoteListContextMenu(options: NoteListContextMenuParams) {
   const {
     locale = 'en',
-    onOpenInNewWindow,
     onRenameFilename,
     onDeletePaths,
     onExportPdf,
@@ -95,7 +91,6 @@ export function useNoteListContextMenu(options: NoteListContextMenuParams) {
       if (
         !hasNoteListContextActions({
           entry,
-          onOpenInNewWindow,
           onRenameFilename,
           onDeletePaths,
           onExportPdf,
@@ -114,7 +109,6 @@ export function useNoteListContextMenu(options: NoteListContextMenuParams) {
       onDeletePaths,
       onExportPdf,
       onRenameFilename,
-      onOpenInNewWindow,
       onRevealFile,
     ],
   )
@@ -125,7 +119,6 @@ export function useNoteListContextMenu(options: NoteListContextMenuParams) {
         ctxMenu={ctxMenu}
         ctxMenuRef={ctxMenuRef}
         locale={locale}
-        onOpenInNewWindow={onOpenInNewWindow}
         onRequestRename={onRenameFilename ? requestRename : undefined}
         onDeletePaths={onDeletePaths}
         onExportPdf={onExportPdf}

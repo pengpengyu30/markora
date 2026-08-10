@@ -14,18 +14,18 @@ export interface PersistedVaultList {
   }>
   active_vault: string | null
   default_workspace_path?: string | null
-  hidden_defaults: string[]
+  hidden_defaults?: string[]
 }
 
 function persistedVaultOption(v: PersistedVaultList['vaults'][number]): VaultOption {
   return {
     label: v.label,
     path: v.path,
-    alias: v.alias ?? undefined,
+    ...(v.alias ? { alias: v.alias } : {}),
     ...(v.shortLabel ? { shortLabel: v.shortLabel } : {}),
-    color: v.color ?? null,
-    icon: v.icon ?? null,
-    mounted: v.mounted !== false,
+    ...(v.color ? { color: v.color } : {}),
+    ...(v.icon ? { icon: v.icon } : {}),
+    ...(v.mounted === false ? { mounted: false } : {}),
   }
 }
 
@@ -56,7 +56,7 @@ export async function loadVaultList(): Promise<{
     vaults: checked,
     activeVault: data.active_vault,
     defaultWorkspacePath: data.default_workspace_path ?? data.active_vault,
-    hiddenDefaults: data.hidden_defaults,
+    hiddenDefaults: data.hidden_defaults ?? [],
   }
 }
 
@@ -70,14 +70,16 @@ export function saveVaultList(
     vaults: vaults.map(v => ({
       label: v.label,
       path: v.path,
-      alias: v.alias ?? null,
+      ...(v.alias ? { alias: v.alias } : {}),
       ...(v.shortLabel ? { shortLabel: v.shortLabel } : {}),
-      color: v.color ?? null,
-      icon: v.icon ?? null,
-      mounted: v.mounted !== false,
+      ...(v.color ? { color: v.color } : {}),
+      ...(v.icon ? { icon: v.icon } : {}),
+      ...(v.mounted === false ? { mounted: false } : {}),
     })),
     active_vault: activeVault,
-    default_workspace_path: defaultWorkspacePath,
+    ...(defaultWorkspacePath && defaultWorkspacePath !== activeVault
+      ? { default_workspace_path: defaultWorkspacePath }
+      : {}),
     hidden_defaults: hiddenDefaults,
   }
   return tauriCall('save_vault_list', { list })

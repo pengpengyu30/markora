@@ -4,7 +4,6 @@ import { WelcomeScreen } from './WelcomeScreen'
 import type { useOnboarding } from '../hooks/useOnboarding'
 import type { useVaultSwitcher } from '../hooks/useVaultSwitcher'
 import type { Settings } from '../types'
-import type { NoteWindowParams } from '../utils/windowMode'
 import type { AppLocale } from '../lib/i18n'
 
 type OnboardingState = ReturnType<typeof useOnboarding>
@@ -13,7 +12,6 @@ export interface StartupScreenParams {
   isOffline: boolean
   isStartupLoading: boolean
   locale?: AppLocale
-  noteWindowParams: NoteWindowParams | null
   onboarding: OnboardingState
   runtimeMissingVaultPath: string | null
   saveSettings: (settings: Settings) => Promise<void>
@@ -26,20 +24,16 @@ export interface StartupScreenParams {
 }
 
 function shouldShowTelemetryConsent(params: StartupScreenParams): boolean {
-  return !params.noteWindowParams
-    && !params.isStartupLoading
+  return !params.isStartupLoading
     && params.settingsLoaded
     && params.settings.telemetry_consent === null
 }
 
 function shouldShowWelcomeView(params: StartupScreenParams): boolean {
-  return !params.noteWindowParams
-    && (
-      Boolean(params.runtimeMissingVaultPath)
-      || params.onboarding.state.status === 'welcome'
-      || params.onboarding.state.status === 'vault-missing'
-      || params.shouldResumeFreshStartOnboarding
-    )
+  return Boolean(params.runtimeMissingVaultPath)
+    || params.onboarding.state.status === 'welcome'
+    || params.onboarding.state.status === 'vault-missing'
+    || params.shouldResumeFreshStartOnboarding
 }
 
 function welcomeOnboardingState(params: StartupScreenParams): OnboardingState {

@@ -56,7 +56,6 @@ function makeHandlers(): AppCommandHandlers {
     onOpenVault: vi.fn(),
     onRemoveActiveVault: vi.fn(),
     onRestoreGettingStarted: vi.fn(),
-    onOpenInNewWindow: vi.fn(),
     onReloadVault: vi.fn(),
     onRepairVault: vi.fn(),
     activeTabPathRef: { current: '/vault/test.md' },

@@ -101,34 +101,6 @@ describe('useVaultSwitcher', () => {
     expect(result.current.vaultPath).toBe(expectedDefaultVaultPath)
   })
 
-  it('persists workspace identity changes for the implicit default vault', async () => {
-    const { result } = await renderLoadedVaultSwitcher()
-
-    act(() => {
-      result.current.updateWorkspaceIdentity(expectedDefaultVaultPath, { mounted: false, shortLabel: 'GS' })
-    })
-
-    await waitFor(() => {
-      expect(result.current.allVaults).toEqual([
-        expect.objectContaining({
-          path: expectedDefaultVaultPath,
-          managedDefault: true,
-          mounted: false,
-          shortLabel: 'GS',
-        }),
-      ])
-    })
-    await waitFor(() => {
-      expect(mockVaultListStore.vaults).toEqual([
-        expect.objectContaining({
-          path: expectedDefaultVaultPath,
-          mounted: false,
-          shortLabel: 'GS',
-        }),
-      ])
-    })
-  })
-
   it('loads persisted vaults on mount', async () => {
     mockVaultListStore = {
       vaults: [{ label: 'My Vault', path: '/Users/luca/Laputa' }],
@@ -198,13 +170,8 @@ describe('useVaultSwitcher', () => {
       vaults: [{
         label: 'Selected Vault',
         path: '/selected/vault',
-        alias: null,
-        color: null,
-        icon: null,
-        mounted: true,
       }],
       active_vault: '/selected/vault',
-      default_workspace_path: '/selected/vault',
       hidden_defaults: [],
     })
   })
@@ -226,7 +193,6 @@ describe('useVaultSwitcher', () => {
     expect(mockVaultListStore).toEqual({
       vaults: [],
       active_vault: expectedDefaultVaultPath,
-      default_workspace_path: expectedDefaultVaultPath,
       hidden_defaults: [],
     })
   })
@@ -293,10 +259,6 @@ describe('useVaultSwitcher', () => {
     expect(result.current.allVaults).toEqual([{
       label: 'Work',
       path: '/work/vault',
-      alias: undefined,
-      color: null,
-      icon: null,
-      mounted: true,
       available: true,
     }])
     expect(result.current.vaultPath).toBe('/work/vault')
@@ -306,13 +268,8 @@ describe('useVaultSwitcher', () => {
         vaults: [{
           label: 'Work',
           path: '/work/vault',
-          alias: null,
-          color: null,
-          icon: null,
-          mounted: true,
         }],
         active_vault: '/work/vault',
-        default_workspace_path: '/work/vault',
         hidden_defaults: [],
       })
     })
@@ -335,7 +292,6 @@ describe('useVaultSwitcher', () => {
       expect(mockVaultListStore).toEqual({
         vaults: [],
         active_vault: null,
-        default_workspace_path: null,
         hidden_defaults: [],
       })
     })

@@ -79,7 +79,6 @@ async function installStartupRecoveryMock(page: Page): Promise<void> {
           { label: 'Secondary Vault', path: `${vaultPath}-secondary` },
         ],
         active_vault: vaultPath,
-        default_workspace_path: vaultPath,
         hidden_defaults: [],
       }),
       check_vault_exists: () => true,

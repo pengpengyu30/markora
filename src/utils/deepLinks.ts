@@ -1,11 +1,10 @@
 import type { VaultEntry } from '../types'
 import { joinVaultPath, normalizeNotePathForCollision, normalizeNotePathForIdentity, normalizeNotePathSeparators } from './notePathIdentity'
-import { workspaceAliasFromOption } from './workspaces'
+import { slugifyNoteStem } from './noteSlug'
 
 export const TOLARIA_DEEP_LINK_SCHEME = 'tolaria'
 
 export interface DeepLinkVault {
-  alias?: string | null
   available?: boolean | null
   label?: string | null
   path: string
@@ -88,11 +87,8 @@ function stablePathHash({ path }: Pick<DeepLinkVault, 'path'>): string {
 }
 
 function baseSlugForVault(vault: DeepLinkVault): string {
-  return workspaceAliasFromOption({
-    alias: vault.alias ?? vault.label ?? '',
-    label: vault.label ?? '',
-    path: vault.path,
-  })
+  const fallbackLabel = vault.path.split(/[\\/]/).filter(Boolean).pop() ?? 'vault'
+  return slugifyNoteStem(vault.label?.trim() || fallbackLabel)
 }
 
 export function vaultDeepLinkSlug(vault: DeepLinkVault, allVaults: readonly DeepLinkVault[]): string {

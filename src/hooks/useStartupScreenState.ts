@@ -12,7 +12,6 @@ interface StartupVaultSwitcherState {
 }
 
 interface UseStartupScreenStateArgs {
-  isNoteWindow: boolean
   onboardingState: StartupOnboardingState
   runtimeMissingVaultPath: string | null
   selectedVaultPath: string | null
@@ -30,7 +29,6 @@ interface StartupScreenState {
 }
 
 interface ShouldShowStartupScreenArgs {
-  isNoteWindow: boolean
   isStartupLoading: boolean
   onboardingState: StartupOnboardingState
   runtimeMissingVaultPath: string | null
@@ -69,7 +67,6 @@ function needsTelemetryConsent(
 
 function shouldShowStartupScreenForState(options: ShouldShowStartupScreenArgs): boolean {
   const {
-    isNoteWindow,
     isStartupLoading,
     onboardingState,
     runtimeMissingVaultPath,
@@ -77,8 +74,6 @@ function shouldShowStartupScreenForState(options: ShouldShowStartupScreenArgs): 
     shouldResumeFreshStartOnboarding,
     telemetryConsent,
   } = options
-  if (isNoteWindow) return false
-
   const startupReasons = [
     needsTelemetryConsent(isStartupLoading, settingsLoaded, telemetryConsent),
     Boolean(runtimeMissingVaultPath),
@@ -90,18 +85,16 @@ function shouldShowStartupScreenForState(options: ShouldShowStartupScreenArgs): 
 }
 
 function isVaultContentLoading(
-  isNoteWindow: boolean,
   isStartupLoading: boolean,
   onboardingState: StartupOnboardingState,
   vaultIsLoading: boolean,
 ): boolean {
   const readyVaultIsLoading = onboardingState.status === 'ready' && vaultIsLoading
-  return !isNoteWindow && (isStartupLoading || readyVaultIsLoading)
+  return isStartupLoading || readyVaultIsLoading
 }
 
 export function useStartupScreenState(options: UseStartupScreenStateArgs): StartupScreenState {
   const {
-    isNoteWindow,
     onboardingState,
     runtimeMissingVaultPath,
     selectedVaultPath,
@@ -115,9 +108,8 @@ export function useStartupScreenState(options: UseStartupScreenStateArgs): Start
     [onboardingState, selectedVaultPath, vaultSwitcher],
   )
 
-  const isStartupLoading = !isNoteWindow && onboardingState.status === 'loading'
+  const isStartupLoading = onboardingState.status === 'loading'
   const shouldShowStartupScreen = shouldShowStartupScreenForState({
-    isNoteWindow,
     isStartupLoading,
     onboardingState,
     runtimeMissingVaultPath,
@@ -125,7 +117,7 @@ export function useStartupScreenState(options: UseStartupScreenStateArgs): Start
     shouldResumeFreshStartOnboarding,
     telemetryConsent,
   })
-  const vaultContentLoading = isVaultContentLoading(isNoteWindow, isStartupLoading, onboardingState, vaultIsLoading)
+  const vaultContentLoading = isVaultContentLoading(isStartupLoading, onboardingState, vaultIsLoading)
 
   return {
     isStartupLoading,

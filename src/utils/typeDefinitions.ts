@@ -1,13 +1,7 @@
 import type { VaultEntry } from '../types'
 
-const NO_WORKSPACE_KEY = '__tolaria_no_workspace__'
-
 interface TypeNameQuery {
   type: string
-}
-
-interface WorkspacePathQuery {
-  path?: string | null
 }
 
 interface TypeDefinitionLookup {
@@ -16,23 +10,8 @@ interface TypeDefinitionLookup {
   typeEntryPath?: string
 }
 
-interface WorkspaceTypeDefinitionLookup {
-  entries: VaultEntry[]
-  type: string
-  workspacePath: string
-}
-
 export function normalizeTypeName({ type }: TypeNameQuery): string {
   return type.trim().toLowerCase()
-}
-
-export function typeWorkspaceKey({ path }: WorkspacePathQuery): string {
-  const normalizedPath = path?.trim()
-  return normalizedPath?.length ? normalizedPath : NO_WORKSPACE_KEY
-}
-
-export function entryTypeWorkspaceKey(entry: Pick<VaultEntry, 'workspace'>): string {
-  return typeWorkspaceKey({ path: entry.workspace?.path })
 }
 
 export function isMarkdownEntry(entry: Pick<VaultEntry, 'fileKind'>): boolean {
@@ -59,17 +38,4 @@ export function findTypeDefinition({
   const key = normalizeTypeName({ type })
   if (!key) return null
   return entries.find((entry) => isTypeDefinitionForName(entry, { type: key })) ?? null
-}
-
-export function findTypeDefinitionForWorkspace({
-  entries,
-  type,
-  workspacePath,
-}: WorkspaceTypeDefinitionLookup): VaultEntry | null {
-  const key = normalizeTypeName({ type })
-  if (!key) return null
-  return entries.find((entry) => (
-    isTypeDefinitionForName(entry, { type: key })
-      && entry.workspace?.path === workspacePath
-  )) ?? null
 }

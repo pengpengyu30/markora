@@ -170,7 +170,6 @@ vi.mock('../utils/wikilinkSuggestions', () => ({
 vi.mock('../utils/suggestionEnrichment', () => ({
   attachClickHandlers: <T,>(items: T[]) => items,
   enrichSuggestionItems: <T,>(items: T[]) => items,
-  hasMultipleSuggestionWorkspaces: () => false,
 }))
 
 vi.mock('./WikilinkSuggestionMenu', () => ({

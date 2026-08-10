@@ -33,7 +33,6 @@ interface NoteCommandsConfig {
   onMoveNoteToFolder?: () => void
   canMoveNoteToFolder?: boolean
   onTurnCurrentBlockInto?: (target: RichEditorBlockTypeDefinition) => void
-  onOpenInNewWindow?: () => void
   onRevealActiveFile?: (path: string) => void
   onCopyActiveFilePath?: (path: string) => void
   onCopyActiveDeepLink?: (path: string) => void
@@ -160,7 +159,6 @@ function buildOptionalNoteCommands(config: NoteCommandsConfig): CommandAction[] 
   return [
     ...buildFileActionCommands(config),
     ...buildRetargetingCommands(config),
-    ...buildPresentationCommands(config),
   ]
 }
 
@@ -281,19 +279,6 @@ function buildFileActionCommands(config: NoteCommandsConfig): CommandAction[] {
     buildCopyActiveDeepLinkCommand(config),
     buildExportNotePdfCommand(config),
     buildOpenActiveFileExternalCommand(config),
-  ]
-}
-
-function buildPresentationCommands(config: NoteCommandsConfig): CommandAction[] {
-  return [
-    createNoteCommand({
-      id: 'open-in-new-window',
-      label: 'Open in New Window',
-      shortcut: getAppCommandShortcutDisplay(APP_COMMAND_IDS.noteOpenInNewWindow),
-      keywords: ['window', 'new', 'detach', 'pop', 'external', 'separate'],
-      enabled: config.hasActiveNote,
-      execute: () => config.onOpenInNewWindow?.(),
-    }),
   ]
 }
 

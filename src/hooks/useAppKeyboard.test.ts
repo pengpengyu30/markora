@@ -452,12 +452,4 @@ describe('useAppKeyboard', () => {
     expect(actions.onZoomReset).toHaveBeenCalled()
   })
 
-  it('Cmd+Shift+O triggers open in new window', () => {
-    const actions = makeActions()
-    const onOpenInNewWindow = vi.fn()
-    renderHook(() => useAppKeyboard({ ...actions, onOpenInNewWindow }))
-    fireKey('o', { metaKey: true, shiftKey: true })
-    expect(onOpenInNewWindow).toHaveBeenCalled()
-  })
-
 })
