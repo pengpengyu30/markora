@@ -115,13 +115,6 @@ function sourceBytes(source: FastMarkdownSource): number {
   return textEncoder ? textEncoder.encode(source.markdown).byteLength : source.markdown.length
 }
 
-function startsHtmlBlock(line: MarkdownLine): boolean {
-  const candidate = line.trimStart()
-  if (line.length - candidate.length > 3 || candidate.charAt(0) !== '<') return false
-  const nameStart = candidate.charAt(1) === '/' ? 2 : 1
-  return /[A-Za-z]/u.test(candidate.charAt(nameStart)) && candidate.indexOf('>', nameStart + 1) !== -1
-}
-
 function paragraphBlock(content: InlineItem[]): BlockLike {
   return { type: 'paragraph', content, children: [] }
 }
@@ -264,7 +257,6 @@ function nextStyleMarker(text: InlineMarkdownText, index: LineIndex): { style: k
 }
 
 function unsupportedLine(line: MarkdownLine): string | null {
-  if (startsHtmlBlock(line)) return 'html-block'
   if (MARKDOWN_IMAGE_RE.test(line)) return 'markdown-image'
   if (REFERENCE_LINK_RE.test(line)) return 'reference-link'
   if (UNSUPPORTED_BLOCK_RE.test(line)) return 'unsupported-block-marker'

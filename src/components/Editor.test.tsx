@@ -1,4 +1,4 @@
-import { screen, fireEvent, act, within, waitFor } from '@testing-library/react'
+import { screen, fireEvent, act, within } from '@testing-library/react'
 import { beforeEach, describe, it, expect, vi } from 'vitest'
 import { formatShortcutDisplay } from '../hooks/appCommandCatalog'
 import { RUNTIME_STYLE_NONCE } from '../lib/runtimeStyleNonce'
@@ -146,7 +146,7 @@ describe('Editor', () => {
     expect(screen.queryByTestId('blocknote-view')).not.toBeInTheDocument()
   })
 
-  it('renders HTML in-app and switches to editable source from the breadcrumb', async () => {
+  it('renders standalone HTML through the unsupported fallback and keeps raw source editing', async () => {
     const standalonePreviewEntry: VaultEntry = {
       ...mockEntry,
       path: '/vault/reports/status.html',
@@ -162,46 +162,18 @@ describe('Editor', () => {
       vaultPath: '/vault',
     })
 
-    expect(screen.getByTestId('html-file-preview')).toBeInTheDocument()
-    expect(screen.getByTestId('html-file-preview').parentElement).toHaveAttribute('data-note-pdf-export-root', 'true')
+    expect(screen.getByTestId('file-preview-fallback')).toHaveTextContent('Preview unavailable')
+    expect(screen.queryByRole('iframe')).not.toBeInTheDocument()
     expect(screen.queryByTestId('blocknote-view')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Open the raw editor' }))
 
     expect(await screen.findByTestId('raw-editor-codemirror')).toBeInTheDocument()
-    expect(screen.queryByTestId('html-file-preview')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('file-preview-fallback')).not.toBeInTheDocument()
 
     act(() => {
       resetVaultConfigStore()
     })
-  })
-
-  it('exports the rendered HTML preview through the PDF flow', async () => {
-    const standaloneEntry: VaultEntry = {
-      ...mockEntry,
-      path: '/vault/reports/status.html',
-      filename: 'status.html',
-      title: 'status.html',
-      fileKind: 'text',
-    }
-    const print = vi.spyOn(window, 'print').mockImplementation(() => {})
-
-    try {
-      renderEditor({
-        tabs: [{ entry: standaloneEntry, content: '' }],
-        activeTabPath: standaloneEntry.path,
-        entries: [standaloneEntry],
-        vaultPath: '/vault',
-      })
-
-      fireEvent.click(screen.getByRole('button', { name: 'More note actions' }))
-      fireEvent.click(within(await screen.findByRole('menu')).getByRole('menuitem', { name: 'Export note as PDF' }))
-
-      await waitFor(() => expect(print).toHaveBeenCalledOnce())
-      window.dispatchEvent(new Event('afterprint'))
-    } finally {
-      print.mockRestore()
-    }
   })
 
   it('shows a graceful fallback when an image preview fails to render', () => {
@@ -335,7 +307,7 @@ describe('Editor', () => {
     )
   })
 
-  it('does not parse active sheets through the hidden rich editor', async () => {
+  it('routes legacy sheets to the unsupported fallback without parsing them as rich content', async () => {
     const sheetEntry: VaultEntry = {
       ...mockEntry,
       path: '/vault/project/model.md',
@@ -355,7 +327,7 @@ describe('Editor', () => {
     })
     await flushEditorSwapWork()
 
-    expect(screen.getByTestId('sheet-editor')).toHaveAttribute('data-path', sheetEntry.path)
+    expect(screen.getByTestId('file-preview-fallback')).toHaveTextContent('Preview unavailable')
     expect(mockEditor.tryParseMarkdownToBlocks).not.toHaveBeenCalled()
   })
 

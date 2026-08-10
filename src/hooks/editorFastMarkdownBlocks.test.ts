@@ -60,12 +60,9 @@ describe('tryParseFastMarkdownBlocks', () => {
   })
 
   it('rejects Markdown constructs that need BlockNote parsing to preserve semantics', () => {
-    const html = tryParseFastMarkdownBlocks('<aside>custom html</aside>')
     const referenceLink = tryParseFastMarkdownBlocks('[docs]: https://example.com')
     const image = tryParseFastMarkdownBlocks('![diagram](attachments/diagram.png)')
 
-    expect(html.supported).toBe(false)
-    expect(html.metrics.fallbackReason).toBe('html-block')
     expect(referenceLink.supported).toBe(false)
     expect(referenceLink.metrics.fallbackReason).toBe('reference-link')
     expect(image.supported).toBe(false)

@@ -22,11 +22,9 @@ import { resolveEntry } from '../utils/wikilink'
 import { MATH_BLOCK_TYPE, MATH_INLINE_TYPE, renderMathToHtml } from '../utils/mathMarkdown'
 import { MERMAID_BLOCK_TYPE, mermaidFenceSource } from '../utils/mermaidMarkdown'
 import { TLDRAW_BLOCK_TYPE, TLDRAW_DEFAULT_HEIGHT } from '../utils/tldrawMarkdown'
-import { HTML_BLOCK_DEFAULT_HEIGHT, HTML_BLOCK_TYPE } from '../utils/htmlBlockMarkdown'
 import { MARKDOWN_HIGHLIGHT_STYLE } from '../utils/markdownHighlightMarkdown'
 import type { VaultEntry } from '../types'
 import { createTolariaCodeBlockOptions } from './codeBlockOptions'
-import { HtmlBlock } from './HtmlBlock'
 import { MermaidDiagram } from './MermaidDiagram'
 import { SafeHtmlSpan } from './SafeMarkup'
 import { updateTldrawBlockPropsSafely } from './tldrawBlockProps'
@@ -298,22 +296,6 @@ function readMermaidPreElement(element: HTMLElement): { source: string; diagram:
   }
 }
 
-function readHtmlPreElement(element: HTMLElement): { height: string; html: string } | undefined {
-  if (element.tagName !== 'PRE') return undefined
-  if (element.childElementCount !== 1 || element.firstElementChild?.tagName !== 'CODE') return undefined
-
-  const code = element.firstElementChild
-  if (readCodeElementLanguage(code) !== 'html') return undefined
-
-  const html = code.textContent?.endsWith('\n')
-    ? code.textContent
-    : `${code.textContent ?? ''}\n`
-  return {
-    height: HTML_BLOCK_DEFAULT_HEIGHT,
-    html,
-  }
-}
-
 const MermaidBlock = createReactBlockSpec(
   {
     type: MERMAID_BLOCK_TYPE,
@@ -431,29 +413,8 @@ const TldrawBlock = createReactBlockSpec(
   },
 )
 
-const HtmlBlockSpec = createReactBlockSpec(
-  {
-    type: HTML_BLOCK_TYPE,
-    propSchema: {
-      height: { default: '320' },
-      html: { default: '' },
-      scripts: { default: 'blocked' },
-    },
-    content: 'none',
-  },
-  {
-    runsBefore: ['codeBlock'],
-    meta: { selectable: false },
-    parse: readHtmlPreElement,
-    render: (props) => (
-      <HtmlBlock block={props.block} editor={props.editor} />
-    ),
-  },
-)
-
 const codeBlock = createCodeBlockSpec(createTolariaCodeBlockOptions())
 const audioBlock = AudioBlockSpec()
-const htmlBlock = HtmlBlockSpec()
 const mathBlock = MathBlock()
 const mermaidBlock = MermaidBlock()
 const tldrawBlock = TldrawBlock()
@@ -492,7 +453,6 @@ export const schema = BlockNoteSchema.create({
   blockSpecs: {
     audio: audioBlock,
     calloutBlock,
-    htmlBlock,
     mathBlock,
     mermaidBlock,
     tldrawBlock,

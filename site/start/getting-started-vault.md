@@ -11,12 +11,10 @@ It exists to show Tolaria's conventions without requiring you to restructure you
 - Wikilinks in note bodies.
 - Relationship fields in frontmatter.
 - Rich-editor blocks, callouts, collapsible sections, and durable formatting.
-- A spreadsheet with formulas and a cross-note frontmatter reference.
-- An HTML dashboard powered by vault expressions.
-- A standalone HTML report that can be previewed or edited in raw mode.
+- Legacy spreadsheet and HTML source files are kept only as migration examples.
 - A local Git repository that can be connected to a remote later.
 
-In the cloned vault, open **Editor Playground** for block editing, **Project Dashboard** for vault expressions, and **Sample Report** for standalone HTML preview.
+In the cloned vault, open **Editor Playground** for block editing. Legacy spreadsheet and HTML examples remain source files that can be inspected in raw mode or opened externally.
 
 ## Local-Only By Default
 

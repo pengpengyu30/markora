@@ -1,12 +1,12 @@
 import type React from 'react'
-import { lazy, Suspense, useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
-import { translate, type AppLocale } from '../../lib/i18n'
+import type { AppLocale } from '../../lib/i18n'
 import type { VaultEntry } from '../../types'
 import { useEditorFocusScope } from '../../hooks/editorFocusOwnership'
 import { dispatchEditorFindAvailability } from '../../utils/editorFindEvents'
 import { BreadcrumbBar } from '../BreadcrumbBar'
-import { HtmlFilePreview } from '../HtmlFilePreview'
+import { FilePreview } from '../FilePreview'
 import { RawEditorView } from '../RawEditorView'
 import { SingleEditorView } from '../SingleEditorView'
 import type { useEditorContentModel } from './useEditorContentModel'
@@ -62,19 +62,6 @@ const LOADING_BREADCRUMB_ENTRY: VaultEntry = {
   properties: {},
   hasH1: false,
   fileKind: 'markdown',
-}
-
-const LazySheetEditor = lazy(() => import('../SheetEditor').then((module) => ({ default: module.SheetEditor })))
-
-function SheetEditorLoading({ locale = 'en' }: { locale?: AppLocale }) {
-  return (
-    <div
-      className="flex flex-1 items-center justify-center px-6 py-5 text-sm text-muted-foreground"
-      data-testid="sheet-editor-loading"
-    >
-      {translate(locale, 'editor.sheet.loading')}
-    </div>
-  )
 }
 
 function RawModeEditorSection(
@@ -266,8 +253,8 @@ function EditorBreadcrumbArea({
 type EditorCanvasProps = Pick<
   EditorContentModel,
   | 'showEditor'
-  | 'isHtmlPreview'
-  | 'isSheet'
+  | 'isHtmlFile'
+  | 'legacyUnsupportedKind'
   | 'richEditorContentReady'
   | 'cssVars'
   | 'editor'
@@ -275,23 +262,27 @@ type EditorCanvasProps = Pick<
   | 'entries'
   | 'onNavigateWikilink'
   | 'onEditorChange'
-  | 'onRawContentChange'
-  | 'sheetFlushRef'
   | 'isDeletedPreview'
   | 'vaultPath'
   | 'locale'
   | 'onImageImportError'
+  | 'onOpenExternalFile'
+  | 'onRevealFile'
+  | 'onCopyFilePath'
+  | 'onCopyDeepLink'
 >
 
 function EditorCanvas(props: EditorCanvasProps) {
   if (!props.showEditor) return null
-  if (props.isHtmlPreview && props.activeTab) {
+  if ((props.isHtmlFile || props.legacyUnsupportedKind) && props.activeTab) {
     return (
-      <HtmlFilePreview
-        content={props.activeTab.content}
-        path={props.activeTab.entry.path}
-        title={props.activeTab.entry.title}
-        vaultPath={props.vaultPath ?? ''}
+      <FilePreview
+        entry={props.activeTab.entry}
+        locale={props.locale}
+        onCopyDeepLink={props.onCopyDeepLink}
+        onCopyFilePath={props.onCopyFilePath}
+        onOpenExternalFile={props.onOpenExternalFile}
+        onRevealFile={props.onRevealFile}
       />
     )
   }
@@ -300,7 +291,6 @@ function EditorCanvas(props: EditorCanvasProps) {
 
 function StandardEditorCanvas(options: EditorCanvasProps) {
   const {
-    isSheet,
     richEditorContentReady,
     cssVars,
     editor,
@@ -308,41 +298,17 @@ function StandardEditorCanvas(options: EditorCanvasProps) {
     entries,
     onNavigateWikilink,
     onEditorChange,
-    onRawContentChange,
-    sheetFlushRef,
     isDeletedPreview,
     vaultPath,
     locale,
     onImageImportError,
   } = options
-  if (!isSheet && !richEditorContentReady) return null
-
-  if (isSheet && activeTab) {
-    return (
-      <EditorFindScope className="editor-scroll-area editor-scroll-area--sheet" style={cssVars as React.CSSProperties}>
-        <Suspense fallback={<SheetEditorLoading locale={locale} />}>
-          <LazySheetEditor
-            key={activeTab.entry.path}
-            content={activeTab.content}
-            entries={entries}
-            flushContentRef={sheetFlushRef}
-            locale={locale}
-            path={activeTab.entry.path}
-            onContentChange={onRawContentChange ?? (() => {})}
-            onNavigateWikilink={onNavigateWikilink}
-            sourceEntry={activeTab.entry}
-            vaultPath={vaultPath}
-          />
-        </Suspense>
-      </EditorFindScope>
-    )
-  }
+  if (!richEditorContentReady) return null
 
   return (
     <EditorFindScope className="editor-scroll-area" style={cssVars as React.CSSProperties}>
       <div className="editor-content-wrapper" data-note-pdf-export-root="true">
         <SingleEditorView
-          currentContent={activeTab?.content ?? ''}
           editor={editor}
           entries={entries}
           onNavigateWikilink={onNavigateWikilink}
@@ -411,10 +377,9 @@ export function EditorContentLayout(model: EditorContentModel) {
     isDeletedPreview,
     rawLatestContentRef,
     rawModeContent,
-    sheetFlushRef,
     noteWidth,
-    isHtmlPreview,
-    isSheet,
+    isHtmlFile,
+    legacyUnsupportedKind,
     richEditorContentReady,
     findRequest,
     locale,
@@ -423,7 +388,7 @@ export function EditorContentLayout(model: EditorContentModel) {
   } = model
   const rootClassName = cn(
     'flex flex-1 flex-col min-w-0 min-h-0',
-    isHtmlPreview || isSheet || noteWidth === 'wide' ? 'editor-content-width--wide' : 'editor-content-width--normal',
+    isHtmlFile || legacyUnsupportedKind || noteWidth === 'wide' ? 'editor-content-width--wide' : 'editor-content-width--normal',
   )
   const chromeTab = activeTab ?? loadingTab
   const chromePath = chromeTab?.entry.path ?? path
@@ -459,7 +424,8 @@ export function EditorContentLayout(model: EditorContentModel) {
           />
           <EditorCanvas
             showEditor={showEditor}
-            isHtmlPreview={isHtmlPreview}
+            isHtmlFile={isHtmlFile}
+            legacyUnsupportedKind={legacyUnsupportedKind}
             richEditorContentReady={richEditorContentReady}
             cssVars={cssVars}
             activeTab={activeTab}
@@ -468,12 +434,13 @@ export function EditorContentLayout(model: EditorContentModel) {
             entries={entries}
             onNavigateWikilink={onNavigateWikilink}
             onEditorChange={onEditorChange}
-            onRawContentChange={onRawContentChange}
             onImageImportError={onImageImportError}
-            sheetFlushRef={sheetFlushRef}
             isDeletedPreview={isDeletedPreview}
-            isSheet={isSheet}
             locale={locale}
+            onOpenExternalFile={model.onOpenExternalFile}
+            onRevealFile={model.onRevealFile}
+            onCopyFilePath={model.onCopyFilePath}
+            onCopyDeepLink={model.onCopyDeepLink}
           />
         </>
       )}

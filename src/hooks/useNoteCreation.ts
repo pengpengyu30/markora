@@ -13,13 +13,6 @@ import {
   notePathFilename,
 } from '../utils/notePathIdentity'
 import { labelFromWorkspacePath, workspaceIdentityFromVault } from '../utils/workspaces'
-import {
-  NOTE_FORMAT_FRONTMATTER_KEY,
-  NOTE_FORMAT_SHEET,
-  NOTE_FORMAT_TEXT,
-  normalizeNoteFormat,
-  type NoteFormat,
-} from '../utils/noteFormat'
 import type { VaultOption } from '../components/status-bar/types'
 import { useCreateNoteInFolderRequests } from './noteCreationRequests'
 import { requestEditorFocus } from './useEditorFocus'
@@ -115,30 +108,21 @@ export function entryMatchesTarget({ entry, target }: EntryMatchParams): boolean
 }
 
 export interface NoteContentParams {
-  format?: NoteFormat
   initialEmptyHeading?: boolean
 }
 
-function buildNoteBody({
-  format,
-  initialEmptyHeading,
-}: Pick<NoteContentParams, 'format' | 'initialEmptyHeading'>): string {
-  if (format === NOTE_FORMAT_SHEET) return ''
+function buildNoteBody({ initialEmptyHeading }: NoteContentParams): string {
   return initialEmptyHeading ? '\n# \n\n' : ''
 }
 
 export function buildNoteContent({
-  format = NOTE_FORMAT_TEXT,
   initialEmptyHeading = false,
 }: NoteContentParams): string {
-  const body = buildNoteBody({ format, initialEmptyHeading })
-  if (format === NOTE_FORMAT_SHEET) return `---\n${NOTE_FORMAT_FRONTMATTER_KEY}: sheet\n---\n`
-  return body
+  return buildNoteBody({ initialEmptyHeading })
 }
 
 export interface NewNoteParams {
   title: string
-  format?: NoteFormat
   vaultPath: string
   defaultWorkspacePath?: string | null
   vaults?: readonly VaultOption[]
@@ -148,7 +132,7 @@ export function resolveNewNote(options: NewNoteParams): {
   entry: VaultEntry
   content: string
 } {
-  const { title, format, vaultPath, defaultWorkspacePath, vaults = [] } = options
+  const { title, vaultPath, defaultWorkspacePath, vaults = [] } = options
   const creationVaultPath = resolveCreationVaultPath(vaultPath, defaultWorkspacePath, vaults)
   const slug = slugify(title)
   const entry = {
@@ -159,7 +143,7 @@ export function resolveNewNote(options: NewNoteParams): {
     }),
     workspace: workspaceForVaultPath(creationVaultPath, vaults, defaultWorkspacePath),
   }
-  return { entry, content: buildNoteContent({ format }) }
+  return { entry, content: buildNoteContent({}) }
 }
 
 type ResolvedEntry = { entry: VaultEntry; content: string }
@@ -194,10 +178,9 @@ function buildCreationCollisionMessage({
 }
 
 export function planNewNoteCreation(options: NewNoteParams & { entries: VaultEntry[] }): NoteCreationPlan {
-  const { defaultWorkspacePath, entries, title, format, vaultPath, vaults } = options
+  const { defaultWorkspacePath, entries, title, vaultPath, vaults } = options
   const resolved = resolveNewNote({
     title,
-    format,
     vaultPath,
     defaultWorkspacePath,
     vaults,
@@ -347,14 +330,12 @@ interface ImmediateCreateDeps {
 
 type ImmediateCreationPath =
   | 'cmd_n'
-  | 'cmd_sheet'
   | 'folder_command_palette'
   | 'folder_context_menu'
   | 'folder_header'
 
 export interface ImmediateCreateOptions {
   creationPath?: ImmediateCreationPath
-  format?: NoteFormat
   folderPath?: string
   vaultPath?: string
 }
@@ -424,9 +405,7 @@ function immediateNoteRelativePath(slug: string, folderPath?: string): string {
 }
 
 async function createNoteImmediate(deps: ImmediateCreateDeps, request: ImmediateCreateRequest): Promise<boolean> {
-  const noteFormat = normalizeNoteFormat(request.format)
-  const untitledLabel = noteFormat === NOTE_FORMAT_SHEET ? 'Sheet' : 'Note'
-  const slug = generateUntitledFilename(deps.entries, untitledLabel, deps.pendingSlugs)
+  const slug = generateUntitledFilename(deps.entries, 'Note', deps.pendingSlugs)
   const title = slug_to_title(slug)
   const creationVaultPath = resolveImmediateCreationVaultPath(deps, request)
   const relativePath = immediateNoteRelativePath(slug, request.folderPath)
@@ -440,10 +419,7 @@ async function createNoteImmediate(deps: ImmediateCreateDeps, request: Immediate
   }
   const resolved: ResolvedEntry = {
     entry,
-    content: buildNoteContent({
-      format: noteFormat,
-      initialEmptyHeading: noteFormat !== NOTE_FORMAT_SHEET,
-    }),
+    content: buildNoteContent({ initialEmptyHeading: true }),
   }
   const didPersist = await persistImmediateEntry(deps, resolved.entry, resolved.content)
   if (!didPersist) return false
@@ -459,7 +435,6 @@ function trackImmediateCreate(request: ImmediateCreateRequest, didCreate: boolea
   if (!didCreate) return
   trackEvent('note_created', {
     creation_path: request.creationPath ?? 'cmd_n',
-    format: normalizeNoteFormat(request.format),
   })
 }
 

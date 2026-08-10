@@ -118,7 +118,6 @@ function visibleRichEditorScrollArea(ownerDocument: Document): HTMLElement | nul
     .filter((element): element is HTMLElement => element instanceof HTMLElement)
 
   return scrollAreas.find((scrollArea) => {
-    if (scrollArea.classList.contains('editor-scroll-area--sheet')) return false
     if (!scrollArea.querySelector('.editor__blocknote-container .bn-editor')) return false
 
     const rect = scrollArea.getBoundingClientRect()

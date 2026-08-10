@@ -29,20 +29,4 @@ Date fields use Tolaria's picker, relationship fields can use wikilinks, and raw
 
 ## Referencing Properties
 
-HTML blocks can reference properties from the current note or another note:
-
-::: v-pre
-```html
-<p>{{status}}</p>
-<p>{{formatDate(date, "long")}}</p>
-<p>{{[[project-alpha]].status}}</p>
-```
-:::
-
-Sheet formulas can also read scalar properties with the same note target form:
-
-```txt
-=[[project-alpha]].status
-```
-
-Use [Vault Expressions](/reference/vault-expressions) for HTML expression syntax and [Spreadsheet Formulas](/reference/spreadsheet-functions) for formula behavior.
+Properties are available to Tolaria's note lists, filters, and relationship navigation. The former HTML-block vault-expression and spreadsheet-formula runtimes are no longer active; old expression text remains source text for manual migration.

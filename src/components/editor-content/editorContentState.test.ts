@@ -137,14 +137,14 @@ describe('deriveEditorContentState', () => {
   })
 
   it.each([
-    ['marks markdown notes with sheet display as sheet editor content', 'Note', '---\ntype: Note\n_display: sheet\n---\nMetric,January', true],
-    ['does not treat Sheet type metadata as sheet editor content', 'Sheet', '---\ntype: Sheet\n---\nMetric,January', false],
-  ])('%s', (_label, isA, content, expectedIsSheet) => {
+    ['marks markdown notes with sheet display as legacy unsupported content', 'Note', '---\ntype: Note\n_display: sheet\n---\nMetric,January', 'sheet'],
+    ['does not treat Sheet type metadata as legacy unsupported content', 'Sheet', '---\ntype: Sheet\n---\nMetric,January', null],
+  ])('%s', (_label, isA, content, expectedKind) => {
     const state = deriveStateForContent({ isA, fileKind: 'markdown' }, content)
 
-    expect(state.isSheet).toBe(expectedIsSheet)
+    expect(state.legacyUnsupportedKind).toBe(expectedKind)
     expect(state.showEditor).toBe(true)
-    if (expectedIsSheet) expect(state.effectiveRawMode).toBe(false)
+    if (expectedKind) expect(state.effectiveRawMode).toBe(false)
   })
 
   it('does not use fresh entry type metadata as sheet editor content', () => {
@@ -168,17 +168,17 @@ describe('deriveEditorContentState', () => {
       activeStatus: 'clean',
     })
 
-    expect(state.isSheet).toBe(false)
+    expect(state.legacyUnsupportedKind).toBe(null)
     expect(state.showEditor).toBe(true)
   })
 
   it.each([
     ['uses indexed display metadata when loaded content is temporarily missing frontmatter', 'Metric,January', true],
     ['lets loaded display metadata override stale indexed display metadata', '---\n_display: text\n---\nMetric,January', false],
-  ])('%s', (_label, content, expectedIsSheet) => {
+  ])('%s', (_label, content, expectedKind) => {
     const state = deriveStateForContent({ display: 'sheet', fileKind: 'markdown' }, content)
 
-    expect(state.isSheet).toBe(expectedIsSheet)
+    expect(state.legacyUnsupportedKind).toBe(expectedKind ? 'sheet' : null)
     expect(state.showEditor).toBe(true)
   })
 
@@ -192,11 +192,11 @@ describe('deriveEditorContentState', () => {
       content: '---\ntype: Note\n_display: sheet\n---\nMetric,January',
     })
 
-    expect(textState.isSheet).toBe(true)
+    expect(textState.legacyUnsupportedKind).toBe('sheet')
     expect(textState.effectiveRawMode).toBe(false)
   })
 
-  it('does not treat binary files as sheet nodes even if display metadata matches', () => {
+  it('does not treat binary files as legacy unsupported notes even if display metadata matches', () => {
     const binaryState = deriveState({
       entry: {
         ...baseEntry,
@@ -206,10 +206,10 @@ describe('deriveEditorContentState', () => {
       content: '---\n_display: sheet\n---\nMetric,January',
     })
 
-    expect(binaryState.isSheet).toBe(false)
+    expect(binaryState.legacyUnsupportedKind).toBe(null)
   })
 
-  it.each(['html', 'HTM'])('shows .%s text files as toggleable HTML previews', (extension) => {
+  it.each(['html', 'HTM'])('shows .%s text files as unsupported files with raw-source access', (extension) => {
     const state = deriveState({
       entry: {
         ...baseEntry,
@@ -220,13 +220,13 @@ describe('deriveEditorContentState', () => {
       content: '<!doctype html><h1>Status</h1>',
     })
 
-    expect(state.isHtmlPreview).toBe(true)
+    expect(state.isHtmlFile).toBe(true)
     expect(state.isNonMarkdownText).toBe(false)
     expect(state.effectiveRawMode).toBe(false)
     expect(state.showEditor).toBe(true)
   })
 
-  it('switches an HTML preview to the raw editor when raw mode is enabled', () => {
+  it('switches an unsupported HTML file to the raw editor when raw mode is enabled', () => {
     const entry = {
       ...baseEntry,
       path: '/vault/reports/status.html',
@@ -240,8 +240,29 @@ describe('deriveEditorContentState', () => {
       activeStatus: 'clean',
     })
 
-    expect(state.isHtmlPreview).toBe(true)
+    expect(state.isHtmlFile).toBe(true)
     expect(state.effectiveRawMode).toBe(true)
     expect(state.showEditor).toBe(false)
+  })
+
+  it('keeps fenced HTML as an ordinary Markdown code block', () => {
+    const state = deriveStateForContent(
+      { fileKind: 'markdown' },
+      'Before\n\n```html\n<script>window.__shouldNotRun = true</script>\n```',
+    )
+
+    expect(state.legacyUnsupportedKind).toBe(null)
+    expect(state.effectiveRawMode).toBe(false)
+    expect(state.showEditor).toBe(true)
+  })
+
+  it('keeps tldraw fences on the rich-editor path', () => {
+    const state = deriveStateForContent(
+      { fileKind: 'markdown' },
+      '```tldraw id="board"\n{}\n```',
+    )
+
+    expect(state.legacyUnsupportedKind).toBe(null)
+    expect(state.showEditor).toBe(true)
   })
 })

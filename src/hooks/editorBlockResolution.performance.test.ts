@@ -103,17 +103,14 @@ describe('resolveBlocksForTarget performance paths', () => {
     expect(JSON.stringify(resolved.blocks)).not.toContain('TOLARIA_MATH')
   })
 
-  it.each([
-    ['HTML blocks', '<aside>custom html</aside>', '/vault/html.md'],
-    ['Markdown images', '![diagram](attachments/diagram.png)', '/vault/image.md'],
-  ])('falls back to BlockNote parsing for large notes with %s', async (_label, unsupportedMarkdown, targetPath) => {
+  it('falls back to BlockNote parsing for large notes with Markdown images', async () => {
     const editor = makeEditor()
-    const content = `${longMarkdownBody()}\n\n${unsupportedMarkdown}`
+    const content = `${longMarkdownBody()}\n\n![diagram](attachments/diagram.png)`
 
     await resolveBlocksForTarget({
       editor: editor as never,
       cache: new Map(),
-      targetPath,
+      targetPath: '/vault/image.md',
       content,
     })
 

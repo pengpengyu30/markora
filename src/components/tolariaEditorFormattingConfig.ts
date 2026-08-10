@@ -44,7 +44,6 @@ import {
   type RichEditorBlockTypeDefinition,
   type RichEditorBlockTypeKey,
 } from '../utils/richEditorBlockTypes'
-import { HTML_BLOCK_DEFAULT_HEIGHT, HTML_BLOCK_TYPE } from '../utils/htmlBlockMarkdown'
 import { MATH_BLOCK_TYPE } from '../utils/mathMarkdown'
 import { MERMAID_BLOCK_TYPE, mermaidFenceSource } from '../utils/mermaidMarkdown'
 import { TLDRAW_BLOCK_TYPE, TLDRAW_DEFAULT_HEIGHT } from '../utils/tldrawMarkdown'
@@ -75,7 +74,6 @@ type TolariaSlashMenuLabels = {
   calloutTypeTitles: Record<ObsidianCalloutType, string>
   dateTitle: string
   datetimeTitle: string
-  htmlTitle: string
   mathTitle: string
   timeTitle: string
 }
@@ -91,7 +89,6 @@ export const MERMAID_SLASH_COMMAND_DIAGRAM = [
   '    edit["Switch to the raw editor to edit"]',
 ].join('\n')
 export const MATH_SLASH_COMMAND_LATEX = '\\sqrt{a^2 + b^2}'
-export const HTML_SLASH_COMMAND_SOURCE = ''
 
 const UNSUPPORTED_FORMATTING_TOOLBAR_KEYS = new Set([
   'underlineStyleButton',
@@ -140,7 +137,6 @@ const TOLARIA_SLASH_MENU_ICONS: Partial<Record<string, PhosphorIcon>> = {
   heading_2: TextHTwo,
   heading_3: TextHThree,
   heading_4: TextHFour,
-  html: CodeBlock,
   image: ImageSquare,
   math: Pi,
   mermaid: FlowArrow,
@@ -271,23 +267,6 @@ export function createMathSlashMenuItem(
     type: MATH_BLOCK_TYPE,
     props: {
       latex: MATH_SLASH_COMMAND_LATEX,
-    },
-  })
-}
-
-export function createHtmlBlockSlashMenuItem(
-  editor: Parameters<typeof getDefaultReactSlashMenuItems>[0],
-  labels: Pick<TolariaSlashMenuLabels, 'htmlTitle'> = { htmlTitle: 'HTML block' },
-): TolariaSlashMenuItem {
-  return createBlockSlashMenuItem(editor, {
-    key: 'html',
-    title: labels.htmlTitle,
-    aliases: ['embed', 'iframe', 'sandbox', 'html'],
-    eventName: 'editor_html_block_slash_command_used',
-    type: HTML_BLOCK_TYPE,
-    props: {
-      height: HTML_BLOCK_DEFAULT_HEIGHT,
-      html: HTML_SLASH_COMMAND_SOURCE,
     },
   })
 }
@@ -440,7 +419,6 @@ export function getTolariaSlashMenuItems(
     [
       createMermaidSlashMenuItem(editor),
       createMathSlashMenuItem(editor, labels),
-      createHtmlBlockSlashMenuItem(editor, labels),
       createWhiteboardSlashMenuItem(editor),
       ...dateTimeItems,
     ],

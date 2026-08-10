@@ -12,7 +12,6 @@ type NotePdfExportSource = 'breadcrumb' | 'app_command' | 'note_list_context_men
 type NoteRetargetKind = 'folder' | 'type'
 type NoteRetargetFolderDestination = 'folder' | 'root'
 type AnalyticsBoolean = boolean
-type SheetFormulaFunctionName = string
 type StartupSource = 'scan' | 'snapshot'
 
 const ALL_NOTES_VISIBILITY_CATEGORIES: ReadonlyArray<keyof AllNotesFileVisibility> = [
@@ -134,20 +133,4 @@ export function trackInlineImageLightboxOpened(): void {
 
 export function trackDatePropertyDirectEntrySaved(): void {
   trackEvent('date_property_direct_entry_saved', { source: 'properties_panel' })
-}
-
-export function trackSheetEditorOpened(params: {
-  columnCount: number
-  hasMetadata: boolean
-  rowCount: number
-}): void {
-  trackEvent('sheet_editor_opened', {
-    column_count: params.columnCount,
-    has_metadata: numericFlag(params.hasMetadata),
-    row_count: params.rowCount,
-  })
-}
-
-export function trackSheetFormulaAutocompleteUsed(functionName: SheetFormulaFunctionName): void {
-  trackEvent('sheet_formula_autocomplete_used', { function_name: functionName })
 }

@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, memo, useState } from 'react'
+import { useRef, useEffect, useCallback, memo, useMemo, useState } from 'react'
 import { useEditorTabSwap } from '../hooks/useEditorTabSwap'
 import { useCreateBlockNote } from '@blocknote/react'
 import '@blocknote/mantine/style.css'
@@ -24,7 +24,8 @@ import { FilePreview } from './FilePreview'
 import { schema } from './editorSchema'
 import { useRightPanelExclusion } from './useRightPanelExclusion'
 import type { RawEditorFindRequest } from './RawEditorFindBar'
-import { resolvePendingRawExitContent, resolveRawModeContent } from './editorRawModeSync'
+import { applyPendingRawExitContent, resolvePendingRawExitContent, resolveRawModeContent } from './editorRawModeSync'
+import { deriveEditorContentState } from './editor-content/editorContentState'
 import { useRegisterEditorContentFlushes } from './editorContentFlushRegistration'
 import { useRawModeWithFlush } from './useRawModeWithFlush'
 import { createImeCompositionKeyGuardExtension } from './imeCompositionKeyGuardExtension'
@@ -44,7 +45,6 @@ import { useFilenameAutolinkGuard } from './useFilenameAutolinkGuard'
 import { useEditorPdfExport } from './useEditorPdfExport'
 import type { NotePdfExportSource } from '../utils/notePdfExport'
 import type { RichEditorBlockTypeDefinition } from '../utils/richEditorBlockTypes'
-import { useRichEditorContentReadiness, useRichEditorSheetSwapState } from './useRichEditorSheetTransition'
 import { installRichEditorMarkdownSerializer } from '../utils/richEditorMarkdown'
 import { installRichEditorDispatchPerformanceProbe } from './richEditorDispatchPerformance'
 import { RICH_EDITOR_BLOCKNOTE_PERFORMANCE_OPTIONS } from './richEditorBlockNoteOptions'
@@ -190,7 +190,6 @@ function useEditorSetup(options: EditorSetupParams) {
   const activeTabPathRef = useRef(activeTabPath)
   const onImageImportErrorRef = useRef(onImageImportError)
   const flushPendingEditorChangeRef = useRef<(() => boolean) | null>(null)
-  const sheetFlushRef = useRef<((path: string) => void) | null>(null)
   useEffect(() => {
     vaultPathRef.current = vaultPath
   }, [vaultPath])
@@ -281,26 +280,34 @@ function useEditorSetup(options: EditorSetupParams) {
         )
       }, [activeTabPath, setPendingRawExitContent, tabs])
 
-      const { activeTabIsSheet, richEditorActiveTabPath, tabsForEditorSwap } = useRichEditorSheetSwapState({
-        activeTab,
-        activeTabPath,
-        tabs,
-        pendingRawExitContent,
-      })
+      const tabsForEditorSwap = useMemo(
+        () => applyPendingRawExitContent(tabs, pendingRawExitContent),
+        [pendingRawExitContent, tabs],
+      )
+      const richEditorTab = tabsForEditorSwap.find((tab) => tab.entry.path === activeTabPath) ?? null
+      const richEditorState = richEditorTab
+        ? deriveEditorContentState({
+          activeTab: richEditorTab,
+          entries: tabsForEditorSwap.map((tab) => tab.entry),
+          rawMode: false,
+        })
+        : null
+      const richEditorTabUnavailable = Boolean(
+        richEditorState?.isHtmlFile || richEditorState?.legacyUnsupportedKind,
+      )
 
       const { editorContentPath, handleEditorChange, flushPendingEditorChange, editorMountedRef } = useEditorTabSwap({
         tabs: tabsForEditorSwap,
-        activeTabPath: richEditorActiveTabPath,
+        activeTabPath: richEditorTabUnavailable ? null : activeTabPath,
         editor,
         onContentChange,
         rawMode,
         vaultPath,
       })
-      const richEditorContentReady = useRichEditorContentReadiness({
-        activeTab,
-        activeTabIsSheet,
-        editorContentPath,
-      })
+      const richEditorContentReady = richEditorTabUnavailable
+        || !activeTab
+        || editorContentPath === null
+        || editorContentPath === activeTab.entry.path
       useEffect(() => {
         if (richEditorContentReady) markStartupPhase('editor_interactive')
       }, [richEditorContentReady])
@@ -337,7 +344,6 @@ function useEditorSetup(options: EditorSetupParams) {
         handleEditorChange,
         flushPendingEditorChange,
         isLoadingNewTab,
-        sheetFlushRef,
         richEditorContentReady,
       }
     }
@@ -410,7 +416,6 @@ function useEditorSetup(options: EditorSetupParams) {
       rawModeContent: string | null
       findRequest?: RawEditorFindRequest | null
       rawLatestContentRef: React.MutableRefObject<string | null>
-      sheetFlushRef: React.MutableRefObject<((path: string) => void) | null>
       onRenameFilename?: (path: string, newFilenameStem: string) => void
       noteWidth?: NoteWidthMode
       onToggleNoteWidth?: () => void
@@ -452,7 +457,6 @@ function useEditorSetup(options: EditorSetupParams) {
       rawModeContent,
       findRequest,
       rawLatestContentRef,
-      sheetFlushRef,
       onRenameFilename,
       noteWidth,
       onToggleNoteWidth,
@@ -502,13 +506,13 @@ function useEditorSetup(options: EditorSetupParams) {
               onRevealFile={onRevealFile}
               onCopyFilePath={onCopyFilePath}
               onCopyDeepLink={onCopyDeepLink}
+              onOpenExternalFile={onOpenExternalFile}
               onExportPdf={() => onExportPdf?.('breadcrumb')}
               onDeleteNote={onDeleteNote}
               vaultPath={vaultPath}
               rawModeContent={rawModeContent}
               findRequest={findRequest}
               rawLatestContentRef={rawLatestContentRef}
-              sheetFlushRef={sheetFlushRef}
               onRenameFilename={onRenameFilename}
               noteWidth={noteWidth}
               onToggleNoteWidth={onToggleNoteWidth}
@@ -593,7 +597,6 @@ export const Editor = memo(function Editor(props: EditorProps) {
     activeTab: runtime.activeTab,
     flushPendingEditorChange: runtime.flushPendingEditorChange,
     flushPendingEditorContentRef: props.flushPendingEditorContentRef,
-    sheetFlushRef: runtime.sheetFlushRef,
     rawLatestContentRef: runtime.rawLatestContentRef,
     rawMode: runtime.rawMode,
     onContentChange: props.onContentChange,

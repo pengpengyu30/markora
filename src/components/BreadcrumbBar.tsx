@@ -814,8 +814,12 @@ function BreadcrumbActions(options: Omit<BreadcrumbBarProps, 'wordCount' | 'barR
     locale = 'en',
 } = options
   let noteWidthAction = onToggleNoteWidth,
-    tableOfContentsAction = onToggleTableOfContents
-  if (isHtmlFileEntry(entry)) noteWidthAction = tableOfContentsAction = undefined
+    tableOfContentsAction = onToggleTableOfContents,
+    exportPdfAction = onExportPdf
+  if (isHtmlFileEntry(entry)) {
+    noteWidthAction = tableOfContentsAction = undefined
+    exportPdfAction = undefined
+  }
 
   return (
     <div
@@ -847,7 +851,7 @@ function BreadcrumbActions(options: Omit<BreadcrumbBarProps, 'wordCount' | 'barR
         onRevealFile={onRevealFile}
         onCopyFilePath={onCopyFilePath}
         onCopyDeepLink={onCopyDeepLink}
-        onExportPdf={onExportPdf}
+        onExportPdf={exportPdfAction}
         onDelete={onDelete}
         showResponsiveActions={overflowCollapsed}
         locale={locale}
@@ -902,10 +906,12 @@ function BreadcrumbOverflowMenu(options: Pick<
     <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
       <BreadcrumbOverflowMenuTrigger label={moreActionsLabel} setMenuOpen={setMenuOpen} tooltipControl={tooltipControl} />
       <DropdownMenuContent align="end" className="min-w-44">
-        <DropdownMenuItem disabled={!onExportPdf} onSelect={onExportPdf}>
-          <FilePdf size={16} />
-          {exportPdfLabel}
-        </DropdownMenuItem>
+        {onExportPdf && (
+          <DropdownMenuItem onSelect={onExportPdf}>
+            <FilePdf size={16} />
+            {exportPdfLabel}
+          </DropdownMenuItem>
+        )}
         {showResponsiveActions && showMarkdownActions && (
           <>
             <DropdownMenuItem disabled={!onToggleNoteWidth} onSelect={onToggleNoteWidth}>

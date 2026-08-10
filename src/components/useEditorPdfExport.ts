@@ -4,7 +4,6 @@ import { trackNotePdfExportFailed } from '../lib/productAnalytics'
 import { notePdfExportFilename, printActiveNoteAsPdf, type NotePdfExportSource } from '../utils/notePdfExport'
 import type { VaultEntry } from '../types'
 import { isMarkdownEntry } from '../utils/typeDefinitions'
-import { isHtmlFileEntry } from '../utils/filePreview'
 
 interface EditorPdfExportTab {
   entry: VaultEntry
@@ -42,7 +41,7 @@ interface PendingPdfExportParams {
 }
 
 function isPdfExportableTab(activeTab: EditorPdfExportTab | null): activeTab is EditorPdfExportTab {
-  return Boolean(activeTab && (isMarkdownEntry(activeTab.entry) || isHtmlFileEntry(activeTab.entry)))
+  return Boolean(activeTab && isMarkdownEntry(activeTab.entry))
 }
 
 function errorMessage(error: unknown): string {

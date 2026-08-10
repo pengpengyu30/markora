@@ -17,28 +17,9 @@ vi.mock('../RawEditorView', () => ({
   RawEditorView: () => <div data-testid="raw-editor-view" />,
 }))
 
-vi.mock('../HtmlFilePreview', () => ({
-  HtmlFilePreview: ({ content, path }: { content: string; path: string }) => (
-    <div data-testid="html-file-preview" data-content={content} data-path={path} />
-  ),
-}))
-
-vi.mock('../SheetEditor', () => ({
-  SheetEditor: ({
-    content,
-    flushContentRef,
-    path,
-  }: {
-    content: string
-    flushContentRef?: React.MutableRefObject<((path: string) => void) | null>
-    path: string
-  }) => (
-    <div
-      data-testid="sheet-editor"
-      data-content={content}
-      data-has-flush-ref={String(Boolean(flushContentRef))}
-      data-path={path}
-    />
+vi.mock('../FilePreview', () => ({
+  FilePreview: ({ entry }: { entry: { path: string } }) => (
+    <div data-testid="file-preview" data-path={entry.path} />
   ),
 }))
 
@@ -75,7 +56,8 @@ function createModel(overrides: Record<string, unknown> = {}) {
     onNavigateWikilink: vi.fn(),
     onEditorChange: vi.fn(),
     isDeletedPreview: false,
-    isHtmlPreview: false,
+    isHtmlFile: false,
+    legacyUnsupportedKind: null,
     rawLatestContentRef: { current: null },
     noteWidth: 'normal',
     onToggleNoteWidth: vi.fn(),
@@ -173,55 +155,26 @@ describe('EditorContentLayout', () => {
     expect(rawEditor.closest('.editor-content-wrapper')).toBeNull()
   })
 
-  it('renders HTML files in the editor pane without mounting the rich editor', () => {
+  it.each([
+    ['HTML files', { isHtmlFile: true, fileKind: 'text' }],
+    ['legacy Sheet notes', { legacyUnsupportedKind: 'sheet' }],
+  ])('renders %s through the generic unsupported fallback without mounting the rich editor', (_label, flags) => {
     render(<EditorContentLayout {...createModel({
-      isHtmlPreview: true,
+      ...flags,
       richEditorContentReady: false,
       activeTab: {
         entry: {
           path: '/vault/reports/status.html',
           filename: 'status.html',
           title: 'Status',
-          fileKind: 'text',
+          ...('fileKind' in flags ? { fileKind: flags.fileKind } : {}),
         },
-        content: '<h1>Status</h1>',
+        content: 'legacy content',
       },
     })} />)
 
-    expect(screen.getByTestId('html-file-preview')).toHaveAttribute('data-path', '/vault/reports/status.html')
-    expect(screen.getByTestId('html-file-preview')).toHaveAttribute('data-content', '<h1>Status</h1>')
+    expect(screen.getByTestId('file-preview')).toHaveAttribute('data-path', '/vault/reports/status.html')
     expect(screen.queryByTestId('single-editor-view')).not.toBeInTheDocument()
     expect(screen.queryByTestId('raw-editor-view')).not.toBeInTheDocument()
-  })
-
-  it('routes sheet notes to the sheet editor without the rich-editor wrapper', async () => {
-    const sheetFlushRef = { current: null }
-    render(<EditorContentLayout {...createModel({
-      cssVars: { '--editor-accent': '#155dff' },
-      isSheet: true,
-      sheetFlushRef,
-      activeTab: {
-        entry: {
-          path: '/vault/project/budget.md',
-          filename: 'budget.md',
-          title: 'Budget',
-        },
-        content: 'Metric,January\nRevenue,1200',
-      },
-    })} />)
-
-    const sheetEditor = await screen.findByTestId('sheet-editor')
-
-    expect(sheetEditor).toHaveAttribute('data-path', '/vault/project/budget.md')
-    expect(sheetEditor).toHaveAttribute('data-content', 'Metric,January\nRevenue,1200')
-    expect(sheetEditor).toHaveAttribute('data-has-flush-ref', 'true')
-    expect(screen.queryByTestId('single-editor-view')).not.toBeInTheDocument()
-    expect(sheetEditor.closest('.editor-content-wrapper')).toBeNull()
-    const findScope = sheetEditor.closest('[data-editor-find-scope="true"]')
-    expect(findScope).toHaveClass(
-      'editor-scroll-area',
-      'editor-scroll-area--sheet',
-    )
-    expect(findScope).toHaveStyle({ '--editor-accent': '#155dff' })
   })
 })

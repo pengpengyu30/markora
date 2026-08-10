@@ -47,7 +47,6 @@ import { findNearestTextCursorBlock } from './blockNoteCursorTarget'
 import { ImageLightbox } from './ImageLightbox'
 import { ActionTooltip } from './ui/action-tooltip'
 import { Button } from './ui/button'
-import { VaultExpressionProvider } from './VaultExpressionContext'
 import { subscribeRichEditorExternalChange } from './editorExternalChangeEvents'
 import {
   activatePlainTextPasteTarget,
@@ -992,7 +991,6 @@ function useSuggestionMenuItems(options: {
           },
           dateTitle: t('editor.slash.date'),
           datetimeTitle: t('editor.slash.datetime'),
-          htmlTitle: t('editor.slash.htmlBlock'),
           mathTitle: t('editor.slash.math'),
           timeTitle: t('editor.slash.time'),
             }),
@@ -1183,7 +1181,6 @@ function refreshCodeBlockSyntaxHighlighting(editor: ReturnType<typeof useCreateB
 
 /** Single BlockNote editor view — content is swapped via replaceBlocks */
 export function SingleEditorView(options: {
-  currentContent?: string
   editor: ReturnType<typeof useCreateBlockNote>
   entries: VaultEntry[]
   onNavigateWikilink: (target: string) => void
@@ -1194,7 +1191,7 @@ export function SingleEditorView(options: {
   editable?: boolean
   locale?: AppLocale
 }) {
-  const { currentContent = '', editor, entries, onNavigateWikilink, onChange, onImageImportError, sourceEntry, vaultPath, editable = true, locale = 'en' } = options
+  const { editor, entries, onNavigateWikilink, onChange, onImageImportError, sourceEntry, vaultPath, editable = true, locale = 'en' } = options
   const { cssVars } = useEditorTheme()
   const themeMode = useDocumentThemeMode()
   const previousThemeModeRef = useRef(themeMode)
@@ -1341,33 +1338,25 @@ export function SingleEditorView(options: {
       )}
       <BlockNoteRenderRecoveryBoundary onRecover={(_, reason) => repairEditorDocumentForRenderRecovery(editor, reason)}>
         {(recoveryKey) => (
-          <VaultExpressionProvider
-            currentContent={currentContent}
-            entries={entries}
-            locale={locale}
-            sourceEntry={sourceEntry ?? null}
-            vaultPath={vaultPath ?? ''}
+          <SharedContextBlockNoteView
+            key={recoveryKey}
+            editor={editor}
+            theme={themeMode}
+            onChange={handleEditorChange}
+            editable={editable}
+            emojiPicker={false}
+            formattingToolbar={false}
+            linkToolbar={false}
+            slashMenu={false}
+            sideMenu={false}
           >
-            <SharedContextBlockNoteView
-              key={recoveryKey}
-              editor={editor}
-              theme={themeMode}
-              onChange={handleEditorChange}
-              editable={editable}
-              emojiPicker={false}
-              formattingToolbar={false}
-              linkToolbar={false}
-              slashMenu={false}
-              sideMenu={false}
-            >
-              <EditorInteractionControllers
-                {...suggestionMenuItems}
-                locale={locale}
-                runEditorAction={runEditorAction}
-                vaultPath={vaultPath}
-              />
-            </SharedContextBlockNoteView>
-          </VaultExpressionProvider>
+            <EditorInteractionControllers
+              {...suggestionMenuItems}
+              locale={locale}
+              runEditorAction={runEditorAction}
+              vaultPath={vaultPath}
+            />
+          </SharedContextBlockNoteView>
         )}
       </BlockNoteRenderRecoveryBoundary>
       {copyTarget && <CodeBlockCopyButton copyTarget={copyTarget} locale={locale} />}

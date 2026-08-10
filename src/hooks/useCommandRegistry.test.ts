@@ -450,22 +450,10 @@ describe('useCommandRegistry', () => {
     })
   })
 
-  it('exposes a sheet create command using note display metadata', () => {
-    const onCreateNote = vi.fn()
-    const { result } = renderHook(() => useCommandRegistry(makeConfig({ onCreateNote })))
+  it('does not expose the removed sheet create command', () => {
+    const { result } = renderHook(() => useCommandRegistry(makeConfig()))
 
-    const command = findCommand(result.current, 'create-sheet')
-    expect(command).toMatchObject({
-      label: 'New Sheet',
-      group: 'Note',
-      enabled: true,
-    })
-
-    command!.execute()
-    expect(onCreateNote).toHaveBeenCalledWith({
-      creationPath: 'cmd_sheet',
-      format: 'sheet',
-    })
+    expect(findCommand(result.current, 'create-sheet')).toBeUndefined()
   })
 
   it('disables the current-folder create command outside folder selections', () => {

@@ -19,7 +19,6 @@ const STATIC_LABEL_KEYS: Partial<Record<string, TranslationKey>> = {
   'delete-folder': 'command.navigation.deleteFolder',
   'filter-open': 'command.navigation.showOpenNotes',
   'create-note': 'command.note.newNote',
-  'create-sheet': 'command.note.newSheet',
   'create-note-current-folder': 'command.note.newNoteInCurrentFolder',
   'save-note': 'command.note.saveNote',
   'paste-plain-text': 'command.note.pastePlainText',

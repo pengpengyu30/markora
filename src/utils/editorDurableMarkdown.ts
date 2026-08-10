@@ -18,12 +18,10 @@ import {
   isCalloutBlock,
   serializeCalloutBlock,
 } from './calloutMarkdown'
-import { htmlBlockMarkdownCodec } from './htmlBlockMarkdown'
 import { mermaidMarkdownCodec } from './mermaidMarkdown'
 import { tldrawMarkdownCodec } from './tldrawMarkdown'
 
 const EDITOR_DURABLE_MARKDOWN_CODECS = [
-  htmlBlockMarkdownCodec,
   mermaidMarkdownCodec,
   tldrawMarkdownCodec,
 ] as const

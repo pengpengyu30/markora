@@ -303,7 +303,7 @@ describe('BreadcrumbBar — standalone HTML actions', () => {
     expect(screen.queryByRole('button', { name: 'Open table of contents' })).not.toBeInTheDocument()
 
     const menu = await openOverflowMenu()
-    expect(within(menu).getByRole('menuitem', { name: 'Export note as PDF' })).toBeInTheDocument()
+    expect(within(menu).queryByRole('menuitem', { name: 'Export note as PDF' })).not.toBeInTheDocument()
     expect(within(menu).getByRole('menuitem', { name: 'Delete this note' })).toBeInTheDocument()
   })
 })

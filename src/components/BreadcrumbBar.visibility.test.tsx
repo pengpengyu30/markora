@@ -86,13 +86,9 @@ describe('BreadcrumbBar filename visibility', () => {
     expect(editorCss).toContain('display: none;')
   })
 
-  it('contains sheet editor overflow without zoom-resizing the editor lane', () => {
+  it('does not keep removed sheet-editor layout rules', () => {
     const editorCss = readFileSync(`${process.cwd()}/src/components/Editor.css`, 'utf8')
-    const sheetRule = editorCss.match(/\.editor-scroll-area--sheet\s*{[^}]+}/)?.[0] ?? ''
 
-    expect(sheetRule).toContain('overflow: hidden;')
-    expect(sheetRule).toContain('contain: layout paint;')
-    expect(sheetRule).not.toContain('--tolaria-overlay-zoom-inverse')
-    expect(sheetRule).not.toContain('flex: 0 0')
+    expect(editorCss).not.toContain('.editor-scroll-area--sheet')
   })
 })

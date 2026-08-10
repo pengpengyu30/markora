@@ -18,11 +18,13 @@ interface EditorContentStateInput {
 interface VisibilityState {
   effectiveRawMode: boolean
   isDeletedPreview: boolean
-  isHtmlPreview: boolean
+  isHtmlFile: boolean
   isNonMarkdownText: boolean
-  isSheet: boolean
+  legacyUnsupportedKind: LegacyUnsupportedNoteKind | null
   showEditor: boolean
 }
+
+export type LegacyUnsupportedNoteKind = 'sheet'
 
 const entryLookupCache = new WeakMap<VaultEntry[], Map<string, VaultEntry>>()
 
@@ -43,9 +45,9 @@ export interface EditorContentState {
   freshEntry: VaultEntry | undefined
   hasH1: boolean
   isDeletedPreview: boolean
-  isHtmlPreview: boolean
+  isHtmlFile: boolean
   isNonMarkdownText: boolean
-  isSheet: boolean
+  legacyUnsupportedKind: LegacyUnsupportedNoteKind | null
   effectiveRawMode: boolean
   showEditor: boolean
   path: string
@@ -65,13 +67,17 @@ function resolveHasH1(activeTab: EditorContentTab | null, freshEntry: VaultEntry
   return contentHasTopLevelH1(activeTab) || freshEntry?.hasH1 === true || activeTab?.entry.hasH1 === true
 }
 
-function resolveIsSheet(activeTab: EditorContentTab | null, freshEntry: VaultEntry | undefined): boolean {
-  if (!activeTab) return false
-  return noteDisplaysAsSheet({
+function resolveLegacyUnsupportedKind(
+  activeTab: EditorContentTab | null,
+  freshEntry: VaultEntry | undefined,
+): LegacyUnsupportedNoteKind | null {
+  if (!activeTab || activeTab.entry.fileKind === 'binary') return null
+  if (noteDisplaysAsSheet({
     content: activeTab.content,
     display: freshEntry?.display ?? activeTab.entry.display,
     fileKind: activeTab.entry.fileKind,
-  })
+  })) return 'sheet'
+  return null
 }
 
 function deriveVisibilityState(input: {
@@ -85,16 +91,16 @@ function deriveVisibilityState(input: {
     rawMode,
   } = input
   const isDeletedPreview = !!activeTab && !freshEntry
-  const isSheet = resolveIsSheet(activeTab, freshEntry)
-  const isHtmlPreview = !!activeTab && isHtmlFileEntry(activeTab.entry)
-  const isNonMarkdownText = activeTab?.entry.fileKind === 'text' && !isSheet && !isHtmlPreview
+  const legacyUnsupportedKind = resolveLegacyUnsupportedKind(activeTab, freshEntry)
+  const isHtmlFile = !!activeTab && isHtmlFileEntry(activeTab.entry)
+  const isNonMarkdownText = activeTab?.entry.fileKind === 'text' && !legacyUnsupportedKind && !isHtmlFile
   const effectiveRawMode = rawMode || isNonMarkdownText
 
   return {
     isDeletedPreview,
-    isHtmlPreview,
+    isHtmlFile,
     isNonMarkdownText,
-    isSheet,
+    legacyUnsupportedKind,
     effectiveRawMode,
     showEditor: !effectiveRawMode,
   }

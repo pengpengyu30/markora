@@ -32,13 +32,13 @@ export interface EditorContentProps {
   onRevealFile?: (path: string) => void
   onCopyFilePath?: (path: string) => void
   onCopyDeepLink?: (entry: VaultEntry) => void
+  onOpenExternalFile?: (path: string) => void
   onExportPdf?: () => void
   onDeleteNote?: (path: string) => void
   vaultPath?: string
   rawModeContent?: string | null
   findRequest?: RawEditorFindRequest | null
   rawLatestContentRef?: React.MutableRefObject<string | null>
-  sheetFlushRef?: React.MutableRefObject<((path: string) => void) | null>
   onRenameFilename?: (path: string, newFilenameStem: string) => void
   noteWidth?: NoteWidthMode
   onToggleNoteWidth?: () => void
@@ -57,8 +57,8 @@ export function useEditorContentModel(props: EditorContentProps) {
   const { cssVars } = useEditorTheme()
   const {
     isDeletedPreview,
-    isHtmlPreview,
-    isSheet,
+    isHtmlFile,
+    legacyUnsupportedKind,
     isNonMarkdownText,
     effectiveRawMode,
     showEditor: showContentEditor,
@@ -81,8 +81,8 @@ export function useEditorContentModel(props: EditorContentProps) {
     ...props,
     cssVars,
     isDeletedPreview,
-    isHtmlPreview,
-    isSheet,
+    isHtmlFile,
+    legacyUnsupportedKind,
     effectiveRawMode,
     forceRawMode: isNonMarkdownText || isDeletedPreview,
     showEditor,

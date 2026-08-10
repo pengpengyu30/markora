@@ -283,7 +283,6 @@ macro_rules! app_invoke_handler {
             commands::print_current_webview,
             commands::can_export_current_webview_pdf,
             commands::export_current_webview_pdf,
-            commands::resolve_sheet_external_formula_inputs,
             vault_watcher::start_vault_watcher,
             vault_watcher::stop_vault_watcher
         ]

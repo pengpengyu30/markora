@@ -179,10 +179,6 @@ vi.mock('./tolariaEditorFormatting', () => ({
   TolariaFormattingToolbarController: () => null,
 }))
 
-vi.mock('./SheetEditor', () => ({
-  SheetEditor: ({ path }: { path: string }) => <div data-testid="sheet-editor" data-path={path} />,
-}))
-
 import { Editor } from './Editor'
 
 type EditorComponentProps = ComponentProps<typeof Editor>

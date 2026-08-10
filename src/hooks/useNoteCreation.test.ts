@@ -114,9 +114,6 @@ describe('buildNoteContent', () => {
     expect(buildNoteContent({ initialEmptyHeading: true })).toBe('\n# \n\n')
   })
 
-  it('retains sheet compatibility until the editor milestone', () => {
-    expect(buildNoteContent({ format: 'sheet' })).toBe('---\n_display: sheet\n---\n')
-  })
 })
 
 describe('resolveNewNote', () => {
@@ -299,24 +296,6 @@ describe('useNoteCreation hook', () => {
       'untitled-note-1700000000.md',
       'untitled-note-1700000000-2.md',
     ])
-    vi.restoreAllMocks()
-  })
-
-  it('retains sheet compatibility content for the later editor milestone', async () => {
-    vi.spyOn(Date, 'now').mockReturnValue(1700000000000)
-    const { result } = renderHook(() => useNoteCreation(makeConfig(), tabDeps))
-
-    await act(async () => {
-      result.current.handleCreateNoteImmediate({ creationPath: 'cmd_sheet', format: 'sheet' })
-      await flushImmediateCreate()
-    })
-
-    expect(addEntry).toHaveBeenCalledWith(expect.objectContaining({
-      filename: 'untitled-sheet-1700000000.md',
-      title: 'Untitled Sheet 1700000000',
-      isA: null,
-    }))
-    expect(openTabWithContent).toHaveBeenCalledWith(expect.anything(), '---\n_display: sheet\n---\n')
     vi.restoreAllMocks()
   })
 

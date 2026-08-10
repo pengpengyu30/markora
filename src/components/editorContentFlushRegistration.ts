@@ -1,6 +1,5 @@
 import { useCallback, useEffect } from 'react'
 import type React from 'react'
-import { noteDisplaysAsSheet } from '../utils/noteFormat'
 
 type Tab = {
   entry: { path: string; display?: unknown; fileKind?: string | null }
@@ -11,7 +10,6 @@ export function useRegisterEditorContentFlushes(options: {
   activeTab: Tab | null
   flushPendingEditorChange: () => boolean
   flushPendingEditorContentRef?: React.MutableRefObject<((path: string) => void) | null>
-  sheetFlushRef?: React.MutableRefObject<((path: string) => void) | null>
   rawLatestContentRef: React.MutableRefObject<string | null>
   rawMode: boolean
   onContentChange?: (path: string, content: string) => void
@@ -21,7 +19,6 @@ export function useRegisterEditorContentFlushes(options: {
     activeTab,
     flushPendingEditorChange,
     flushPendingEditorContentRef,
-    sheetFlushRef,
     rawLatestContentRef,
     rawMode,
     onContentChange,
@@ -31,7 +28,6 @@ export function useRegisterEditorContentFlushes(options: {
     activeTab,
     flushPendingEditorChange,
     flushPendingEditorContentRef,
-    sheetFlushRef,
   })
   useRegisterRawContentFlush({
     activeTab,
@@ -46,29 +42,17 @@ function useRegisterRichContentFlush({
   activeTab,
   flushPendingEditorChange,
   flushPendingEditorContentRef,
-  sheetFlushRef,
 }: {
   activeTab: Tab | null
   flushPendingEditorChange: () => boolean
   flushPendingEditorContentRef?: React.MutableRefObject<((path: string) => void) | null>
-  sheetFlushRef?: React.MutableRefObject<((path: string) => void) | null>
 }) {
   const flushPendingEditorContent = useCallback(
     (path: string) => {
-    if (!activeTab || activeTab.entry.path !== path) return
-      if (
-        noteDisplaysAsSheet({
-      content: activeTab.content,
-      display: activeTab.entry.display,
-      fileKind: activeTab.entry.fileKind,
-        })
-      ) {
-      sheetFlushRef?.current?.(path)
-      return
-    }
-    flushPendingEditorChange()
+      if (!activeTab || activeTab.entry.path !== path) return
+      flushPendingEditorChange()
     },
-    [activeTab, flushPendingEditorChange, sheetFlushRef],
+    [activeTab, flushPendingEditorChange],
   )
 
   useRegisteredFlushRef(flushPendingEditorContentRef, flushPendingEditorContent)

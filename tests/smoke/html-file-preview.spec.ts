@@ -84,46 +84,37 @@ test.afterEach(() => {
   removeFixtureVaultCopy(tempVaultDir)
 })
 
-test('previews standalone HTML and exposes source through the breadcrumb and keyboard', async ({ page }) => {
+test('standalone HTML uses the generic fallback while keeping raw source editing', async ({ page }) => {
   await triggerShortcutCommand(page, APP_COMMAND_IDS.fileQuickOpen)
   const quickOpenInput = page.locator('input[placeholder="Search notes..."]')
   await expect(quickOpenInput).toBeVisible({ timeout: 5_000 })
   await quickOpenInput.fill(HTML_FILENAME)
   await page.keyboard.press('Enter')
 
-  const preview = page.getByTestId('html-file-preview')
+  const preview = page.getByTestId('file-preview')
   await expect(preview).toBeVisible({ timeout: 5_000 })
-  const previewFrame = page.frameLocator('[data-testid="html-file-preview"]')
-  await expect(previewFrame.getByRole('heading', { name: 'HTML preview is rendering' })).toBeVisible()
-  await expect(previewFrame.getByText('Scripts stayed blocked')).toBeVisible()
+  await expect(page.getByTestId('file-preview-fallback')).toBeVisible()
+  await expect(page.getByText('Preview unavailable', { exact: true })).toBeVisible()
+  await expect(page.locator('iframe')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Add to favorites' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Set note as organized' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: "Open note's neighborhood" })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Switch to wide note width' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Open table of contents' })).toHaveCount(0)
 
-  await page.evaluate(() => {
-    if (!window.__mockHandlers) return
-    window.__mockHandlers.can_export_current_webview_pdf = () => false
-    window.__mockHandlers.print_current_webview = () => {
-      document.body.dataset.pdfExportRequested = 'true'
-      return null
-    }
-  })
   await page.getByRole('button', { name: 'More note actions' }).click()
   const actionMenu = page.getByRole('menu')
   await expect(actionMenu.getByRole('menuitem', { name: 'Archive this note' })).toHaveCount(0)
-  await actionMenu.getByRole('menuitem', { name: 'Export note as PDF' }).click()
-  await expect(page.locator('body')).toHaveAttribute('data-pdf-export-requested', 'true')
-  await page.evaluate(() => window.dispatchEvent(new Event('afterprint')))
+  await expect(actionMenu.getByRole('menuitem', { name: 'Export note as PDF' })).toHaveCount(0)
 
-  await page.getByRole('button', { name: 'Open the raw editor' }).click()
+  await triggerShortcutCommand(page, APP_COMMAND_IDS.editToggleRawEditor)
   const rawEditor = page.getByTestId('raw-editor-codemirror')
   await expect(rawEditor).toBeVisible({ timeout: 5_000 })
   await expect(rawEditor.locator('.cm-line span')).not.toHaveCount(0)
 
-  await page.getByRole('button', { name: 'Return to the editor' }).click()
+  await triggerShortcutCommand(page, APP_COMMAND_IDS.editToggleRawEditor)
   await expect(preview).toBeVisible({ timeout: 5_000 })
+  await expect(page.getByTestId('file-preview-fallback')).toBeVisible()
 
   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+Backslash' : 'Control+Backslash')
   await expect(page.getByTestId('raw-editor-codemirror')).toBeVisible({ timeout: 5_000 })

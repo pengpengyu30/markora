@@ -106,9 +106,6 @@ describe('buildNoteContent', () => {
     expect(buildNoteContent({ initialEmptyHeading: true })).toBe('\n# \n\n')
   })
 
-  it('retains the sheet compatibility format until the editor milestone', () => {
-    expect(buildNoteContent({ format: 'sheet' })).toBe('---\n_display: sheet\n---\n')
-  })
 })
 
 describe('resolveNewNote', () => {
