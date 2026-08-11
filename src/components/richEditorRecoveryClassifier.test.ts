@@ -101,8 +101,11 @@ describe('richEditorRecoveryClassifier', () => {
     },
   )
 
-  it('keeps render-only recovery reasons off the transform surface', () => {
-    const error = new Error('Maximum update depth exceeded')
+  it.each([
+    'Maximum update depth exceeded',
+    'Minified React error #185; visit https://react.dev/errors/185 for the full message',
+  ])('keeps render-only recovery reasons off the transform surface: %s', (message) => {
+    const error = new Error(message)
 
     expect(classifyRichEditorRecoveryError(error, 'render')).toBe('react_update_depth_exceeded')
     expect(classifyRichEditorRecoveryError(error, 'transform')).toBeNull()
@@ -130,6 +133,13 @@ describe('richEditorRecoveryClassifier', () => {
 
   it('classifies null firstChild DOM races as the shared DOM reason', () => {
     const error = new TypeError("Cannot read properties of null (reading 'firstChild')")
+
+    expect(classifyRichEditorRecoveryError(error, 'transform')).toBe('dom_not_found')
+    expect(classifyRichEditorRecoveryError(error, 'render')).toBe('dom_not_found')
+  })
+
+  it('classifies WebKit null DOM-order races as the shared DOM reason', () => {
+    const error = new TypeError("null is not an object (evaluating 'n.compareDocumentPosition')")
 
     expect(classifyRichEditorRecoveryError(error, 'transform')).toBe('dom_not_found')
     expect(classifyRichEditorRecoveryError(error, 'render')).toBe('dom_not_found')
