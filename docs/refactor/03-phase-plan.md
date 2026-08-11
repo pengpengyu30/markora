@@ -3,7 +3,7 @@
 > Delete before building. Implement, validate, and commit each phase independently.
 > The “Affected modules” list contains representative paths, not an exhaustive inventory. During execution, use a global search for references: **before deleting any module, first grep for every reference to its symbols, command names, and event names**.
 
-> **Execution status (2026-08-08)**: The simplified implementation for P1–P8 has landed. The final record below reflects validation results from the current worktree. This work did not run Git commands or delete directories.
+> **Execution status (2026-08-11)**: M0–M7 implementation work has landed. M8 is the documentation and validation wrap-up. This work does not run Git commands or delete directories.
 
 ## Validation gates (required for every phase)
 
@@ -194,20 +194,21 @@ pnpm playwright:smoke
 
 ### P8 final record
 
-- Implementation: the frontend has been reduced to a single three-column Markdown notebook; Rust retains only vault, frontmatter, folder, tag, and invisible-Git snapshot commands.
-- Documentation: `README.md`, `docs/ARCHITECTURE.md`, and `docs/ABSTRACTIONS.md` have been rewritten, and a simplification-fork ADR has been added; `AGENTS.md` was not modified because it requires owner confirmation before slimming down.
-- Tests: 22 Vitest tests, TypeScript, Rust check, 37 Rust tests, Vite build, 73.07% frontend line coverage, and 87.99% Rust line coverage all passed. Playwright smoke tests are recorded separately when the local Chromium executable is missing.
-- Cleanup: obsolete Lara configuration and old `e2e/` test files were removed; ignored generated directories were left unchanged because this task prohibited directory deletion.
-- Data hygiene: demo-vault contents were not modified; no directory-delete command was called; no Git commands were run.
+- Implementation: M8 changes documentation and repository guidance only. No runtime feature or product behavior is added. The current implementation is documented as a single-main-window Markdown notebook with retained multi-Project loading, Tags, invisible local Git safety, and durable tldraw whiteboards.
+- Documentation: `README.md`, `docs/ARCHITECTURE.md`, and `docs/ABSTRACTIONS.md` were rewritten; `AGENTS.md` was slimmed to remove CodeScene, Codacy, Lara, PostHog, and Todoist workflow requirements while retaining TDD, validation, demo-vault hygiene, UI component rules, and localization validation. ADR-0175 records the retired/reframed ADR families without modifying historical ADRs.
+- Smoke maintenance: the `playwright:smoke` script now runs the current 21-test retained-feature manifest (autosave, deletion, navigation, search, Tags, whiteboards, Project switching, and wikilinks). Legacy smoke files for retired types, properties, Git collaboration, Getting Started cloning, and old Project selectors remain in the repository for historical reference but are no longer part of the current release gate.
+- Known implementation deviations are explicit: Projects remain the user-facing replacement for vault/workspace switching; whiteboards remain supported despite the original P4 deletion list; the checkout still contains 21 locale catalogs and selected cross-platform compatibility code.
+- Validation: `pnpm lint` ✅; `pnpm exec tsc --noEmit` ✅; `pnpm l10n:validate` ✅ (21 catalogs, 526 keys); `pnpm docs:build` ✅; `pnpm build` ✅; `pnpm test` ✅ (321 files, 2,949 passed, 2 release-workflow assertions skipped because this fork has no release workflow fixtures); Rust tests ✅ (604 passed); curated `pnpm playwright:smoke` ✅ (21 passed).
+- Data hygiene: demo-vault contents were not modified; no directory-delete command was called; no Git write operation was run.
 
-## Baseline record (fill in during P0)
+## Baseline record (captured in P0 and completed in P8)
 
-| Metric | Baseline | Final value (fill in during P8) |
+| Metric | Baseline | Final value |
 |---|---|---|
-| `pnpm build` output size | 24,752 KiB (`du -sk dist`) | Fill in after the refactor is complete |
-| Installer size | Not measured (M0 stopped after the full gate failed) | Fill in after the refactor is complete |
-| Number of npm dependencies | 63 runtime / 31 development | Fill in after the refactor is complete |
-| Number of Cargo dependencies | 28 runtime / 1 build | Fill in after the refactor is complete |
+| `pnpm build` output size | 24,752 KiB (`du -sk dist`) | 20,416 KiB (`du -sk dist`), 17.5% smaller |
+| Installer size | Not measured (M0 stopped after the full gate failed) | 27,804 KiB debug macOS bundle (`src-tauri/target/debug/bundle/macos/Tolaria.app.tar.gz`); no comparable P0 installer baseline |
+| Number of npm dependencies | 63 runtime / 31 development | 57 runtime / 31 development |
+| Number of Cargo dependencies | 28 runtime / 1 build | 24 common + 5 macOS-target runtime entries / 1 build (29 runtime entries as declared) |
 
 ## M0 acceptance record (2026-08-08)
 

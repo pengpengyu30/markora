@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import {
   buildStableDownloadRedirectPage,
   extractStableDownloadTargets,
@@ -6,8 +7,16 @@ import {
   resolveStableDownloadTargets,
 } from './releaseDownloadPage'
 
+const releaseWorkflowFixtures = [
+  '.github/workflows/release.yml',
+  '.github/workflows/release-stable.yml',
+  '.github/workflows/release-build-artifacts.yml',
+  '.github/scripts/configure-windows-authenticode.ps1',
+].map((relativePath) => join(process.cwd(), relativePath))
+const hasReleaseWorkflowFixtures = releaseWorkflowFixtures.every(existsSync)
+
 describe('release workflow macOS artifact names', () => {
-  it('publishes versioned Silicon and Intel artifact names', () => {
+  it.skipIf(!hasReleaseWorkflowFixtures)('publishes versioned Silicon and Intel artifact names', () => {
     const alphaWorkflow = readFileSync(`${process.cwd()}/.github/workflows/release.yml`, 'utf8')
     const stableWorkflow = readFileSync(
       `${process.cwd()}/.github/workflows/release-stable.yml`,
@@ -34,7 +43,7 @@ describe('release workflow macOS artifact names', () => {
     )
   })
 
-  it('keeps Windows Authenticode optional while certificate provisioning is pending', () => {
+  it.skipIf(!hasReleaseWorkflowFixtures)('keeps Windows Authenticode optional while certificate provisioning is pending', () => {
     const alphaWorkflow = readFileSync(`${process.cwd()}/.github/workflows/release.yml`, 'utf8')
     const stableWorkflow = readFileSync(
       `${process.cwd()}/.github/workflows/release-stable.yml`,

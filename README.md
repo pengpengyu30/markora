@@ -1,157 +1,95 @@
-![Latest stable](https://img.shields.io/github/v/release/refactoringhq/tolaria?display_name=tag) [![Codecov](https://codecov.io/gh/refactoringhq/tolaria/graph/badge.svg?branch=main)](https://codecov.io/gh/refactoringhq/tolaria) [![CodeScene Hotspot Code Health](https://codescene.io/projects/76865/status-badges/hotspot-code-health)](https://codescene.io/projects/76865) [![Codacy Badge](https://app.codacy.com/project/badge/Grade/fa3cdc28aefa460591c74aa262530708)](https://app.codacy.com/gh/refactoringhq/tolaria/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+# Tolaria
 
-# 💧 Tolaria
+Tolaria is a local Markdown notebook for macOS. It opens ordinary folders as Projects, keeps notes as portable files, and adds fast navigation, rich/raw editing, tags, backlinks, and a local Git safety boundary without requiring an account or a cloud service.
 
-> This repository is a customized fork of [Tolaria](https://github.com/refactoringhq/tolaria). It is maintained for personal and project-specific development, so its product direction, design choices, and behavior may intentionally differ from the upstream project. See the upstream repository for the original project and its official releases.
+This repository is a maintained simplification fork of [Tolaria](https://github.com/refactoringhq/tolaria). Its product boundary is intentionally smaller than upstream. See [the architecture overview](docs/ARCHITECTURE.md), [the abstraction map](docs/ABSTRACTIONS.md), and [ADR-0175](docs/adr/0175-simplification-fork-ledger.md) before extending it.
 
-Tolaria is a desktop app for macOS, Windows, and Linux for managing **markdown knowledge bases**. People use it for a variety of use cases:
+## What is included
 
-* Operate second brains and personal knowledge
-* Organize company docs as context for AI
-* Store OpenClaw/assistants memory and procedures
+- Markdown notes and folders backed by the filesystem;
+- rich BlockNote editing and raw Markdown/text editing;
+- tabs, wikilinks, backlinks, code blocks, tables, math, Mermaid, callouts, and images;
+- tags stored in note frontmatter and filterable from the sidebar;
+- multiple registered Projects, with a setting for a single-Project view;
+- Quick Open (`Cmd+O`), the command palette (`Cmd+K`), and full-text search (`Cmd+Shift+F`);
+- local Git snapshots for managed Projects and a `Restore Deleted Note…` command;
+- PDF/media previews and safe external-open fallbacks;
+- durable tldraw whiteboards embedded in notes.
 
-Personally, I use it to **run my life** (hey 👋 [Luca here](http://x.com/lucaronin)). I have a massive workspace of 10,000+ notes, which are the result of my [Refactoring](https://refactoring.fm/) work + a ton of personal journaling and *second braining*.
+The active UI does not provide AI/MCP integrations, visible Git collaboration workflows, standalone note windows, telemetry/feedback features, or Sheet editing. Historical ADRs are retained as an audit trail; they do not describe the current product by themselves.
 
-<img width="1000" height="656" alt="1776506856823-CleanShot_2026-04-18_at_12 06 57_2x" src="https://github.com/user-attachments/assets/8aeafb0a-b236-43c2-a083-ec111f903c38" />
+## Data model
 
-## Sponsors
+Projects are folders. Notes are Markdown files. Existing YAML frontmatter is preserved, while the simplified metadata UI owns only the `tags` key. Tags are lowercased and accept only letters, digits, and hyphens, with a maximum length of 15 characters.
 
-Tolaria is supported by a small panel of tools that help keep the project healthy, tested, and ready for AI-assisted development. I use these tools every day.
+Tolaria stores only installation-local preferences and the registered Project list outside the Project files. A Project may be an ordinary folder, a Git repository root, or a folder nested in a larger repository. The invisible Git layer is scoped so an ancestor repository is not silently modified.
 
-<table>
-  <tr>
-    <td align="center" width="25%">
-      <a href="https://www.codacy.com/?utm_source=tolaria&utm_medium=github&utm_campaign=refactoring">
-        <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/refactoringhq/tolaria/main/site/public/landing/sponsors/codacy-light.svg">
-          <img src="https://raw.githubusercontent.com/refactoringhq/tolaria/main/site/public/landing/sponsors/codacy-dark.svg" alt="Codacy" height="32">
-        </picture>
-      </a>
-    </td>
-    <td align="center" width="25%">
-      <a href="https://codescene.com/?utm_source=tolaria&utm_medium=github&utm_campaign=refactoring">
-        <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/refactoringhq/tolaria/main/site/public/landing/sponsors/codescene-light.svg">
-          <img src="https://raw.githubusercontent.com/refactoringhq/tolaria/main/site/public/landing/sponsors/codescene-dark.svg" alt="CodeScene" height="32">
-        </picture>
-      </a>
-    </td>
-    <td align="center" width="25%">
-      <a href="https://circleci.com/?utm_source=tolaria&utm_medium=github&utm_campaign=refactoring">
-        <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/refactoringhq/tolaria/main/site/public/landing/sponsors/circleci-light.svg">
-          <img src="https://raw.githubusercontent.com/refactoringhq/tolaria/main/site/public/landing/sponsors/circleci-dark.svg" alt="CircleCI" height="32">
-        </picture>
-      </a>
-    </td>
-    <td align="center" width="25%">
-      <a href="https://getunblocked.com/?utm_source=tolaria&utm_medium=github&utm_campaign=refactoring">
-        <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/refactoringhq/tolaria/main/site/public/landing/sponsors/unblocked-light.svg">
-          <img src="https://raw.githubusercontent.com/refactoringhq/tolaria/main/site/public/landing/sponsors/unblocked-dark.svg" alt="Unblocked" height="32">
-        </picture>
-      </a>
-    </td>
-  </tr>
-</table>
+## Requirements
 
-## Walkthroughs
+- macOS for native application development and QA;
+- Node.js 20 or newer;
+- pnpm;
+- Rust stable and the Tauri prerequisites.
 
-You can find some Loom walkthroughs below — they are short and to the point:
-- [How I Organize My Own Tolaria Workspace](https://www.loom.com/share/bb3aaffa238b4be0bd62e4464bca2528)
-- [My Inbox Workflow](https://www.loom.com/share/dffda263317b4fa8b47b59cdf9330571)
-- [How I Save Web Resources to Tolaria](https://www.loom.com/share/8a3c1776f801402ebbf4d7b0f31e9882)
+The browser mock is useful for renderer tests and development. Native behavior such as real filesystem access, local Git snapshots, menu shortcuts, and whiteboards must be checked in the Tauri app.
 
-## Principles
+## Local development
 
-- 📑 **Files-first** — Your notes are plain markdown files. They're portable, work with any editor, and require no export step. Your data belongs to you, not to any app.
-- 🔌 **Git-first** — Every vault is a git repository. You get full version history, the ability to use any git remote, and zero dependency on Tolaria servers.
-- 🛜 **Offline-first, zero lock-in** — No accounts, no subscriptions, no cloud dependencies. Your vault works completely offline and always will. If you stop using Tolaria, you lose nothing.
-- 🔬 **Open source** — Tolaria is free and open source. I built this for [myself](https://x.com/lucaronin) and for sharing it with others.
-- 📋 **Standards-based** — Notes are markdown files with YAML frontmatter. No proprietary formats, no locked-in data. Everything works with standard tools if you decide to move away from Tolaria.
-- 🔍 **Types as lenses, not schemas** — Types in Tolaria are navigation aids, not enforcement mechanisms. There's no required fields, no validation, just helpful categories for finding notes.
-- 🪄**AI-first but not AI-only** — A vault of files works very well with AI agents, but you are free to use whatever you want. We support Claude Code, Codex CLI, and Gemini CLI setup paths, but you can edit the vault with any AI you want. We provide an AGENTS file for your agents to figure out.
-- ⌨️ **Keyboard-first** — Tolaria is designed for power-users who want to use keyboard as much as possible. A lot of how we designed the Editor and the Command Palette is based on this.
-- 💪 **Built from real use** — Tolaria was created for manage my personal vault of 10,000+ notes, and I use it every day. Every feature exists because it solved a real problem.
-
-## Installation
-
-### Homebrew
-
-Install via Homebrew on macOS:
-
-```batch
-brew install --cask tolaria
-```
-
-### Download from releases
-
-Download the [latest release here](https://refactoringhq.github.io/tolaria/download/) for macOS, Windows, or Linux. Windows installers are Authenticode-signed; company-managed devices may still require IT approval of the Tolaria publisher before first install.
-
-## Getting started
-
-When you open Tolaria for the first time you get the chance of cloning the [getting started vault](https://github.com/refactoringhq/tolaria-getting-started) — which gives you a walkthrough of the whole app.
-
-The public user docs live in [`site/`](site/) and are published to GitHub Pages. Start with [Install Tolaria](site/start/install.md), then [First Launch](site/start/first-launch.md).
-
-## Open source and local setup
-
-Tolaria is open source and built with Tauri, React, and TypeScript. If you want to run or contribute to the app locally, here is [how to get started](https://github.com/refactoringhq/tolaria/blob/main/docs/GETTING-STARTED.md). You can also find the gist below 👇
-
-### Prerequisites
-
-- Node.js 20+
-- pnpm 8+
-- Rust stable
-- macOS or Linux for development
-
-#### Linux system dependencies
-
-Tauri 2 on Linux requires WebKit2GTK 4.1 and GTK 3:
-
-- Arch / Manjaro:
-  ```bash
-  sudo pacman -S --needed webkit2gtk-4.1 base-devel curl wget file openssl \
-    appmenu-gtk-module libappindicator-gtk3 librsvg
-  ```
-- Debian / Ubuntu (22.04+):
-  ```bash
-  sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file \
-    libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev \
-    libsoup-3.0-dev patchelf
-  ```
-- Fedora 38+:
-  ```bash
-  sudo dnf install webkit2gtk4.1-devel openssl-devel curl wget file \
-    libappindicator-gtk3-devel librsvg2-devel
-  ```
-
-The bundled MCP server still spawns the system `node` binary at runtime on Linux, so install Node from your distro package manager if you want the external AI tooling flow.
-
-### Quick start
+Install dependencies and start the browser renderer:
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-Open `http://localhost:5173` for the browser-based mock mode, or run the native desktop app with:
+The browser app is served at the Vite URL shown in the terminal. To run the native app:
 
 ```bash
 pnpm tauri dev
 ```
 
-## Tech Docs
+For the local Apple Silicon workflow used by this checkout:
 
-- 📐 [ARCHITECTURE.md](docs/ARCHITECTURE.md) — System design, tech stack, data flow
-- 🧩 [ABSTRACTIONS.md](docs/ABSTRACTIONS.md) — Core abstractions and models
-- 🚀 [GETTING-STARTED.md](docs/GETTING-STARTED.md) — How to navigate the codebase
-- 📚 [ADRs](docs/adr) — Architecture Decision Records
+```bash
+./scripts/build-macos-arm64.local
+./scripts/run-macos-arm64.local
+```
 
-## Security
+These scripts are project-local build/run helpers. They do not replace the validation commands below.
 
-If you believe you have found a security issue, please report it privately as described in [SECURITY.md](./SECURITY.md).
+## Validation
+
+Run the standard frontend and native checks:
+
+```bash
+pnpm lint
+pnpm exec tsc --noEmit
+pnpm test
+cargo test --manifest-path src-tauri/Cargo.toml
+```
+
+Build and browser smoke checks:
+
+```bash
+pnpm build
+pnpm docs:build
+pnpm playwright:smoke
+```
+
+The smoke command uses the repository's Playwright configuration and is intended for core Project/note/search flows. Native QA should additionally cover Project restart persistence, settings persistence, hidden Git behavior, deleted-note recovery, and whiteboard reopen behavior.
+
+## Documentation map
+
+- [Architecture](docs/ARCHITECTURE.md) — current runtime, data flow, Project graph, Git boundary, and known deviations;
+- [Abstractions](docs/ABSTRACTIONS.md) — types, hooks, commands, invariants, and test ownership;
+- [Getting started](docs/GETTING-STARTED.md) — repository orientation and local development notes;
+- [Architecture Decision Records](docs/adr/README.md) — historical and current decisions;
+- [Refactor plan](docs/refactor/README.md) — M0–M8 scope, acceptance records, and baseline.
+
+## Project rules
+
+Keep notes portable, keep writes path-validated, preserve unknown frontmatter, and add tests before changing behavior. Do not introduce a retired product surface by copying an old upstream component without checking the simplification ADR first.
 
 ## License
 
-Tolaria is licensed under AGPL-3.0-or-later. The Tolaria name and logo remain covered by the project’s trademark policy.
+Tolaria is licensed under AGPL-3.0-or-later. See [LICENSE](LICENSE).

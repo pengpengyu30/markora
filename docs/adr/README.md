@@ -229,3 +229,5 @@ proposed → active → superseded
 | [0171](0171-separate-vault-application-instances.md) | Separate vault application instances | active |
 | [0172](0172-local-codescene-change-safeguards.md) | Local CodeScene safeguards before commits and direct-to-main pushes | active |
 | [0173](0173-future-calendar-version-recovery.md) | Future calendar version rejection and recovery | active |
+| [0174](0174-simplified-macos-markdown-notebook.md) | Simplified macOS Markdown notebook fork | active |
+| [0175](0175-simplification-fork-ledger.md) | Simplification fork ledger and retired decision families | active |
