@@ -182,6 +182,7 @@ function ClickableNavItem(options: {
   activeBadgeClassName?: string
   activeBadgeStyle?: React.CSSProperties
   onClick?: () => void
+  ariaPressed?: boolean
   compact?: boolean
   padding: ReturnType<typeof getNavItemPadding>
 }) {
@@ -198,6 +199,7 @@ function ClickableNavItem(options: {
     activeBadgeClassName,
     activeBadgeStyle,
     onClick,
+    ariaPressed,
     compact,
     padding,
   } = options
@@ -212,6 +214,7 @@ function ClickableNavItem(options: {
       )}
       style={{ padding, borderRadius: 4 }}
       onClick={onClick}
+      aria-pressed={ariaPressed}
     >
       <SidebarNavIcon Icon={Icon} emoji={emoji} iconSize={getNavItemIconSize(compact)} isActive={isActive} />
       <NavItemLabel label={label} compact={compact} />
@@ -239,6 +242,7 @@ export function NavItem(options: {
   activeBadgeClassName?: string
   activeBadgeStyle?: React.CSSProperties
   onClick?: () => void
+  ariaPressed?: boolean
   disabled?: boolean
   disabledTooltip?: string
   compact?: boolean
@@ -256,6 +260,7 @@ export function NavItem(options: {
     activeBadgeClassName,
     activeBadgeStyle,
     onClick,
+    ariaPressed,
     disabled,
     disabledTooltip,
     compact,
@@ -288,6 +293,7 @@ export function NavItem(options: {
       activeBadgeClassName={activeBadgeClassName}
       activeBadgeStyle={activeBadgeStyle}
       onClick={onClick}
+      ariaPressed={ariaPressed}
       compact={compact}
       padding={padding}
     />

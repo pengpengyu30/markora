@@ -27,6 +27,8 @@ type BreadcrumbActions = Pick<
   | 'onRenameFilename'
   | 'noteWidth'
   | 'onToggleNoteWidth'
+  | 'availableTags'
+  | 'onUpdateTags'
 >
 
 const LOADING_BREADCRUMB_ENTRY: VaultEntry = {
@@ -162,6 +164,8 @@ function ActiveTabBreadcrumb({
       onRenameFilename={actions.onRenameFilename}
       noteWidth={actions.noteWidth}
       onToggleNoteWidth={actions.onToggleNoteWidth}
+      availableTags={actions.availableTags}
+      onUpdateTags={actions.onUpdateTags}
       locale={locale}
     />
   )
@@ -207,6 +211,8 @@ function buildBreadcrumbActions(model: EditorContentModel): BreadcrumbActions {
     onRenameFilename: model.onRenameFilename,
     noteWidth: model.noteWidth,
     onToggleNoteWidth: model.onToggleNoteWidth,
+    availableTags: model.availableTags,
+    onUpdateTags: model.onUpdateTags,
   }
 }
 

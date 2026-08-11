@@ -8,7 +8,7 @@ import { APP_STORAGE_KEYS, LEGACY_APP_STORAGE_KEYS, getAppStorageItem } from '..
 import { isAllNotesEntry } from '../../utils/noteListHelpers'
 import type { AllNotesFileVisibility } from '../../utils/allNotesFileVisibility'
 
-export type SidebarGroupKey = 'folders'
+export type SidebarGroupKey = 'folders' | 'tags'
 
 export interface SidebarMenuPosition {
   x: number
@@ -149,12 +149,12 @@ function loadCollapsedState(): Record<SidebarGroupKey, boolean> {
     const raw = getAppStorageItem('sidebarCollapsed')
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<Record<SidebarGroupKey, boolean>>
-      return { folders: parsed.folders === true }
+      return { folders: parsed.folders === true, tags: parsed.tags === undefined ? true : parsed.tags === true }
     }
   } catch {
     // Ignore localStorage failures and fall back to defaults.
   }
-  return { folders: false }
+  return { folders: false, tags: true }
 }
 
 export function useSidebarCollapsed() {

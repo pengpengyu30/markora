@@ -4,6 +4,7 @@ import type { SortOption, SortDirection } from '../../utils/noteListHelpers'
 import { translate, type AppLocale } from '../../lib/i18n'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 import { APP_COMMAND_EVENT_NAME, APP_COMMAND_IDS } from '../../hooks/appCommandDispatcher'
 import { useDragRegion } from '../../hooks/useDragRegion'
 import { SortDropdown } from '../SortDropdown'
@@ -27,6 +28,8 @@ interface NoteListHeaderProps {
   onToggleSearch: () => void
   onSearchChange: (value: string) => void
   onSearchKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void
+  selectedTags?: string[]
+  onClearTagFilter?: () => void
 }
 
 function dispatchExpandSidebarFromHeader() {
@@ -199,6 +202,33 @@ function SearchRow({ search, isSearching, searchInputRef, locale, onSearchChange
   )
 }
 
+function TagFilterRow({
+  selectedTags,
+  locale,
+  onClearTagFilter,
+}: Pick<NoteListHeaderProps, 'selectedTags' | 'locale' | 'onClearTagFilter'> & { locale: AppLocale }) {
+  if (!selectedTags || selectedTags.length === 0) return null
+
+  return (
+    <div data-testid="note-list-tag-filter" className="flex flex-wrap items-center gap-1.5 border-b border-border px-3 py-2 text-xs">
+      <span className="text-muted-foreground">{translate(locale, 'noteList.tags.filteredBy')}</span>
+      {selectedTags.map((tag) => (
+        <Badge key={tag} variant="secondary" className="px-1.5 py-0.5 font-normal">{tag}</Badge>
+      ))}
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="ml-auto h-6 px-1.5 text-xs font-normal text-muted-foreground hover:text-foreground"
+        onClick={onClearTagFilter}
+        aria-label={translate(locale, 'noteList.tags.clear')}
+      >
+        {translate(locale, 'noteList.tags.clear')}
+      </Button>
+    </div>
+  )
+}
+
 export function NoteListHeader(options: NoteListHeaderProps) {
   const { title, listSort, listDirection } = options
   const { sidebarCollapsed, searchVisible, search, isSearching, searchInputRef } = options
@@ -236,6 +266,7 @@ export function NoteListHeader(options: NoteListHeaderProps) {
           onSearchKeyDown={onSearchKeyDown}
         />
       )}
+      <TagFilterRow selectedTags={options.selectedTags} locale={locale} onClearTagFilter={options.onClearTagFilter} />
     </>
   )
 }

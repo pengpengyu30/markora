@@ -7,6 +7,7 @@ import { useEditorTheme } from '../../hooks/useTheme'
 import { deriveEditorContentState } from './editorContentState'
 import type { RawEditorFindRequest } from '../RawEditorFindBar'
 import type { ImageImportError } from '../../hooks/useImageDrop'
+import type { TagCount } from '../../utils/noteTags'
 
 export interface Tab {
   entry: VaultEntry
@@ -19,6 +20,8 @@ export interface EditorContentProps {
   isLoadingNewTab: boolean
   isVaultLoading?: boolean
   entries: VaultEntry[]
+  availableTags?: TagCount[]
+  onUpdateTags?: (path: string, tags: string[]) => void | Promise<void>
   editor: ReturnType<typeof useCreateBlockNote>
   richEditorContentReady: boolean
   rawMode: boolean

@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Sidebar } from './Sidebar'
 import type { SidebarSelection, VaultEntry } from '../types'
 
@@ -39,6 +39,14 @@ function makeEntry(overrides: Partial<VaultEntry> = {}): VaultEntry {
 }
 
 describe('Sidebar', () => {
+  beforeEach(() => {
+    vi.stubGlobal('localStorage', {
+      getItem: () => null,
+      setItem: () => {},
+      removeItem: () => {},
+    })
+  })
+
   it('does not render the removed all-notes navigation entry', () => {
     render(<Sidebar entries={[]} selection={defaultSelection} onSelect={() => {}} />)
 
@@ -76,6 +84,22 @@ describe('Sidebar', () => {
     expect(screen.getByText('Edge')).toBeInTheDocument()
     expect(screen.getByText('Tolaria')).toBeInTheDocument()
     expect(screen.getByText('Projects')).toBeInTheDocument()
+  })
+
+  it('places Tags above Projects and keeps the group collapsed by default', () => {
+    render(
+      <Sidebar
+        entries={[makeEntry({ properties: { tags: ['shared'] } })]}
+        folders={[{ name: 'Edge', path: '', rootPath: '/projects/edge', children: [] }]}
+        selection={defaultSelection}
+        onSelect={() => {}}
+      />,
+    )
+
+    const tagsSection = screen.getByTestId('sidebar-tags')
+    const projectsLabel = screen.getByText('Projects')
+    expect(tagsSection.compareDocumentPosition(projectsLabel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /shared.*1/i })).not.toBeInTheDocument()
   })
 
   it('does not show a separate all-notes count', () => {

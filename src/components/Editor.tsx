@@ -45,6 +45,7 @@ import { useFilenameAutolinkGuard } from './useFilenameAutolinkGuard'
 import { useEditorPdfExport } from './useEditorPdfExport'
 import type { NotePdfExportSource } from '../utils/notePdfExport'
 import type { RichEditorBlockTypeDefinition } from '../utils/richEditorBlockTypes'
+import type { TagCount } from '../utils/noteTags'
 import { installRichEditorMarkdownSerializer } from '../utils/richEditorMarkdown'
 import { installRichEditorDispatchPerformanceProbe } from './richEditorDispatchPerformance'
 import { RICH_EDITOR_BLOCKNOTE_PERFORMANCE_OPTIONS } from './richEditorBlockNoteOptions'
@@ -68,6 +69,8 @@ export interface EditorProps {
   activeTabPath: string | null
   isVaultLoading?: boolean
   entries: VaultEntry[]
+  availableTags?: TagCount[]
+  onUpdateTags?: (path: string, tags: string[]) => void | Promise<void>
   onNavigateWikilink: (target: string) => void
   onCreateNote?: () => void
   rightPanelCollapsed: boolean
@@ -394,6 +397,8 @@ function useEditorSetup(options: EditorSetupParams) {
       isLoadingNewTab: boolean
       isVaultLoading?: boolean
       entries: VaultEntry[]
+      availableTags?: TagCount[]
+      onUpdateTags?: (path: string, tags: string[]) => void | Promise<void>
       editor: ReturnType<typeof useCreateBlockNote>
       richEditorContentReady: boolean
       rawMode: boolean
@@ -433,6 +438,8 @@ function useEditorSetup(options: EditorSetupParams) {
       isLoadingNewTab,
       isVaultLoading,
       entries,
+      availableTags,
+      onUpdateTags,
       editor,
       richEditorContentReady,
       rawMode,
@@ -489,6 +496,8 @@ function useEditorSetup(options: EditorSetupParams) {
               isLoadingNewTab={isLoadingNewTab}
               isVaultLoading={isVaultLoading}
               entries={entries}
+              availableTags={availableTags}
+              onUpdateTags={onUpdateTags}
               editor={editor}
               richEditorContentReady={richEditorContentReady}
               rawMode={rawMode}

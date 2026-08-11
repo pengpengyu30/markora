@@ -68,6 +68,26 @@ describe('mockFrontmatterHelpers', () => {
       expect(result).toContain('  - "AI"')
     })
 
+    it('preserves every non-tag frontmatter line and the body when adding tags', () => {
+      const original = '---\r\ntitle: "A: title"\r\ncustom: [one, two]\r\n---\r\n# literal #body\r\n'
+      window.__mockContent = { '/test.md': original }
+
+      const result = updateMockFrontmatter('/test.md', 'tags', ['alpha', 'beta'])
+      const tagBlock = result.match(/tags:\r?\n(?: {2}- .*\r?\n?)+/)?.[0]
+
+      expect(tagBlock).toBeDefined()
+      expect(result.replace(tagBlock ?? '', '')).toBe(original)
+    })
+
+    it('removes only the tags block while preserving other frontmatter and body bytes', () => {
+      const original = '---\ntitle: "A: title"\ntags:\n  - "alpha"\n  - "beta"\ncustom: [one, two]\n---\n# literal #body\n'
+      window.__mockContent = { '/test.md': original }
+
+      const result = deleteMockFrontmatterProperty('/test.md', 'tags')
+
+      expect(result).toBe('---\ntitle: "A: title"\ncustom: [one, two]\n---\n# literal #body\n')
+    })
+
     it('replaces existing array property', () => {
       window.__mockContent = {
         '/test.md': '---\ntitle: Hello\naliases:\n  - "old"\n---\n\n# Hello\n',

@@ -242,6 +242,8 @@ function NoteListLayoutHeader(
   | 'toggleSearch'
   | 'setSearch'
   | 'handleSearchKeyDown'
+  | 'selectedTags'
+  | 'onClearTagFilter'
   >,
 ) {
   const {
@@ -259,6 +261,8 @@ function NoteListLayoutHeader(
     toggleSearch,
     setSearch,
     handleSearchKeyDown,
+    selectedTags,
+    onClearTagFilter,
   } = options
   return (
     <NoteListHeader
@@ -276,6 +280,8 @@ function NoteListLayoutHeader(
       onToggleSearch={toggleSearch}
       onSearchChange={setSearch}
       onSearchKeyDown={handleSearchKeyDown}
+      selectedTags={selectedTags}
+      onClearTagFilter={onClearTagFilter}
     />
   )
 }

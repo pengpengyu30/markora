@@ -71,6 +71,7 @@ import {
   runNativeTextHistoryCommand,
   shouldPreferOnboardingVaultPath,
 } from './utils/appOrchestration'
+import { buildTagCounts, filterEntriesByTags } from './utils/noteTags'
 import './App.css'
 
 // Type declarations for mock content storage and test overrides
@@ -90,6 +91,7 @@ function App() {
 
 function MainApp() {
   const [selection, setSelection] = useState<SidebarSelection>(DEFAULT_SELECTION)
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [pendingNoteListPdfExportPath, setPendingNoteListPdfExportPath] = useState<string | null>(null)
   const handleSetSelection = useCallback((sel: SidebarSelection) => {
     setSelection(sel)
@@ -111,6 +113,7 @@ function MainApp() {
   const vaultSwitcher = useVaultSwitcher({
     onSwitch: () => {
       handleSetSelection(DEFAULT_SELECTION)
+      setSelectedTags([])
       notes.closeAllTabs()
     },
     onToast: (msg) => setToastMessage(msg),
@@ -194,6 +197,19 @@ function MainApp() {
     multiWorkspaceEnabled,
     visibleWorkspacePathList,
   })
+  const tagFilteredEntries = useMemo(
+    () => filterEntriesByTags(visibleEntries, selectedTags),
+    [selectedTags, visibleEntries],
+  )
+  const availableTags = useMemo(() => buildTagCounts(visibleEntries), [visibleEntries])
+  const handleToggleTag = useCallback((tag: string) => {
+    setSelectedTags((current) => current.includes(tag)
+      ? current.filter((selectedTag) => selectedTag !== tag)
+      : [...current, tag])
+  }, [])
+  const handleClearTagFilter = useCallback(() => {
+    setSelectedTags([])
+  }, [])
   const runtimeMissingVaultPath = vault.unavailableVaultPath
   const {
     markInternalWrite: markRecentVaultWrite,
@@ -307,7 +323,11 @@ function MainApp() {
     handleSelectNote,
     handleReplaceActiveTab,
     closeAllTabs,
+    handleUpdateFrontmatter,
   } = notes
+  const handleUpdateTags = useCallback((path: string, tags: string[]) => {
+    void handleUpdateFrontmatter(path, 'tags', tags, { silent: true })
+  }, [handleUpdateFrontmatter])
   const noteActiveTabPath = notes.activeTabPath
   const noteActiveTabPathRef = notes.activeTabPathRef
   useLastActiveNote({
@@ -837,6 +857,8 @@ function MainApp() {
               <div className="app__sidebar" style={{ width: layout.sidebarWidth }}>
                 <Sidebar
                   entries={visibleEntries}
+                  selectedTags={selectedTags}
+                  onToggleTag={handleToggleTag}
                   folders={vault.folders}
                   selection={effectiveSelection}
                   onSelect={handleSetSelection}
@@ -866,7 +888,7 @@ function MainApp() {
           {noteListVisible && (
             <>
               <div className="app__note-list" style={{ width: layout.noteListWidth }}>
-                <NoteList vaultPath={resolvedPath} entries={visibleEntries} selection={effectiveSelection} selectedNote={activeTab?.entry ?? null} loading={isVaultContentLoading} modifiedFiles={vault.modifiedFiles} getNoteStatus={vault.getNoteStatus} sidebarCollapsed={!sidebarVisible} onSelectNote={notes.handleSelectNote} onReplaceActiveTab={notes.handleReplaceActiveTab} onCreateNote={notes.handleCreateNoteImmediate} onBulkDeletePermanently={deleteActions.handleBulkDeletePermanently} onRenameFilename={appSave.handleFilenameRename} onExportPdf={handleExportNotePdfFromList} onRevealFile={fileActions.revealFile} onCopyFilePath={fileActions.copyFilePath} visibleNotesRef={visibleNotesRef} allNotesFileVisibility={allNotesFileVisibility} multiSelectionCommandRef={multiSelectionCommandRef} locale={appLocale} />
+                <NoteList vaultPath={resolvedPath} entries={tagFilteredEntries} selection={effectiveSelection} selectedNote={activeTab?.entry ?? null} selectedTags={selectedTags} onClearTagFilter={handleClearTagFilter} loading={isVaultContentLoading} modifiedFiles={vault.modifiedFiles} getNoteStatus={vault.getNoteStatus} sidebarCollapsed={!sidebarVisible} onSelectNote={notes.handleSelectNote} onReplaceActiveTab={notes.handleReplaceActiveTab} onCreateNote={notes.handleCreateNoteImmediate} onBulkDeletePermanently={deleteActions.handleBulkDeletePermanently} onRenameFilename={appSave.handleFilenameRename} onExportPdf={handleExportNotePdfFromList} onRevealFile={fileActions.revealFile} onCopyFilePath={fileActions.copyFilePath} visibleNotesRef={visibleNotesRef} allNotesFileVisibility={allNotesFileVisibility} multiSelectionCommandRef={multiSelectionCommandRef} locale={appLocale} />
               </div>
               <ResizeHandle onResize={layout.handleNoteListResize} />
             </>
@@ -877,6 +899,8 @@ function MainApp() {
               activeTabPath={notes.activeTabPath}
               isVaultLoading={isVaultContentLoading}
               entries={vault.entries}
+              availableTags={availableTags}
+              onUpdateTags={handleUpdateTags}
               onNavigateWikilink={notes.handleNavigateWikilink}
               onCreateNote={notes.handleCreateNoteImmediate}
               rightPanelCollapsed={layout.rightPanelCollapsed}

@@ -513,4 +513,16 @@
   "status.project.removeConfirmMessage": "Detta tar bort {label} från Tolarias projektlista. Filer på disk raderas inte.",
   "status.project.removeConfirmAction": "Ta bort projekt",
 "sidebar.group.projects": "PROJEKT"
+  ,"sidebar.group.tags": "TAGS"
+  ,"noteList.tags.filteredBy": "Filtered by"
+  ,"noteList.tags.clear": "Clear tag filter"
+  ,"editor.tags.add": "Add tag"
+  ,"editor.tags.addLabel": "Add tag"
+  ,"editor.tags.inputPlaceholder": "Type a tag..."
+  ,"editor.tags.create": "Create \"{tag}\""
+  ,"editor.tags.remove": "Remove tag {tag}"
+  ,"editor.tags.usage": "Used in {count} notes"
+  ,"editor.tags.noMatches": "No matching tags"
+  ,"editor.tags.validation.invalid": "Use only letters, numbers, and hyphens."
+  ,"editor.tags.validation.tooLong": "Tags can be up to 15 characters."
 }

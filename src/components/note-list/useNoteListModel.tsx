@@ -306,6 +306,8 @@ export interface NoteListProps {
   visibleNotesRef?: React.MutableRefObject<VaultEntry[]>
   allNotesFileVisibility?: AllNotesFileVisibility
   locale?: AppLocale
+  selectedTags?: string[]
+  onClearTagFilter?: () => void
 }
 
 function buildNoteListLayoutModel(params: {
@@ -319,6 +321,8 @@ function buildNoteListLayoutModel(params: {
   interaction: ReturnType<typeof useNoteListInteractionState> & {
     renderItem: (entry: VaultEntry, options?: { forceSelected?: boolean }) => React.ReactNode
   }
+  selectedTags?: string[]
+  onClearTagFilter?: () => void
 }) {
   return {
     title: resolveHeaderTitle(params.selection, params.locale),
@@ -354,11 +358,13 @@ function buildNoteListLayoutModel(params: {
     handleBulkDeletePermanently: params.interaction.handleBulkDeletePermanently,
     contextMenuNode: params.interaction.noteListContextMenu.contextMenuNode,
     dialogNode: null,
+    selectedTags: params.selectedTags,
+    onClearTagFilter: params.onClearTagFilter,
   }
 }
 
 export function useNoteListModel(options: NoteListProps) {
-  const { entries, vaultPath, selection, selectedNote, loading = false, modifiedFiles, getNoteStatus, sidebarCollapsed, onReplaceActiveTab, onCreateNote, onBulkDeletePermanently, onRenameFilename, onExportPdf, onRevealFile, onCopyFilePath, visibleNotesRef, allNotesFileVisibility, locale = 'en' } = options
+  const { entries, vaultPath, selection, selectedNote, loading = false, modifiedFiles, getNoteStatus, sidebarCollapsed, onReplaceActiveTab, onCreateNote, onBulkDeletePermanently, onRenameFilename, onExportPdf, onRevealFile, onCopyFilePath, visibleNotesRef, allNotesFileVisibility, locale = 'en', selectedTags, onClearTagFilter } = options
   const selectedNotePath = selectedNote?.path ?? null
   const { resolvedGetNoteStatus } = useModifiedFilesState(
     modifiedFiles,
@@ -431,5 +437,7 @@ export function useNoteListModel(options: NoteListProps) {
       ...interaction,
       renderItem,
     },
+    selectedTags,
+    onClearTagFilter,
   })
 }

@@ -268,6 +268,30 @@ describe('BreadcrumbBar — file actions', () => {
   })
 })
 
+describe('BreadcrumbBar — tags', () => {
+  it('places the icon-only add-tag action in the toolbar and keeps tags below the filename', () => {
+    const entry = makeEntry({ properties: { tags: ['a-very-long-tag-name'] } })
+    const { container } = renderBreadcrumb(entry, {
+      availableTags: [{ name: 'a-very-long-tag-name', count: 1 }],
+      onUpdateTags: vi.fn(),
+    })
+
+    expect(screen.getByTestId('breadcrumb-tag-add')).toBeInTheDocument()
+    expect(screen.queryByText('+ Add tag')).not.toBeInTheDocument()
+    expect(screen.getByTestId('note-tag-row')).toBeInTheDocument()
+    expect(screen.getByText('a-very-long-tag-name')).toHaveAttribute('title', 'a-very-long-tag-name')
+    expect(container.querySelector('.breadcrumb-bar')).toHaveStyle({ height: '78px' })
+  })
+
+  it('keeps the toolbar add-tag action available without an empty tag row', () => {
+    const { container } = renderBreadcrumb({}, { onUpdateTags: vi.fn() })
+
+    expect(screen.getByTestId('breadcrumb-tag-add')).toBeInTheDocument()
+    expect(screen.queryByTestId('note-tag-row')).not.toBeInTheDocument()
+    expect(container.querySelector('.breadcrumb-bar')).toHaveStyle({ height: '52px' })
+  })
+})
+
 describe('BreadcrumbBar — standalone HTML actions', () => {
   it('keeps applicable file actions and hides Markdown-only actions', async () => {
     renderBreadcrumb({

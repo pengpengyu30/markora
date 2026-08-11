@@ -295,7 +295,7 @@ export interface FrontmatterRunRequest {
   options?: FrontmatterOpOptions
 }
 
-const WRITABLE_FRONTMATTER_KEYS = new Set(['title', '_width'])
+const WRITABLE_FRONTMATTER_KEYS = new Set(['title', '_width', 'tags'])
 
 /** Return whether the current product still owns a frontmatter write key. */
 export function isWritableFrontmatterKey(key: FrontmatterKey): boolean {

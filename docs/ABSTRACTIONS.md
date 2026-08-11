@@ -15,6 +15,7 @@ These frontmatter field names have special meaning in Tolaria's UI:
 | Field | Meaning | UI behavior |
 |---|---|---|
 | `title:` | Legacy display-title fallback for older notes | Used only when a note has no H1; new notes do not write it automatically |
+| `tags:` | User-defined note labels | Removable editor chips, usage-counted sidebar filters, and note-list AND filtering |
 | `type:` | Entity type (Project, Person, Quarter…) | Type chip in note list + sidebar grouping |
 | `status:` | Lifecycle stage (active, done, blocked…) | Colored chip in note list + editor header |
 | `icon:` | Per-note icon (emoji, Phosphor name, or HTTP/HTTPS image URL) | Rendered on note title surfaces; editable from the Properties panel |
@@ -370,6 +371,30 @@ The BlockNote body is the only title editing surface:
 - Notes without an H1 show the editor body and placeholder only.
 - Legacy no-H1 notes whose display title differs from the filename show that title as read-only breadcrumb context beside the editable filename, so referenced notes remain identifiable without raw mode.
 - Filename changes are explicit breadcrumb actions, not a dedicated title-input side effect.
+
+### Note Tags
+
+`tags` is a durable, user-authored frontmatter field. Tolaria accepts both a single scalar
+and a YAML string array when reading a note, then normalizes the value to trimmed,
+lowercased, deduplicated tag names for UI behavior. Adding or removing tags updates only
+the `tags` property; the line-oriented frontmatter writer preserves unrelated frontmatter
+fields, ordering, comments, line endings, and the Markdown body. New typed tags must use
+letters, numbers, and single hyphens only, and are limited to 15 characters. Empty tag
+names are ignored.
+
+The editor breadcrumb renders tags as removable, fixed-width chips below the filename and
+keeps an icon-only Add tag combobox in the right toolbar. The combobox lists tags already
+present in the visible workspace with usage counts and supports validated typed creation.
+Input is normalized to lowercase, while unsupported symbols are rejected; Markdown body
+text is never scanned for tags, so a literal `#topic` heading or paragraph does not create
+a tag.
+
+Sidebar tag state is renderer-session state rather than vault data. The Tags section is
+derived from the currently visible entries, sorted by descending note usage and then name,
+appears above Projects, and starts collapsed unless the user has explicitly expanded it.
+It supports multiple selections. Selected tags intersect with AND semantics while folder
+selection remains independent. The note-list header exposes the active selections and a
+Clear action; a reload or restart starts with no tag filter.
 
 ### Sidebar Selection
 

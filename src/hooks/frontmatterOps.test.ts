@@ -13,6 +13,7 @@ describe('isWritableFrontmatterKey', () => {
     ['Title', true],
     ['_width', true],
     ['width', true],
+    ['tags', true],
     ['status', false],
     ['type', false],
     ['color', false],

@@ -7,9 +7,12 @@ import { useSidebarCollapsed } from './sidebar/sidebarHooks'
 import type { AppLocale } from '../lib/i18n'
 import type { FolderFileActions } from '../hooks/useFileActions'
 import type { AllNotesFileVisibility } from '../utils/allNotesFileVisibility'
+import { SidebarTagsSection } from './SidebarTagsSection'
 
 interface SidebarProps {
   entries: VaultEntry[]
+  selectedTags?: string[]
+  onToggleTag?: (tag: string) => void
   selection: SidebarSelection
   onSelect: (selection: SidebarSelection) => void
   folders?: FolderNode[]
@@ -37,6 +40,9 @@ interface SidebarNavigationProps
   extends Pick<
     SidebarProps,
     | 'selection'
+    | 'entries'
+    | 'selectedTags'
+    | 'onToggleTag'
     | 'onSelect'
     | 'folders'
     | 'onCreateFolder'
@@ -127,6 +133,14 @@ function SidebarFoldersNavigation(options: SidebarFoldersNavigationProps) {
 function SidebarNavigation(props: SidebarNavigationProps) {
   return (
     <nav className="flex-1 overflow-y-auto">
+      <SidebarTagsSection
+        entries={props.entries}
+        selectedTags={props.selectedTags ?? []}
+        onToggleTag={props.onToggleTag ?? (() => {})}
+        collapsed={props.groupCollapsed.tags}
+        onToggle={() => props.toggleGroup('tags')}
+        locale={props.locale ?? 'en'}
+      />
       <SidebarFoldersNavigation {...props} />
     </nav>
   )

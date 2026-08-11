@@ -513,4 +513,16 @@
   "status.project.removeConfirmMessage": "Tolaria 프로젝트 목록에서 {label}을(를) 제거합니다. 디스크의 파일은 삭제되지 않습니다.",
   "status.project.removeConfirmAction": "프로젝트 제거",
 "sidebar.group.projects": "프로젝트"
+  ,"sidebar.group.tags": "TAGS"
+  ,"noteList.tags.filteredBy": "Filtered by"
+  ,"noteList.tags.clear": "Clear tag filter"
+  ,"editor.tags.add": "Add tag"
+  ,"editor.tags.addLabel": "Add tag"
+  ,"editor.tags.inputPlaceholder": "Type a tag..."
+  ,"editor.tags.create": "Create \"{tag}\""
+  ,"editor.tags.remove": "Remove tag {tag}"
+  ,"editor.tags.usage": "Used in {count} notes"
+  ,"editor.tags.noMatches": "No matching tags"
+  ,"editor.tags.validation.invalid": "Use only letters, numbers, and hyphens."
+  ,"editor.tags.validation.tooLong": "Tags can be up to 15 characters."
 }
