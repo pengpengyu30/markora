@@ -25,10 +25,7 @@ mkdir -p "$CONFIG_DIR"
 if test ! -f "$SETTINGS_FILE"; then
   printf '%s\n' \
     '{' \
-    '  "automatic_update_checks_enabled": false,' \
-    '  "telemetry_consent": false,' \
-    '  "crash_reporting_enabled": false,' \
-    '  "analytics_enabled": false' \
+    '  "automatic_update_checks_enabled": false' \
     '}' > "$SETTINGS_FILE"
 fi
 

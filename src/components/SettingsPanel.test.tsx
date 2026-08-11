@@ -4,14 +4,9 @@ import { SettingsPanel } from './SettingsPanel'
 import type { Settings } from '../types'
 import { THEME_MODE_STORAGE_KEY } from '../lib/themeMode'
 
-const { trackEventMock, registerEscapeSurfaceMock, unregisterEscapeSurfaceMock } = vi.hoisted(() => ({
-  trackEventMock: vi.fn(),
+const { registerEscapeSurfaceMock, unregisterEscapeSurfaceMock } = vi.hoisted(() => ({
   registerEscapeSurfaceMock: vi.fn(),
   unregisterEscapeSurfaceMock: vi.fn(),
-}))
-
-vi.mock('../lib/telemetry', () => ({
-  trackEvent: trackEventMock,
 }))
 
 vi.mock('../utils/macosDismissableEscapeSurface', () => ({
@@ -27,10 +22,6 @@ const emptySettings: Settings = {
   autogit_enabled: null,
   autogit_idle_threshold_seconds: null,
   autogit_inactive_threshold_seconds: null,
-  telemetry_consent: null,
-  crash_reporting_enabled: null,
-  analytics_enabled: null,
-  anonymous_id: null,
   release_channel: null,
   automatic_update_checks_enabled: null,
   theme_mode: null,
@@ -121,7 +112,6 @@ describe('SettingsPanel', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    trackEventMock.mockClear()
     Object.defineProperty(window, 'localStorage', { value: localStorageMock, configurable: true })
     installMatchMedia(false)
     window.localStorage.clear()
@@ -171,8 +161,6 @@ describe('SettingsPanel', () => {
     fireEvent.click(screen.getByTestId('settings-save'))
 
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
-      analytics_enabled: false,
-      crash_reporting_enabled: false,
       initial_h1_auto_rename_enabled: true,
       release_channel: null,
       automatic_update_checks_enabled: null,
@@ -249,21 +237,13 @@ describe('SettingsPanel', () => {
     expect(onClose).toHaveBeenCalled()
   })
 
-  it('tracks All Notes visibility toggles with categorical metadata only', () => {
+  it('saves All Notes visibility toggles without telemetry settings', () => {
     render(
       <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
     )
 
     fireEvent.click(within(screen.getByTestId('settings-all-notes-show-images')).getByRole('switch'))
 
-    expect(trackEventMock).toHaveBeenCalledWith('all_notes_visibility_changed', {
-      category: 'images',
-      enabled: 1,
-    })
-    expect(trackEventMock).not.toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({ path: expect.any(String) }),
-    )
   })
 
   it('defaults the color mode control to light', () => {
@@ -335,7 +315,6 @@ describe('SettingsPanel', () => {
       date_display_format: 'iso',
       note_width_mode: 'wide',
     }))
-    expect(trackEventMock).toHaveBeenCalledWith('date_display_format_changed', { format: 'iso' })
   })
 
   it('keeps the language selector keyboard accessible', () => {
@@ -451,7 +430,7 @@ describe('SettingsPanel', () => {
     expect(screen.getByRole('switch', { name: 'Check for updates automatically' })).toHaveAttribute('aria-checked', 'true')
   })
 
-  it('saves and tracks the automatic update checks preference when toggled off', () => {
+  it('saves the automatic update checks preference when toggled off', () => {
     render(
       <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
     )
@@ -461,9 +440,6 @@ describe('SettingsPanel', () => {
 
     expectSettingsSaved({
       automatic_update_checks_enabled: false,
-    })
-    expect(trackEventMock).toHaveBeenCalledWith('automatic_update_checks_changed', {
-      enabled: 0,
     })
   })
 
@@ -591,46 +567,12 @@ describe('SettingsPanel', () => {
     expect(closeButton).toHaveFocus()
   })
 
-  describe('Privacy & Telemetry section', () => {
-    it('renders crash reporting and analytics toggles', () => {
-      render(
-        <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
-      )
-      expect(screen.getByTestId('settings-crash-reporting')).toBeInTheDocument()
-      expect(screen.getByTestId('settings-analytics')).toBeInTheDocument()
-    })
+  it('does not render the removed privacy and telemetry settings', () => {
+    render(<SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />)
 
-    it('toggles reflect initial settings state', () => {
-      const withTelemetry: Settings = {
-        ...emptySettings,
-        telemetry_consent: true,
-        crash_reporting_enabled: true,
-        analytics_enabled: false,
-        anonymous_id: 'test-uuid',
-      }
-      render(
-        <SettingsPanel open={true} settings={withTelemetry} onSave={onSave} onClose={onClose} />
-      )
-
-      const crashCheckbox = within(screen.getByTestId('settings-crash-reporting')).getByRole('checkbox')
-      const analyticsCheckbox = within(screen.getByTestId('settings-analytics')).getByRole('checkbox')
-
-      expect(crashCheckbox).toHaveAttribute('aria-checked', 'true')
-      expect(analyticsCheckbox).toHaveAttribute('aria-checked', 'false')
-    })
-
-    it('saves telemetry settings when toggled and saved', () => {
-      render(
-        <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
-      )
-
-      fireEvent.click(within(screen.getByTestId('settings-crash-reporting')).getByRole('checkbox'))
-      fireEvent.click(screen.getByTestId('settings-save'))
-
-      expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
-        crash_reporting_enabled: true,
-        analytics_enabled: false,
-      }))
-    })
+    expect(screen.queryByTestId('settings-crash-reporting')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('settings-analytics')).not.toBeInTheDocument()
+    expect(screen.queryByText('Privacy')).not.toBeInTheDocument()
+    expect(screen.queryByText('Telemetry')).not.toBeInTheDocument()
   })
 })

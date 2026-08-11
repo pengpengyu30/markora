@@ -95,7 +95,7 @@ describe('richEditorRecoveryClassifier', () => {
     expect(classifyRichEditorRecoveryError(error, 'render')).toBe('dom_not_found')
   })
 
-  it('separates document repair decisions from telemetry reason names', () => {
+  it('separates document repair decisions from recovery reason names', () => {
     const invalidContentError = new RangeError(
       'Invalid content for node blockContainer: <paragraph("A"), blockGroup(blockContainer(bulletListItem("B")))>',
     )

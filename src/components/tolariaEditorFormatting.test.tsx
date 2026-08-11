@@ -2,10 +2,6 @@ import { Children, isValidElement, type ReactElement } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { getFormattingToolbarItems } from '@blocknote/react'
 
-vi.mock('../lib/telemetry', () => ({
-  trackEvent: vi.fn(),
-}))
-
 import {
   addItemsToMediaGroup,
   createCalloutSlashMenuItem,
@@ -17,7 +13,6 @@ import {
   MATH_SLASH_COMMAND_LATEX,
   MERMAID_SLASH_COMMAND_DIAGRAM,
 } from './tolariaEditorFormattingConfig'
-import { trackEvent } from '../lib/telemetry'
 import { MATH_BLOCK_TYPE } from '../utils/mathMarkdown'
 import { mermaidFenceSource } from '../utils/mermaidMarkdown'
 import { CALLOUT_BLOCK_TYPE } from '../utils/calloutMarkdown'
@@ -265,7 +260,6 @@ describe('tolariaEditorFormatting', () => {
       props: { latex: MATH_SLASH_COMMAND_LATEX },
     }])
     expect(updateBlock).not.toHaveBeenCalled()
-    expect(trackEvent).toHaveBeenCalledWith('editor_math_slash_command_used')
   })
 
   it('creates a callout parent command with every default style in its submenu', () => {
@@ -305,9 +299,6 @@ describe('tolariaEditorFormatting', () => {
       type: CALLOUT_BLOCK_TYPE,
       props: { calloutType: 'tip', title: '' },
     }])
-    expect(trackEvent).toHaveBeenCalledWith('editor_callout_slash_command_used', {
-      type: 'tip',
-    })
   })
 
   it('uses a distinct Phosphor icon for every default callout type', () => {
@@ -361,14 +352,5 @@ describe('tolariaEditorFormatting', () => {
       updateSelection: true,
     })
     expect(replaceBlocks).not.toHaveBeenCalled()
-    expect(trackEvent).toHaveBeenCalledWith('editor_timestamp_slash_command_used', {
-      kind: 'date',
-    })
-    expect(trackEvent).toHaveBeenCalledWith('editor_timestamp_slash_command_used', {
-      kind: 'time',
-    })
-    expect(trackEvent).toHaveBeenCalledWith('editor_timestamp_slash_command_used', {
-      kind: 'datetime',
-    })
   })
 })

@@ -1,13 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   createTodoBlockShortcutExtension,
   isTodoBlockShortcut,
 } from './todoBlockShortcutExtension'
-import { trackEvent } from '../lib/telemetry'
-
-vi.mock('../lib/telemetry', () => ({
-  trackEvent: vi.fn(),
-}))
 
 type ShortcutEventOptions = {
   altKey?: boolean
@@ -84,10 +79,6 @@ function createFixture({ editable = true, composing = false } = {}) {
 }
 
 describe('createTodoBlockShortcutExtension', () => {
-  beforeEach(() => {
-    vi.mocked(trackEvent).mockClear()
-  })
-
   it('recognizes platform Mod+T without Alt or Shift', () => {
     expect(isTodoBlockShortcut(shortcutEvent(), 'mac')).toBe(true)
     expect(isTodoBlockShortcut(shortcutEvent({ ctrlKey: true, metaKey: false }), 'non-mac')).toBe(true)
@@ -122,10 +113,6 @@ describe('createTodoBlockShortcutExtension', () => {
     expect(fixture.editor.updateBlock).toHaveBeenCalledWith('paragraph-block', expect.objectContaining({
       type: 'checkListItem',
     }))
-    expect(trackEvent).toHaveBeenCalledWith('editor_block_type_changed', {
-      block_type: 'checkListItem',
-      source: 'keyboard_shortcut',
-    })
     expect(event.preventDefault).toHaveBeenCalledWith()
     expect(event.stopPropagation).toHaveBeenCalledWith()
   })

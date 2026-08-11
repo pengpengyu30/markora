@@ -59,7 +59,7 @@ describe('insertImageBlockAfterCursor', () => {
     )
   })
 
-  it('recovers stale BlockNote insertion races without surfacing them to Sentry', () => {
+  it('recovers stale BlockNote insertion races without surfacing them', () => {
     const missingBlockError = new Error('Block with ID cursor-block not found')
     const editor = createEditor({
       getBlock: vi.fn(() => ({ id: 'cursor-block' })),

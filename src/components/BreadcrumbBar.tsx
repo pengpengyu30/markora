@@ -37,7 +37,6 @@ import {
   ClipboardText,
   FilePdf,
   FolderOpen,
-  Link,
   ArrowsClockwise,
   ArrowsInLineHorizontal,
   ArrowsOutLineHorizontal,
@@ -60,7 +59,6 @@ interface BreadcrumbBarProps {
   onToggleTableOfContents?: () => void
   onRevealFile?: (path: string) => void
   onCopyFilePath?: (path: string) => void
-  onCopyDeepLink?: (entry: VaultEntry) => void
   onExportPdf?: () => void
   onDelete?: () => void
   onRenameFilename?: (path: string, newFilenameStem: string) => void
@@ -411,10 +409,6 @@ function NoteWidthMenuIcon({ noteWidth = 'normal' }: { noteWidth?: NoteWidthMode
 
 function pathAction(action: ((path: string) => void) | undefined, path: string): (() => void) | undefined {
   return action ? () => action(path) : undefined
-}
-
-function entryAction(action: ((entry: VaultEntry) => void) | undefined, entry: VaultEntry): (() => void) | undefined {
-  return action ? () => action(entry) : undefined
 }
 
 function readElementWidth(element: HTMLElement): number {
@@ -805,7 +799,6 @@ function BreadcrumbActions(options: Omit<BreadcrumbBarProps, 'wordCount' | 'barR
     onToggleTableOfContents,
     onRevealFile,
     onCopyFilePath,
-    onCopyDeepLink,
     onExportPdf,
     onDelete,
     actionsRef,
@@ -849,7 +842,6 @@ function BreadcrumbActions(options: Omit<BreadcrumbBarProps, 'wordCount' | 'barR
         onToggleTableOfContents={onToggleTableOfContents}
         onRevealFile={onRevealFile}
         onCopyFilePath={onCopyFilePath}
-        onCopyDeepLink={onCopyDeepLink}
         onExportPdf={exportPdfAction}
         onDelete={onDelete}
         showResponsiveActions={overflowCollapsed}
@@ -868,7 +860,6 @@ function BreadcrumbOverflowMenu(options: Pick<
   | 'onToggleTableOfContents'
   | 'onRevealFile'
   | 'onCopyFilePath'
-  | 'onCopyDeepLink'
   | 'onExportPdf'
   | 'onDelete'
   | 'locale'
@@ -883,7 +874,6 @@ function BreadcrumbOverflowMenu(options: Pick<
     onToggleTableOfContents,
     onRevealFile,
     onCopyFilePath,
-    onCopyDeepLink,
     onExportPdf,
     onDelete,
     showResponsiveActions,
@@ -893,7 +883,6 @@ function BreadcrumbOverflowMenu(options: Pick<
   if (isHtmlFileEntry(entry)) showMarkdownActions = false
   const runRevealAction = pathAction(onRevealFile, entry.path)
   const runCopyPathAction = pathAction(onCopyFilePath, entry.path)
-  const runCopyDeepLinkAction = entryAction(onCopyDeepLink, entry)
   const exportPdfLabel = translate(locale, 'editor.toolbar.exportPdf')
   const noteWidthLabel = translate(locale, noteWidthLabelKey(noteWidth))
   const tableOfContentsLabel = translate(locale, showTableOfContents ? 'editor.toolbar.closeTableOfContents' : 'editor.toolbar.openTableOfContents')
@@ -935,10 +924,6 @@ function BreadcrumbOverflowMenu(options: Pick<
             </DropdownMenuItem>
           </>
         )}
-        <DropdownMenuItem disabled={!runCopyDeepLinkAction} onSelect={runCopyDeepLinkAction}>
-          <Link size={16} />
-          {translate(locale, 'editor.toolbar.copyNoteDeepLink')}
-        </DropdownMenuItem>
         <DropdownMenuItem disabled={!onDelete} variant="destructive" onSelect={onDelete}>
           <Trash size={16} />
           {translate(locale, 'editor.toolbar.delete')}

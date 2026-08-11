@@ -1,4 +1,4 @@
-import { Article, ArrowsClockwise as RefreshCw, FolderOpen, Palette, ShieldCheck, type IconProps } from '@phosphor-icons/react'
+import { Article, ArrowsClockwise as RefreshCw, FolderOpen, Palette, type IconProps } from '@phosphor-icons/react'
 import type { ComponentType } from 'react'
 import type { TranslationKey } from '../lib/i18n'
 import { Button } from './ui/button'
@@ -20,7 +20,6 @@ export function SettingsBodyNav({ t }: SettingsBodyNavProps) {
     { id: SETTINGS_SECTION_IDS.sync, label: t('settings.sync.title'), Icon: RefreshCw },
     { id: SETTINGS_SECTION_IDS.appearance, label: t('settings.appearance.title'), Icon: Palette },
     { id: SETTINGS_SECTION_IDS.content, label: t('settings.vaultContent.title'), Icon: Article },
-    { id: SETTINGS_SECTION_IDS.privacy, label: t('settings.privacy.title'), Icon: ShieldCheck },
   ]
 
   return (

@@ -1,6 +1,5 @@
 import { createExtension } from '@blocknote/core'
 import type { EditorView } from '@tiptap/pm/view'
-import { trackEvent } from '../lib/telemetry'
 import { isMac } from '../utils/platform'
 import { createTolariaCodeBlockOptions } from './codeBlockOptions'
 import { createCodeBlockLineNumberPlugin } from './codeBlockLineNumbers'
@@ -107,7 +106,7 @@ function fenceLanguage(block: RichEditorBlock): string | null {
 }
 
 function turnIntoCodeBlock({
-  editor, block, language, source, clearContent = false,
+  editor, block, language, clearContent = false,
 }: CodeBlockCreation): boolean {
   const update = {
     type: CODE_BLOCK_TYPE,
@@ -118,7 +117,6 @@ function turnIntoCodeBlock({
     ...update,
   } as never)
   editor.focus()
-  trackEvent('editor_code_block_created', { source })
   return true
 }
 

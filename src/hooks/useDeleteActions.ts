@@ -1,7 +1,6 @@
 import { startTransition, useCallback, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { isTauri, mockInvoke } from '../mock-tauri'
-import { trackEvent } from '../lib/telemetry'
 
 interface ConfirmDeleteState {
   title: string
@@ -120,10 +119,6 @@ function useDeleteRunner({
     try {
       const deletedPaths = await runDeleteCommand(paths, resolveVaultPathForPath)
       const deletedCount = deletedPaths.length
-
-      if (deletedCount > 0) {
-        trackEvent('note_deleted')
-      }
 
       if (deletedCount !== paths.length) {
         await reconcileDeleteFailure()

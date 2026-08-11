@@ -14,8 +14,6 @@ const MAIN_ENTRYPOINT_IMPORT_TIMEOUT_MS = 120_000
 const mocks = vi.hoisted(() => {
   const render = vi.fn()
   const createRoot = vi.fn(() => ({ render }))
-  const sentryHandler = vi.fn()
-  const reactErrorHandler = vi.fn(() => sentryHandler)
   const getShortcutEventInit = vi.fn(() => ({ key: 'x' }))
   const isFullscreen = vi.fn(async () => false)
   let resizeListener: (() => void) | null = null
@@ -33,18 +31,15 @@ const mocks = vi.hoisted(() => {
     loadAppModule,
     onResized,
     renderApp,
-    reactErrorHandler,
     render,
     resizeListener: () => resizeListener,
     setResizeListener: (listener: (() => void) | null) => {
       resizeListener = listener
     },
-    sentryHandler,
   }
 })
 
 vi.mock('react-dom/client', () => ({ createRoot: mocks.createRoot }))
-vi.mock('@sentry/react', () => ({ reactErrorHandler: mocks.reactErrorHandler }))
 vi.mock('./App.tsx', () => ({
   default: (() => {
     mocks.loadAppModule()
@@ -130,7 +125,6 @@ async function expectCaughtRenderRecoverySuppressed(
 
   rootOptions().onCaughtError?.(error, { componentStack })
 
-  expect(mocks.sentryHandler).not.toHaveBeenCalled()
   expect(document.getElementById('tolaria-fatal-render-error')).toBeNull()
 }
 
@@ -170,10 +164,9 @@ describe('main entrypoint', () => {
     sessionStorage.clear()
   })
 
-  it('captures React root errors through Sentry with component stack context', async () => {
+  it('shows fatal React root errors without initializing or reporting telemetry', async () => {
     await importEntrypoint()
 
-    expect(mocks.reactErrorHandler).toHaveBeenCalledOnce()
     expect(mocks.createRoot).toHaveBeenCalledWith(
       document.getElementById('root'),
       expect.objectContaining({
@@ -187,7 +180,7 @@ describe('main entrypoint', () => {
     window.__tolariaFrontendReady = true
     rootOptions().onCaughtError?.(error, { componentStack: '\n    in App' })
 
-    expect(mocks.sentryHandler).toHaveBeenCalledWith(error, { componentStack: '\n    in App' })
+    expect(document.getElementById('tolaria-fatal-render-error')).toHaveTextContent('Maximum update depth exceeded')
   }, MAIN_ENTRYPOINT_IMPORT_TIMEOUT_MS)
 
   it('reloads and suppresses startup default-export chunk errors before frontend readiness', async () => {
@@ -197,11 +190,10 @@ describe('main entrypoint', () => {
     rootOptions().onUncaughtError?.(error, { componentStack: '' })
 
     expect(sessionStorage.getItem('tolaria:startup-reload-attempted')).toBe('1')
-    expect(mocks.sentryHandler).not.toHaveBeenCalled()
     expect(document.getElementById('tolaria-fatal-render-error')).toBeNull()
   }, MAIN_ENTRYPOINT_IMPORT_TIMEOUT_MS)
 
-  it('suppresses recovered BlockNote maximum update depth errors from Sentry', async () => {
+  it('suppresses recovered BlockNote maximum update depth errors', async () => {
     await importEntrypoint()
 
     const error = new Error('Maximum update depth exceeded. This can happen when a component repeatedly calls setState.')
@@ -210,7 +202,6 @@ describe('main entrypoint', () => {
 
     rootOptions().onCaughtError?.(error, { componentStack })
 
-    expect(mocks.sentryHandler).not.toHaveBeenCalled()
     expect(document.getElementById('tolaria-fatal-render-error')).toBeNull()
   }, MAIN_ENTRYPOINT_IMPORT_TIMEOUT_MS)
 
@@ -222,7 +213,6 @@ describe('main entrypoint', () => {
 
     rootOptions().onCaughtError?.(error, { componentStack: '\n    in BlockNoteView' })
 
-    expect(mocks.sentryHandler).not.toHaveBeenCalled()
     expect(document.getElementById('tolaria-fatal-render-error')).toBeNull()
   }, MAIN_ENTRYPOINT_IMPORT_TIMEOUT_MS)
 
@@ -234,18 +224,17 @@ describe('main entrypoint', () => {
 
     rootOptions().onRecoverableError?.(error, { componentStack: '\n    in BlockNoteView' })
 
-    expect(mocks.sentryHandler).not.toHaveBeenCalled()
     expect(document.getElementById('tolaria-fatal-render-error')).toBeNull()
   }, MAIN_ENTRYPOINT_IMPORT_TIMEOUT_MS)
 
-  it('normalizes missing React component stacks before handing errors to Sentry', async () => {
+  it('normalizes missing React component stacks in the fatal overlay', async () => {
     await importEntrypoint()
 
     const error = new Error('recoverable render error')
     window.__tolariaFrontendReady = true
     rootOptions().onRecoverableError?.(error, {})
 
-    expect(mocks.sentryHandler).toHaveBeenCalledWith(error, { componentStack: '' })
+    expect(document.getElementById('tolaria-fatal-render-error')).toHaveTextContent('recoverable render error')
   }, MAIN_ENTRYPOINT_IMPORT_TIMEOUT_MS)
 
   it('marks macOS chrome for traffic-light layout offsets', async () => {
@@ -317,28 +306,27 @@ describe('main entrypoint', () => {
     rootOptions().onRecoverableError?.(error, {})
     rootOptions().onCaughtError?.(error, { componentStack: '\n    in App' })
 
-    expect(mocks.sentryHandler).not.toHaveBeenCalled()
     expect(document.getElementById('tolaria-fatal-render-error')).toBeNull()
   })
 
-  it('suppresses recovered BlockNote missing-id render errors from Sentry', async () => {
+  it('suppresses recovered BlockNote missing-id render errors', async () => {
     const error = new Error("Block doesn't have id")
     const componentStack = '\n    in MermaidBlock\n    in BlockNoteRenderRecoveryBoundary'
 
     await expectCaughtRenderRecoverySuppressed(error, componentStack)
     rootOptions().onUncaughtError?.(error, { componentStack })
 
-    expect(mocks.sentryHandler).toHaveBeenCalledWith(error, { componentStack })
+    expect(document.getElementById('tolaria-fatal-render-error')).toHaveTextContent("Block doesn't have id")
   })
 
-  it('suppresses recovered BlockNote stale block-reference render errors from Sentry', async () => {
+  it('suppresses recovered BlockNote stale block-reference render errors', async () => {
     const error = new Error('Block with ID 669f337a-dee2-4d92-b5cb-9a4e9828ecf9 not found')
     const componentStack = '\n    in BlockNoteView\n    in BlockNoteRenderRecoveryBoundary'
 
     await expectCaughtRenderRecoverySuppressed(error, componentStack)
     rootOptions().onUncaughtError?.(error, { componentStack })
 
-    expect(mocks.sentryHandler).toHaveBeenCalledWith(error, { componentStack })
+    expect(document.getElementById('tolaria-fatal-render-error')).toHaveTextContent('Block with ID')
   })
 
   it('suppresses caught BlockNote block-type mismatch render errors without component stacks', async () => {
@@ -347,23 +335,23 @@ describe('main entrypoint', () => {
     await expectCaughtRenderRecoverySuppressed(error, '')
     rootOptions().onUncaughtError?.(error, {})
 
-    expect(mocks.sentryHandler).toHaveBeenCalledWith(error, { componentStack: '' })
+    expect(document.getElementById('tolaria-fatal-render-error')).toHaveTextContent('Block type does not match')
   })
 
-  it('suppresses caught WebKit DOM NotFoundError render recoveries from Sentry', async () => {
+  it('suppresses caught WebKit DOM NotFoundError render recoveries', async () => {
     const error = new Error('The object can not be found here.')
     error.name = 'NotFoundError'
 
     await expectCaughtRenderRecoverySuppressed(error)
   })
 
-  it('suppresses caught BlockNote null firstChild render recoveries from Sentry', async () => {
+  it('suppresses caught BlockNote null firstChild render recoveries', async () => {
     const error = new TypeError("Cannot read properties of null (reading 'firstChild')")
 
     await expectCaughtRenderRecoverySuppressed(error)
   })
 
-  it('suppresses recovered action tooltip render errors from Sentry', async () => {
+  it('suppresses recovered action tooltip render errors', async () => {
     await importEntrypoint()
 
     const { markRecoveredActionTooltipError } = await import('./components/ui/actionTooltipRecovery')
@@ -374,7 +362,6 @@ describe('main entrypoint', () => {
 
     rootOptions().onCaughtError?.(error, { componentStack })
 
-    expect(mocks.sentryHandler).not.toHaveBeenCalled()
     expect(document.getElementById('tolaria-fatal-render-error')).toBeNull()
   })
 

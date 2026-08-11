@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState, type MutableRefObject } from 'react'
 import { translate, type AppLocale } from '../lib/i18n'
-import { trackNotePdfExportFailed } from '../lib/productAnalytics'
 import { notePdfExportFilename, printActiveNoteAsPdf, type NotePdfExportSource } from '../utils/notePdfExport'
 import type { VaultEntry } from '../types'
 import { isMarkdownEntry } from '../utils/typeDefinitions'
@@ -124,7 +123,6 @@ export function useEditorPdfExport(options: UseEditorPdfExportParams): (source?:
   const exportNoteAsPdf = useCallback(
     (source: NotePdfExportSource = 'breadcrumb') => {
     if (!isPdfExportableTab(activeTab)) {
-      trackNotePdfExportFailed(source, 'export_unavailable')
       onToast?.(translate(locale, 'editor.exportPdf.unavailable'))
       return
     }

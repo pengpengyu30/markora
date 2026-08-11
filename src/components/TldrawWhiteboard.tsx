@@ -19,8 +19,10 @@ import {
 } from 'tldraw'
 import 'tldraw/tldraw.css'
 import { useDocumentThemeMode } from '../hooks/useDocumentThemeMode'
-import { resolveEffectiveLocale, translate, type AppLocale } from '../lib/i18n'
+import { translate, type AppLocale } from '../lib/i18n'
 import type { ResolvedThemeMode } from '../lib/themeMode'
+import { useAppLocale } from '../hooks/useAppPreferences'
+import { subscribeRichEditorExternalFlush } from './editorExternalChangeEvents'
 import {
   isWhiteboardPlatformPermissionRejection,
   retainWhiteboardPlatformPermissionGuard,
@@ -105,38 +107,42 @@ function cssSize({ height, width }: PixelSize): CSSProperties {
   } as CSSProperties
 }
 
-function tldrawUserPreferences(themeMode: ResolvedThemeMode): TLUserPreferences {
+const TLDRAW_LOCALE_BY_APP_LOCALE: Partial<Record<AppLocale, TLUserPreferences['locale']>> = {
+  en: 'en',
+  'it-IT': 'it',
+  'fr-FR': 'fr',
+  'de-DE': 'de',
+  'ru-RU': 'ru',
+  'es-ES': 'es',
+  'pt-BR': 'pt-br',
+  'pt-PT': 'pt-pt',
+  'es-419': 'es',
+  'zh-CN': 'zh-cn',
+  'zh-TW': 'zh-tw',
+  'ja-JP': 'ja',
+  'ko-KR': 'ko-kr',
+  vi: 'vi',
+  'pl-PL': 'pl',
+  'id-ID': 'id',
+  'uk-UA': 'uk',
+  'sv-SE': 'sv',
+}
+
+function tldrawLocale(locale: AppLocale): TLUserPreferences['locale'] {
+  return TLDRAW_LOCALE_BY_APP_LOCALE[locale] ?? 'en'
+}
+
+function tldrawUserPreferences(themeMode: ResolvedThemeMode, locale: AppLocale): TLUserPreferences {
   return {
     ...defaultUserPreferences,
     id: TOLARIA_TLDRAW_USER_ID,
     colorScheme: themeMode,
+    locale: tldrawLocale(locale),
   }
 }
 
 function ignoreTldrawUserPreferencesUpdate(preferences: TLUserPreferences) {
   void preferences
-}
-
-function readDocumentLocale(): AppLocale {
-  if (typeof document === 'undefined') return 'en'
-  return resolveEffectiveLocale(document.documentElement.lang)
-}
-
-function useDocumentLocale(): AppLocale {
-  const [locale, setLocale] = useState(readDocumentLocale)
-
-  useEffect(() => {
-    if (typeof document === 'undefined') return
-
-    const syncLocale = () => setLocale(readDocumentLocale())
-    const observer = new MutationObserver(syncLocale)
-    observer.observe(document.documentElement, { attributeFilter: ['lang'], attributes: true })
-    syncLocale()
-
-    return () => observer.disconnect()
-  }, [])
-
-  return locale
 }
 
 interface WhiteboardRuntimeGuardOptions {
@@ -151,7 +157,7 @@ function installTldrawPlatformPermissionGuard({ onPlatformPermissionDenied }: Wh
     onPlatformPermissionDenied()
   }
 
-  // Sentry installs its global rejection handler during app startup, before tldraw mounts.
+  // The app installs its global rejection handler during startup, before tldraw mounts.
   window.addEventListener('unhandledrejection', handleUnhandledRejection, true)
   return () => {
     window.removeEventListener('unhandledrejection', handleUnhandledRejection, true)
@@ -169,9 +175,23 @@ function parseSnapshot(source: string): TLStoreSnapshot | null {
   }
 }
 
-function createBoardStore(boardId: string) {
+function isStoreSnapshot(snapshot: TLStoreSnapshot | null): snapshot is TLStoreSnapshot {
+  if (!snapshot || typeof snapshot !== 'object') return false
+  return 'store' in snapshot
+    && typeof snapshot.store === 'object'
+    && snapshot.store !== null
+    && 'schema' in snapshot
+    && typeof snapshot.schema === 'object'
+    && snapshot.schema !== null
+}
+
+function createBoardStore(boardId: string, snapshot: TLStoreSnapshot | null) {
   void boardId
-  return createTLStore({ onMount: installTldrawTextMeasurementGuard })
+  const initialSnapshot = isStoreSnapshot(snapshot) ? snapshot : null
+  return createTLStore({
+    onMount: installTldrawTextMeasurementGuard,
+    ...(initialSnapshot ? { snapshot: initialSnapshot } : {}),
+  })
 }
 
 function serializeSnapshot(snapshot: TLStoreSnapshot): string {
@@ -538,24 +558,37 @@ export function TldrawWhiteboard({
   onSnapshotChange,
   onSizeChange,
 }: TldrawWhiteboardProps) {
-  const store = useMemo(() => createBoardStore(boardId), [boardId])
+  const initialStoreStateRef = useRef<{ boardId: string; parsedSnapshot: TLStoreSnapshot | null; source: string } | null>(null)
+  if (initialStoreStateRef.current === null || initialStoreStateRef.current.boardId !== boardId) {
+    initialStoreStateRef.current = {
+      boardId,
+      parsedSnapshot: parseSnapshot(snapshot),
+      source: snapshot,
+    }
+  }
+  const initialStoreState = initialStoreStateRef.current
+  const store = useMemo(
+    () => createBoardStore(boardId, initialStoreState.parsedSnapshot),
+    [boardId, initialStoreState],
+  )
   const boardRef = useRef<HTMLDivElement | null>(null)
   const savedSnapshotRef = useRef<string | null>(null)
   const savedBoardIdRef = useRef<string | null>(null)
   const onSnapshotChangeRef = useRef(onSnapshotChange)
+  const flushSnapshotRef = useRef<(() => void) | null>(null)
   const persistedSize = useMemo(() => normalizeSize({ height, width }), [height, width])
   const [resizingSize, setResizingSize] = useState<PixelSize | null>(null)
   const [permissionDeniedBoardId, setPermissionDeniedBoardId] = useState<string | null>(null)
   const platformPermissionDenied = permissionDeniedBoardId === boardId
   const visibleSize = resizingSize ?? persistedSize
   const { fullscreen, toggleFullscreen } = useFullscreenWhiteboard()
-  const locale = useDocumentLocale()
+  const locale = useAppLocale()
   const fullscreenLabel = translate(
     locale,
     fullscreen ? 'editor.whiteboard.exitFullscreen' : 'editor.whiteboard.enterFullscreen',
   )
   const themeMode = useDocumentThemeMode()
-  const userPreferences = useMemo(() => tldrawUserPreferences(themeMode), [themeMode])
+  const userPreferences = useMemo(() => tldrawUserPreferences(themeMode, locale), [locale, themeMode])
   const tldrawUser = useTldrawUser({
     setUserPreferences: ignoreTldrawUserPreferencesUpdate,
     userPreferences,
@@ -573,6 +606,12 @@ export function TldrawWhiteboard({
   useEffect(() => {
     if (boardId === savedBoardIdRef.current && snapshot === savedSnapshotRef.current) return
 
+    if (initialStoreState.source === snapshot) {
+      savedBoardIdRef.current = boardId
+      savedSnapshotRef.current = snapshot
+      return
+    }
+
     const parsed = parseSnapshot(snapshot)
     if (parsed) {
       try {
@@ -589,19 +628,20 @@ export function TldrawWhiteboard({
     loadSnapshot(store, emptySnapshot)
     savedBoardIdRef.current = boardId
     savedSnapshotRef.current = serializeSnapshot(emptySnapshot)
-  }, [boardId, snapshot, store])
+  }, [boardId, initialStoreState, snapshot, store])
 
   useEffect(() => {
     let timeoutId: number | null = null
+    const saveSnapshotForBoard = onSnapshotChangeRef.current
 
-    const flushSnapshot = () => {
+    const flushSnapshot = (saveSnapshot = onSnapshotChangeRef.current) => {
       timeoutId = null
       const nextSnapshot = serializeSnapshot(getDocumentSnapshot(store))
       if (nextSnapshot === savedSnapshotRef.current) return
 
       savedBoardIdRef.current = boardId
       savedSnapshotRef.current = nextSnapshot
-      onSnapshotChangeRef.current(nextSnapshot)
+      saveSnapshot(nextSnapshot)
     }
 
     const scheduleSnapshotFlush = () => {
@@ -610,11 +650,25 @@ export function TldrawWhiteboard({
     }
 
     const cleanup = store.listen(scheduleSnapshotFlush, { source: 'user', scope: 'document' })
+    const flushPendingSnapshot = () => {
+      if (timeoutId === null) return
+      window.clearTimeout(timeoutId)
+      flushSnapshot()
+    }
+    flushSnapshotRef.current = flushPendingSnapshot
     return () => {
       cleanup()
-      if (timeoutId !== null) window.clearTimeout(timeoutId)
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId)
+        flushSnapshot(saveSnapshotForBoard)
+      }
+      if (flushSnapshotRef.current === flushPendingSnapshot) flushSnapshotRef.current = null
     }
   }, [boardId, store])
+
+  useEffect(() => subscribeRichEditorExternalFlush(() => {
+    flushSnapshotRef.current?.()
+  }), [])
 
   const startResize = (event: ReactPointerEvent<HTMLButtonElement>) => {
     event.preventDefault()

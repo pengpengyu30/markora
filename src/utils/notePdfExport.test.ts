@@ -5,10 +5,6 @@ import {
   notePdfExportFilename,
   printActiveNoteAsPdf,
 } from './notePdfExport'
-import {
-  trackNotePdfExportFailed,
-  trackNotePdfExportStarted,
-} from '../lib/productAnalytics'
 
 const tauriRuntimeMock = vi.hoisted(() => ({
   isTauri: vi.fn(() => false),
@@ -16,11 +12,6 @@ const tauriRuntimeMock = vi.hoisted(() => ({
 
 vi.mock('../mock-tauri', () => ({
   isTauri: tauriRuntimeMock.isTauri,
-}))
-
-vi.mock('../lib/productAnalytics', () => ({
-  trackNotePdfExportFailed: vi.fn(),
-  trackNotePdfExportStarted: vi.fn(),
 }))
 
 let requestAnimationFrameSpy: ReturnType<typeof vi.spyOn>
@@ -47,7 +38,6 @@ describe('note PDF export', () => {
 
     expect(document.body).toHaveClass(NOTE_PDF_EXPORT_CLASS)
     expect(print).toHaveBeenCalledOnce()
-    expect(trackNotePdfExportStarted).toHaveBeenCalledWith('breadcrumb')
   })
 
   it('saves the current native webview to a chosen PDF path inside Tauri', async () => {
@@ -63,7 +53,6 @@ describe('note PDF export', () => {
     })
 
     expect(nativeSavePdf).toHaveBeenCalledWith('/tmp/project-plan.pdf')
-    expect(trackNotePdfExportStarted).toHaveBeenCalledWith('app_command')
     expect(document.body).toHaveClass(NOTE_PDF_EXPORT_CLASS)
 
     window.dispatchEvent(new Event('afterprint'))
@@ -82,7 +71,6 @@ describe('note PDF export', () => {
     })
 
     expect(nativeSavePdf).not.toHaveBeenCalled()
-    expect(trackNotePdfExportStarted).not.toHaveBeenCalled()
   })
 
   it('falls back to the native print dialog when direct PDF saving is unsupported', async () => {
@@ -102,7 +90,6 @@ describe('note PDF export', () => {
     expect(nativePrint).toHaveBeenCalledOnce()
     expect(nativeSavePdf).not.toHaveBeenCalled()
     expect(saveDialog).not.toHaveBeenCalled()
-    expect(trackNotePdfExportStarted).toHaveBeenCalledWith('app_command')
   })
 
   it('removes print-only mode after the native print lifecycle finishes', async () => {
@@ -113,7 +100,7 @@ describe('note PDF export', () => {
     expect(document.body).not.toHaveClass(NOTE_PDF_EXPORT_CLASS)
   })
 
-  it('tracks and cleans up failed print attempts', async () => {
+  it('cleans up failed print attempts', async () => {
     const error = new Error('print failed')
 
     await expect(printActiveNoteAsPdf({
@@ -122,7 +109,6 @@ describe('note PDF export', () => {
     })).rejects.toThrow(error)
 
     expect(document.body).not.toHaveClass(NOTE_PDF_EXPORT_CLASS)
-    expect(trackNotePdfExportFailed).toHaveBeenCalledWith('app_command', 'export_error')
   })
 
   it('builds safe default PDF filenames from markdown filenames', () => {

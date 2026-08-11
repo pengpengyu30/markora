@@ -3,11 +3,6 @@ import { renderHook } from '@testing-library/react'
 import { requestEditorFocus, useEditorFocus } from './useEditorFocus'
 import type { FocusableEditor } from './editorFocusUtils'
 import { resumeEditorFocus, suspendEditorFocus } from './editorFocusOwnership'
-import { trackEvent } from '../lib/telemetry'
-
-vi.mock('../lib/telemetry', () => ({
-  trackEvent: vi.fn(),
-}))
 
 function makeTiptapMock(hasHeading: boolean | Array<number | null> = true, headingNodeSize = 15) {
   const headingSizes = Array.isArray(hasHeading)
@@ -427,9 +422,6 @@ describe('useEditorFocus', () => {
         '[editor] Recovered rich-editor transform error:',
         expect.any(RangeError),
       )
-      expect(trackEvent).toHaveBeenCalledWith('rich_editor_transform_error_recovered', {
-        reason: 'mismatched_transaction',
-      })
     })
 
     it('collapses selection to the caret for an empty H1', () => {

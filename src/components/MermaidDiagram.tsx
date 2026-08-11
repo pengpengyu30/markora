@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/dialog'
 import { APP_COMMAND_EVENT_NAME, APP_COMMAND_IDS } from '../hooks/appCommandDispatcher'
 import { translate } from '../lib/i18n'
-import { trackEvent } from '../lib/telemetry'
 import { SafeSvgDiv } from './SafeMarkup'
 
 type MermaidApi = typeof import('mermaid')['default']
@@ -184,7 +183,6 @@ function stopMermaidViewportEvent(event: SyntheticEvent): void {
 function openRawEditorForMermaidSource(event: SyntheticEvent): void {
   event.preventDefault()
   event.stopPropagation()
-  trackEvent('editor_mermaid_raw_edit_requested')
   window.dispatchEvent(new CustomEvent(APP_COMMAND_EVENT_NAME, {
     detail: APP_COMMAND_IDS.editToggleRawEditor,
   }))

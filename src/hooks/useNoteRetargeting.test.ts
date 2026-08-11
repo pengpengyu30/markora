@@ -1,12 +1,7 @@
 import { renderHook, act } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FolderNode, VaultEntry } from '../types'
-import { trackNoteRetargeted } from '../lib/productAnalytics'
 import { useNoteRetargeting } from './useNoteRetargeting'
-
-vi.mock('../lib/productAnalytics', () => ({
-  trackNoteRetargeted: vi.fn(),
-}))
 
 const makeEntry = (overrides: Partial<VaultEntry> = {}): VaultEntry => ({
   path: '/vault/notes/alpha.md',
@@ -75,10 +70,6 @@ describe('useNoteRetargeting', () => {
       '/vault',
       expect.any(Function),
     )
-    expect(trackNoteRetargeted).toHaveBeenCalledWith({
-      targetKind: 'folder',
-      folderDestination: 'folder',
-    })
   })
 
   it('moves a nested note back to the vault root', async () => {
@@ -100,10 +91,6 @@ describe('useNoteRetargeting', () => {
       '/vault',
       expect.any(Function),
     )
-    expect(trackNoteRetargeted).toHaveBeenCalledWith({
-      targetKind: 'folder',
-      folderDestination: 'root',
-    })
   })
 
   it('uses normalized paths when checking a Windows folder destination', async () => {

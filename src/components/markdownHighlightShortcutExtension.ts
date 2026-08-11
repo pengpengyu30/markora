@@ -1,6 +1,5 @@
 import { createExtension } from '@blocknote/core'
 import type { useCreateBlockNote } from '@blocknote/react'
-import { trackEvent } from '../lib/telemetry'
 import { MARKDOWN_HIGHLIGHT_STYLE } from '../utils/markdownHighlightMarkdown'
 
 type EditorLike = ReturnType<typeof useCreateBlockNote>
@@ -39,7 +38,6 @@ function isEditable(editor: ShortcutEditor): boolean {
 function toggleMarkdownHighlight(editor: ShortcutEditor): void {
   editor.focus()
   editor.toggleStyles({ [MARKDOWN_HIGHLIGHT_STYLE]: true } as never)
-  trackEvent('markdown_highlight_shortcut_used', { source: 'keyboard' })
 }
 
 export const createMarkdownHighlightShortcutExtension = createExtension(({ editor }) => {

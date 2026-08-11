@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState, type RefObject } from 'react'
-import { trackInlineImageLightboxOpened } from '../lib/productAnalytics'
 import { getDoubleClickedImageTarget, type ImageLightboxTarget } from '../utils/imageLightboxTarget'
 
 type UseImageLightboxArgs = {
@@ -25,7 +24,6 @@ export function useImageLightbox({ containerRef }: UseImageLightboxArgs): UseIma
 
       event.preventDefault()
       setImage(nextImage)
-      trackInlineImageLightboxOpened()
     }
 
     container.addEventListener('dblclick', onDoubleClick, true)

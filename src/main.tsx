@@ -1,5 +1,4 @@
 import { lazy, StrictMode, Suspense } from 'react'
-import * as Sentry from '@sentry/react'
 import { createRoot } from 'react-dom/client'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import './index.css'
@@ -179,8 +178,6 @@ window.__laputaTest = {
   },
 }
 
-const sentryReactErrorHandler = Sentry.reactErrorHandler()
-
 function isResizeObserverLoopError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error)
   return message.includes('ResizeObserver loop completed with undelivered notifications')
@@ -241,7 +238,6 @@ function captureReactRootError(
 
   const componentStack = errorInfo.componentStack ?? ''
   showFatalRenderError(error, { componentStack })
-  sentryReactErrorHandler(error, { componentStack })
   reloadFrontendOnceIfStartupFailed()
 }
 

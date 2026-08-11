@@ -1,4 +1,3 @@
-import { trackEvent } from '../lib/telemetry'
 import { vaultAttachmentAssetUrl } from '../utils/vaultAttachments'
 import {
   clipboardRemoteImages,
@@ -378,12 +377,6 @@ function finishRichRemoteImageImport(
   options.onImportResult?.({
     failedCount: result.failedCount,
     totalCount: result.totalCount,
-  })
-  trackEvent('remote_images_paste_imported', {
-    surface: 'rich_editor',
-    total_count: result.totalCount,
-    success_count: result.totalCount - result.failedCount,
-    failure_count: result.failedCount,
   })
 }
 

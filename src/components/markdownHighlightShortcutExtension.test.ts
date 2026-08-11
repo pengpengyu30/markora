@@ -1,17 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { MARKDOWN_HIGHLIGHT_STYLE } from '../utils/markdownHighlightMarkdown'
 import {
   createMarkdownHighlightShortcutExtension,
   isMarkdownHighlightShortcut,
 } from './markdownHighlightShortcutExtension'
-
-const { trackEventMock } = vi.hoisted(() => ({
-  trackEventMock: vi.fn(),
-}))
-
-vi.mock('../lib/telemetry', () => ({
-  trackEvent: trackEventMock,
-}))
 
 type ShortcutEventOptions = {
   altKey?: boolean
@@ -80,10 +72,6 @@ function createFixture({ editable = true, composing = false } = {}) {
 }
 
 describe('createMarkdownHighlightShortcutExtension', () => {
-  beforeEach(() => {
-    trackEventMock.mockClear()
-  })
-
   it('recognizes Cmd/Ctrl+Shift+M without Alt', () => {
     expect(isMarkdownHighlightShortcut(shortcutEvent())).toBe(true)
     expect(isMarkdownHighlightShortcut(shortcutEvent({ ctrlKey: true, metaKey: false }))).toBe(true)
@@ -115,7 +103,6 @@ describe('createMarkdownHighlightShortcutExtension', () => {
 
     expect(fixture.editor.focus).toHaveBeenCalledWith()
     expect(fixture.editor.toggleStyles).toHaveBeenCalledWith({ [MARKDOWN_HIGHLIGHT_STYLE]: true })
-    expect(trackEventMock).toHaveBeenCalledWith('markdown_highlight_shortcut_used', { source: 'keyboard' })
     expect(event.preventDefault).toHaveBeenCalledWith()
     expect(event.stopPropagation).toHaveBeenCalledWith()
   })
@@ -126,13 +113,11 @@ describe('createMarkdownHighlightShortcutExtension', () => {
     const composingEvent = composingFixture.fireKeydown()
     expect(composingFixture.editor.toggleStyles).not.toHaveBeenCalled()
     expect(composingEvent.preventDefault).not.toHaveBeenCalled()
-    expect(trackEventMock).not.toHaveBeenCalled()
 
     const readonlyFixture = createFixture({ editable: false })
     readonlyFixture.mount()
     const readonlyEvent = readonlyFixture.fireKeydown()
     expect(readonlyFixture.editor.toggleStyles).not.toHaveBeenCalled()
     expect(readonlyEvent.preventDefault).not.toHaveBeenCalled()
-    expect(trackEventMock).not.toHaveBeenCalled()
   })
 })

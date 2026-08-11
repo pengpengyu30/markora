@@ -1,47 +1,31 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const analytics = vi.hoisted(() => ({
-  reconciled: vi.fn(),
-  usable: vi.fn(),
-}))
 const invoke = vi.hoisted(() => vi.fn())
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke }))
 vi.mock('../mock-tauri', () => ({ isTauri: () => true }))
-vi.mock('./productAnalytics', () => ({
-  trackStartupActiveVaultUsable: analytics.usable,
-  trackStartupBackgroundReconciled: analytics.reconciled,
-}))
-
-describe('startup performance telemetry', () => {
+describe('startup performance traces', () => {
   beforeEach(() => {
     vi.resetModules()
     performance.clearMarks()
-    analytics.reconciled.mockReset()
-    analytics.usable.mockReset()
     invoke.mockReset()
     invoke.mockImplementation((command: string) => Promise.resolve(
       command === 'get_startup_elapsed_ms' ? 10 : { elapsed_ms: 10 },
     ))
   })
 
-  it('records the warm-start target and emits each milestone once', async () => {
+  it('records active-vault and reconciliation milestones', async () => {
     const startup = await import('./startupPerformance')
 
     startup.markStartupPhase('react_shell')
-    startup.recordActiveVaultUsable('snapshot', 42)
-    startup.recordActiveVaultUsable('scan', 7)
+    startup.recordActiveVaultUsable(42)
+    startup.recordActiveVaultUsable(7)
     startup.recordBackgroundReconciled(43)
     startup.recordBackgroundReconciled(44)
-    await vi.waitFor(() => expect(analytics.usable).toHaveBeenCalledOnce())
 
     expect(startup.STARTUP_TARGETS_MS.activeVaultUsable).toBe(800)
-    expect(analytics.usable).toHaveBeenCalledWith(expect.objectContaining({
-      activeVaultEntryCount: 42,
-      source: 'snapshot',
-      targetMs: 800,
-    }))
-    expect(analytics.reconciled).toHaveBeenCalledOnce()
+    expect(performance.getEntriesByName('tolaria:active_usable', 'mark')).toHaveLength(1)
+    expect(performance.getEntriesByName('tolaria:background_reconciled', 'mark')).toHaveLength(1)
   })
 
   it('records native-relative milestones for machine-readable startup traces', async () => {

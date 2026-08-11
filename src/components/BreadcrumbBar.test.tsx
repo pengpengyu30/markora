@@ -257,16 +257,6 @@ describe('BreadcrumbBar — file actions', () => {
     expect(onCopyFilePath).toHaveBeenCalledWith('/vault/note/test.md')
   })
 
-  it('copies the current note deep link from the overflow menu', async () => {
-    const onCopyDeepLink = vi.fn()
-    render(<BreadcrumbBar entry={baseEntry} {...defaultProps} onCopyDeepLink={onCopyDeepLink} />)
-
-    const menu = await openOverflowMenu()
-    fireEvent.click(within(menu).getByRole('menuitem', { name: 'Copy note deeplink' }))
-
-    expect(onCopyDeepLink).toHaveBeenCalledWith(baseEntry)
-  })
-
   it('exports the current note as PDF from the overflow menu', async () => {
     const onExportPdf = vi.fn()
     render(<BreadcrumbBar entry={baseEntry} {...defaultProps} onExportPdf={onExportPdf} />)
@@ -573,7 +563,6 @@ describe('BreadcrumbBar — action buttons always right-aligned', () => {
     expect(within(menu).queryByRole('menuitem', { name: 'Switch to wide note width' })).not.toBeInTheDocument()
     expect(within(menu).queryByRole('menuitem', { name: 'Reveal in Finder' })).not.toBeInTheDocument()
     expect(within(menu).queryByRole('menuitem', { name: 'Copy file path' })).not.toBeInTheDocument()
-    expect(within(menu).getByRole('menuitem', { name: 'Copy note deeplink' })).toBeInTheDocument()
   })
 
   it('exposes lower-priority actions when overflow hides their toolbar buttons', async () => {
@@ -599,7 +588,6 @@ describe('BreadcrumbBar — action buttons always right-aligned', () => {
       expect(within(menu).getByRole('menuitem', { name: 'Switch to wide note width' })).toBeInTheDocument()
       expect(within(menu).getByRole('menuitem', { name: 'Reveal in Finder' })).toBeInTheDocument()
       expect(within(menu).getByRole('menuitem', { name: 'Copy file path' })).toBeInTheDocument()
-      expect(within(menu).getByRole('menuitem', { name: 'Copy note deeplink' })).toBeInTheDocument()
     } finally {
       restoreMeasurement()
     }

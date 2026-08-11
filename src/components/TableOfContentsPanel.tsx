@@ -1,7 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { ListBullets, TextHOne, TextHThree, TextHTwo, X } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
-import { trackEvent } from '../lib/telemetry'
 import type { AppLocale } from '../lib/i18n'
 import { translate } from '../lib/i18n'
 import type { VaultEntry } from '../types'
@@ -133,7 +132,6 @@ function useTocNavigation(editor: TableOfContentsEditor, title: string) {
     }
     editor.focus?.()
     scrollBlockIntoView(blockId)
-    trackEvent('table_of_contents_heading_selected')
   }, [editor, title])
 }
 

@@ -1,12 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { APP_COMMAND_EVENT_NAME, APP_COMMAND_IDS } from '../../hooks/appCommandDispatcher'
-import { trackEvent } from '../../lib/telemetry'
 import { NoteListHeader } from './NoteListHeader'
-
-vi.mock('../../lib/telemetry', () => ({
-  trackEvent: vi.fn(),
-}))
 
 const baseProps = {
   title: 'Inbox',
@@ -31,10 +26,6 @@ function renderHeader(overrides: Partial<Parameters<typeof NoteListHeader>[0]> =
 }
 
 describe('NoteListHeader expand sidebar button', () => {
-  beforeEach(() => {
-    vi.mocked(trackEvent).mockClear()
-  })
-
   it('keeps the expand-sidebar button hidden when the sidebar is open', () => {
     renderHeader({ sidebarCollapsed: false })
 
@@ -52,7 +43,6 @@ describe('NoteListHeader expand sidebar button', () => {
 
       expect(commandListener).toHaveBeenCalledTimes(1)
       expect((commandListener.mock.calls[0]?.[0] as CustomEvent<string>).detail).toBe(APP_COMMAND_IDS.viewAll)
-      expect(trackEvent).toHaveBeenCalledWith('sidebar_expanded_from_note_list_header')
     } finally {
       window.removeEventListener(APP_COMMAND_EVENT_NAME, commandListener)
     }

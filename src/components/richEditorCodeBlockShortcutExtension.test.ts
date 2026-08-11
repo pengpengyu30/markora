@@ -1,11 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
-import { trackEvent } from '../lib/telemetry'
 import {
   createRichEditorCodeBlockShortcutExtension,
   isCodeBlockCreationShortcut,
 } from './richEditorCodeBlockShortcutExtension'
 
-vi.mock('../lib/telemetry', () => ({ trackEvent: vi.fn() }))
 vi.mock('../utils/platform', () => ({ isMac: () => true }))
 
 type KeyListener = (event: KeyboardEvent) => void
@@ -75,7 +73,6 @@ describe('createRichEditorCodeBlockShortcutExtension', () => {
       content: [],
     })
     expect(event.preventDefault).toHaveBeenCalled()
-    expect(trackEvent).toHaveBeenCalledWith('editor_code_block_created', { source: 'markdown_fence' })
     fixture.controller.abort()
   })
 
@@ -89,7 +86,6 @@ describe('createRichEditorCodeBlockShortcutExtension', () => {
       type: 'codeBlock',
       props: { language: 'text' },
     })
-    expect(trackEvent).toHaveBeenCalledWith('editor_code_block_created', { source: 'keyboard_shortcut' })
     expect(event.preventDefault).toHaveBeenCalled()
     fixture.controller.abort()
   })

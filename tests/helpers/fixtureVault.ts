@@ -337,14 +337,9 @@ async function installFixtureVaultInitScript({ page, vaultPath, isGitRepo, folde
       get_default_vault_path: () => resolvedVaultPath,
       save_vault_list: () => null,
       save_settings: () => null,
-      reinit_telemetry: () => null,
       update_menu_state: () => null,
       get_settings: () => ({
         auto_pull_interval_minutes: 5,
-        telemetry_consent: false,
-        crash_reporting_enabled: null,
-        analytics_enabled: null,
-        anonymous_id: null,
         release_channel: null,
       }),
     })

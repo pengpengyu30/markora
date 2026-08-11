@@ -23,10 +23,6 @@ async function installOnboardingVaultMocks(page: Page, config: MockConfig) {
     const stateKey = 'tolaria:test-vault-state'
     const defaultSettings = {
       auto_pull_interval_minutes: null,
-      telemetry_consent: true,
-      crash_reporting_enabled: null,
-      analytics_enabled: null,
-      anonymous_id: null,
       release_channel: null,
     }
     const buildEntries = (vaultPath: string) => {

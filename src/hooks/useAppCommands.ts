@@ -34,7 +34,6 @@ interface AppCommandsConfig {
   onCreateNote: (options?: ImmediateCreateOptions) => void
   onSave: () => void
   onOpenSettings: () => void
-  onOpenFeedback?: () => void
   onDeleteNote: (path: string) => void
   onSetViewMode: (mode: ViewMode) => void
   onToggleBacklinks: () => void
@@ -77,7 +76,6 @@ interface AppCommandsConfig {
   onTurnCurrentBlockInto?: (target: RichEditorBlockTypeDefinition) => void
   onRevealActiveFile?: (path: string) => void
   onCopyActiveFilePath?: (path: string) => void
-  onCopyActiveDeepLink?: (path: string) => void
   onOpenActiveFileExternal?: (path: string) => void
   onExportNoteAsPdf?: () => void
   onRevealSelectedFolder?: () => void
@@ -120,7 +118,6 @@ type CommandRegistryCoreActions = Pick<
   | 'onPastePlainText'
   | 'onTurnCurrentBlockInto'
   | 'onOpenSettings'
-  | 'onOpenFeedback'
   | 'onDeleteNote'
   | 'onSetViewMode'
   | 'onToggleBacklinks'
@@ -150,7 +147,6 @@ type CommandRegistryVaultActions = Pick<
   | 'onRestoreDeletedNote'
   | 'onRevealActiveFile'
   | 'onCopyActiveFilePath'
-  | 'onCopyActiveDeepLink'
   | 'onOpenActiveFileExternal'
 >
 type CommandRegistryNoteActions = Pick<
@@ -333,7 +329,6 @@ function createCommandRegistryCoreConfig(
     undoLabel: config.undoLabel,
     redoLabel: config.redoLabel,
     onOpenSettings: config.onOpenSettings,
-    onOpenFeedback: config.onOpenFeedback,
     onDeleteNote: config.onDeleteNote,
     onSetViewMode: config.onSetViewMode,
     onToggleBacklinks: config.onToggleBacklinks,
@@ -371,7 +366,6 @@ function createCommandRegistryVaultConfig(
     onRestoreDeletedNote: config.onRestoreDeletedNote,
     onRevealActiveFile: config.onRevealActiveFile,
     onCopyActiveFilePath: config.onCopyActiveFilePath,
-    onCopyActiveDeepLink: config.onCopyActiveDeepLink,
     onOpenActiveFileExternal: config.onOpenActiveFileExternal,
   }
 }

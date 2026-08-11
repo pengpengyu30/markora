@@ -1,5 +1,4 @@
 import { useRef, useState, useCallback, useEffect, useMemo } from 'react'
-import { trackEvent } from '../lib/telemetry'
 import type { EditorView } from '@codemirror/view'
 import { MIN_QUERY_LENGTH } from '../utils/wikilinkSuggestions'
 import { NoteSearchList } from './NoteSearchList'
@@ -349,7 +348,6 @@ function useRawEditorWikilinkInsertion({
       changes: { from: 0, to: doc.length, insert: next.text },
       selection: { anchor: next.cursor },
     })
-    trackEvent('wikilink_inserted')
     setAutocomplete(null)
 
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -486,12 +484,6 @@ function useRawEditorRemoteImagePaste({
       onImageImportResult?.({
         failedCount: result.failedCount,
         totalCount: result.totalCount,
-      })
-      trackEvent('remote_images_paste_imported', {
-        surface: 'raw_editor',
-        total_count: result.totalCount,
-        success_count: result.totalCount - result.failedCount,
-        failure_count: result.failedCount,
       })
     })
     },

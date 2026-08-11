@@ -31,7 +31,6 @@ export interface EditorContentProps {
   onEditorChange?: () => void
   onRevealFile?: (path: string) => void
   onCopyFilePath?: (path: string) => void
-  onCopyDeepLink?: (entry: VaultEntry) => void
   onOpenExternalFile?: (path: string) => void
   onExportPdf?: () => void
   onDeleteNote?: (path: string) => void

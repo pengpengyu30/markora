@@ -7,10 +7,9 @@ import {
   TOGGLE_GITIGNORED_VISIBILITY_EVENT,
 } from '../lib/gitignoredVisibilityEvents'
 import { serializeUiLanguagePreference } from '../lib/i18n'
-import { trackThemeModeChanged } from '../lib/productAnalytics'
 import { normalizeReleaseChannel, serializeReleaseChannel } from '../lib/releaseChannel'
 import { normalizeDateDisplayFormat } from '../utils/dateDisplay'
-import { DEFAULT_THEME_MODE, normalizeThemeMode, type ThemeMode } from '../lib/themeMode'
+import { normalizeThemeMode } from '../lib/themeMode'
 import type { Settings } from '../types'
 import { normalizeNoteWidthMode } from '../utils/noteWidth'
 
@@ -41,10 +40,6 @@ const EMPTY_SETTINGS: Settings = {
   autogit_enabled: null,
   autogit_idle_threshold_seconds: null,
   autogit_inactive_threshold_seconds: null,
-  telemetry_consent: null,
-  crash_reporting_enabled: null,
-  analytics_enabled: null,
-  anonymous_id: null,
   release_channel: null,
   automatic_update_checks_enabled: null,
   theme_mode: null,
@@ -97,10 +92,6 @@ function nullableTrimmedString(value: unknown): string | null {
   return trimmed || null
 }
 
-function effectiveThemeMode(settings: Settings): ThemeMode {
-  return normalizeThemeMode(settings.theme_mode) ?? DEFAULT_THEME_MODE
-}
-
 export function useSettings() {
   const [settings, setSettings] = useState<Settings>(EMPTY_SETTINGS)
   const [loaded, setLoaded] = useState(false)
@@ -124,15 +115,10 @@ export function useSettings() {
 
   const saveSettings = useCallback(async (newSettings: Settings) => {
     const previousHideGitignored = shouldHideGitignoredFiles(settings)
-    const previousThemeMode = effectiveThemeMode(settings)
     const normalizedSettings = normalizeSettings(newSettings)
     try {
       await tauriCall<null>('save_settings', { settings: normalizedSettings })
       setSettings(normalizedSettings)
-      const nextThemeMode = effectiveThemeMode(normalizedSettings)
-      if (previousThemeMode !== nextThemeMode) {
-        trackThemeModeChanged(nextThemeMode)
-      }
       const nextHideGitignored = shouldHideGitignoredFiles(normalizedSettings)
       if (previousHideGitignored !== nextHideGitignored) {
         notifyGitignoredVisibilityChanged(nextHideGitignored)

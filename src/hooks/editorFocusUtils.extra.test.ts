@@ -148,7 +148,7 @@ describe('editorFocusUtils extra coverage', () => {
     const heading = document.createElement('div')
     heading.setAttribute('data-content-type', 'heading')
     heading.setAttribute('data-level', '1')
-    heading.textContent = 'Sentry Fresh Paste Guard'
+    heading.textContent = 'Fresh Paste Guard'
     wrapper.append(editable, heading)
     document.body.appendChild(wrapper)
 

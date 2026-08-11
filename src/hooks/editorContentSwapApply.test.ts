@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { trackEvent } from '../lib/telemetry'
 import {
   applyBlocksToEditor,
   applyBlocksToEditorProgressively,
@@ -7,10 +6,6 @@ import {
   PROGRESSIVE_BLOCK_APPLY_THRESHOLD,
   PROGRESSIVE_INITIAL_BLOCK_APPLY_CHUNK_SIZE,
 } from './editorContentSwapApply'
-
-vi.mock('../lib/telemetry', () => ({
-  trackEvent: vi.fn(),
-}))
 
 function makeFrameRef<T>(current: T) {
   return { current }
@@ -88,9 +83,6 @@ describe('applyBlocksToEditor', () => {
       '[editor] Recovered rich-editor content swap:',
       staleBlockError,
     )
-    expect(trackEvent).toHaveBeenCalledWith('rich_editor_transform_error_recovered', {
-      reason: 'stale_block_reference',
-    })
     expect(editor.blocksToHTMLLossy).toHaveBeenCalledWith(nextBlocks)
     expect(editor._tiptapEditor.commands.setContent).toHaveBeenCalledWith('<p>Recovered content</p>')
   })

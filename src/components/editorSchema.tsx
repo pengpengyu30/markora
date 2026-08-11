@@ -387,7 +387,7 @@ const TldrawBlock = createReactBlockSpec(
           snapshot={props.block.props.snapshot}
           width={props.block.props.width}
           onSnapshotChange={(snapshot) => {
-            updateTldrawBlockPropsSafely({
+            const updated = updateTldrawBlockPropsSafely({
               blockId: props.block.id,
               editor: props.editor,
               nextProps: (currentProps) => ({
@@ -395,6 +395,7 @@ const TldrawBlock = createReactBlockSpec(
                 snapshot,
               }),
             })
+            if (updated) dispatchRichEditorExternalChange(props.editor, props.editor.domElement ?? undefined)
           }}
           onSizeChange={(size) => {
             updateTldrawBlockPropsSafely({

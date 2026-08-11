@@ -22,8 +22,6 @@ import {
 import { normalizeReleaseChannel, serializeReleaseChannel, type ReleaseChannel } from '../lib/releaseChannel'
 import { shouldHideGitignoredFiles } from '../lib/gitignoredVisibility'
 import { areAutomaticUpdateChecksEnabled } from '../lib/automaticUpdateChecks'
-import { trackAllNotesVisibilityChanged } from '../lib/productAnalytics'
-import { PrivacySettingsSection } from './PrivacySettingsSection'
 import { ProjectSettingsSection } from './ProjectSettingsSection'
 import { SettingsBodyNav } from './SettingsBodyNav'
 import {
@@ -46,7 +44,6 @@ import { DEFAULT_DATE_DISPLAY_FORMAT, normalizeDateDisplayFormat, type DateDispl
 import { Button } from './ui/button'
 import type { NoteWidthMode } from '../types'
 import { SETTINGS_SECTION_IDS } from './settingsSectionIds'
-import { trackSettingsPreferenceChanges, trackTelemetryConsentChange } from './settingsPreferenceTracking'
 import { useSettingsPanelAutofocus, useSettingsPanelFocusTrap } from './useSettingsPanelFocus'
 import { registerMacosDismissableEscapeSurface } from '../utils/macosDismissableEscapeSurface'
 
@@ -76,8 +73,6 @@ interface SettingsDraft {
   initialH1AutoRename: boolean
   hideGitignoredFiles: boolean
   allNotesFileVisibility: AllNotesFileVisibility
-  crashReporting: boolean
-  analytics: boolean
   multiProjectEnabled: boolean
 }
 
@@ -103,10 +98,6 @@ interface SettingsBodyProps {
   setHideGitignoredFiles: (value: boolean) => void
   allNotesFileVisibility: AllNotesFileVisibility
   setAllNotesFileVisibility: (value: AllNotesFileVisibility) => void
-  crashReporting: boolean
-  setCrashReporting: (value: boolean) => void
-  analytics: boolean
-  setAnalytics: (value: boolean) => void
   multiProjectEnabled: boolean
   setMultiProjectEnabled: (value: boolean) => void
   projects: VaultOption[]
@@ -134,8 +125,6 @@ function createSettingsDraft(settings: Settings): SettingsDraft {
     initialH1AutoRename: settings.initial_h1_auto_rename_enabled ?? true,
     hideGitignoredFiles: shouldHideGitignoredFiles(settings),
     allNotesFileVisibility: resolveAllNotesFileVisibility(settings),
-    crashReporting: settings.crash_reporting_enabled ?? false,
-    analytics: settings.analytics_enabled ?? false,
     multiProjectEnabled: settings.multi_workspace_enabled !== false,
   }
 }
@@ -146,26 +135,9 @@ function resolveSettingsDraftThemeMode(themeMode: Settings['theme_mode']): Theme
   return readStoredThemeMode(window.localStorage) ?? DEFAULT_THEME_MODE
 }
 
-function resolveTelemetryConsent(settings: Settings, draft: SettingsDraft): boolean | null {
-  if (draft.crashReporting || draft.analytics) return true
-  return settings.telemetry_consent === null ? null : false
-}
-
-function resolveAnonymousId(settings: Settings, draft: SettingsDraft): string | null {
-  if (draft.crashReporting || draft.analytics) {
-    return settings.anonymous_id ?? crypto.randomUUID()
-  }
-
-  return settings.anonymous_id
-}
-
 function buildSettingsFromDraft(settings: Settings, draft: SettingsDraft): Settings {
   const nextSettings = {
     ...settings,
-    telemetry_consent: resolveTelemetryConsent(settings, draft),
-    crash_reporting_enabled: draft.crashReporting,
-    analytics_enabled: draft.analytics,
-    anonymous_id: resolveAnonymousId(settings, draft),
     release_channel: serializeReleaseChannel(draft.releaseChannel),
     automatic_update_checks_enabled: draft.automaticUpdateChecksEnabled ? null : false,
     theme_mode: draft.themeMode,
@@ -245,18 +217,15 @@ function useSettingsDraftActions(options: Pick<SettingsPanelInnerProps, 'initial
     onSave({ ...settings, hide_gitignored_files: value })
   }, [onSave, settings, updateDraft])
   const handleAllNotesFileVisibilityChange = useCallback((value: AllNotesFileVisibility) => {
-    trackAllNotesVisibilityChanged(draft.allNotesFileVisibility, value)
     updateDraft('allNotesFileVisibility', value)
     onSave(settingsWithAllNotesFileVisibility(settings, value))
-  }, [draft.allNotesFileVisibility, onSave, settings, updateDraft])
+  }, [onSave, settings, updateDraft])
   const handleThemeModeChange = useCallback((value: ThemeMode) => {
     updateDraft('themeMode', value)
     applyThemeModeSelection(value)
     onSave({ ...settings, theme_mode: value })
   }, [onSave, settings, updateDraft])
   const handleSave = useCallback(() => {
-    trackTelemetryConsentChange(settings.analytics_enabled === true, draft.analytics)
-    trackSettingsPreferenceChanges(settings, draft)
     onSave(buildSettingsFromDraft(settings, draft))
     onClose()
   }, [draft, onClose, onSave, settings])
@@ -458,10 +427,6 @@ function SettingsBodyFromDraft(options: SettingsBodyFromDraftProps) {
       setHideGitignoredFiles={setHideGitignoredFiles}
       allNotesFileVisibility={draft.allNotesFileVisibility}
       setAllNotesFileVisibility={setAllNotesFileVisibility}
-      crashReporting={draft.crashReporting}
-      setCrashReporting={(value) => updateDraft('crashReporting', value)}
-      analytics={draft.analytics}
-      setAnalytics={(value) => updateDraft('analytics', value)}
       multiProjectEnabled={draft.multiProjectEnabled}
       setMultiProjectEnabled={(value) => updateDraft('multiProjectEnabled', value)}
       projects={projects}
@@ -482,7 +447,6 @@ function SettingsBody(props: SettingsBodyProps) {
         <SettingsProjectSections {...props} />
         <SettingsSyncAndAppearanceSections {...props} />
         <SettingsContentSections {...props} />
-        <SettingsPrivacySections {...props} />
       </div>
     </div>
   )
@@ -568,23 +532,6 @@ function SettingsContentSections(options: SettingsBodyProps) {
         setAllNotesFileVisibility={setAllNotesFileVisibility}
       />
     </SettingsSection>
-  )
-}
-
-function SettingsPrivacySections(options: SettingsBodyProps) {
-  const { t, crashReporting, setCrashReporting, analytics, setAnalytics } = options
-  return (
-    <>
-      <SettingsSection id={SETTINGS_SECTION_IDS.privacy}>
-        <PrivacySettingsSection
-          t={t}
-          crashReporting={crashReporting}
-          setCrashReporting={setCrashReporting}
-          analytics={analytics}
-          setAnalytics={setAnalytics}
-        />
-      </SettingsSection>
-    </>
   )
 }
 

@@ -79,7 +79,6 @@ export interface EditorProps {
   vaultPath?: string
   onRevealFile?: (path: string) => void
   onCopyFilePath?: (path: string) => void
-  onCopyDeepLink?: (entry: VaultEntry) => void
   onOpenExternalFile?: (path: string) => void
   onDeleteNote?: (path: string) => void
   onContentChange?: (path: string, content: string) => void
@@ -409,7 +408,6 @@ function useEditorSetup(options: EditorSetupParams) {
       handleEditorChange: () => void
       onRevealFile?: (path: string) => void
       onCopyFilePath?: (path: string) => void
-      onCopyDeepLink?: (entry: VaultEntry) => void
       onOpenExternalFile?: (path: string) => void
       onDeleteNote?: (path: string) => void
       vaultPath?: string
@@ -449,7 +447,6 @@ function useEditorSetup(options: EditorSetupParams) {
       handleEditorChange,
       onRevealFile,
       onCopyFilePath,
-      onCopyDeepLink,
       onExportPdf,
       onOpenExternalFile,
       onDeleteNote,
@@ -482,7 +479,6 @@ function useEditorSetup(options: EditorSetupParams) {
                   entry={activeBinaryTab.entry}
                   locale={locale}
                   onCopyFilePath={onCopyFilePath}
-                  onCopyDeepLink={onCopyDeepLink}
                   onOpenExternalFile={onOpenExternalFile}
                   onRevealFile={onRevealFile}
                 />
@@ -505,7 +501,6 @@ function useEditorSetup(options: EditorSetupParams) {
               onEditorChange={handleEditorChange}
               onRevealFile={onRevealFile}
               onCopyFilePath={onCopyFilePath}
-              onCopyDeepLink={onCopyDeepLink}
               onOpenExternalFile={onOpenExternalFile}
               onExportPdf={() => onExportPdf?.('breadcrumb')}
               onDeleteNote={onDeleteNote}

@@ -4,7 +4,6 @@ import { isTauri, mockInvoke } from '../mock-tauri'
 import type { NoteWidthMode, Settings, VaultEntry } from '../types'
 import type { FrontmatterValue } from '../types'
 import type { FrontmatterOpOptions } from './frontmatterOps'
-import { trackEvent } from '../lib/telemetry'
 import { canPersistNoteWidthMode, resolveNoteWidthMode, toggleNoteWidthMode } from '../utils/noteWidth'
 
 type VaultPath = VaultEntry['path']
@@ -98,14 +97,12 @@ async function persistOrRememberNoteWidth({
   })
   if (!canPersistNoteWidthMode(persistedContent)) {
     rememberTransientWidth(path, mode)
-    trackEvent('note_width_mode_changed', { mode, scope: 'transient' })
     return
   }
 
   try {
     await updateFrontmatter(path, '_width', mode, { silent: true })
     rememberTransientWidth(path, mode)
-    trackEvent('note_width_mode_changed', { mode, scope: 'note' })
   } catch (err) {
     setToastMessage(`Failed to update note width: ${err}`)
   }
@@ -155,7 +152,6 @@ export function useNoteWidthMode({
 
   const setDefaultNoteWidth = useCallback(async (mode: NoteWidthMode) => {
     await saveSettings({ ...settings, note_width_mode: mode })
-    trackEvent('note_width_default_changed', { mode })
   }, [saveSettings, settings])
 
   return {

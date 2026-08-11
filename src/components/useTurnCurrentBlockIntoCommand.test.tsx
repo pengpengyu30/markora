@@ -3,10 +3,6 @@ import { describe, expect, it, vi } from 'vitest'
 import { useTurnCurrentBlockIntoCommand } from './useTurnCurrentBlockIntoCommand'
 import type { RichEditorBlockTypeDefinition } from '../utils/richEditorBlockTypes'
 
-vi.mock('../lib/telemetry', () => ({
-  trackEvent: vi.fn(),
-}))
-
 const headingTwo = {
   key: 'heading-2',
   labelKey: 'editor.blockType.heading2',

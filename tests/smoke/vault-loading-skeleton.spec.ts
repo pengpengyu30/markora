@@ -74,10 +74,6 @@ async function installSlowVaultMock(page: Page): Promise<void> {
         handlers.get_default_vault_path = () => '/vault'
         handlers.get_settings = () => ({
           auto_pull_interval_minutes: null,
-          telemetry_consent: true,
-          crash_reporting_enabled: null,
-          analytics_enabled: null,
-          anonymous_id: null,
           release_channel: null,
         })
         handlers.get_vault_settings = () => ({ theme: null })

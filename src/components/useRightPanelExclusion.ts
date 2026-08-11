@@ -1,5 +1,4 @@
 import { useCallback, useState } from 'react'
-import { trackEvent } from '../lib/telemetry'
 
 interface RightPanelExclusionOptions {
   rightPanelCollapsed: boolean
@@ -16,7 +15,6 @@ export function useRightPanelExclusion({ rightPanelCollapsed, onToggleRightPanel
 
   const handleToggleTableOfContents = useCallback(() => {
     const nextOpen = !showTableOfContents
-    trackEvent('table_of_contents_toggled', { open: nextOpen ? 1 : 0 })
 
     if (nextOpen) {
       setShowBacklinks(false)

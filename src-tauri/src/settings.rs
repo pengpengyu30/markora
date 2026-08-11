@@ -78,10 +78,6 @@ pub struct Settings {
     pub autogit_enabled: Option<bool>,
     pub autogit_idle_threshold_seconds: Option<u32>,
     pub autogit_inactive_threshold_seconds: Option<u32>,
-    pub telemetry_consent: Option<bool>,
-    pub crash_reporting_enabled: Option<bool>,
-    pub analytics_enabled: Option<bool>,
-    pub anonymous_id: Option<String>,
     pub release_channel: Option<String>,
     pub automatic_update_checks_enabled: Option<bool>,
     pub theme_mode: Option<String>,
@@ -191,10 +187,6 @@ fn normalize_settings(settings: Settings) -> Settings {
         autogit_inactive_threshold_seconds: normalize_optional_positive_u32(
             settings.autogit_inactive_threshold_seconds,
         ),
-        telemetry_consent: settings.telemetry_consent,
-        crash_reporting_enabled: settings.crash_reporting_enabled,
-        analytics_enabled: settings.analytics_enabled,
-        anonymous_id: normalize_optional_string(settings.anonymous_id),
         release_channel: normalize_release_channel(settings.release_channel.as_deref()),
         automatic_update_checks_enabled: settings.automatic_update_checks_enabled,
         theme_mode: normalize_theme_mode(settings.theme_mode.as_deref()),
@@ -327,10 +319,6 @@ mod tests {
             autogit_enabled: Some(true),
             autogit_idle_threshold_seconds: Some(90),
             autogit_inactive_threshold_seconds: Some(30),
-            telemetry_consent: Some(true),
-            crash_reporting_enabled: Some(true),
-            analytics_enabled: Some(false),
-            anonymous_id: Some("abc-123-uuid".to_string()),
             release_channel: Some("alpha".to_string()),
             automatic_update_checks_enabled: Some(false),
             theme_mode: Some("dark".to_string()),
@@ -431,7 +419,6 @@ mod tests {
     #[test]
     fn test_save_trims_whitespace() {
         let loaded = save_and_reload(Settings {
-            anonymous_id: Some("  test-uuid  ".to_string()),
             git_path: Some("  /opt/homebrew/bin/git  ".to_string()),
             git_provider: Some("  native  ".to_string()),
             git_wsl_distro: Some("  Ubuntu  ".to_string()),
@@ -442,7 +429,6 @@ mod tests {
             note_width_mode: Some("  WIDE  ".to_string()),
             ..Default::default()
         });
-        assert_eq!(loaded.anonymous_id.as_deref(), Some("test-uuid"));
         assert_eq!(loaded.git_path.as_deref(), Some("/opt/homebrew/bin/git"));
         assert_eq!(loaded.git_provider.as_deref(), Some("native"));
         assert_eq!(loaded.git_wsl_distro.as_deref(), Some("Ubuntu"));
@@ -598,15 +584,15 @@ mod tests {
         save_settings_at(
             &path,
             Settings {
-                anonymous_id: Some("test-uuid".to_string()),
+                git_path: Some("/opt/homebrew/bin/git".to_string()),
                 ..Default::default()
             },
         )
         .unwrap();
         assert!(path.exists());
         assert_eq!(
-            get_settings_at(&path).unwrap().anonymous_id.as_deref(),
-            Some("test-uuid")
+            get_settings_at(&path).unwrap().git_path.as_deref(),
+            Some("/opt/homebrew/bin/git")
         );
     }
 
@@ -621,28 +607,7 @@ mod tests {
     }
 
     #[test]
-    fn test_telemetry_fields_roundtrip() {
-        let loaded = save_and_reload(Settings {
-            telemetry_consent: Some(true),
-            crash_reporting_enabled: Some(true),
-            analytics_enabled: Some(false),
-            anonymous_id: Some("test-uuid-v4".to_string()),
-            ..Default::default()
-        });
-        assert_eq!(
-            loaded,
-            Settings {
-                telemetry_consent: Some(true),
-                crash_reporting_enabled: Some(true),
-                analytics_enabled: Some(false),
-                anonymous_id: Some("test-uuid-v4".to_string()),
-                ..Default::default()
-            }
-        );
-    }
-
-    #[test]
-    fn test_old_settings_json_missing_telemetry_fields() {
+    fn test_old_settings_json_ignores_removed_fields() {
         let dir = tempfile::TempDir::new().unwrap();
         let path = dir.path().join("settings.json");
         // Simulate an old settings.json that still contains removed GitHub auth fields.

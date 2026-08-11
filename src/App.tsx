@@ -9,7 +9,6 @@ import { SearchPanel } from './components/SearchPanel'
 import { Toast } from './components/Toast'
 import { StatusBar } from './components/StatusBar'
 import { SettingsPanel } from './components/SettingsPanel'
-import { FeedbackDialog } from './components/FeedbackDialog'
 import { NoteRetargetingDialogs } from './components/note-retargeting/NoteRetargetingDialogs'
 import { StartupShellFallback } from './components/StartupShellFallback'
 import { StartupScreen } from './components/StartupScreen'
@@ -30,7 +29,6 @@ import { useAppNavigation } from './hooks/useAppNavigation'
 import { useDeleteActions } from './hooks/useDeleteActions'
 import { useFolderActions } from './hooks/useFolderActions'
 import { useFileActions } from './hooks/useFileActions'
-import { useDeepLinks } from './hooks/useDeepLinks'
 import { useLayoutPanels } from './hooks/useLayoutPanels'
 import { useLastActiveNote } from './hooks/useLastActiveNote'
 import { useAppSave } from './hooks/useAppSave'
@@ -47,7 +45,7 @@ import { refreshPulledVaultState } from './utils/pulledVaultRefresh'
 import { RenameDetectedBanner } from './components/RenameDetectedBanner'
 import type { NoteListMultiSelectionCommands } from './components/note-list/multiSelectionCommands'
 import { areAutomaticUpdateChecksEnabled } from './lib/automaticUpdateChecks'
-import { TOLARIA_DOCS_URL } from './constants/feedback'
+import { TOLARIA_DOCS_URL } from './constants/docs'
 import { openExternalUrl } from './utils/url'
 import {
   translate,
@@ -64,10 +62,10 @@ import { useManagedGit } from './hooks/useManagedGit'
 import { useVisibleWorkspaceEntries, useWorkspaceGraphState } from './hooks/useWorkspaceGraphState'
 import { AppPreferencesProvider, useAppPreferences } from './hooks/useAppPreferences'
 import { useVaultRenameDetection } from './hooks/useVaultRenameDetection'
-import { useVaultOpenedTelemetry } from './hooks/useVaultOpenedTelemetry'
 import { useStartupScreenState } from './hooks/useStartupScreenState'
 import { useStartupStateMilestones } from './hooks/useStartupStateMilestones'
 import { shouldReplaceSyncedTabEntry } from './utils/tabEntrySync'
+import { dispatchRichEditorExternalFlush } from './components/editorExternalChangeEvents'
 import {
   isActiveElementInsideEditorSurface,
   runNativeTextHistoryCommand,
@@ -101,9 +99,6 @@ function MainApp() {
   const multiSelectionCommandRef = useRef<NoteListMultiSelectionCommands | null>(null)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const dialogs = useDialogs()
-  const [showFeedback, setShowFeedback] = useState(false)
-  const openFeedback = useCallback(() => setShowFeedback(true), [])
-  const closeFeedback = useCallback(() => setShowFeedback(false), [])
   const openDocs = useCallback(() => {
     void openExternalUrl(TOLARIA_DOCS_URL)
   }, [])
@@ -230,11 +225,6 @@ function MainApp() {
     setToastMessage,
     vaultPath: resolvedPath,
   })
-  useVaultOpenedTelemetry({
-    entryCount: vault.entries.length,
-    gitMode: managedGit.mode,
-    resolvedPath,
-  })
   const loadDefaultVaultModifiedFiles = vault.loadModifiedFiles
   const refreshGitModifiedFiles = useCallback(async () => {
     await loadDefaultVaultModifiedFiles()
@@ -270,6 +260,7 @@ function MainApp() {
   const flushPendingRawContentRef = useRef<((path: string) => void) | null>(null)
   const appSaveFlushBeforeActionRef = useRef<((path: string) => Promise<unknown>) | null>(null)
   const flushEditorStateBeforeAction = useCallback(async (path: string) => {
+    dispatchRichEditorExternalFlush()
     flushPendingEditorContentRef.current?.(path)
     flushPendingRawContentRef.current?.(path)
     await appSaveFlushBeforeActionRef.current?.(path)
@@ -496,6 +487,7 @@ function MainApp() {
 
   const handleTrackedSave = useCallback(async (...args: Parameters<typeof handleAppSave>) => {
     if (notes.activeTabPath) {
+      dispatchRichEditorExternalFlush()
       flushPendingEditorContentRef.current?.(notes.activeTabPath)
       flushPendingRawContentRef.current?.(notes.activeTabPath)
     }
@@ -734,8 +726,6 @@ function MainApp() {
     onboardingState: onboarding.state,
     runtimeMissingVaultPath,
     selectedVaultPath,
-    settingsLoaded,
-    telemetryConsent: settings.telemetry_consent,
     vaultIsLoading: vault.isLoading,
     vaultSwitcher,
   })
@@ -744,20 +734,6 @@ function MainApp() {
     onboardingStatus: onboarding.state.status,
     settingsLoaded,
     vaultListLoaded: vaultSwitcher.loaded,
-  })
-  const deepLinks = useDeepLinks({
-    activeEntry: activeTab?.entry ?? null,
-    currentVaultPath: resolvedPath,
-    enabled: true,
-    entries: visibleEntries,
-    isVaultContentLoading,
-    locale: appLocale,
-    onSelectNote: notes.handleSelectNote,
-    onSwitchVault: vaultSwitcher.switchVault,
-    reloadVault: vault.reloadVault,
-    setToastMessage,
-    vaultListLoaded: vaultSwitcher.loaded,
-    vaults: vaultSwitcher.allVaults,
   })
   const activeEditorVaultPath = activeTab ? vaultPathForEntry(activeTab.entry, resolvedPath) : resolvedPath
   const undoCommand = useCallback(() => {
@@ -790,7 +766,6 @@ function MainApp() {
     undoLabel: notes.undoLabel,
     redoLabel: notes.redoLabel,
     onOpenSettings: handleOpenSettings,
-    onOpenFeedback: openFeedback,
     onDeleteNote: deleteActions.handleDeleteNote,
     onSetViewMode: handleSetViewMode,
     onToggleBacklinks: toggleBacklinksCommand,
@@ -831,7 +806,6 @@ function MainApp() {
     canMoveNoteToFolder: noteRetargetingUi.canMoveActiveNoteToFolder,
     onRevealActiveFile: fileActions.revealFile,
     onCopyActiveFilePath: fileActions.copyFilePath,
-    onCopyActiveDeepLink: deepLinks.copyPathDeepLink,
     onOpenActiveFileExternal: fileActions.openExternalFile,
   })
 
@@ -846,9 +820,6 @@ function MainApp() {
         locale={appLocale}
         onboarding={onboarding}
         runtimeMissingVaultPath={runtimeMissingVaultPath}
-        saveSettings={saveSettings}
-        settings={settings}
-        settingsLoaded={settingsLoaded}
         shouldResumeFreshStartOnboarding={shouldResumeFreshStartOnboarding}
         setToastMessage={setToastMessage}
         toastMessage={toastMessage}
@@ -917,7 +888,6 @@ function MainApp() {
               vaultPath={activeEditorVaultPath}
               onRevealFile={fileActions.revealFile}
               onCopyFilePath={fileActions.copyFilePath}
-              onCopyDeepLink={deepLinks.copyEntryDeepLink}
               onOpenExternalFile={fileActions.openExternalFile}
               onDeleteNote={deleteActions.handleDeleteNote}
               onContentChange={handleTrackedContentChange}
@@ -945,7 +915,7 @@ function MainApp() {
         </div>
         <UpdateBanner status={updateStatus} actions={updateActions} locale={appLocale} />
         <RenameDetectedBanner renames={detectedRenames} onUpdate={handleUpdateWikilinks} onDismiss={handleDismissRenames} />
-        <StatusBar noteCount={visibleEntries.length} vaultPath={resolvedPath} defaultWorkspacePath={defaultWorkspacePath} vaults={vaultSwitcher.allVaults} multiWorkspaceEnabled={multiWorkspaceEnabled} onSwitchVault={vaultSwitcher.switchVault} onSetDefaultWorkspace={vaultSwitcher.setDefaultWorkspace} onOpenSettings={handleOpenSettings} onOpenVaultSettings={handleOpenProjectSettings} onOpenFeedback={openFeedback} onOpenDocs={openDocs} onOpenLocalFolder={vaultSwitcher.handleOpenLocalFolder} onCreateEmptyVault={vaultSwitcher.handleCreateEmptyVault} onCloneGettingStarted={cloneGettingStartedVault} isOffline={networkStatus.isOffline} isVaultReloading={vault.isReloading || isVaultContentLoading} zoomLevel={zoom.zoomLevel} themeMode={documentThemeMode} onZoomReset={zoom.zoomReset} onToggleThemeMode={settingsLoaded ? handleToggleThemeMode : undefined} buildNumber={buildNumber} onCheckForUpdates={handleCheckForUpdates} onRemoveVault={vaultSwitcher.removeVault} onReorderVaults={vaultSwitcher.reorderVaults} onUpdateWorkspaceIdentity={vaultSwitcher.updateWorkspaceIdentity} locale={appLocale} />
+        <StatusBar noteCount={visibleEntries.length} vaultPath={resolvedPath} defaultWorkspacePath={defaultWorkspacePath} vaults={vaultSwitcher.allVaults} multiWorkspaceEnabled={multiWorkspaceEnabled} onSwitchVault={vaultSwitcher.switchVault} onSetDefaultWorkspace={vaultSwitcher.setDefaultWorkspace} onOpenSettings={handleOpenSettings} onOpenVaultSettings={handleOpenProjectSettings} onOpenDocs={openDocs} onOpenLocalFolder={vaultSwitcher.handleOpenLocalFolder} onCreateEmptyVault={vaultSwitcher.handleCreateEmptyVault} onCloneGettingStarted={cloneGettingStartedVault} isOffline={networkStatus.isOffline} isVaultReloading={vault.isReloading || isVaultContentLoading} zoomLevel={zoom.zoomLevel} themeMode={documentThemeMode} onZoomReset={zoom.zoomReset} onToggleThemeMode={settingsLoaded ? handleToggleThemeMode : undefined} buildNumber={buildNumber} onCheckForUpdates={handleCheckForUpdates} onRemoveVault={vaultSwitcher.removeVault} onReorderVaults={vaultSwitcher.reorderVaults} onUpdateWorkspaceIdentity={vaultSwitcher.updateWorkspaceIdentity} locale={appLocale} />
         <DeleteProgressNotice count={deleteActions.pendingDeleteCount} />
         <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />
         <QuickOpenPalette open={dialogs.showQuickOpen} entries={visibleEntries} isLoading={vault.isLoading} onSelect={notes.handleSelectNote} onCreateNote={(title) => notes.handleCreateNote(title, 'quick_open')} onClose={dialogs.closeQuickOpen} locale={appLocale} />
@@ -973,7 +943,6 @@ function MainApp() {
           onSelectFolder={noteRetargetingUi.selectFolder}
         />
         <SettingsPanel open={dialogs.showSettings} initialSectionId={settingsInitialSectionId} settings={settings} locale={appLocale} systemLocale={systemLocale} projects={vaultSwitcher.allVaults} defaultProjectPath={vaultSwitcher.defaultWorkspacePath} onSetDefaultProject={vaultSwitcher.setDefaultWorkspace} onRemoveProject={vaultSwitcher.removeVault} onReorderProjects={vaultSwitcher.reorderVaults} onUpdateProjectIdentity={vaultSwitcher.updateWorkspaceIdentity} onSave={saveSettings} onClose={dialogs.closeSettings} />
-        <FeedbackDialog open={showFeedback} onClose={closeFeedback} locale={appLocale} />
         {deleteActions.confirmDelete && (
           <ConfirmDeleteDialog
             open={true}

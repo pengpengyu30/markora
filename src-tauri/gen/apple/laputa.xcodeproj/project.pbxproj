@@ -60,7 +60,6 @@
 		A70EB7513BFD74428B2C6ED1 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		AA64014FA2D16950AD4DF619 /* mod.rs */ = {isa = PBXFileReference; path = mod.rs; sourceTree = "<group>"; };
 		ACCD8318FA6543BA013E37E4 /* ops.rs */ = {isa = PBXFileReference; path = ops.rs; sourceTree = "<group>"; };
-		BA9FA5D7A7A7574FF74589C8 /* telemetry.rs */ = {isa = PBXFileReference; path = telemetry.rs; sourceTree = "<group>"; };
 		BB4E3DD2D3BA34BB86C908B6 /* status.rs */ = {isa = PBXFileReference; path = status.rs; sourceTree = "<group>"; };
 		C39B460DE1A3B78A0937BFDD /* settings.rs */ = {isa = PBXFileReference; path = settings.rs; sourceTree = "<group>"; };
 		C80E8FDDA822F4F167B601C1 /* mod_tests.rs */ = {isa = PBXFileReference; path = mod_tests.rs; sourceTree = "<group>"; };
@@ -230,7 +229,6 @@
 				6F67F5CDD6BB137126C5AABB /* menu.rs */,
 				E36BAA25D76F212157A06395 /* search.rs */,
 				C39B460DE1A3B78A0937BFDD /* settings.rs */,
-				BA9FA5D7A7A7574FF74589C8 /* telemetry.rs */,
 				A17AA2469F233241B0DF8BE3 /* vault_list.rs */,
 				5D80057D94E84FA08C34A8B0 /* frontmatter */,
 				85465A1346B035D3C3DA6236 /* git */,

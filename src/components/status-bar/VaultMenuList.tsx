@@ -18,9 +18,8 @@ import { CSS } from '@dnd-kit/utilities'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { translate, type AppLocale } from '../../lib/i18n'
-import { trackEvent } from '../../lib/telemetry'
 import { reorderVaultPath, vaultPathList } from '../../utils/vaultOrdering'
-import { workspaceAliasFromOption, workspaceIdentityFromVault } from '../../utils/workspaces'
+import { workspaceIdentityFromVault } from '../../utils/workspaces'
 import { WorkspaceInitialsBadge } from '../WorkspaceInitialsBadge'
 import type { VaultOption } from './types'
 
@@ -79,10 +78,6 @@ function WorkspaceMountCheckbox(props: {
       onCheckedChange={(nextChecked) => {
         if (typeof nextChecked !== 'boolean') return
         onMountedChange?.(vault.path, nextChecked)
-        trackEvent('workspace_mount_changed', {
-          workspace_alias: workspaceAliasFromOption(vault),
-          mounted: nextChecked ? 1 : 0,
-        })
       }}
     />
   )

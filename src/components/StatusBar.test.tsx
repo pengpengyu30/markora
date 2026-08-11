@@ -69,19 +69,6 @@ describe('StatusBar', () => {
     await expectTooltip(screen.getByRole('button', { name: 'Check for updates' }), 'Check for updates')
   }, 10_000)
 
-  it('shows Contribute button when callback is provided', () => {
-    render(<StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} onOpenFeedback={vi.fn()} />)
-    expect(screen.getByTestId('status-feedback')).toBeInTheDocument()
-    expect(screen.getByText('Contribute')).toBeInTheDocument()
-  })
-
-  it('calls onOpenFeedback when Contribute is clicked', () => {
-    const onOpenFeedback = vi.fn()
-    render(<StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} onOpenFeedback={onOpenFeedback} />)
-    fireEvent.click(screen.getByTestId('status-feedback'))
-    expect(onOpenFeedback).toHaveBeenCalledOnce()
-  })
-
   it('shows and opens Docs from the bottom bar', () => {
     const onOpenDocs = vi.fn()
     render(<StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} onOpenDocs={onOpenDocs} />)

@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import { OnboardingShell } from './OnboardingShell'
 import { Button } from '@/components/ui/button'
 import customizeLogo from '@/assets/customize-logo-cropped.svg'
-import { TOLARIA_FIRST_LAUNCH_DOCS_URL } from '@/constants/feedback'
+import { TOLARIA_FIRST_LAUNCH_DOCS_URL } from '@/constants/docs'
 import { translate, type AppLocale } from '@/lib/i18n'
 import { openExternalUrl } from '@/utils/url'
 

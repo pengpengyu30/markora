@@ -1,4 +1,3 @@
-import { trackEvent } from '../lib/telemetry'
 import {
   APP_COMMAND_IDS,
   executeAppCommand,
@@ -78,8 +77,5 @@ export function handleAppKeyboardEvent(actions: KeyboardActions, event: Keyboard
   if (handleFocusedTextCommand(event, commandId)) return
 
   event.preventDefault()
-  if (commandId === APP_COMMAND_IDS.editFindInVault) {
-    trackEvent('search_used')
-  }
   executeAppCommand(commandId, actions, 'renderer-keyboard')
 }

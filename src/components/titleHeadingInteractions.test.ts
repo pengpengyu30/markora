@@ -21,7 +21,7 @@ function createTitleHeadingFixture() {
   heading.setAttribute('data-level', '1')
   const inline = document.createElement('div')
   inline.className = 'bn-inline-content'
-  const text = document.createTextNode('Sentry Fresh Paste Guard')
+  const text = document.createTextNode('Fresh Paste Guard')
 
   inline.appendChild(text)
   heading.appendChild(inline)
@@ -81,7 +81,7 @@ describe('useEditorPasteHandler', () => {
       expectedCursorMove: false,
       expectedText: ' Plain Paste Payload',
       name: 'preserves collapsed title-heading plain paste position before insertion',
-      select: (text: Text) => selectCollapsedText(text, 'Sentry Fresh Paste '.length),
+      select: (text: Text) => selectCollapsedText(text, 'Fresh Paste '.length),
     },
     {
       clipboardData: {
@@ -91,7 +91,7 @@ describe('useEditorPasteHandler', () => {
       expectedText: ' Rich Paste Payload',
       expectedCursorMove: false,
       name: 'preserves collapsed title-heading rich paste position before insertion',
-      select: (text: Text) => selectCollapsedText(text, 'Sentry Fresh Paste '.length),
+      select: (text: Text) => selectCollapsedText(text, 'Fresh Paste '.length),
     },
     {
       clipboardData: {
@@ -101,7 +101,7 @@ describe('useEditorPasteHandler', () => {
       expectedText: ' Rich Paste Payload',
       expectedCursorMove: false,
       name: 'preserves selected title text during rich paste',
-      select: (text: Text) => selectTextRange(text, 0, 'Sentry'.length),
+      select: (text: Text) => selectTextRange(text, 0, 'Fresh'.length),
     },
   ])('$name', ({ clipboardData, expectedCursorMove, expectedText, select }) => {
     const editor = createEditor()

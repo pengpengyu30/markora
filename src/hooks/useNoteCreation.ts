@@ -4,7 +4,6 @@ import { isTauri, addMockEntry, mockInvoke } from '../mock-tauri'
 import type { VaultEntry } from '../types'
 import { slugifyNoteStem as slugify } from '../utils/noteSlug'
 import { resolveEntry } from '../utils/wikilink'
-import { trackEvent } from '../lib/telemetry'
 import { cacheNoteContent } from './useTabManagement'
 import {
   findByCollidingNotePath,
@@ -287,7 +286,7 @@ interface NoteCreationRequest extends CreationDeps {
 }
 
 async function createNamedNote(options: NoteCreationRequest): Promise<boolean> {
-  const { entries, defaultWorkspacePath, title, vaultPath, vaults, setToastMessage, persistResolvedEntry, creationPath } = options
+  const { entries, defaultWorkspacePath, title, vaultPath, vaults, setToastMessage, persistResolvedEntry } = options
   const plan = planNewNoteCreation({
     entries,
     title,
@@ -302,11 +301,6 @@ async function createNamedNote(options: NoteCreationRequest): Promise<boolean> {
 
   try {
     await persistResolvedEntry(plan.resolved)
-    if (creationPath) {
-      trackEvent('note_created', {
-        creation_path: creationPath,
-      })
-    }
     return true
   } catch (error) {
     setToastMessage(createPersistFailureMessage(plan.resolved.entry, error))
@@ -431,13 +425,6 @@ async function createNoteImmediate(deps: ImmediateCreateDeps, request: Immediate
   return true
 }
 
-function trackImmediateCreate(request: ImmediateCreateRequest, didCreate: boolean): void {
-  if (!didCreate) return
-  trackEvent('note_created', {
-    creation_path: request.creationPath ?? 'cmd_n',
-  })
-}
-
 function useLatestImmediateCreateDeps(
   config: ImmediateCreateQueueConfig,
   pendingSlugsRef: MutableRefObject<Set<string>>,
@@ -506,8 +493,7 @@ function useImmediateCreateQueue(
     if (!deps) return
 
     try {
-      const didCreate = await createNoteImmediate(deps, request)
-      trackImmediateCreate(request, didCreate)
+      await createNoteImmediate(deps, request)
     } catch (error) {
       console.warn('Failed to create immediate note:', error)
     }

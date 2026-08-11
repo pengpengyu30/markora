@@ -713,9 +713,9 @@ Defined in `src/utils/durableMarkdownBlocks.ts`, `src/utils/editorDurableMarkdow
 
 - Fenced `tldraw` blocks become `tldrawBlock` schema nodes before BlockNote sees the Markdown body.
 - Each `tldrawBlock` stores a stable `boardId` plus the tldraw document snapshot JSON. Session state such as camera, selected tool, and current selection is not persisted into the note.
-- The rich editor renders the block with the `tldraw` package and saves debounced document snapshot changes back into the block props, so normal Tolaria autosave writes the board into the `.md` file.
+- The rich editor renders the block with the `tldraw` package and hydrates a persisted snapshot into the store before the board mounts. Debounced snapshot changes are flushed before external editor actions (including note switches and saves), with unmount cleanup as a final safety net, so BlockNote serialization cannot overwrite the latest drawing with stale props.
 - Whiteboard prop writes re-resolve the live BlockNote block by id before mutating it, and disappear as no-ops if a note reload or mode switch has already removed that block.
-- The tldraw runtime receives Tolaria's resolved light/dark mode as its user color scheme, so embedded whiteboards follow the app appearance and update while mounted.
+- The tldraw runtime receives Tolaria's resolved light/dark mode and an explicit mapped locale as its user preferences, so embedded whiteboards follow the app appearance and language instead of the browser/system default.
 - Embedded whiteboards expose a session-only full-window workspace that reuses the same tldraw store and Markdown snapshot; expanding or closing it does not persist camera, tool, or size state.
 - Mermaid and tldraw both register small codecs with the shared durable fenced-block pipeline; scanner, token, block injection, and mixed serialization mechanics live in one owner.
 - The `/whiteboard` slash command inserts an empty tldraw block using the same Markdown-durable storage path. Preview images are intentionally omitted; thumbnails can be added later as derived cache artifacts.

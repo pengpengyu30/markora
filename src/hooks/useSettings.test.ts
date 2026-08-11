@@ -8,10 +8,6 @@ import {
 } from '../lib/gitignoredVisibilityEvents'
 import { useSettings } from './useSettings'
 
-const { trackEventMock } = vi.hoisted(() => ({
-  trackEventMock: vi.fn(),
-}))
-
 const defaultSettings: Settings = {
   auto_pull_interval_minutes: null,
   git_enabled: null,
@@ -21,10 +17,6 @@ const defaultSettings: Settings = {
   autogit_enabled: null,
   autogit_idle_threshold_seconds: null,
   autogit_inactive_threshold_seconds: null,
-  telemetry_consent: null,
-  crash_reporting_enabled: null,
-  analytics_enabled: null,
-  anonymous_id: null,
   release_channel: null,
   automatic_update_checks_enabled: null,
   theme_mode: null,
@@ -46,10 +38,6 @@ const savedSettings: Settings = {
   autogit_enabled: true,
   autogit_idle_threshold_seconds: 90,
   autogit_inactive_threshold_seconds: 30,
-  telemetry_consent: null,
-  crash_reporting_enabled: null,
-  analytics_enabled: null,
-  anonymous_id: null,
   release_channel: null,
   automatic_update_checks_enabled: null,
   theme_mode: null,
@@ -84,10 +72,6 @@ vi.mock('../mock-tauri', () => ({
   mockInvoke: (cmd: string, args?: Record<string, unknown>) => mockInvokeFn(cmd, args),
 }))
 
-vi.mock('../lib/telemetry', () => ({
-  trackEvent: trackEventMock,
-}))
-
 async function renderLoadedSettings(): Promise<Settings> {
   const { result } = renderHook(() => useSettings())
 
@@ -108,10 +92,6 @@ function changedSettings(): Settings {
     autogit_enabled: false,
     autogit_idle_threshold_seconds: 120,
     autogit_inactive_threshold_seconds: 45,
-    telemetry_consent: null,
-    crash_reporting_enabled: null,
-    analytics_enabled: null,
-    anonymous_id: null,
     release_channel: null,
     automatic_update_checks_enabled: false,
     theme_mode: null,
@@ -128,7 +108,6 @@ function changedSettings(): Settings {
 describe('useSettings', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    trackEventMock.mockClear()
     mockSettingsStore = { ...defaultSettings }
     nativeInvoke.mockResolvedValue(undefined)
   })
@@ -220,7 +199,7 @@ describe('useSettings', () => {
     expect(result.current.settings).toEqual(newSettings)
   })
 
-  it('tracks theme mode changes after settings save succeeds', async () => {
+  it('saves theme mode changes with the rest of the settings', async () => {
     const { result } = renderHook(() => useSettings())
 
     await waitFor(() => {
@@ -234,7 +213,7 @@ describe('useSettings', () => {
       })
     })
 
-    expect(trackEventMock).toHaveBeenCalledWith('theme_mode_changed', { mode: 'system' })
+    expect(result.current.settings.theme_mode).toBe('system')
   })
 
   it('preserves the Gitignored files visibility preference', async () => {

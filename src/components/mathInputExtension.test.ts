@@ -1,11 +1,6 @@
 import { describe, expect, it, vi, afterEach, beforeEach } from 'vitest'
 import { createMathInputExtension } from './mathInputExtension'
-import { trackEvent } from '../lib/telemetry'
 import { MATH_BLOCK_TYPE, MATH_INLINE_TYPE } from '../utils/mathMarkdown'
-
-vi.mock('../lib/telemetry', () => ({
-  trackEvent: vi.fn(),
-}))
 
 function transformError(message = 'Invalid math transform') {
   const error = new Error(message)
@@ -273,9 +268,6 @@ describe('createMathInputExtension', () => {
 
     expect(fixture.view.dispatch).not.toHaveBeenCalled()
     expect(event.preventDefault).not.toHaveBeenCalled()
-    expect(trackEvent).toHaveBeenCalledWith('rich_editor_transform_error_recovered', {
-      reason: 'transform_error',
-    })
   })
 
   it('restores rendered inline math source on double click', () => {
@@ -303,10 +295,6 @@ describe('createMathInputExtension', () => {
     expect(fixture.setTextSelection).toHaveBeenCalledWith({ from: 8, to: 11 })
     expect(event.preventDefault).toHaveBeenCalledTimes(1)
     expect(event.stopPropagation).toHaveBeenCalledTimes(1)
-    expect(trackEvent).toHaveBeenCalledWith('math_source_edit_reopened', {
-      activation: 'pointer',
-      math_mode: 'inline',
-    })
   })
 
   it('recovers stale selection transactions after rendered inline math source is restored', () => {
@@ -331,13 +319,6 @@ describe('createMathInputExtension', () => {
     expect(fixture.setTextSelection).toHaveBeenCalledWith({ from: 8, to: 11 })
     expect(event.preventDefault).toHaveBeenCalledTimes(1)
     expect(event.stopPropagation).toHaveBeenCalledTimes(1)
-    expect(trackEvent).toHaveBeenCalledWith('rich_editor_transform_error_recovered', {
-      reason: 'mismatched_transaction',
-    })
-    expect(trackEvent).toHaveBeenCalledWith('math_source_edit_reopened', {
-      activation: 'pointer',
-      math_mode: 'inline',
-    })
   })
 
   it('leaves rendered block math intact on double click', () => {
@@ -357,10 +338,6 @@ describe('createMathInputExtension', () => {
     expect(fixture.setTextSelection).not.toHaveBeenCalled()
     expect(event.preventDefault).not.toHaveBeenCalled()
     expect(event.stopPropagation).not.toHaveBeenCalled()
-    expect(trackEvent).not.toHaveBeenCalledWith('math_source_edit_reopened', {
-      activation: 'pointer',
-      math_mode: 'block',
-    })
   })
 
   it('restores selected math source from the keyboard', () => {
@@ -383,10 +360,6 @@ describe('createMathInputExtension', () => {
     expect(fixture.setTextSelection).toHaveBeenCalledWith({ from: 13, to: 19 })
     expect(event.preventDefault).toHaveBeenCalledTimes(1)
     expect(event.stopPropagation).toHaveBeenCalledTimes(1)
-    expect(trackEvent).toHaveBeenCalledWith('math_source_edit_reopened', {
-      activation: 'keyboard',
-      math_mode: 'inline',
-    })
   })
 
   it('leaves selected block math intact from the keyboard', () => {

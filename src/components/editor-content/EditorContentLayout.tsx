@@ -22,7 +22,6 @@ type BreadcrumbActions = Pick<
   | 'onToggleTableOfContents'
   | 'onRevealFile'
   | 'onCopyFilePath'
-  | 'onCopyDeepLink'
   | 'onExportPdf'
   | 'onDeleteNote'
   | 'onRenameFilename'
@@ -158,7 +157,6 @@ function ActiveTabBreadcrumb({
       onToggleTableOfContents={actions.onToggleTableOfContents}
       onRevealFile={actions.onRevealFile}
       onCopyFilePath={actions.onCopyFilePath}
-      onCopyDeepLink={actions.onCopyDeepLink}
       onExportPdf={actions.onExportPdf}
       onDelete={bindPath(actions.onDeleteNote, path)}
       onRenameFilename={actions.onRenameFilename}
@@ -204,7 +202,6 @@ function buildBreadcrumbActions(model: EditorContentModel): BreadcrumbActions {
     onToggleTableOfContents: model.onToggleTableOfContents,
     onRevealFile: model.onRevealFile,
     onCopyFilePath: model.onCopyFilePath,
-    onCopyDeepLink: model.onCopyDeepLink,
     onExportPdf: model.onExportPdf,
     onDeleteNote: model.onDeleteNote,
     onRenameFilename: model.onRenameFilename,
@@ -268,7 +265,6 @@ type EditorCanvasProps = Pick<
   | 'onOpenExternalFile'
   | 'onRevealFile'
   | 'onCopyFilePath'
-  | 'onCopyDeepLink'
 >
 
 function EditorCanvas(props: EditorCanvasProps) {
@@ -278,7 +274,6 @@ function EditorCanvas(props: EditorCanvasProps) {
       <FilePreview
         entry={props.activeTab.entry}
         locale={props.locale}
-        onCopyDeepLink={props.onCopyDeepLink}
         onCopyFilePath={props.onCopyFilePath}
         onOpenExternalFile={props.onOpenExternalFile}
         onRevealFile={props.onRevealFile}
@@ -439,7 +434,6 @@ export function EditorContentLayout(model: EditorContentModel) {
             onOpenExternalFile={model.onOpenExternalFile}
             onRevealFile={model.onRevealFile}
             onCopyFilePath={model.onCopyFilePath}
-            onCopyDeepLink={model.onCopyDeepLink}
           />
         </>
       )}

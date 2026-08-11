@@ -55,10 +55,6 @@ let mockSettings: Settings = {
   autogit_enabled: false,
   autogit_idle_threshold_seconds: 90,
   autogit_inactive_threshold_seconds: 30,
-  telemetry_consent: false,
-  crash_reporting_enabled: null,
-  analytics_enabled: null,
-  anonymous_id: null,
   release_channel: null,
   automatic_update_checks_enabled: null,
   theme_mode: null,
@@ -382,10 +378,6 @@ export const mockHandlers = {
       autogit_enabled: s.autogit_enabled ?? false,
       autogit_idle_threshold_seconds: s.autogit_idle_threshold_seconds ?? 90,
       autogit_inactive_threshold_seconds: s.autogit_inactive_threshold_seconds ?? 30,
-      telemetry_consent: s.telemetry_consent,
-      crash_reporting_enabled: s.crash_reporting_enabled,
-      analytics_enabled: s.analytics_enabled,
-      anonymous_id: s.anonymous_id,
       release_channel: s.release_channel,
       automatic_update_checks_enabled: s.automatic_update_checks_enabled ?? null,
       theme_mode: s.theme_mode ?? null,
@@ -456,7 +448,6 @@ export const mockHandlers = {
   repair_vault: (): string => {
     return 'Vault repaired'
   },
-  reinit_telemetry: (): null => null,
 } satisfies Record<string, (...args: never[]) => unknown>
 
 export function addMockEntry(_entry: VaultEntry, content: string): void {

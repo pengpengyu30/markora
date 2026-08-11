@@ -124,10 +124,6 @@ export interface Settings {
   autogit_enabled?: boolean | null
   autogit_idle_threshold_seconds?: number | null
   autogit_inactive_threshold_seconds?: number | null
-  telemetry_consent: boolean | null
-  crash_reporting_enabled: boolean | null
-  analytics_enabled: boolean | null
-  anonymous_id: string | null
   release_channel: string | null
   automatic_update_checks_enabled?: boolean | null
   theme_mode?: ThemeMode | null

@@ -1,10 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createTrackedWikilinkInputTransform } from './wikilinkInputExtension'
-import { trackEvent } from '../lib/telemetry'
-
-vi.mock('../lib/telemetry', () => ({
-  trackEvent: vi.fn(),
-}))
 
 function createTransaction() {
   const transaction = {
@@ -81,7 +76,6 @@ describe('createWikilinkInputTransform', () => {
       type: 'wikilink',
     })
     expect(transaction.scrollIntoView).toHaveBeenCalledOnce()
-    expect(trackEvent).toHaveBeenCalledWith('wikilink_inserted', { trigger: 'typed' })
   })
 
   it('ignores empty, multiline, and pasted wikilink text', () => {

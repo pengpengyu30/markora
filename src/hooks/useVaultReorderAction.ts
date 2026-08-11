@@ -1,6 +1,5 @@
 import { useCallback, type Dispatch, type SetStateAction } from 'react'
 import type { VaultOption } from '../components/status-bar/types'
-import { trackEvent } from '../lib/telemetry'
 import { orderVaultsByPath } from '../utils/vaultOrdering'
 
 function persistableVault(vault: VaultOption): VaultOption {
@@ -21,6 +20,5 @@ export function useVaultReorderAction({
     if (!orderedVaults) return
 
     setExtraVaults(orderedVaults.map(persistableVault))
-    trackEvent('vault_order_changed', { vault_count: orderedVaults.length })
   }, [allVaults, setExtraVaults])
 }

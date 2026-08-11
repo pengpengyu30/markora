@@ -11,7 +11,6 @@ const {
   getRawEditorDropdownPositionMock,
   noteSearchListState,
   replaceActiveWikilinkQueryMock,
-  trackEventMock,
   useCodeMirrorMock,
   viewRefState,
 } = vi.hoisted(() => ({
@@ -23,7 +22,6 @@ const {
   getRawEditorDropdownPositionMock: vi.fn(),
   noteSearchListState: { lastProps: null as null | Record<string, unknown> },
   replaceActiveWikilinkQueryMock: vi.fn(),
-  trackEventMock: vi.fn(),
   useCodeMirrorMock: vi.fn(),
   viewRefState: { current: null as null | Record<string, unknown> },
 }))
@@ -43,10 +41,6 @@ vi.mock('../utils/rawEditorUtils', () => ({
 
 vi.mock('../utils/typeColors', () => ({
   buildTypeEntryMap: buildTypeEntryMapMock,
-}))
-
-vi.mock('../lib/telemetry', () => ({
-  trackEvent: trackEventMock,
 }))
 
 vi.mock('./NoteSearchList', () => ({
@@ -268,7 +262,6 @@ describe('RawEditorView behavior coverage', () => {
       selection: { anchor: 12 },
     })
     expect(onContentChange).toHaveBeenCalledWith('/vault/a.md', '[[Inserted]]')
-    expect(trackEventMock).toHaveBeenCalledWith('wikilink_inserted')
     expect(mockView.focus).toHaveBeenCalledTimes(1)
     expect(callbacks.onEscape()).toBe(false)
   })

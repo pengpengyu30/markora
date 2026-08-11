@@ -1,5 +1,4 @@
 import { invoke } from '@tauri-apps/api/core'
-import { trackEvent } from '../lib/telemetry'
 import { isTauri, mockInvoke } from '../mock-tauri'
 
 export type PlainTextPasteSurface =
@@ -28,10 +27,6 @@ function isCommandPaletteElement(element: Element | null): boolean {
 
 function isUsableTarget(target: PlainTextPasteTarget | null): target is PlainTextPasteTarget {
   return Boolean(target?.isConnected())
-}
-
-function recordPlainTextPaste(surface: PlainTextPasteSurface): void {
-  trackEvent('plain_text_paste_used', { surface })
 }
 
 function inputEvent(text: string): Event {
@@ -110,9 +105,7 @@ function isEditableHTMLElementForPlainTextPaste(element: HTMLElement | null): bo
 }
 
 function insertIntoTarget(target: PlainTextPasteTarget, text: string): boolean {
-  if (!target.insert(text)) return false
-  recordPlainTextPaste(target.surface)
-  return true
+  return target.insert(text)
 }
 
 function currentPasteTarget(): PlainTextPasteTarget | null {
@@ -128,11 +121,7 @@ function insertIntoContainedTarget(
 }
 
 function insertIntoFocusedSurface(text: string, element: HTMLElement | null): boolean {
-  const focusedSurface = insertIntoFocusedEditable(text, element)
-  if (!focusedSurface) return false
-
-  recordPlainTextPaste(focusedSurface)
-  return true
+  return Boolean(insertIntoFocusedEditable(text, element))
 }
 
 function shouldUseLastPasteTarget(element: HTMLElement | null): boolean {

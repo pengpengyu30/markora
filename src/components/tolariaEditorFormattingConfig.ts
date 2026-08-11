@@ -33,7 +33,6 @@ import {
   Video,
   type Icon as PhosphorIcon,
 } from '@phosphor-icons/react'
-import { trackEvent } from '../lib/telemetry'
 import { CALLOUT_BLOCK_TYPE, calloutHeading } from '../utils/calloutMarkdown'
 import {
   OBSIDIAN_CALLOUT_DEFINITIONS,
@@ -63,7 +62,6 @@ type SlashInsertEditor = {
 }
 type BlockSlashMenuItemConfig = {
   aliases: string[]
-  eventName?: string
   key: string
   props: Record<string, unknown>
   title: string
@@ -210,7 +208,6 @@ export function createDateTimeSlashMenuItems(
       inlineEditor.insertInlineContent(formatLocalDateTime(getCurrentDate(), key), {
         updateSelection: true,
       })
-      trackEvent('editor_timestamp_slash_command_used', { kind: key })
     },
   } as TolariaSlashMenuItem))
 }
@@ -263,7 +260,6 @@ export function createMathSlashMenuItem(
     key: 'math',
     title: labels.mathTitle,
     aliases: ['equation', 'latex', 'formula', 'sqrt'],
-    eventName: 'editor_math_slash_command_used',
     type: MATH_BLOCK_TYPE,
     props: {
       latex: MATH_SLASH_COMMAND_LATEX,
@@ -294,7 +290,6 @@ export function createCalloutSlashMenuItem(
         type: CALLOUT_BLOCK_TYPE,
         props: { calloutType: type, title: '' },
       }])
-      trackEvent('editor_callout_slash_command_used', { type })
     },
     title: labels.calloutTypeTitles[type],
   } satisfies TolariaSlashMenuItem))
@@ -326,7 +321,6 @@ function createBlockSlashMenuItem(
         type: config.type,
         props: config.props,
       }])
-      if (config.eventName) trackEvent(config.eventName)
     },
   } as TolariaSlashMenuItem
 }

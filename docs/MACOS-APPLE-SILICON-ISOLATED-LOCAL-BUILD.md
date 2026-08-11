@@ -254,7 +254,7 @@ The launcher:
 
 - verifies that `Tolaria Dev.app` exists;
 - creates an isolated development settings file when needed;
-- disables automatic update checks, telemetry, crash reporting, and analytics in that settings file;
+- disables automatic update checks in that settings file;
 - sets the development configuration namespace;
 - redirects the application's primary JSON configuration to `.tolaria-build.local/runtime/config/`;
 - starts the application directly from the build output without copying it to `/Applications`.

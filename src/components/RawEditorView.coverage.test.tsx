@@ -3,7 +3,6 @@ import type { MutableRefObject } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const {
-  trackEventMock,
   buildTypeEntryMapMock,
   buildRawEditorBaseItemsMock,
   detectYamlErrorMock,
@@ -13,7 +12,6 @@ const {
   replaceActiveWikilinkQueryMock,
   useCodeMirrorMock,
 } = vi.hoisted(() => ({
-  trackEventMock: vi.fn(),
   buildTypeEntryMapMock: vi.fn(() => new Map()),
   buildRawEditorBaseItemsMock: vi.fn(() => []),
   detectYamlErrorMock: vi.fn(() => null),
@@ -40,10 +38,6 @@ let latestViewRef: MutableRefObject<{
     selection: { main: { head: number } }
   }
 } | null>
-
-vi.mock('../lib/telemetry', () => ({
-  trackEvent: trackEventMock,
-}))
 
 vi.mock('../utils/typeColors', () => ({
   buildTypeEntryMap: buildTypeEntryMapMock,
@@ -250,7 +244,6 @@ describe('RawEditorView additional coverage', () => {
       changes: { from: 0, to: 'Before [[Al'.length, insert: 'Before [[Alpha]]' },
       selection: { anchor: 15 },
     })
-    expect(trackEventMock).toHaveBeenCalledWith('wikilink_inserted')
     expect(onContentChange).toHaveBeenCalledWith('/vault/raw-note.md', 'Before [[Alpha]]')
     expect(latestViewRef.current?.focus).toHaveBeenCalledTimes(1)
 

@@ -13,7 +13,6 @@ import {
 import { DEFAULT_DATE_DISPLAY_FORMAT, normalizeDateDisplayFormat, type DateDisplayFormat } from '../utils/dateDisplay'
 import { resolveAllNotesFileVisibility } from '../utils/allNotesFileVisibility'
 import { useDocumentThemeMode } from './useDocumentThemeMode'
-import { useTelemetry } from './useTelemetry'
 import { useThemeMode } from './useThemeMode'
 
 interface AppPreferencesConfig {
@@ -95,8 +94,6 @@ export function useAppPreferences({
   const handleSetUiLanguage = useCallback((uiLanguage: UiLanguagePreference) => {
     void saveSettings({ ...settings, ui_language: serializeUiLanguagePreference(uiLanguage) })
   }, [saveSettings, settings])
-  useTelemetry(settings, settingsLoaded)
-
   return {
     allNotesFileVisibility,
     appLocale,

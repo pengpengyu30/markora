@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { beforeEach, describe, it, expect, vi } from 'vitest'
 import { WelcomeScreen } from './WelcomeScreen'
 import customizeLogo from '@/assets/customize-logo-cropped.svg'
-import { TOLARIA_FIRST_LAUNCH_DOCS_URL } from '@/constants/feedback'
+import { TOLARIA_FIRST_LAUNCH_DOCS_URL } from '@/constants/docs'
 
 const dragRegionMouseDown = vi.fn()
 const openExternalUrl = vi.fn()

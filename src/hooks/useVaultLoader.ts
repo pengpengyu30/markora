@@ -154,7 +154,7 @@ async function loadInitialVaultState(options: InitialVaultLoadStateOptions) {
   if (isCurrentVaultPath(path)) {
     setIsLoading(false)
     setHasCompletedInitialLoad(true)
-    recordActiveVaultUsable(entriesResult.source, entriesResult.entryCount)
+    recordActiveVaultUsable(entriesResult.entryCount)
   }
   await chromeLoad
 }

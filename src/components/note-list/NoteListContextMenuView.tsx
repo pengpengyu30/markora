@@ -13,7 +13,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input'
 import { APP_COMMAND_IDS, getAppCommandShortcutDisplay } from '../../hooks/appCommandCatalog'
 import { translate, type AppLocale } from '../../lib/i18n'
-import { trackEvent } from '../../lib/telemetry'
 import type { VaultEntry } from '../../types'
 import { isMarkdownEntry } from '../../utils/typeDefinitions'
 import type { NoteListContextMenuState } from './NoteListContextMenu'
@@ -27,8 +26,6 @@ interface NoteListContextMenuItem {
   onSelect: () => void
   shortcut?: string
 }
-
-type SelectContextAction = (action: string, run: () => void) => void
 
 interface NoteListContextMenuNodeProps {
   ctxMenu: NoteListContextMenuState | null
@@ -52,6 +49,8 @@ type BuildContextMenuItemsParams = Pick<
   | 'onCopyFilePath'
 >
 
+type SelectContextAction = (run: () => void) => void
+
 function renameItem(
   entry: VaultEntry,
   locale: AppLocale,
@@ -62,7 +61,7 @@ function renameItem(
   return [{
     icon: PencilSimple,
     label: translate(locale, 'noteList.context.renameNote'),
-    onSelect: () => { selectAction('rename_filename', () => { onRequestRename(entry); }); },
+    onSelect: () => { selectAction(() => { onRequestRename(entry); }); },
   }]
 }
 
@@ -76,7 +75,7 @@ function revealFileItem(
   return [{
     icon: FolderOpen,
     label: translate(locale, 'editor.toolbar.revealFile'),
-    onSelect: () => { selectAction('reveal_file', () => { onRevealFile(entry.path); }); },
+    onSelect: () => { selectAction(() => { onRevealFile(entry.path); }); },
   }]
 }
 
@@ -90,7 +89,7 @@ function copyFilePathItem(
   return [{
     icon: ClipboardText,
     label: translate(locale, 'editor.toolbar.copyFilePath'),
-    onSelect: () => { selectAction('copy_file_path', () => { onCopyFilePath(entry.path); }); },
+    onSelect: () => { selectAction(() => { onCopyFilePath(entry.path); }); },
   }]
 }
 
@@ -104,7 +103,7 @@ function exportPdfItem(
   return [{
     icon: FilePdf,
     label: translate(locale, 'editor.toolbar.exportPdf'),
-    onSelect: () => { selectAction('export_pdf', () => { onExportPdf(entry); }); },
+    onSelect: () => { selectAction(() => { onExportPdf(entry); }); },
     shortcut: getAppCommandShortcutDisplay(APP_COMMAND_IDS.noteExportPdf),
   }]
 }
@@ -120,7 +119,7 @@ function deleteItem(
     destructive: true,
     icon: Trash,
     label: translate(locale, 'editor.toolbar.delete'),
-    onSelect: () => { selectAction('delete', () => { onDeletePaths([entry.path]); }); },
+    onSelect: () => { selectAction(() => { onDeletePaths([entry.path]); }); },
     shortcut: getAppCommandShortcutDisplay(APP_COMMAND_IDS.noteDelete),
   }]
 }
@@ -171,8 +170,7 @@ export function NoteListContextMenuNode(props: NoteListContextMenuNodeProps) {
   if (!ctxMenu) return null
 
   const { entry } = ctxMenu
-  const selectAction = (action: string, run: () => void) => {
-    trackEvent('note_item_context_menu_action', { action })
+  const selectAction: SelectContextAction = (run) => {
     onClose()
     run()
   }
@@ -245,7 +243,6 @@ function NoteListRenameForm({
       return
     }
 
-    trackEvent('note_item_context_menu_rename_filename_submitted')
     onRename(nextFilenameStem)
   }
 

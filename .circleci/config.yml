@@ -119,10 +119,6 @@ commands:
             required=(
               TAURI_SIGNING_PRIVATE_KEY
               TAURI_KEY_PASSWORD
-              VITE_SENTRY_DSN
-              SENTRY_DSN
-              VITE_POSTHOG_KEY
-              VITE_POSTHOG_HOST
             )
             for name in "${required[@]}"; do
               if [[ -z "${!name:-}" ]]; then
@@ -461,7 +457,6 @@ jobs:
             set -euo pipefail
             source /tmp/tolaria-release/release.env
             export TAURI_SIGNING_PRIVATE_KEY_PASSWORD="$TAURI_KEY_PASSWORD"
-            export VITE_SENTRY_RELEASE="$VERSION"
             if [[ "<< parameters.channel >>" == "alpha" ]]; then
               pnpm tauri build --target "<< parameters.target >>" --bundles app
             else
@@ -565,7 +560,6 @@ jobs:
             set -euo pipefail
             source /tmp/tolaria-release/release.env
             export TAURI_SIGNING_PRIVATE_KEY_PASSWORD="$TAURI_KEY_PASSWORD"
-            export VITE_SENTRY_RELEASE="$VERSION"
             pnpm tauri build --target x86_64-unknown-linux-gnu --bundles deb,rpm,appimage
       - run:
           name: Validate and collect Linux bundles
@@ -696,11 +690,7 @@ jobs:
           command: |
             $required = @(
               "TAURI_SIGNING_PRIVATE_KEY",
-              "TAURI_KEY_PASSWORD",
-              "VITE_SENTRY_DSN",
-              "SENTRY_DSN",
-              "VITE_POSTHOG_KEY",
-              "VITE_POSTHOG_HOST"
+              "TAURI_KEY_PASSWORD"
             )
             foreach ($name in $required) {
               if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
@@ -737,7 +727,6 @@ jobs:
             }
             $env:Path = "C:\Program Files\nodejs;$env:USERPROFILE\.cargo\bin;$env:Path"
             $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = $env:TAURI_KEY_PASSWORD
-            $env:VITE_SENTRY_RELEASE = $release["VERSION"]
             corepack prepare pnpm@10.33.0 --activate
             $authenticodeAvailable = (Get-Content "C:\tmp\tolaria-release\authenticode.txt").Trim()
             if ($authenticodeAvailable -eq "true") {

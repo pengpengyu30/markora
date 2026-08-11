@@ -35,7 +35,6 @@ interface NoteCommandsConfig {
   onTurnCurrentBlockInto?: (target: RichEditorBlockTypeDefinition) => void
   onRevealActiveFile?: (path: string) => void
   onCopyActiveFilePath?: (path: string) => void
-  onCopyActiveDeepLink?: (path: string) => void
   onOpenActiveFileExternal?: (path: string) => void
   locale?: AppLocale
   onExportNoteAsPdf?: () => void
@@ -242,16 +241,6 @@ function buildCopyActiveFilePathCommand(config: NoteCommandsConfig): CommandActi
   })
 }
 
-function buildCopyActiveDeepLinkCommand(config: NoteCommandsConfig): CommandAction {
-  return buildActivePathCommand(config, {
-    id: 'copy-active-deep-link',
-    label: 'Copy deep link to current item',
-    keywords: ['deeplink', 'deep link', 'url', 'link', 'copy', 'clipboard'],
-    enabled: !!config.onCopyActiveDeepLink,
-    run: (path) => config.onCopyActiveDeepLink?.(path),
-  })
-}
-
 function buildExportNotePdfCommand(config: NoteCommandsConfig): CommandAction {
   return createNoteCommand({
     id: 'export-note-pdf',
@@ -276,7 +265,6 @@ function buildFileActionCommands(config: NoteCommandsConfig): CommandAction[] {
   return [
     buildRevealActiveFileCommand(config),
     buildCopyActiveFilePathCommand(config),
-    buildCopyActiveDeepLinkCommand(config),
     buildExportNotePdfCommand(config),
     buildOpenActiveFileExternalCommand(config),
   ]

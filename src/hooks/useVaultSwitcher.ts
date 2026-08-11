@@ -5,7 +5,6 @@ import { isTauri, mockInvoke } from '../mock-tauri'
 import { formatFolderPickerActionError, pickFolder } from '../utils/vault-dialog'
 import { loadVaultList, saveVaultList } from '../utils/vaultListStore'
 import type { VaultOption } from '../components/StatusBar'
-import { trackEvent } from '../lib/telemetry'
 import { buildAllVaults } from '../utils/vaultCollections'
 import { useVaultReorderAction } from './useVaultReorderAction'
 import { useWorkspaceIdentityActions } from './useWorkspaceIdentityActions'
@@ -725,7 +724,6 @@ function switchVaultPath({
   onSwitchRef: MutableRefObject<() => void>
   path: string
 }) {
-  trackEvent('vault_switched')
   setSelectedVaultPath(path)
   setVaultPath(path)
   onSwitchRef.current()

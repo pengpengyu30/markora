@@ -1,6 +1,5 @@
 import { createExtension } from '@blocknote/core'
 import type { useCreateBlockNote } from '@blocknote/react'
-import { trackEvent } from '../lib/telemetry'
 import { MATH_BLOCK_TYPE, MATH_INLINE_TYPE, readCompletedInlineMathAtEnd } from '../utils/mathMarkdown'
 import {
   dispatchRichEditorInputTransaction,
@@ -16,7 +15,6 @@ const MATH_NODE_SEARCH_RADIUS = 8
 type EditorViewLike = NonNullable<ReturnType<typeof useCreateBlockNote>['prosemirrorView']>
 type EditorLike = ReturnType<typeof useCreateBlockNote>
 type MathKind = 'inline' | 'block'
-type MathActivation = 'keyboard' | 'pointer'
 type MathNodeLike = {
   attrs?: Record<string, unknown>
   nodeSize: number
@@ -261,12 +259,10 @@ function restoreMathSourceSelection(
 }
 
 function restoreMathSource({
-  activation,
   editor,
   location,
   view,
 }: {
-  activation: MathActivation
   editor: EditorLike
   location: MathNodeLocation
   view: EditorViewLike
@@ -281,10 +277,6 @@ function restoreMathSource({
   if (!dispatchRichEditorInputTransaction(view, { transaction })) return false
 
   restoreMathSourceSelection(editor, location)
-  trackEvent('math_source_edit_reopened', {
-    activation,
-    math_mode: location.kind,
-  })
   return true
 }
 
@@ -299,7 +291,7 @@ function handleRenderedMathDoubleClick(
   const location = readRenderedMathLocation({ ...target, view })
   if (!location) return
 
-  if (!restoreMathSource({ activation: 'pointer', editor, location, view })) return
+  if (!restoreMathSource({ editor, location, view })) return
 
   event.preventDefault()
   event.stopPropagation()
@@ -315,7 +307,7 @@ function handleMathKeyDown(
   const location = view ? readSelectedMathLocation(view) : null
   if (!view || !location) return
 
-  if (!restoreMathSource({ activation: 'keyboard', editor, location, view })) return
+  if (!restoreMathSource({ editor, location, view })) return
 
   event.preventDefault()
   event.stopPropagation()

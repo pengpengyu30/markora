@@ -1,15 +1,7 @@
 import { act, fireEvent, renderHook } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { createRef } from 'react'
 import { useImageLightbox } from './useImageLightbox'
-
-const { trackInlineImageLightboxOpenedMock } = vi.hoisted(() => ({
-  trackInlineImageLightboxOpenedMock: vi.fn(),
-}))
-
-vi.mock('../lib/productAnalytics', () => ({
-  trackInlineImageLightboxOpened: trackInlineImageLightboxOpenedMock,
-}))
 
 function createHookTarget() {
   const container = document.createElement('div')
@@ -31,7 +23,6 @@ function appendImage(container: HTMLElement, src = 'https://example.com/photo.pn
 
 beforeEach(() => {
   document.body.replaceChildren()
-  trackInlineImageLightboxOpenedMock.mockClear()
 })
 
 describe('useImageLightbox', () => {
@@ -45,7 +36,6 @@ describe('useImageLightbox', () => {
       src: 'https://example.com/photo.png',
       alt: 'Preview target',
     })
-    expect(trackInlineImageLightboxOpenedMock).toHaveBeenCalledTimes(1)
   })
 
   it('opens before BlockNote can stop the double-click from bubbling', () => {
@@ -56,7 +46,6 @@ describe('useImageLightbox', () => {
     fireEvent.doubleClick(img)
 
     expect(view.result.current.image?.src).toBe('https://example.com/photo.png')
-    expect(trackInlineImageLightboxOpenedMock).toHaveBeenCalledTimes(1)
   })
 
   it('leaves single-click image selection alone', () => {
@@ -66,7 +55,6 @@ describe('useImageLightbox', () => {
     fireEvent.click(img)
 
     expect(view.result.current.image).toBeNull()
-    expect(trackInlineImageLightboxOpenedMock).not.toHaveBeenCalled()
   })
 
   it('ignores double-clicks on non-image targets', () => {
@@ -77,7 +65,6 @@ describe('useImageLightbox', () => {
     fireEvent.doubleClick(text)
 
     expect(view.result.current.image).toBeNull()
-    expect(trackInlineImageLightboxOpenedMock).not.toHaveBeenCalled()
   })
 
   it('closes the current lightbox image', () => {

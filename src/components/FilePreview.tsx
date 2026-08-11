@@ -7,14 +7,12 @@ import {
   FilePdf,
   FolderOpen,
   ImageSquare,
-  Link,
   SpeakerHigh,
   Video,
   WarningCircle,
 } from '@phosphor-icons/react'
 import type { VaultEntry } from '../types'
-import { translate, type AppLocale } from '../lib/i18n'
-import { trackFilePreviewAction, trackFilePreviewFailed, trackFilePreviewOpened } from '../lib/productAnalytics'
+import type { AppLocale } from '../lib/i18n'
 import { filePreviewKind, previewFileTypeLabel, type FilePreviewKind } from '../utils/filePreview'
 import { useExternalMediaPreview } from '../utils/mediaPreviewRuntime'
 import { focusNoteListContainer } from '../utils/domScroll'
@@ -25,7 +23,6 @@ interface FilePreviewProps {
   entry: VaultEntry
   locale?: AppLocale
   onCopyFilePath?: (path: string) => void
-  onCopyDeepLink?: (entry: VaultEntry) => void
   onOpenExternalFile?: (path: string) => void
   onRevealFile?: (path: string) => void
 }
@@ -180,22 +177,18 @@ function FilePreviewHeader(options: {
   previewKind: FilePreviewKind | null
   canUseFileActions: boolean
   fileTypeLabel: string
-  locale?: AppLocale
   onOpenExternal: () => void
   onRevealFile?: () => void
   onCopyFilePath?: () => void
-  onCopyDeepLink?: () => void
 }) {
   const {
     entry,
     previewKind,
     canUseFileActions,
     fileTypeLabel,
-    locale = 'en',
     onOpenExternal,
     onRevealFile,
     onCopyFilePath,
-    onCopyDeepLink,
   } = options
   return (
     <div
@@ -220,12 +213,6 @@ function FilePreviewHeader(options: {
           <Button type="button" variant="ghost" size="sm" onClick={onCopyFilePath} disabled={!canUseFileActions}>
             <ClipboardText size={15} />
             Copy path
-          </Button>
-        )}
-        {onCopyDeepLink && (
-          <Button type="button" variant="ghost" size="sm" onClick={onCopyDeepLink} disabled={!canUseFileActions}>
-            <Link size={15} />
-            {translate(locale, 'filePreview.copyDeepLink')}
           </Button>
         )}
         <Button type="button" variant="ghost" size="sm" onClick={onOpenExternal} disabled={!canUseFileActions}>
@@ -405,15 +392,12 @@ function useFilePreviewFailureState(entryPath: string) {
 
   const handleImageError = useCallback(() => {
     setFailedImagePath(entryPath)
-    trackFilePreviewFailed('image')
   }, [entryPath])
   const handleAudioError = useCallback(() => {
     setFailedMediaPath(entryPath)
-    trackFilePreviewFailed('audio')
   }, [entryPath])
   const handleVideoError = useCallback(() => {
     setFailedMediaPath(entryPath)
-    trackFilePreviewFailed('video')
   }, [entryPath])
 
   return {
@@ -426,24 +410,17 @@ function useFilePreviewFailureState(entryPath: string) {
 }
 
 function useFilePreviewActions({
-  entry,
   entryPath,
   onCopyFilePath,
-  onCopyDeepLink,
   onOpenExternalFile,
   onRevealFile,
-  previewKind,
 }: {
-  entry: VaultEntry
   entryPath: string
   onCopyFilePath?: (path: string) => void
-  onCopyDeepLink?: (entry: VaultEntry) => void
   onOpenExternalFile?: (path: string) => void
   onRevealFile?: (path: string) => void
-  previewKind: FilePreviewKind | null
 }) {
   const handleOpenExternal = useCallback(() => {
-    trackFilePreviewAction('open_external', previewKind)
     if (onOpenExternalFile) {
       onOpenExternalFile(entryPath)
       return
@@ -452,28 +429,20 @@ function useFilePreviewActions({
     void openLocalFile(entryPath).catch((error) => {
       console.warn('Failed to open file with default app:', error)
     })
-  }, [entryPath, onOpenExternalFile, previewKind])
+  }, [entryPath, onOpenExternalFile])
 
   const handleRevealFile = useCallback(() => {
-    trackFilePreviewAction('reveal', previewKind)
     onRevealFile?.(entryPath)
-  }, [entryPath, onRevealFile, previewKind])
+  }, [entryPath, onRevealFile])
 
   const handleCopyFilePath = useCallback(() => {
-    trackFilePreviewAction('copy_path', previewKind)
     onCopyFilePath?.(entryPath)
-  }, [entryPath, onCopyFilePath, previewKind])
-
-  const handleCopyDeepLink = useCallback(() => {
-    trackFilePreviewAction('copy_deep_link', previewKind)
-    onCopyDeepLink?.(entry)
-  }, [entry, onCopyDeepLink, previewKind])
+  }, [entryPath, onCopyFilePath])
 
   return {
     handleOpenExternal,
     handleRevealFile,
     handleCopyFilePath,
-    handleCopyDeepLink,
   }
 }
 
@@ -492,9 +461,7 @@ function previewKindForBody(
 
 export function FilePreview({
   entry,
-  locale = 'en',
   onCopyFilePath,
-  onCopyDeepLink,
   onOpenExternalFile,
   onRevealFile,
 }: FilePreviewProps) {
@@ -508,19 +475,11 @@ export function FilePreview({
   const externalMediaPreview = useExternalMediaPreview()
   const failures = useFilePreviewFailureState(previewPath ?? '')
   const actions = useFilePreviewActions({
-    entry,
     entryPath: previewPath ?? '',
     onCopyFilePath,
-    onCopyDeepLink,
     onOpenExternalFile,
     onRevealFile,
-    previewKind,
   })
-
-  useEffect(() => {
-    void previewPath
-    trackFilePreviewOpened(previewKind)
-  }, [previewPath, previewKind])
 
   useEffect(() => {
     previewRef.current?.setAttribute('tabindex', '0')
@@ -549,11 +508,9 @@ export function FilePreview({
         previewKind={previewKind}
         canUseFileActions={canUseFileActions}
         fileTypeLabel={fileTypeLabel}
-        locale={locale}
         onOpenExternal={actions.handleOpenExternal}
         onRevealFile={onRevealFile ? actions.handleRevealFile : undefined}
         onCopyFilePath={onCopyFilePath ? actions.handleCopyFilePath : undefined}
-        onCopyDeepLink={onCopyDeepLink ? actions.handleCopyDeepLink : undefined}
       />
       <div className="min-h-0 flex-1 overflow-auto bg-background">
         <FilePreviewBody

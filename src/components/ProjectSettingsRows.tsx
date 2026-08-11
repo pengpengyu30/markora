@@ -7,7 +7,6 @@ import { SettingsGroupItem } from './SettingsControls'
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip'
 import { ProjectMoveButtons } from './ProjectMoveButtons'
 import { createTranslator, type AppLocale } from '../lib/i18n'
-import { trackEvent } from '../lib/telemetry'
 import type { VaultOption } from './status-bar/types'
 import { canMoveVaultPath, moveVaultPath, type VaultMoveDirection } from '../utils/vaultOrdering'
 import { workspaceIdentityFromVault } from '../utils/workspaces'
@@ -205,9 +204,6 @@ function ProjectRowActions(
         size="xs"
         onClick={() => {
           onSetDefaultProject?.(project.path)
-          trackEvent('project_default_changed', {
-            workspace_alias: workspace.alias,
-          })
         }}
         disabled={!onSetDefaultProject || workspace.defaultForNewNotes}
         data-testid={`settings-project-default-${workspace.alias}`}

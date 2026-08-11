@@ -12,7 +12,6 @@ mod macos_fullscreen_escape;
 pub mod menu;
 pub mod search;
 pub mod settings;
-pub mod telemetry;
 pub mod vault;
 pub mod vault_list;
 pub mod vault_watcher;
@@ -74,28 +73,12 @@ fn with_desktop_entry_plugins(builder: tauri::Builder<tauri::Wry>) -> tauri::Bui
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
             focus_main_window(app);
         }))
-        .plugin(tauri_plugin_deep_link::init())
-}
-
-#[cfg(desktop)]
-fn setup_deep_link_runtime_registration(
-    _app: &mut tauri::App,
-) -> Result<(), Box<dyn std::error::Error>> {
-    #[cfg(any(target_os = "windows", target_os = "linux"))]
-    {
-        use tauri_plugin_deep_link::DeepLinkExt;
-
-        _app.deep_link().register_all()?;
-    }
-
-    Ok(())
 }
 
 #[cfg(desktop)]
 fn setup_desktop_plugins(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     setup_macos_webview_shortcut_prevention(app)?;
     macos_fullscreen_escape::setup(app)?;
-    setup_deep_link_runtime_registration(app)?;
     install_desktop_runtime_plugins(app)?;
     setup_native_desktop_menu(app)?;
     setup_custom_window_chrome(app)?;
@@ -199,10 +182,6 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         app_icon::update_app_icon_for_theme(app.handle(), "light")?;
     }
 
-    if telemetry::init_sentry_from_settings() {
-        log::info!("Sentry initialized (crash reporting enabled)");
-    }
-
     Ok(())
 }
 
@@ -270,7 +249,6 @@ macro_rules! app_invoke_handler {
             commands::read_text_from_clipboard,
             commands::get_process_memory_snapshot,
             commands::repair_vault,
-            commands::reinit_telemetry,
             commands::should_use_external_media_preview,
             commands::print_current_webview,
             commands::can_export_current_webview_pdf,

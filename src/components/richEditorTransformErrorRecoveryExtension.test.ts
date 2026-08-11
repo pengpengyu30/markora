@@ -4,11 +4,6 @@ import {
   installRichEditorTransformErrorRecovery,
   isRecoverableEditorTransformError,
 } from './richEditorTransformErrorRecoveryExtension'
-import { trackEvent } from '../lib/telemetry'
-
-vi.mock('../lib/telemetry', () => ({
-  trackEvent: vi.fn(),
-}))
 
 function transformError(message = 'Invalid transform') {
   const error = new Error(message)
@@ -81,7 +76,7 @@ function createViewWithSomeProp(handleKeyDown: () => boolean) {
   }
 }
 
-function expectDocumentRepairRecovery(error: Error, reason: string) {
+function expectDocumentRepairRecovery(error: Error) {
   const { currentDoc, view } = createView(error)
   const recoverDocument = vi.fn()
 
@@ -89,9 +84,6 @@ function expectDocumentRepairRecovery(error: Error, reason: string) {
 
   expect(() => view.dispatch({ before: currentDoc })).not.toThrow()
   expect(recoverDocument).toHaveBeenCalledTimes(1)
-  expect(trackEvent).toHaveBeenCalledWith('rich_editor_transform_error_recovered', {
-    reason,
-  })
 }
 
 beforeEach(() => {
@@ -161,9 +153,6 @@ describe('installRichEditorTransformErrorRecovery', () => {
 
     expect(() => view.dispatch({ before: previousDoc })).not.toThrow()
     expect(dispatch).toHaveBeenCalledWith({ before: previousDoc })
-    expect(trackEvent).toHaveBeenCalledWith('rich_editor_transform_error_recovered', {
-      reason: 'stale_transaction',
-    })
   })
 
   it('recovers ProseMirror mismatched transactions from active key handling', () => {
@@ -172,9 +161,6 @@ describe('installRichEditorTransformErrorRecovery', () => {
     installRichEditorTransformErrorRecovery(view)
 
     expect(() => view.dispatch({ before: currentDoc })).not.toThrow()
-    expect(trackEvent).toHaveBeenCalledWith('rich_editor_transform_error_recovered', {
-      reason: 'mismatched_transaction',
-    })
   })
 
   it('recovers WebKit DOM NotFoundError from editor dispatch', () => {
@@ -183,9 +169,6 @@ describe('installRichEditorTransformErrorRecovery', () => {
     installRichEditorTransformErrorRecovery(view)
 
     expect(() => view.dispatch({ before: currentDoc })).not.toThrow()
-    expect(trackEvent).toHaveBeenCalledWith('rich_editor_transform_error_recovered', {
-      reason: 'dom_not_found',
-    })
   })
 
   it('recovers null firstChild DOM races from editor dispatch', () => {
@@ -194,9 +177,6 @@ describe('installRichEditorTransformErrorRecovery', () => {
     installRichEditorTransformErrorRecovery(view)
 
     expect(() => view.dispatch({ before: currentDoc })).not.toThrow()
-    expect(trackEvent).toHaveBeenCalledWith('rich_editor_transform_error_recovered', {
-      reason: 'dom_not_found',
-    })
   })
 
   it('recovers invalid-content schema transactions from mixed paragraph and list editing', () => {
@@ -204,21 +184,18 @@ describe('installRichEditorTransformErrorRecovery', () => {
       new RangeError(
         'Invalid content for node blockContainer: <paragraph("Procedures are long-running"), blockGroup(blockContainer(bulletListItem("Step")))>',
       ),
-      'transform_error',
     )
   })
 
   it('repairs invalid block joins after pull refreshes editor state', () => {
     expectDocumentRepairRecovery(
       transformError('Cannot join blockGroup onto blockContainer'),
-      'invalid_block_join',
     )
   })
 
   it('repairs invalid table-cell joins while editing table contents', () => {
     expectDocumentRepairRecovery(
       transformError('Cannot join tableCell onto blockContainer'),
-      'invalid_block_join',
     )
   })
 
@@ -233,15 +210,11 @@ describe('installRichEditorTransformErrorRecovery', () => {
     expect(view.someProp('handleKeyDown', (handler) => handler())).toBe(true)
     expect(keyDownPlugin).toHaveBeenCalledTimes(1)
     expect(recoverDocument).toHaveBeenCalledTimes(1)
-    expect(trackEvent).toHaveBeenCalledWith('rich_editor_transform_error_recovered', {
-      reason: 'invalid_block_join',
-    })
   })
 
   it('repairs missing-id block transactions before they escape dispatch', () => {
     expectDocumentRepairRecovery(
       new Error("Block doesn't have id"),
-      'block_missing_id',
     )
   })
 
@@ -256,9 +229,6 @@ describe('installRichEditorTransformErrorRecovery', () => {
     expect(view.someProp('handleKeyDown', (handler) => handler())).toBe(true)
     expect(keyDownPlugin).toHaveBeenCalledTimes(1)
     expect(recoverDocument).toHaveBeenCalledTimes(1)
-    expect(trackEvent).toHaveBeenCalledWith('rich_editor_transform_error_recovered', {
-      reason: 'block_missing_id',
-    })
   })
 
   it('repairs null append failures thrown during text input handling', () => {
@@ -272,9 +242,6 @@ describe('installRichEditorTransformErrorRecovery', () => {
     expect(view.someProp('handleTextInput', (handler) => handler())).toBe(true)
     expect(keyDownPlugin).toHaveBeenCalledTimes(1)
     expect(recoverDocument).toHaveBeenCalledTimes(1)
-    expect(trackEvent).toHaveBeenCalledWith('rich_editor_transform_error_recovered', {
-      reason: 'null_fragment_append',
-    })
   })
 
   it('recovers invalid table-cell joins thrown during keydown handling', () => {
@@ -288,9 +255,6 @@ describe('installRichEditorTransformErrorRecovery', () => {
     expect(view.someProp('handleKeyDown', (handler) => handler())).toBe(true)
     expect(keyDownPlugin).toHaveBeenCalledTimes(1)
     expect(recoverDocument).toHaveBeenCalledTimes(1)
-    expect(trackEvent).toHaveBeenCalledWith('rich_editor_transform_error_recovered', {
-      reason: 'invalid_block_join',
-    })
   })
 
   it('keeps unrelated keydown handler failures visible', () => {
@@ -301,62 +265,53 @@ describe('installRichEditorTransformErrorRecovery', () => {
     installRichEditorTransformErrorRecovery(view)
 
     expect(() => view.someProp('handleKeyDown', (handler) => handler())).toThrow('keyboard plugin failed')
-    expect(trackEvent).not.toHaveBeenCalled()
   })
 
   it('recovers table selection transactions whose target row changed underneath BlockNote', () => {
     expectDocumentRepairRecovery(
       new RangeError(nodeIndexMessage('tableRow(tableCell(tableParagraph("A")))')),
-      'table_row_index_out_of_range',
     )
   })
 
   it('recovers table-root index transactions from stale BlockNote table selections', () => {
     expectDocumentRepairRecovery(
       new RangeError(tableRootIndexMessage()),
-      'table_row_index_out_of_range',
     )
   })
 
   it('recovers production table row index transactions reported as plain errors', () => {
     expectDocumentRepairRecovery(
       new Error(nodeIndexMessage('tableRow(tableCell(tableParagraph("A")))')),
-      'table_row_index_out_of_range',
     )
   })
 
   it('recovers production paragraph index transactions from stale slash input', () => {
     expectDocumentRepairRecovery(
       new RangeError(nodeIndexMessage('paragraph("/")')),
-      'paragraph_index_out_of_range',
     )
   })
 
   it('recovers production empty-fragment index transactions from stale selections', () => {
     expectDocumentRepairRecovery(
       new RangeError(nodeIndexMessage('', 0)),
-      'empty_fragment_index_out_of_range',
     )
   })
 
   it('recovers invalid insertion-depth transactions after note switching and saves', () => {
     expectDocumentRepairRecovery(
       new RangeError('Inserted content deeper than insertion position'),
-      'invalid_insertion_depth',
     )
   })
 
   it('repairs null fragment append failures from invalid document model fills', () => {
     expectDocumentRepairRecovery(
       nullFragmentAppendError(),
-      'null_fragment_append',
     )
   })
 
   it('repairs production null append failures reported without a fillBefore stack', () => {
     expectDocumentRepairRecovery(
       new TypeError("Cannot read properties of null (reading 'append')"),
-      'null_fragment_append',
     )
   })
 
@@ -370,9 +325,6 @@ describe('installRichEditorTransformErrorRecovery', () => {
 
     expect(() => view.dispatch({ before: currentDoc })).not.toThrow()
     expect(recoverDocument).not.toHaveBeenCalled()
-    expect(trackEvent).toHaveBeenCalledWith('rich_editor_transform_error_recovered', {
-      reason: 'stale_block_reference',
-    })
   })
 
   it('recovers BlockNote block type mismatch transactions from active editing', () => {
@@ -381,9 +333,6 @@ describe('installRichEditorTransformErrorRecovery', () => {
     installRichEditorTransformErrorRecovery(view)
 
     expect(() => view.dispatch({ before: currentDoc })).not.toThrow()
-    expect(trackEvent).toHaveBeenCalledWith('rich_editor_transform_error_recovered', {
-      reason: 'block_type_mismatch',
-    })
   })
 
   it('recovers DOM index-size selection failures from editor dispatch', () => {
@@ -392,9 +341,6 @@ describe('installRichEditorTransformErrorRecovery', () => {
     installRichEditorTransformErrorRecovery(view)
 
     expect(() => view.dispatch({ before: currentDoc })).not.toThrow()
-    expect(trackEvent).toHaveBeenCalledWith('rich_editor_transform_error_recovered', {
-      reason: 'dom_index_size',
-    })
   })
 
   it('keeps non-ProseMirror dispatch failures visible', () => {
@@ -403,7 +349,6 @@ describe('installRichEditorTransformErrorRecovery', () => {
     installRichEditorTransformErrorRecovery(view)
 
     expect(() => view.dispatch({})).toThrow('plugin failed')
-    expect(trackEvent).not.toHaveBeenCalled()
   })
 
   it('restores the original dispatch after all installs are cleaned up', () => {

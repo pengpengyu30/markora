@@ -5,7 +5,6 @@ import { detectIntentionalMouseMovement, type MouseMovementSnapshot } from '../u
 import type { CommandAction, CommandGroup } from '../hooks/useCommandRegistry'
 import { groupSortKey } from '../hooks/useCommandRegistry'
 import { localizeCommandGroup } from '../hooks/commands/localizeCommands'
-import { rememberFeedbackDialogOpener } from '../lib/feedbackDialogOpener'
 import { createTranslator, type AppLocale } from '../lib/i18n'
 import { formatDroppedPathList } from './inlineWikilinkDropText'
 import { Input } from './ui/input'
@@ -97,11 +96,6 @@ function usePaletteResults(commands: CommandAction[], query: string) {
     groups,
     flatList: groups.flatMap((group) => group.items),
   }
-}
-
-function rememberCommandOpener(command: CommandAction, target: HTMLInputElement | HTMLDivElement | null) {
-  if (command.id !== 'open-contribute') return
-  rememberFeedbackDialogOpener(target instanceof HTMLElement ? target : null)
 }
 
 function inputSelectionRange(input: HTMLInputElement, fallbackIndex: number) {
@@ -310,7 +304,6 @@ function OpenCommandPalette(options: Omit<CommandPaletteProps, 'open'>) {
         event.preventDefault()
         const command = flatList.at(selectedIndex)
         if (!command) return
-        rememberCommandOpener(command, inputRef.current)
         onClose()
         command.execute()
       }
@@ -338,7 +331,6 @@ function OpenCommandPalette(options: Omit<CommandPaletteProps, 'open'>) {
   }
 
   const handleSelectCommand = (command: CommandAction) => {
-    rememberCommandOpener(command, inputRef.current)
     onClose()
     command.execute()
   }

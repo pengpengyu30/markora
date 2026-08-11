@@ -17,7 +17,6 @@ import {
 } from '@blocknote/react'
 import { components } from '@blocknote/mantine'
 import { MantineContext, MantineProvider } from '@mantine/core'
-import { trackEvent } from '../lib/telemetry'
 import { useDocumentThemeMode } from '../hooks/useDocumentThemeMode'
 import { useEditorTheme } from '../hooks/useTheme'
 import { useImageDrop, type ImageImportError } from '../hooks/useImageDrop'
@@ -147,7 +146,6 @@ class BlockNoteRenderRecoveryBoundary extends Component<
 
     const attempt = this.state.retries + 1
     markRecoveredBlockNoteRenderError(error)
-    trackEvent('editor_render_recovered', { reason, attempt })
     this.props.onRecover?.(attempt, reason)
     this.setState(({ recoveryKey, retries }) => ({
       error: null,
@@ -485,7 +483,6 @@ function CodeBlockCopyButton({ copyTarget, locale }: { copyTarget: CodeBlockCopy
 
     void writeClipboardText(codeBlockText(copyTarget.codeBlock))
       .then(() => {
-        trackEvent('code_block_copied')
         setActive(true)
         if (resetTimerRef.current !== null) window.clearTimeout(resetTimerRef.current)
         resetTimerRef.current = window.setTimeout(() => {
@@ -910,12 +907,9 @@ function useInsertWikilink(
   runEditorAction: (action: SuggestionAction) => void,
 ) {
   return useCallback(
-    (target: string, triggerCharacter: WikilinkAutocompleteTrigger) => {
+    (target: string) => {
     runEditorAction(() => {
         editor.insertInlineContent([{ type: 'wikilink' as const, props: { target } }, ' '], { updateSelection: true })
-      trackEvent('wikilink_inserted', {
-        trigger: triggerCharacter === '@' ? 'at' : 'brackets',
-      })
     })
     },
     [editor, runEditorAction],

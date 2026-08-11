@@ -5,17 +5,8 @@ import {
   registerPlainTextPasteTarget,
 } from './plainTextPaste'
 
-const { trackEvent } = vi.hoisted(() => ({
-  trackEvent: vi.fn(),
-}))
-
-vi.mock('../lib/telemetry', () => ({
-  trackEvent,
-}))
-
 describe('plainTextPaste', () => {
   afterEach(() => {
-    vi.clearAllMocks()
     document.body.innerHTML = ''
   })
 
@@ -30,9 +21,6 @@ describe('plainTextPaste', () => {
 
     expect(input.value).toBe('Alpha Plain\nText')
     expect(input.selectionStart).toBe(16)
-    expect(trackEvent).toHaveBeenCalledWith('plain_text_paste_used', {
-      surface: 'focused_input',
-    })
   })
 
   it('keeps command palette focus from swallowing the paste target', () => {
@@ -56,9 +44,6 @@ describe('plainTextPaste', () => {
     expect(insertPlainTextFromClipboardText('Plain')).toBe(true)
     expect(target.insert).toHaveBeenCalledWith('Plain')
     expect(input.value).toBe('')
-    expect(trackEvent).toHaveBeenCalledWith('plain_text_paste_used', {
-      surface: 'raw_editor',
-    })
 
     unregister()
   })
@@ -76,9 +61,6 @@ describe('plainTextPaste', () => {
 
     expect(insertPlainTextFromClipboardText('Plain')).toBe(true)
     expect(target.insert).toHaveBeenCalledWith('Plain')
-    expect(trackEvent).toHaveBeenCalledWith('plain_text_paste_used', {
-      surface: 'rich_editor',
-    })
 
     unregister()
   })
@@ -90,6 +72,5 @@ describe('plainTextPaste', () => {
     input.focus()
 
     expect(insertPlainTextFromClipboardText('Plain')).toBe(false)
-    expect(trackEvent).not.toHaveBeenCalled()
   })
 })

@@ -3,6 +3,7 @@ import fs from 'fs'
 import path from 'path'
 import { createFixtureVaultCopy, openFixtureVault, removeFixtureVaultCopy } from '../helpers/fixtureVault'
 import { executeCommand, openCommandPalette } from './helpers'
+import { dispatchShortcutEvent } from './testBridge'
 
 let tempVaultDir: string
 
@@ -44,6 +45,24 @@ test.afterEach(async () => {
 
 async function openNote(page: Page, title: string): Promise<void> {
   await page.locator('[data-testid="note-list-container"]').getByText(title, { exact: true }).click()
+  await expect(page.locator('.bn-editor')).toBeVisible({ timeout: 5_000 })
+}
+
+async function openNoteWithQuickOpen(page: Page, title: string): Promise<void> {
+  await dispatchShortcutEvent(page, {
+    key: 'o',
+    code: 'KeyO',
+    ctrlKey: false,
+    metaKey: true,
+    shiftKey: false,
+    altKey: false,
+    bubbles: true,
+    cancelable: true,
+  })
+  await expect(page.getByTestId('quick-open-palette')).toBeVisible({ timeout: 5_000 })
+  await page.locator('input[placeholder="Search notes..."]').fill(title)
+  await page.keyboard.press('Enter')
+  await expect(page.getByTestId('quick-open-palette')).not.toBeVisible({ timeout: 5_000 })
   await expect(page.locator('.bn-editor')).toBeVisible({ timeout: 5_000 })
 }
 
@@ -165,6 +184,32 @@ test('tldraw whiteboard fences render as embedded canvases and remain Markdown-d
   expect(rawAfterRichMode).toContain('```tldraw id="planning-map" height="520"')
   expect(rawAfterRichMode).toContain('{}')
   expect(rawAfterRichMode).not.toContain('@@TOLARIA_TLDRAW')
+})
+
+test('@smoke preserves a drawing when switching documents before the debounce window expires', async ({ page }) => {
+  await openNote(page, 'Whiteboard Embed')
+
+  const whiteboard = page.locator('.tldraw-whiteboard')
+  await expect(whiteboard).toBeVisible({ timeout: 20_000 })
+  const boardBox = await whiteboard.boundingBox()
+  expect(boardBox).not.toBeNull()
+
+  await page.getByTestId('tools.draw').click()
+  const start = { x: boardBox!.x + 180, y: boardBox!.y + 180 }
+  const end = { x: start.x + 120, y: start.y + 90 }
+  await page.mouse.move(start.x, start.y)
+  await page.mouse.down()
+  await page.mouse.move(end.x, end.y, { steps: 8 })
+  await page.mouse.up()
+  await expect(whiteboard.locator('.tl-shape')).toBeVisible({ timeout: 5_000 })
+
+  await page.locator('[data-testid="note-list-container"]').getByText('Note B', { exact: true }).click()
+  await expect(page.locator('.bn-editor')).toContainText('This is Note B,')
+  await openNoteWithQuickOpen(page, 'Whiteboard Embed')
+
+  await expect(page.locator('.tldraw-whiteboard .tl-shape')).toBeVisible({ timeout: 20_000 })
+  await toggleRawMode(page, '.cm-content')
+  expect(await getRawEditorContent(page)).toContain('"type": "draw"')
 })
 
 test('embedded tldraw whiteboards follow Tolaria theme changes', async ({ page }) => {

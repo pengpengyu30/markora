@@ -1,6 +1,5 @@
 import { APP_COMMAND_IDS, getAppCommandShortcutDisplay } from '../appCommandCatalog'
 import type { CommandAction } from './types'
-import { rememberFeedbackDialogOpener } from '../../lib/feedbackDialogOpener'
 import { requestGitignoredVisibilityToggle } from '../../lib/gitignoredVisibilityEvents'
 import {
   APP_LOCALES,
@@ -17,7 +16,6 @@ interface SettingsCommandsConfig {
   vaultCount?: number
   isGettingStartedHidden?: boolean
   onOpenSettings: () => void
-  onOpenFeedback?: () => void
   onOpenVault?: () => void
   onCreateEmptyVault?: () => void
   onRemoveActiveVault?: () => void
@@ -41,9 +39,8 @@ function commandKeywords(raw: string): string[] {
 function buildPrimarySettingsCommands({
   locale = 'en',
   onOpenSettings,
-  onOpenFeedback,
   onCheckForUpdates,
-}: Pick<SettingsCommandsConfig, 'locale' | 'onOpenSettings' | 'onOpenFeedback' | 'onCheckForUpdates'>): CommandAction[] {
+}: Pick<SettingsCommandsConfig, 'locale' | 'onOpenSettings' | 'onCheckForUpdates'>): CommandAction[] {
   const t = createTranslator(locale)
   return [
     {
@@ -62,17 +59,6 @@ function buildPrimarySettingsCommands({
       keywords: ['h1', 'title', 'filename', 'rename', 'auto', 'untitled', 'sync', 'preference'],
       enabled: true,
       execute: onOpenSettings,
-    },
-    {
-      id: 'open-contribute',
-      label: t('command.contribute'),
-      group: 'Settings',
-      keywords: ['contribute', 'feedback', 'feature', 'canny', 'discussion', 'github', 'bug', 'report'],
-      enabled: !!onOpenFeedback,
-      execute: () => {
-        rememberFeedbackDialogOpener(document.activeElement instanceof HTMLElement ? document.activeElement : null)
-        onOpenFeedback?.()
-      },
     },
     { id: 'check-updates', label: t('command.checkUpdates'), group: 'Settings', keywords: ['update', 'version', 'upgrade', 'release'], enabled: true, execute: () => onCheckForUpdates?.() },
   ]
@@ -197,13 +183,13 @@ function buildMaintenanceCommands({
 export function buildSettingsCommands(config: SettingsCommandsConfig): CommandAction[] {
   const {
     vaultCount, isGettingStartedHidden,
-    onOpenSettings, onOpenFeedback, onOpenVault, onCreateEmptyVault, onRemoveActiveVault, onRestoreGettingStarted,
+    onOpenSettings, onOpenVault, onCreateEmptyVault, onRemoveActiveVault, onRestoreGettingStarted,
     onCheckForUpdates, onReloadVault, onRepairVault, onRestoreDeletedNote, onToggleGitignoredFilesVisibility,
     locale = 'en', systemLocale = locale, selectedUiLanguage = SYSTEM_UI_LANGUAGE, onSetUiLanguage, onSetThemeMode,
   } = config
 
   return [
-    ...buildPrimarySettingsCommands({ locale, onOpenSettings, onOpenFeedback, onCheckForUpdates }),
+    ...buildPrimarySettingsCommands({ locale, onOpenSettings, onCheckForUpdates }),
     ...buildThemeCommands({ locale, onSetThemeMode }),
     ...buildLanguageCommands({
       locale,

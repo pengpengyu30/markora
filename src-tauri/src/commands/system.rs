@@ -318,11 +318,6 @@ pub async fn download_and_install_app_update(
 }
 
 #[tauri::command]
-pub fn reinit_telemetry() {
-    crate::telemetry::reinit_sentry();
-}
-
-#[tauri::command]
 pub fn load_vault_list() -> Result<VaultList, String> {
     vault_list::load_vault_list()
 }

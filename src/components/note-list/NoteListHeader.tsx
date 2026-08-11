@@ -5,7 +5,6 @@ import { translate, type AppLocale } from '../../lib/i18n'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { APP_COMMAND_EVENT_NAME, APP_COMMAND_IDS } from '../../hooks/appCommandDispatcher'
-import { trackEvent } from '../../lib/telemetry'
 import { useDragRegion } from '../../hooks/useDragRegion'
 import { SortDropdown } from '../SortDropdown'
 import { isMac, MACOS_TRAFFIC_LIGHT_SAFE_PADDING } from '../../utils/platform'
@@ -31,7 +30,6 @@ interface NoteListHeaderProps {
 }
 
 function dispatchExpandSidebarFromHeader() {
-  trackEvent('sidebar_expanded_from_note_list_header')
   window.dispatchEvent(new CustomEvent(APP_COMMAND_EVENT_NAME, {
     detail: APP_COMMAND_IDS.viewAll,
   }))

@@ -32,7 +32,6 @@ interface CommandRegistryConfig {
   onTurnCurrentBlockInto?: (target: RichEditorBlockTypeDefinition) => void
   onRevealActiveFile?: (path: string) => void
   onCopyActiveFilePath?: (path: string) => void
-  onCopyActiveDeepLink?: (path: string) => void
   onOpenActiveFileExternal?: (path: string) => void
   onExportNoteAsPdf?: () => void
   onQuickOpen: () => void
@@ -46,7 +45,6 @@ interface CommandRegistryConfig {
   redoLabel?: string | null
   onPastePlainText: () => void
   onOpenSettings: () => void
-  onOpenFeedback?: () => void
   onOpenVault?: () => void
   onCreateEmptyVault?: () => void
   onDeleteNote: (path: string) => void
@@ -94,7 +92,7 @@ export function useCommandRegistry(config: CommandRegistryConfig): import('./com
   const {
     activeTabPath, entries,
     onQuickOpen, onCreateNote, onSave, onUndo, onRedo, canUndo, canRedo, undoLabel, redoLabel,
-    onPastePlainText, onOpenSettings, onOpenFeedback,
+    onPastePlainText, onOpenSettings,
     onDeleteNote,
     onSetViewMode, onToggleBacklinks, onToggleRawEditor, onFindInNote, onReplaceInNote,
     noteWidth, defaultNoteWidth, onSetNoteWidth, onSetDefaultNoteWidth, onToggleTableOfContents, onOpenVault, onCreateEmptyVault,
@@ -106,7 +104,7 @@ export function useCommandRegistry(config: CommandRegistryConfig): import('./com
     onReloadVault, onRepairVault, onRestoreDeletedNote,
     locale, systemLocale, selectedUiLanguage, onSetUiLanguage, onSetThemeMode,
     onMoveNoteToFolder, canMoveNoteToFolder, onTurnCurrentBlockInto,
-    onRevealActiveFile, onCopyActiveFilePath, onCopyActiveDeepLink, onOpenActiveFileExternal, onExportNoteAsPdf,
+    onRevealActiveFile, onCopyActiveFilePath, onOpenActiveFileExternal, onExportNoteAsPdf,
     
     selection,
   } = config
@@ -145,14 +143,14 @@ export function useCommandRegistry(config: CommandRegistryConfig): import('./com
     onMoveNoteToFolder, canMoveNoteToFolder,
     onTurnCurrentBlockInto,
     onRevealActiveFile, onCopyActiveFilePath, onOpenActiveFileExternal,
-    onCopyActiveDeepLink, onExportNoteAsPdf,
+    onExportNoteAsPdf,
   }), [
     hasActiveNote, activeTabPath, activeEntry?.fileKind, locale,
     folderCreateOptions, onCreateNote, onSave, onUndo, onRedo, canUndo, canRedo, undoLabel, redoLabel,
     onFindInNote, onReplaceInNote, onPastePlainText, onDeleteNote,
     onMoveNoteToFolder, canMoveNoteToFolder, onTurnCurrentBlockInto,
     onRevealActiveFile, onCopyActiveFilePath, onOpenActiveFileExternal,
-    onCopyActiveDeepLink, onExportNoteAsPdf,
+    onExportNoteAsPdf,
   ])
 
   const viewCommands = useMemo(() => buildViewCommands({
@@ -166,11 +164,11 @@ export function useCommandRegistry(config: CommandRegistryConfig): import('./com
 
   const settingsCommands = useMemo(() => buildSettingsCommands({
     vaultCount, isGettingStartedHidden,
-    onOpenSettings, onOpenFeedback, onOpenVault, onCreateEmptyVault, onRemoveActiveVault, onRestoreGettingStarted,
+    onOpenSettings, onOpenVault, onCreateEmptyVault, onRemoveActiveVault, onRestoreGettingStarted,
     onCheckForUpdates, onReloadVault, onRepairVault, onRestoreDeletedNote,
     locale, systemLocale, selectedUiLanguage, onSetUiLanguage, onSetThemeMode,
   }), [
-    vaultCount, isGettingStartedHidden, onOpenSettings, onOpenFeedback,
+    vaultCount, isGettingStartedHidden, onOpenSettings,
     onOpenVault, onCreateEmptyVault, onRemoveActiveVault, onRestoreGettingStarted,
     onCheckForUpdates, onReloadVault, onRepairVault, onRestoreDeletedNote,
     locale, systemLocale, selectedUiLanguage, onSetUiLanguage, onSetThemeMode,

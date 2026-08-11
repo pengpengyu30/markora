@@ -2,6 +2,8 @@ import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import type { ComponentProps } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Editor } from 'tldraw'
+import { AppPreferencesProvider } from '../hooks/useAppPreferences'
+import { dispatchRichEditorExternalFlush } from './editorExternalChangeEvents'
 import { TldrawWhiteboard } from './TldrawWhiteboard'
 import { TooltipProvider } from './ui/tooltip'
 
@@ -13,7 +15,7 @@ interface MockTldrawProps {
 
 interface MockTldrawUser {
   userPreferences: {
-    get: () => { colorScheme?: string }
+    get: () => { colorScheme?: string; locale?: string }
   }
 }
 
@@ -26,6 +28,7 @@ interface MockAssetUrls {
 
 interface MockCreateTLStoreOptions {
   onMount?: (editor: Editor) => void | (() => void)
+  snapshot?: unknown
 }
 
 interface MockTldrawStore {
@@ -39,9 +42,9 @@ const tldrawMock = vi.hoisted(() => ({
 }))
 
 const tldrawStoreMock = vi.hoisted(() => ({
-  createTLStore: vi.fn(() => {
+  createTLStore: vi.fn((options?: MockCreateTLStoreOptions) => {
     const store: MockTldrawStore = {
-      document: { records: {} },
+      document: options?.snapshot ?? { records: {} },
       getStoreSnapshot: vi.fn(() => store.document),
       listen: vi.fn(() => vi.fn()),
     }
@@ -98,11 +101,11 @@ vi.mock('tldraw', async () => {
     createTLStore: tldrawStoreMock.createTLStore,
     defaultUserPreferences: {
       colorScheme: 'light',
-      locale: 'en',
+      locale: 'zh-cn',
     },
     getSnapshot: tldrawStoreMock.getSnapshot,
     loadSnapshot: tldrawStoreMock.loadSnapshot,
-    useTldrawUser: vi.fn(({ userPreferences }: { userPreferences: { colorScheme: string } }) => ({
+    useTldrawUser: vi.fn(({ userPreferences }: { userPreferences: { colorScheme: string; locale: string } }) => ({
       setUserPreferences: vi.fn(),
       userPreferences: {
         get: () => userPreferences,
@@ -211,9 +214,14 @@ function whiteboardProps(
   }
 }
 
-function renderWhiteboard(overrides: Partial<ComponentProps<typeof TldrawWhiteboard>> = {}) {
+function renderWhiteboard(
+  overrides: Partial<ComponentProps<typeof TldrawWhiteboard>> = {},
+  appLocale: ComponentProps<typeof AppPreferencesProvider>['appLocale'] = 'en',
+) {
   return render(
-    <TldrawWhiteboard {...whiteboardProps(overrides)} />,
+    <AppPreferencesProvider appLocale={appLocale}>
+      <TldrawWhiteboard {...whiteboardProps(overrides)} />
+    </AppPreferencesProvider>,
     { wrapper: TooltipProvider },
   )
 }
@@ -222,6 +230,7 @@ describe('TldrawWhiteboard', () => {
   afterEach(() => {
     cleanup()
     document.documentElement.removeAttribute('data-theme')
+    document.documentElement.removeAttribute('lang')
     document.documentElement.classList.remove('dark')
     vi.clearAllMocks()
   })
@@ -241,6 +250,20 @@ describe('TldrawWhiteboard', () => {
     renderWhiteboard()
 
     expect(renderedTldrawProps().user?.userPreferences.get().colorScheme).toBe('dark')
+  })
+
+  it('uses Tolaria language for tldraw instead of the system language', () => {
+    document.documentElement.lang = 'zh-CN'
+
+    renderWhiteboard({}, 'en')
+
+    expect(renderedTldrawProps().user?.userPreferences.get().locale).toBe('en')
+  })
+
+  it('maps supported Tolaria languages to tldraw language codes', () => {
+    renderWhiteboard({}, 'zh-CN')
+
+    expect(renderedTldrawProps().user?.userPreferences.get().locale).toBe('zh-cn')
   })
 
   it('updates the tldraw color scheme when Tolaria theme changes', async () => {
@@ -356,10 +379,10 @@ describe('TldrawWhiteboard', () => {
 
   it('prevents whiteboard permission rejections before earlier global listeners observe them', () => {
     const observedDefaultPrevented: boolean[] = []
-    const sentryLikeListener = (event: PromiseRejectionEvent) => {
+    const earlierGlobalListener = (event: PromiseRejectionEvent) => {
       observedDefaultPrevented.push(event.defaultPrevented)
     }
-    window.addEventListener('unhandledrejection', sentryLikeListener)
+    window.addEventListener('unhandledrejection', earlierGlobalListener)
     let guardCleanup: (() => void) | undefined
 
     try {
@@ -376,21 +399,29 @@ describe('TldrawWhiteboard', () => {
       expect(observedDefaultPrevented).toEqual([true])
     } finally {
       guardCleanup?.()
-      window.removeEventListener('unhandledrejection', sentryLikeListener)
+      window.removeEventListener('unhandledrejection', earlierGlobalListener)
     }
   })
 
   it('resets the drawing store when switching to a blank board snapshot', () => {
-    const boardASnapshot = { records: { shape: 'from-board-a' } }
+    const boardASnapshot = {
+      schema: { schemaVersion: 2, sequences: {} },
+      store: { 'shape:shape': { id: 'shape:shape', typeName: 'shape' } },
+    }
     const { rerender } = renderWhiteboard({ snapshot: JSON.stringify(boardASnapshot) })
 
-    expect(tldrawStoreMock.loadSnapshot).toHaveBeenLastCalledWith(expect.any(Object), boardASnapshot)
+    expect(tldrawStoreMock.createTLStore).toHaveBeenLastCalledWith({
+      onMount: expect.any(Function),
+      snapshot: boardASnapshot,
+    })
 
     rerender(
       <TldrawWhiteboard {...whiteboardProps({ boardId: 'board-2' })} />
     )
 
-    expect(tldrawStoreMock.loadSnapshot).toHaveBeenLastCalledWith(expect.any(Object), { records: {} })
+    expect(tldrawStoreMock.createTLStore).toHaveBeenLastCalledWith({
+      onMount: expect.any(Function),
+    })
   })
 
   it('does not read tldraw session snapshots while restoring a blank board', () => {
@@ -400,7 +431,9 @@ describe('TldrawWhiteboard', () => {
 
     expect(() => renderWhiteboard()).not.toThrow()
 
-    expect(tldrawStoreMock.loadSnapshot).toHaveBeenLastCalledWith(expect.any(Object), { records: {} })
+    expect(tldrawStoreMock.createTLStore).toHaveBeenLastCalledWith({
+      onMount: expect.any(Function),
+    })
     expect(tldrawStoreMock.getSnapshot).not.toHaveBeenCalled()
   })
 
@@ -425,5 +458,59 @@ describe('TldrawWhiteboard', () => {
     expect(onSnapshotChange).toHaveBeenCalledWith('{\n  "records": {\n    "shape": "changed"\n  }\n}\n')
     expect(tldrawStoreMock.getSnapshot).not.toHaveBeenCalled()
     vi.useRealTimers()
+  })
+
+  it('flushes the latest drawing before switching to another document', () => {
+    vi.useFakeTimers()
+    const onSnapshotChange = vi.fn()
+
+    try {
+      const { rerender } = renderWhiteboard({ onSnapshotChange })
+      const store = renderedPrimaryStore()
+      store.document = { records: { shape: 'changed-before-switch' } }
+      const scheduleSnapshotFlush = store.listen.mock.calls[0]?.[0] as (() => void) | undefined
+
+      scheduleSnapshotFlush?.()
+      rerender(
+        <AppPreferencesProvider appLocale="en">
+          <TldrawWhiteboard {...whiteboardProps({ boardId: 'board-2', onSnapshotChange })} />
+        </AppPreferencesProvider>,
+      )
+
+      expect(onSnapshotChange).toHaveBeenCalledWith(`{
+  "records": {
+    "shape": "changed-before-switch"
+  }
+}
+`)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('flushes pending drawings when an external action requests editor content first', () => {
+    vi.useFakeTimers()
+    const onSnapshotChange = vi.fn()
+
+    try {
+      renderWhiteboard({ onSnapshotChange })
+      const store = renderedPrimaryStore()
+      store.document = { records: { shape: 'changed-before-save' } }
+      const scheduleSnapshotFlush = store.listen.mock.calls[0]?.[0] as (() => void) | undefined
+
+      scheduleSnapshotFlush?.()
+      act(() => {
+        dispatchRichEditorExternalFlush()
+      })
+
+      expect(onSnapshotChange).toHaveBeenCalledWith(`{
+  "records": {
+    "shape": "changed-before-save"
+  }
+}
+`)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

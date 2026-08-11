@@ -1,4 +1,3 @@
-import { trackEvent } from '../lib/telemetry'
 import {
   createRichEditorInputTransformExtension,
   type RichEditorInputTransform,
@@ -133,7 +132,6 @@ export function createTrackedWikilinkInputTransform(): RichEditorInputTransform 
   return {
     handleBeforeInput(event, context) {
       const result = transform.handleBeforeInput(event, context)
-      if (result) trackEvent('wikilink_inserted', { trigger: 'typed' })
       return result
     },
     reset: transform.reset,

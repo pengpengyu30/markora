@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
 import type { AppLocale } from '../../lib/i18n'
-import { trackEvent } from '../../lib/telemetry'
 import type { VaultEntry } from '../../types'
 import { isMarkdownEntry } from '../../utils/typeDefinitions'
 import { NoteListContextMenuNode, NoteListRenameDialog } from './NoteListContextMenuView'
@@ -101,7 +100,6 @@ export function useNoteListContextMenu(options: NoteListContextMenuParams) {
         return
       event.preventDefault()
       event.stopPropagation()
-      trackEvent('note_item_context_menu_opened')
       setCtxMenu({ x: event.clientX, y: event.clientY, entry })
     },
     [

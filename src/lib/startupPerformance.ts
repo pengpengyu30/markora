@@ -1,9 +1,5 @@
 import { invoke } from '@tauri-apps/api/core'
 import { isTauri } from '../mock-tauri'
-import {
-  trackStartupActiveVaultUsable,
-  trackStartupBackgroundReconciled,
-} from './productAnalytics'
 
 export const STARTUP_TARGETS_MS = {
   activeVaultUsable: 800,
@@ -11,7 +7,6 @@ export const STARTUP_TARGETS_MS = {
 } as const
 export const STARTUP_MARK_PREFIX = 'tolaria:'
 
-type StartupSource = 'scan' | 'snapshot'
 export type StartupPhase =
   | 'active_snapshot'
   | 'active_usable'
@@ -36,8 +31,6 @@ export type StartupPhase =
 const frontendStartedAt = performance.now()
 const phases = new Map<StartupPhase, number>()
 const phaseWaiters = new Map<StartupPhase, Array<() => void>>()
-let usableEventSent = false
-let reconciliationEventSent = false
 
 function elapsedSinceFrontendStart(): number {
   return Math.round(performance.now() - frontendStartedAt)
@@ -74,39 +67,15 @@ export function waitForStartupPhase(phase: StartupPhase): Promise<void> {
   })
 }
 
-async function nativeStartupElapsedMs(): Promise<number | null> {
-  if (!isTauri()) return null
-  try {
-    return await invoke<number>('get_startup_elapsed_ms')
-  } catch {
-    return null
-  }
-}
-
 export function recordActiveVaultSnapshot(entryCount: number): void {
   markStartupPhase('active_snapshot', entryCount)
   markStartupPhase('vault_snapshot_received', entryCount)
 }
 
-export function recordActiveVaultUsable(source: StartupSource, entryCount: number): void {
-  const activeVaultUsableMs = markStartupPhase('active_usable')
-  if (usableEventSent) return
-  usableEventSent = true
-  void nativeStartupElapsedMs().then((nativeElapsedMs) => {
-    trackStartupActiveVaultUsable({
-      activeVaultEntryCount: entryCount,
-      activeVaultUsableMs,
-      nativeElapsedMs,
-      reactShellMs: phases.get('react_shell') ?? null,
-      source,
-      targetMs: STARTUP_TARGETS_MS.activeVaultUsable,
-    })
-  })
+export function recordActiveVaultUsable(entryCount: number): void {
+  markStartupPhase('active_usable', entryCount)
 }
 
 export function recordBackgroundReconciled(entryCount: number): void {
-  const elapsedMs = markStartupPhase('background_reconciled')
-  if (reconciliationEventSent) return
-  reconciliationEventSent = true
-  trackStartupBackgroundReconciled({ elapsedMs, entryCount })
+  markStartupPhase('background_reconciled', entryCount)
 }

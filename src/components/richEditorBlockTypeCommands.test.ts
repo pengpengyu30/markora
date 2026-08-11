@@ -5,11 +5,6 @@ import {
   turnCurrentBlockIntoType,
 } from './richEditorBlockTypeCommands'
 import type { RichEditorBlockTypeDefinition } from '../utils/richEditorBlockTypes'
-import { trackEvent } from '../lib/telemetry'
-
-vi.mock('../lib/telemetry', () => ({
-  trackEvent: vi.fn(),
-}))
 
 const headingTwo = {
   key: 'heading-2',
@@ -56,11 +51,6 @@ describe('richEditorBlockTypeCommands', () => {
     expect(editor.updateBlock).not.toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
       content: expect.anything(),
     }))
-    expect(trackEvent).toHaveBeenCalledWith('editor_block_type_changed', {
-      block_type: 'heading',
-      level: 2,
-      source: 'command_palette',
-    })
   })
 
   it('re-resolves side-menu blocks before applying the type change', () => {
@@ -73,11 +63,6 @@ describe('richEditorBlockTypeCommands', () => {
     expect(editor.updateBlock).toHaveBeenCalledWith(block.id, {
       type: 'heading',
       props: { level: 2 },
-    })
-    expect(trackEvent).toHaveBeenCalledWith('editor_block_type_changed', {
-      block_type: 'heading',
-      level: 2,
-      source: 'block_menu',
     })
   })
 
@@ -104,10 +89,6 @@ describe('richEditorBlockTypeCommands', () => {
     expect(editor.updateBlock).not.toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
       content: expect.anything(),
     }))
-    expect(trackEvent).toHaveBeenCalledWith('editor_block_type_changed', {
-      block_type: 'checkListItem',
-      source: 'keyboard_shortcut',
-    })
   })
 
   it('toggles the focused checklist block back into a paragraph from the keyboard shortcut', () => {
@@ -121,9 +102,5 @@ describe('richEditorBlockTypeCommands', () => {
     expect(editor.updateBlock).toHaveBeenCalledWith(block.id, expect.objectContaining({
       type: 'paragraph',
     }))
-    expect(trackEvent).toHaveBeenCalledWith('editor_block_type_changed', {
-      block_type: 'paragraph',
-      source: 'keyboard_shortcut',
-    })
   })
 })

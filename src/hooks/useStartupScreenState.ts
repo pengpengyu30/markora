@@ -15,8 +15,6 @@ interface UseStartupScreenStateArgs {
   onboardingState: StartupOnboardingState
   runtimeMissingVaultPath: string | null
   selectedVaultPath: string | null
-  settingsLoaded: boolean
-  telemetryConsent: boolean | null
   vaultIsLoading: boolean
   vaultSwitcher: StartupVaultSwitcherState
 }
@@ -29,12 +27,9 @@ interface StartupScreenState {
 }
 
 interface ShouldShowStartupScreenArgs {
-  isStartupLoading: boolean
   onboardingState: StartupOnboardingState
   runtimeMissingVaultPath: string | null
-  settingsLoaded: boolean
   shouldResumeFreshStartOnboarding: boolean
-  telemetryConsent: boolean | null
 }
 
 function shouldResumeFreshStart(
@@ -57,25 +52,13 @@ function shouldResumeFreshStart(
   )
 }
 
-function needsTelemetryConsent(
-  isStartupLoading: boolean,
-  settingsLoaded: boolean,
-  telemetryConsent: boolean | null,
-): boolean {
-  return !isStartupLoading && settingsLoaded && telemetryConsent === null
-}
-
 function shouldShowStartupScreenForState(options: ShouldShowStartupScreenArgs): boolean {
   const {
-    isStartupLoading,
     onboardingState,
     runtimeMissingVaultPath,
-    settingsLoaded,
     shouldResumeFreshStartOnboarding,
-    telemetryConsent,
   } = options
   const startupReasons = [
-    needsTelemetryConsent(isStartupLoading, settingsLoaded, telemetryConsent),
     Boolean(runtimeMissingVaultPath),
     onboardingState.status === 'welcome',
     onboardingState.status === 'vault-missing',
@@ -98,8 +81,6 @@ export function useStartupScreenState(options: UseStartupScreenStateArgs): Start
     onboardingState,
     runtimeMissingVaultPath,
     selectedVaultPath,
-    settingsLoaded,
-    telemetryConsent,
     vaultIsLoading,
     vaultSwitcher,
   } = options
@@ -110,12 +91,9 @@ export function useStartupScreenState(options: UseStartupScreenStateArgs): Start
 
   const isStartupLoading = onboardingState.status === 'loading'
   const shouldShowStartupScreen = shouldShowStartupScreenForState({
-    isStartupLoading,
     onboardingState,
     runtimeMissingVaultPath,
-    settingsLoaded,
     shouldResumeFreshStartOnboarding,
-    telemetryConsent,
   })
   const vaultContentLoading = isVaultContentLoading(isStartupLoading, onboardingState, vaultIsLoading)
 

@@ -1,4 +1,3 @@
-import { trackNotePdfExportFailed, trackNotePdfExportStarted } from '../lib/productAnalytics'
 import { isTauri } from '../mock-tauri'
 
 export const NOTE_PDF_EXPORT_CLASS = 'tolaria-note-pdf-exporting'
@@ -170,7 +169,6 @@ export async function printActiveNoteAsPdf(options: NotePdfExportOptions): Promi
     nativeSavePdf,
     print,
     saveDialog,
-    source,
     windowObject = window,
   } = options
   const exportDocument = await resolvePdfExport(windowObject, {
@@ -183,11 +181,9 @@ export async function printActiveNoteAsPdf(options: NotePdfExportOptions): Promi
   })
   if (exportDocument === 'cancelled') return
   if (!exportDocument) {
-    trackNotePdfExportFailed(source, 'export_unavailable')
     throw new NotePdfExportUnavailableError()
   }
 
-  trackNotePdfExportStarted(source)
   documentObject.body.classList.add(NOTE_PDF_EXPORT_CLASS)
   const cleanup = schedulePrintModeCleanup(documentObject, windowObject, cleanupDelayMs)
 
@@ -197,7 +193,6 @@ export async function printActiveNoteAsPdf(options: NotePdfExportOptions): Promi
     if (exportDocument.cleanupAfterRun) cleanup()
   } catch (error) {
     cleanup()
-    trackNotePdfExportFailed(source, 'export_error')
     throw error
   }
 }

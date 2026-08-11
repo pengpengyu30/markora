@@ -1,6 +1,5 @@
 import { useCallback, useMemo } from 'react'
 import type { FolderNode, VaultEntry } from '../types'
-import { trackNoteRetargeted } from '../lib/productAnalytics'
 import {
   flattenRetargetFolders,
   folderPathForRetargetEntry,
@@ -67,10 +66,6 @@ async function moveEntryToFolder({
   const result = await moveNoteToFolder(notePath, normalizedFolderPath, vaultPath, () => undefined)
   if (!result) return 'error'
   if (result.new_path === notePath) return 'noop'
-  trackNoteRetargeted({
-    targetKind: 'folder',
-    folderDestination: normalizedFolderPath ? 'folder' : 'root',
-  })
   return 'updated'
 }
 

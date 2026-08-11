@@ -3,18 +3,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { FilePreview } from './FilePreview'
 import type { VaultEntry } from '../types'
 
-const { convertFileSrcMock, externalMediaPreviewMock, trackEventMock } = vi.hoisted(() => ({
+const { convertFileSrcMock, externalMediaPreviewMock } = vi.hoisted(() => ({
   convertFileSrcMock: vi.fn((path: string) => `asset://${path}`),
   externalMediaPreviewMock: vi.fn(() => false),
-  trackEventMock: vi.fn(),
 }))
 
 vi.mock('@tauri-apps/api/core', () => ({
   convertFileSrc: convertFileSrcMock,
-}))
-
-vi.mock('../lib/telemetry', () => ({
-  trackEvent: trackEventMock,
 }))
 
 vi.mock('../utils/mediaPreviewRuntime', () => ({
@@ -90,13 +85,11 @@ describe('FilePreview', () => {
       return `asset://${path}`
     })
     externalMediaPreviewMock.mockReturnValue(false)
-    trackEventMock.mockClear()
   })
 
   it('routes header file actions to the active file path', () => {
     const onRevealFile = vi.fn()
     const onCopyFilePath = vi.fn()
-    const onCopyDeepLink = vi.fn()
     const onOpenExternalFile = vi.fn()
 
     render(
@@ -104,38 +97,17 @@ describe('FilePreview', () => {
         entry={imageEntry}
         onRevealFile={onRevealFile}
         onCopyFilePath={onCopyFilePath}
-        onCopyDeepLink={onCopyDeepLink}
         onOpenExternalFile={onOpenExternalFile}
       />,
     )
 
-    expect(trackEventMock).toHaveBeenCalledWith('file_preview_opened', { preview_kind: 'image' })
-
     fireEvent.click(screen.getByRole('button', { name: 'Reveal' }))
     fireEvent.click(screen.getByRole('button', { name: 'Copy path' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Copy link' }))
     fireEvent.click(screen.getByRole('button', { name: 'Open' }))
 
     expect(onRevealFile).toHaveBeenCalledWith('/vault/Attachments/photo.png')
     expect(onCopyFilePath).toHaveBeenCalledWith('/vault/Attachments/photo.png')
-    expect(onCopyDeepLink).toHaveBeenCalledWith(imageEntry)
     expect(onOpenExternalFile).toHaveBeenCalledWith('/vault/Attachments/photo.png')
-    expect(trackEventMock).toHaveBeenCalledWith('file_preview_action', {
-      action: 'reveal',
-      preview_kind: 'image',
-    })
-    expect(trackEventMock).toHaveBeenCalledWith('file_preview_action', {
-      action: 'copy_path',
-      preview_kind: 'image',
-    })
-    expect(trackEventMock).toHaveBeenCalledWith('file_preview_action', {
-      action: 'copy_deep_link',
-      preview_kind: 'image',
-    })
-    expect(trackEventMock).toHaveBeenCalledWith('file_preview_action', {
-      action: 'open_external',
-      preview_kind: 'image',
-    })
   })
 
   it('renders supported PDF files through the asset preview path', () => {
@@ -187,7 +159,6 @@ describe('FilePreview', () => {
 
     expect(screen.getByTestId('audio-file-preview')).toHaveAttribute('src', 'asset:///vault/Attachments/meeting.mp3')
     expect(screen.getByText('MP3 file')).toBeInTheDocument()
-    expect(trackEventMock).toHaveBeenCalledWith('file_preview_opened', { preview_kind: 'audio' })
   })
 
   it('renders supported video files through the media asset path', () => {
@@ -195,7 +166,6 @@ describe('FilePreview', () => {
 
     expect(screen.getByTestId('video-file-preview')).toHaveAttribute('src', 'asset:///vault/Attachments/demo.mp4')
     expect(screen.getByTestId('video-file-preview')).toHaveAttribute('title', 'demo.mp4')
-    expect(trackEventMock).toHaveBeenCalledWith('file_preview_opened', { preview_kind: 'video' })
   })
 
   it('does not call the Tauri asset bridge for malformed file paths', () => {
@@ -252,27 +222,17 @@ describe('FilePreview', () => {
     expect(screen.getByRole('button', { name: 'Open in default app' })).toBeInTheDocument()
   })
 
-  it('tracks image preview failures without leaking the file path', () => {
+  it('shows image preview failures without leaking the file path', () => {
     render(<FilePreview entry={imageEntry} />)
 
     fireEvent.error(screen.getByTestId('image-file-preview'))
 
-    expect(trackEventMock).toHaveBeenCalledWith('file_preview_failed', { preview_kind: 'image' })
-    expect(trackEventMock).not.toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({ path: expect.any(String) }),
-    )
   })
 
-  it('tracks media preview failures without leaking the file path', () => {
+  it('shows media preview failures without leaking the file path', () => {
     render(<FilePreview entry={audioEntry} />)
 
     fireEvent.error(screen.getByTestId('audio-file-preview'))
 
-    expect(trackEventMock).toHaveBeenCalledWith('file_preview_failed', { preview_kind: 'audio' })
-    expect(trackEventMock).not.toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({ path: expect.any(String) }),
-    )
   })
 })

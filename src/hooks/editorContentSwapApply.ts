@@ -1,6 +1,5 @@
 import type { MutableRefObject } from 'react'
 import type { useCreateBlockNote } from '@blocknote/react'
-import { trackEvent } from '../lib/telemetry'
 import { classifyRichEditorRecoveryError } from '../components/richEditorRecoveryClassifier'
 import { blankParagraphBlocks } from './editorTabContent'
 import { EDITOR_CONTAINER_SELECTOR } from './editorDomSelection'
@@ -61,7 +60,6 @@ function reportEditorContentSwapFailure(error: unknown): void {
   }
 
   console.warn('[editor] Recovered rich-editor content swap:', error)
-  trackEvent('rich_editor_transform_error_recovered', { reason })
 }
 
 function now(): number {

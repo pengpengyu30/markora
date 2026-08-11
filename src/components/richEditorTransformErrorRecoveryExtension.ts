@@ -1,5 +1,4 @@
 import { createExtension } from '@blocknote/core'
-import { trackEvent } from '../lib/telemetry'
 import { repairMalformedEditorBlocks } from '../hooks/editorBlockRepair'
 import {
   classifyRichEditorRecoveryError,
@@ -112,8 +111,8 @@ function shouldRepairEditorDocument(error: unknown): boolean {
 }
 
 export const reportRecoveredEditorTransformError = (reason: RecoveryReason, error: unknown): void => {
+  void reason
   console.warn('[editor] Recovered rich-editor transform error:', error)
-  trackEvent('rich_editor_transform_error_recovered', { reason })
 }
 
 function releaseRecoveryState(
