@@ -135,6 +135,8 @@ export interface Settings {
   all_notes_show_pdfs?: boolean | null
   all_notes_show_images?: boolean | null
   all_notes_show_unsupported?: boolean | null
+  note_list_show_filename?: boolean | null
+  folder_view_show_non_markdown?: boolean | null
   /** When true, all mounted Projects are loaded into one note graph. */
   multi_workspace_enabled?: boolean | null
 }

@@ -75,6 +75,14 @@ export function useAppPreferences({
     () => resolveAllNotesFileVisibility(settings),
     [settings],
   )
+  const noteListShowFilename = useMemo(
+    () => settings.note_list_show_filename === true,
+    [settings.note_list_show_filename],
+  )
+  const folderViewShowNonMarkdown = useMemo(
+    () => settings.folder_view_show_non_markdown === true,
+    [settings.folder_view_show_non_markdown],
+  )
   const selectedUiLanguage: UiLanguagePreference = settings.ui_language ?? SYSTEM_UI_LANGUAGE
 
   useEffect(() => {
@@ -99,9 +107,11 @@ export function useAppPreferences({
     appLocale,
     dateDisplayFormat,
     documentThemeMode,
+    folderViewShowNonMarkdown,
     handleSetThemeMode,
     handleSetUiLanguage,
     handleToggleThemeMode,
+    noteListShowFilename,
     selectedUiLanguage,
     systemLocale,
   }

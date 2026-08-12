@@ -2,7 +2,6 @@ import { useEffect, useMemo, useCallback } from 'react'
 import type {
   VaultEntry,
   SidebarSelection,
-  ModifiedFile,
   NoteStatus,
 } from '../../types'
 import type { AppLocale } from '../../lib/i18n'
@@ -16,7 +15,7 @@ import { useNoteListFullTextSearch } from './noteListFullTextSearch'
 import { filterEntriesByNoteListQuery } from './noteListSearch'
 import { useNoteListSearchState } from './useNoteListSearchState'
 import {
-  useModifiedFilesState,
+  useNoteStatusState,
   useNoteListData,
   useNoteListInteractions,
   useNoteListSort,
@@ -97,6 +96,7 @@ interface UseNoteListContentParams {
   selectedNotePath: string | null
   visibleNotesRef?: React.MutableRefObject<VaultEntry[]>
   allNotesFileVisibility?: AllNotesFileVisibility
+  folderViewShowNonMarkdown?: boolean
 }
 
 function useFilteredNoteListSearch({
@@ -132,7 +132,7 @@ function useFilteredNoteListSearch({
 }
 
 function useNoteListContent(options: UseNoteListContentParams) {
-  const { entries, vaultPath, selection, selectedNotePath, visibleNotesRef, allNotesFileVisibility } = options
+  const { entries, vaultPath, selection, selectedNotePath, visibleNotesRef, allNotesFileVisibility, folderViewShowNonMarkdown } = options
   const dateDisplayFormat = useDateDisplayFormat()
   const { listSort, listDirection, handleSortChange, sortPrefs } = useNoteListSort()
   const {
@@ -154,6 +154,7 @@ function useNoteListContent(options: UseNoteListContentParams) {
         listSort,
         listDirection,
         allNotesFileVisibility,
+        folderViewShowNonMarkdown,
       })
       const { isFullTextSearching, searched } = useFilteredNoteListSearch({
         entries,
@@ -249,6 +250,7 @@ function useNoteListInteractionState(options: UseNoteListInteractionStateParams)
       noteListContextMenu?: ((entry: VaultEntry, event: React.MouseEvent) => void) | undefined
       multiSelect: MultiSelectState
       noteListKeyboard: { highlightedPath: string | null }
+      showFilename?: boolean
     }
 
     function useRenderItem(functionOptions: UseRenderItemParams) {
@@ -259,6 +261,7 @@ function useNoteListInteractionState(options: UseNoteListInteractionStateParams)
       noteListContextMenu,
       multiSelect,
       noteListKeyboard,
+      showFilename,
   } = functionOptions
 
   return useCallback(
@@ -270,6 +273,7 @@ function useNoteListInteractionState(options: UseNoteListInteractionStateParams)
         isMultiSelected={multiSelect.selectedPaths.has(entry.path)}
         isHighlighted={entry.path === noteListKeyboard.highlightedPath}
         noteStatus={resolvedGetNoteStatus(entry.path)}
+        showFilename={showFilename}
         onClickNote={handleClickNote}
         onPrefetch={prefetchNoteContent}
         onContextMenu={noteListContextMenu}
@@ -281,6 +285,7 @@ function useNoteListInteractionState(options: UseNoteListInteractionStateParams)
     noteListKeyboard.highlightedPath,
     noteListContextMenu,
     resolvedGetNoteStatus,
+    showFilename,
     selectedNotePath,
     ],
   )
@@ -292,7 +297,6 @@ export interface NoteListProps {
   selection: SidebarSelection
   selectedNote: VaultEntry | null
   loading?: boolean
-  modifiedFiles?: ModifiedFile[]
   getNoteStatus?: (path: string) => NoteStatus
   sidebarCollapsed?: boolean
   onSelectNote: (entry: VaultEntry) => void
@@ -305,6 +309,8 @@ export interface NoteListProps {
   onCopyFilePath?: (path: string) => void
   visibleNotesRef?: React.MutableRefObject<VaultEntry[]>
   allNotesFileVisibility?: AllNotesFileVisibility
+  folderViewShowNonMarkdown?: boolean
+  showFilename?: boolean
   locale?: AppLocale
   selectedTags?: string[]
   onClearTagFilter?: () => void
@@ -364,10 +370,9 @@ function buildNoteListLayoutModel(params: {
 }
 
 export function useNoteListModel(options: NoteListProps) {
-  const { entries, vaultPath, selection, selectedNote, loading = false, modifiedFiles, getNoteStatus, sidebarCollapsed, onReplaceActiveTab, onCreateNote, onBulkDeletePermanently, onRenameFilename, onExportPdf, onRevealFile, onCopyFilePath, visibleNotesRef, allNotesFileVisibility, locale = 'en', selectedTags, onClearTagFilter } = options
+  const { entries, vaultPath, selection, selectedNote, loading = false, getNoteStatus, sidebarCollapsed, onReplaceActiveTab, onCreateNote, onBulkDeletePermanently, onRenameFilename, onExportPdf, onRevealFile, onCopyFilePath, visibleNotesRef, allNotesFileVisibility, folderViewShowNonMarkdown, showFilename, locale = 'en', selectedTags, onClearTagFilter } = options
   const selectedNotePath = selectedNote?.path ?? null
-  const { resolvedGetNoteStatus } = useModifiedFilesState(
-    modifiedFiles,
+  const { resolvedGetNoteStatus } = useNoteStatusState(
     getNoteStatus,
   )
   const content = useNoteListContent({
@@ -377,6 +382,7 @@ export function useNoteListModel(options: NoteListProps) {
     selectedNotePath,
     visibleNotesRef,
     allNotesFileVisibility,
+    folderViewShowNonMarkdown,
   })
   const interaction = useNoteListInteractionState({
     searched: content.searched,
@@ -400,6 +406,7 @@ export function useNoteListModel(options: NoteListProps) {
     noteListContextMenu: interaction.noteListContextMenu.handleNoteContextMenu,
     multiSelect: interaction.multiSelect,
     noteListKeyboard: interaction.noteListKeyboard,
+    showFilename,
   })
   const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key !== 'Escape') return

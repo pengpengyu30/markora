@@ -50,6 +50,8 @@ const EMPTY_SETTINGS: Settings = {
   all_notes_show_pdfs: null,
   all_notes_show_images: null,
   all_notes_show_unsupported: null,
+  note_list_show_filename: null,
+  folder_view_show_non_markdown: null,
 }
 
 function nullableBoolean(value: boolean | null | undefined): boolean | null {
@@ -75,6 +77,8 @@ function normalizeSettings(settings: Settings): Settings {
     all_notes_show_pdfs: nullableBoolean(settings.all_notes_show_pdfs),
     all_notes_show_images: nullableBoolean(settings.all_notes_show_images),
     all_notes_show_unsupported: nullableBoolean(settings.all_notes_show_unsupported),
+    note_list_show_filename: nullableBoolean(settings.note_list_show_filename),
+    folder_view_show_non_markdown: nullableBoolean(settings.folder_view_show_non_markdown),
   }
 }
 

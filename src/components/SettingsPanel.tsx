@@ -73,6 +73,8 @@ interface SettingsDraft {
   initialH1AutoRename: boolean
   hideGitignoredFiles: boolean
   allNotesFileVisibility: AllNotesFileVisibility
+  noteListShowFilename: boolean
+  folderViewShowNonMarkdown: boolean
   multiProjectEnabled: boolean
 }
 
@@ -98,6 +100,10 @@ interface SettingsBodyProps {
   setHideGitignoredFiles: (value: boolean) => void
   allNotesFileVisibility: AllNotesFileVisibility
   setAllNotesFileVisibility: (value: AllNotesFileVisibility) => void
+  noteListShowFilename: boolean
+  setNoteListShowFilename: (value: boolean) => void
+  folderViewShowNonMarkdown: boolean
+  setFolderViewShowNonMarkdown: (value: boolean) => void
   multiProjectEnabled: boolean
   setMultiProjectEnabled: (value: boolean) => void
   projects: VaultOption[]
@@ -125,6 +131,8 @@ function createSettingsDraft(settings: Settings): SettingsDraft {
     initialH1AutoRename: settings.initial_h1_auto_rename_enabled ?? true,
     hideGitignoredFiles: shouldHideGitignoredFiles(settings),
     allNotesFileVisibility: resolveAllNotesFileVisibility(settings),
+    noteListShowFilename: settings.note_list_show_filename === true,
+    folderViewShowNonMarkdown: settings.folder_view_show_non_markdown === true,
     multiProjectEnabled: settings.multi_workspace_enabled !== false,
   }
 }
@@ -146,6 +154,8 @@ function buildSettingsFromDraft(settings: Settings, draft: SettingsDraft): Setti
     note_width_mode: draft.defaultNoteWidth,
     initial_h1_auto_rename_enabled: draft.initialH1AutoRename,
     hide_gitignored_files: draft.hideGitignoredFiles,
+    note_list_show_filename: draft.noteListShowFilename,
+    folder_view_show_non_markdown: draft.folderViewShowNonMarkdown,
     multi_workspace_enabled: draft.multiProjectEnabled,
   }
   return settingsWithAllNotesFileVisibility(nextSettings, draft.allNotesFileVisibility)
@@ -427,6 +437,10 @@ function SettingsBodyFromDraft(options: SettingsBodyFromDraftProps) {
       setHideGitignoredFiles={setHideGitignoredFiles}
       allNotesFileVisibility={draft.allNotesFileVisibility}
       setAllNotesFileVisibility={setAllNotesFileVisibility}
+      noteListShowFilename={draft.noteListShowFilename}
+      setNoteListShowFilename={(value) => updateDraft('noteListShowFilename', value)}
+      folderViewShowNonMarkdown={draft.folderViewShowNonMarkdown}
+      setFolderViewShowNonMarkdown={(value) => updateDraft('folderViewShowNonMarkdown', value)}
       multiProjectEnabled={draft.multiProjectEnabled}
       setMultiProjectEnabled={(value) => updateDraft('multiProjectEnabled', value)}
       projects={projects}
@@ -515,7 +529,7 @@ function SettingsSyncAndAppearanceSections(options: SettingsBodyProps) {
 }
 
 function SettingsContentSections(options: SettingsBodyProps) {
-  const { t, dateDisplayFormat, setDateDisplayFormat, defaultNoteWidth, setDefaultNoteWidth, initialH1AutoRename, setInitialH1AutoRename, hideGitignoredFiles, setHideGitignoredFiles, allNotesFileVisibility, setAllNotesFileVisibility } = options
+  const { t, dateDisplayFormat, setDateDisplayFormat, defaultNoteWidth, setDefaultNoteWidth, initialH1AutoRename, setInitialH1AutoRename, hideGitignoredFiles, setHideGitignoredFiles, allNotesFileVisibility, setAllNotesFileVisibility, noteListShowFilename, setNoteListShowFilename, folderViewShowNonMarkdown, setFolderViewShowNonMarkdown } = options
   return (
     <SettingsSection id={SETTINGS_SECTION_IDS.content}>
       <VaultContentSettingsSection
@@ -530,6 +544,10 @@ function SettingsContentSections(options: SettingsBodyProps) {
         setHideGitignoredFiles={setHideGitignoredFiles}
         allNotesFileVisibility={allNotesFileVisibility}
         setAllNotesFileVisibility={setAllNotesFileVisibility}
+        noteListShowFilename={noteListShowFilename}
+        setNoteListShowFilename={setNoteListShowFilename}
+        folderViewShowNonMarkdown={folderViewShowNonMarkdown}
+        setFolderViewShowNonMarkdown={setFolderViewShowNonMarkdown}
       />
     </SettingsSection>
   )

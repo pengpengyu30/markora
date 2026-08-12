@@ -89,6 +89,8 @@ pub struct Settings {
     pub all_notes_show_pdfs: Option<bool>,
     pub all_notes_show_images: Option<bool>,
     pub all_notes_show_unsupported: Option<bool>,
+    pub note_list_show_filename: Option<bool>,
+    pub folder_view_show_non_markdown: Option<bool>,
     pub multi_workspace_enabled: Option<bool>,
 }
 
@@ -198,6 +200,8 @@ fn normalize_settings(settings: Settings) -> Settings {
         all_notes_show_pdfs: settings.all_notes_show_pdfs,
         all_notes_show_images: settings.all_notes_show_images,
         all_notes_show_unsupported: settings.all_notes_show_unsupported,
+        note_list_show_filename: settings.note_list_show_filename,
+        folder_view_show_non_markdown: settings.folder_view_show_non_markdown,
         multi_workspace_enabled: settings.multi_workspace_enabled,
     }
 }
@@ -330,6 +334,8 @@ mod tests {
             all_notes_show_pdfs: Some(true),
             all_notes_show_images: Some(true),
             all_notes_show_unsupported: Some(false),
+            note_list_show_filename: Some(true),
+            folder_view_show_non_markdown: Some(true),
             multi_workspace_enabled: Some(true),
         };
         let json = serde_json::to_string(&settings).unwrap();
@@ -619,6 +625,18 @@ mod tests {
         fs::write(&path, legacy_settings.to_string()).unwrap();
         let loaded = get_settings_at(&path).unwrap();
         assert_empty_settings(&loaded);
+    }
+
+    #[test]
+    fn test_old_settings_json_defaults_content_display_settings_to_none() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let path = dir.path().join("settings.json");
+        fs::write(&path, r#"{"theme_mode":"dark"}"#).unwrap();
+
+        let loaded = get_settings_at(&path).unwrap();
+
+        assert_eq!(loaded.note_list_show_filename, None);
+        assert_eq!(loaded.folder_view_show_non_markdown, None);
     }
 
     #[test]

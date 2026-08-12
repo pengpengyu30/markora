@@ -225,9 +225,11 @@ function MainApp() {
     appLocale,
     dateDisplayFormat,
     documentThemeMode,
+    folderViewShowNonMarkdown,
     handleSetThemeMode,
     handleSetUiLanguage,
     handleToggleThemeMode,
+    noteListShowFilename,
     selectedUiLanguage,
     systemLocale,
   } = useAppPreferences({
@@ -888,7 +890,7 @@ function MainApp() {
           {noteListVisible && (
             <>
               <div className="app__note-list" style={{ width: layout.noteListWidth }}>
-                <NoteList vaultPath={resolvedPath} entries={tagFilteredEntries} selection={effectiveSelection} selectedNote={activeTab?.entry ?? null} selectedTags={selectedTags} onClearTagFilter={handleClearTagFilter} loading={isVaultContentLoading} modifiedFiles={vault.modifiedFiles} getNoteStatus={vault.getNoteStatus} sidebarCollapsed={!sidebarVisible} onSelectNote={notes.handleSelectNote} onReplaceActiveTab={notes.handleReplaceActiveTab} onCreateNote={notes.handleCreateNoteImmediate} onBulkDeletePermanently={deleteActions.handleBulkDeletePermanently} onRenameFilename={appSave.handleFilenameRename} onExportPdf={handleExportNotePdfFromList} onRevealFile={fileActions.revealFile} onCopyFilePath={fileActions.copyFilePath} visibleNotesRef={visibleNotesRef} allNotesFileVisibility={allNotesFileVisibility} multiSelectionCommandRef={multiSelectionCommandRef} locale={appLocale} />
+                <NoteList vaultPath={resolvedPath} entries={tagFilteredEntries} selection={effectiveSelection} selectedNote={activeTab?.entry ?? null} selectedTags={selectedTags} onClearTagFilter={handleClearTagFilter} loading={isVaultContentLoading} getNoteStatus={vault.getNoteStatus} sidebarCollapsed={!sidebarVisible} onSelectNote={notes.handleSelectNote} onReplaceActiveTab={notes.handleReplaceActiveTab} onCreateNote={notes.handleCreateNoteImmediate} onBulkDeletePermanently={deleteActions.handleBulkDeletePermanently} onRenameFilename={appSave.handleFilenameRename} onExportPdf={handleExportNotePdfFromList} onRevealFile={fileActions.revealFile} onCopyFilePath={fileActions.copyFilePath} visibleNotesRef={visibleNotesRef} allNotesFileVisibility={allNotesFileVisibility} folderViewShowNonMarkdown={folderViewShowNonMarkdown} showFilename={noteListShowFilename} multiSelectionCommandRef={multiSelectionCommandRef} locale={appLocale} />
               </div>
               <ResizeHandle onResize={layout.handleNoteListResize} />
             </>

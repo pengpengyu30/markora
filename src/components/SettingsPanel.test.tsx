@@ -31,6 +31,8 @@ const emptySettings: Settings = {
   all_notes_show_pdfs: null,
   all_notes_show_images: null,
   all_notes_show_unsupported: null,
+  note_list_show_filename: null,
+  folder_view_show_non_markdown: null,
 }
 
 function installPointerCapturePolyfill() {
@@ -198,6 +200,34 @@ describe('SettingsPanel', () => {
     expect(within(screen.getByTestId('settings-all-notes-show-pdfs')).getByRole('switch')).toHaveAttribute('aria-checked', 'false')
     expect(within(screen.getByTestId('settings-all-notes-show-images')).getByRole('switch')).toHaveAttribute('aria-checked', 'false')
     expect(within(screen.getByTestId('settings-all-notes-show-unsupported')).getByRole('switch')).toHaveAttribute('aria-checked', 'false')
+  })
+
+  it('renders the content display switches off by default', () => {
+    renderOpenSettings()
+
+    expect(screen.getByText('Show original filename in the note list')).toBeInTheDocument()
+    expect(within(screen.getByTestId('settings-note-list-show-filename')).getByRole('switch')).toHaveAttribute('aria-checked', 'false')
+    expect(within(screen.getByTestId('settings-folder-view-show-non-markdown')).getByRole('switch')).toHaveAttribute('aria-checked', 'false')
+  })
+
+  it('preserves and saves the content display switches', () => {
+    renderOpenSettings({
+      ...emptySettings,
+      note_list_show_filename: true,
+      folder_view_show_non_markdown: true,
+    })
+
+    expect(within(screen.getByTestId('settings-note-list-show-filename')).getByRole('switch')).toHaveAttribute('aria-checked', 'true')
+    expect(within(screen.getByTestId('settings-folder-view-show-non-markdown')).getByRole('switch')).toHaveAttribute('aria-checked', 'true')
+
+    fireEvent.click(within(screen.getByTestId('settings-note-list-show-filename')).getByRole('switch'))
+    fireEvent.click(within(screen.getByTestId('settings-folder-view-show-non-markdown')).getByRole('switch'))
+    saveSettingsPanel()
+
+    expectSettingsSaved({
+      note_list_show_filename: false,
+      folder_view_show_non_markdown: false,
+    })
   })
 
   it('preserves saved All Notes file visibility switches', () => {

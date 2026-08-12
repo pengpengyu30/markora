@@ -27,22 +27,24 @@ interface FilteredEntriesParams {
   entries: VaultEntry[]
   selection: SidebarSelection
   allNotesFileVisibility?: AllNotesFileVisibility
+  folderViewShowNonMarkdown?: boolean
 }
 
 function buildFilteredEntries(options: FilteredEntriesParams) {
-  const { entries, selection, allNotesFileVisibility } = options
-  return filterEntries(entries, selection, { allNotesFileVisibility })
+  const { entries, selection, allNotesFileVisibility, folderViewShowNonMarkdown } = options
+  return filterEntries(entries, selection, { allNotesFileVisibility, folderViewShowNonMarkdown })
 }
 
 export function useFilteredEntries(options: FilteredEntriesParams) {
-  const { entries, selection, allNotesFileVisibility } = options
+  const { entries, selection, allNotesFileVisibility, folderViewShowNonMarkdown } = options
   return useMemo(() => {
     return buildFilteredEntries({
       entries,
       selection,
       allNotesFileVisibility,
+      folderViewShowNonMarkdown,
     })
-  }, [allNotesFileVisibility, entries, selection])
+  }, [allNotesFileVisibility, entries, folderViewShowNonMarkdown, selection])
 }
 
 // --- useNoteListData ---
@@ -54,15 +56,17 @@ interface NoteListDataParams {
   listSort: SortOption
   listDirection: SortDirection
   allNotesFileVisibility?: AllNotesFileVisibility
+  folderViewShowNonMarkdown?: boolean
 }
 
 export function useNoteListData(options: NoteListDataParams) {
-  const { entries, selection, query, listSort, listDirection, allNotesFileVisibility } = options
+  const { entries, selection, query, listSort, listDirection, allNotesFileVisibility, folderViewShowNonMarkdown } = options
 
   const filteredEntries = useFilteredEntries({
     entries,
     selection,
     allNotesFileVisibility,
+    folderViewShowNonMarkdown,
   })
 
   const searched = useMemo(() => {

@@ -104,6 +104,22 @@ describe('filterEntries', () => {
 
     const result = filterEntries(entries, { kind: 'folder', path: '', rootPath: '/Users/luca/Laputa' })
 
+    expect(result.map((entry) => entry.title)).toEqual(['Root Note'])
+  })
+
+  it('shows non-Markdown files in the vault root when the folder setting is enabled', () => {
+    const entries = [
+      makeEntry({ path: '/Users/luca/Laputa/root-note.md', title: 'Root Note', fileKind: 'markdown' }),
+      makeEntry({ path: '/Users/luca/Laputa/config.json', title: 'config.json', fileKind: 'text' }),
+      makeEntry({ path: '/Users/luca/Laputa/projects/nested.md', title: 'Nested Note', fileKind: 'markdown' }),
+    ]
+
+    const result = filterEntries(
+      entries,
+      { kind: 'folder', path: '', rootPath: '/Users/luca/Laputa' },
+      { folderViewShowNonMarkdown: true },
+    )
+
     expect(result.map((entry) => entry.title)).toEqual(['Root Note', 'config.json'])
   })
 
@@ -123,7 +139,7 @@ describe('filterEntries', () => {
     expect(result.map((entry) => entry.title)).toEqual(['Team Project'])
   })
 
-  it('keeps folder browsing independent from All Notes file visibility', () => {
+  it('hides non-Markdown files in folder views by default', () => {
     const entries = [
       makeEntry({ path: '/vault/assets/spec.PDF', filename: 'spec.PDF', title: 'Spec', fileKind: 'binary' }),
       makeEntry({ path: '/vault/assets/logo.PNG', filename: 'logo.PNG', title: 'Logo', fileKind: 'binary' }),
@@ -132,7 +148,36 @@ describe('filterEntries', () => {
 
     const result = filterEntries(entries, { kind: 'folder', path: 'assets' })
 
+    expect(result).toEqual([])
+  })
+
+  it('shows all files in a folder when the folder setting is enabled', () => {
+    const entries = [
+      makeEntry({ path: '/vault/assets/spec.PDF', filename: 'spec.PDF', title: 'Spec', fileKind: 'binary' }),
+      makeEntry({ path: '/vault/assets/logo.PNG', filename: 'logo.PNG', title: 'Logo', fileKind: 'binary' }),
+      makeEntry({ path: '/vault/assets/data.sqlite', filename: 'data.sqlite', title: 'Data', fileKind: 'binary' }),
+    ]
+
+    const result = filterEntries(
+      entries,
+      { kind: 'folder', path: 'assets' },
+      { folderViewShowNonMarkdown: true },
+    )
+
     expect(result.map((entry) => entry.title)).toEqual(['Spec', 'Logo', 'Data'])
+  })
+
+  it('keeps the folder setting out of All Notes filtering', () => {
+    const entries = [
+      makeEntry({ path: '/vault/note.md', title: 'Note', fileKind: 'markdown' }),
+      makeEntry({ path: '/vault/assets/logo.PNG', filename: 'logo.PNG', title: 'Logo', fileKind: 'binary' }),
+    ]
+
+    const result = filterEntries(entries, allSelection, {
+      folderViewShowNonMarkdown: true,
+    })
+
+    expect(result.map((entry) => entry.title)).toEqual(['Note'])
   })
 })
 

@@ -103,6 +103,63 @@ describe('NoteItem', () => {
     expect(screen.queryByText('note.md')).not.toBeInTheDocument()
   })
 
+  it('renders the filename stem when the note-list filename setting is enabled', () => {
+    render(
+      <NoteItem
+        entry={makeEntry({ filename: 'project-plan.md', title: 'Project Plan H1' })}
+        isSelected={false}
+        onClickNote={vi.fn()}
+        showFilename={true}
+      />,
+    )
+
+    expect(screen.getByText('project-plan')).toBeInTheDocument()
+    expect(screen.queryByText('Project Plan H1')).not.toBeInTheDocument()
+    expect(screen.queryByText('project-plan.md')).not.toBeInTheDocument()
+  })
+
+  it('keeps non-Markdown extensions when the note-list filename setting is enabled', () => {
+    render(
+      <NoteItem
+        entry={makeEntry({ filename: 'config.json', title: 'Configuration', fileKind: 'text' })}
+        isSelected={false}
+        onClickNote={vi.fn()}
+        showFilename={true}
+      />,
+    )
+
+    expect(screen.getByText('config.json')).toBeInTheDocument()
+    expect(screen.queryByText('config')).not.toBeInTheDocument()
+    expect(screen.queryByText('Configuration')).not.toBeInTheDocument()
+  })
+
+  it('does not render a status dot for a clean note', () => {
+    render(
+      <NoteItem
+        entry={makeEntry({ filename: 'clean.md', title: 'Clean note' })}
+        isSelected={false}
+        noteStatus="clean"
+        onClickNote={vi.fn()}
+      />,
+    )
+
+    expect(screen.queryByTestId('unsaved-indicator')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('pending-save-indicator')).not.toBeInTheDocument()
+  })
+
+  it('renders exactly one green status dot for an unsaved note', () => {
+    render(
+      <NoteItem
+        entry={makeEntry({ filename: 'draft.md', title: 'Draft note' })}
+        isSelected={false}
+        noteStatus="unsaved"
+        onClickNote={vi.fn()}
+      />,
+    )
+
+    expect(screen.getAllByTestId('unsaved-indicator')).toHaveLength(1)
+  })
+
   it('keeps note content sections spaced consistently', () => {
     render(
       <NoteItem

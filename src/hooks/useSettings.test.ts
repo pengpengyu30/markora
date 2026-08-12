@@ -27,6 +27,8 @@ const defaultSettings: Settings = {
   all_notes_show_pdfs: null,
   all_notes_show_images: null,
   all_notes_show_unsupported: null,
+  note_list_show_filename: null,
+  folder_view_show_non_markdown: null,
 }
 
 const savedSettings: Settings = {
@@ -48,6 +50,8 @@ const savedSettings: Settings = {
   all_notes_show_pdfs: null,
   all_notes_show_images: null,
   all_notes_show_unsupported: null,
+  note_list_show_filename: null,
+  folder_view_show_non_markdown: null,
 }
 
 let mockSettingsStore: Settings = { ...defaultSettings }
@@ -102,6 +106,8 @@ function changedSettings(): Settings {
     all_notes_show_pdfs: true,
     all_notes_show_images: false,
     all_notes_show_unsupported: true,
+    note_list_show_filename: true,
+    folder_view_show_non_markdown: true,
   }
 }
 
@@ -240,6 +246,19 @@ describe('useSettings', () => {
     expect(settings.all_notes_show_pdfs).toBe(true)
     expect(settings.all_notes_show_images).toBe(false)
     expect(settings.all_notes_show_unsupported).toBe(true)
+  })
+
+  it('preserves content display preferences', async () => {
+    mockSettingsStore = {
+      ...savedSettings,
+      note_list_show_filename: true,
+      folder_view_show_non_markdown: true,
+    }
+
+    const settings = await renderLoadedSettings()
+
+    expect(settings.note_list_show_filename).toBe(true)
+    expect(settings.folder_view_show_non_markdown).toBe(true)
   })
 
   it('toggles Gitignored file visibility from the command event', async () => {

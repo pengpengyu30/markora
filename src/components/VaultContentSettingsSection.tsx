@@ -19,6 +19,10 @@ interface VaultContentSettingsSectionProps {
   setHideGitignoredFiles: (value: boolean) => void
   allNotesFileVisibility: AllNotesFileVisibility
   setAllNotesFileVisibility: (value: AllNotesFileVisibility) => void
+  noteListShowFilename: boolean
+  setNoteListShowFilename: (value: boolean) => void
+  folderViewShowNonMarkdown: boolean
+  setFolderViewShowNonMarkdown: (value: boolean) => void
 }
 
 const NOTE_WIDTH_OPTIONS: readonly NoteWidthMode[] = ['normal', 'wide']
@@ -60,6 +64,10 @@ export function VaultContentSettingsSection(functionOptions: VaultContentSetting
     setHideGitignoredFiles,
     allNotesFileVisibility,
     setAllNotesFileVisibility,
+    noteListShowFilename,
+    setNoteListShowFilename,
+    folderViewShowNonMarkdown,
+    setFolderViewShowNonMarkdown,
   } = functionOptions
   const updateAllNotesFileVisibility = (patch: Partial<AllNotesFileVisibility>) => {
     setAllNotesFileVisibility({ ...allNotesFileVisibility, ...patch })
@@ -107,6 +115,22 @@ export function VaultContentSettingsSection(functionOptions: VaultContentSetting
           checked={hideGitignoredFiles}
           onChange={setHideGitignoredFiles}
           testId="settings-hide-gitignored-files"
+        />
+
+        <SettingsSwitchRow
+          label={t('settings.vaultContent.showFilename')}
+          description={t('settings.vaultContent.showFilenameDescription')}
+          checked={noteListShowFilename}
+          onChange={setNoteListShowFilename}
+          testId="settings-note-list-show-filename"
+        />
+
+        <SettingsSwitchRow
+          label={t('settings.vaultContent.showNonMarkdownInFolders')}
+          description={t('settings.vaultContent.showNonMarkdownInFoldersDescription')}
+          checked={folderViewShowNonMarkdown}
+          onChange={setFolderViewShowNonMarkdown}
+          testId="settings-folder-view-show-non-markdown"
         />
 
         <SettingsSwitchRow

@@ -13,6 +13,7 @@ import {
 
 export interface FilterEntriesOptions {
   allNotesFileVisibility?: AllNotesFileVisibility
+  folderViewShowNonMarkdown?: boolean
 }
 
 export function relativeDate(ts: number | null): string {
@@ -246,10 +247,15 @@ function filterRootEntries(entries: VaultEntry[], rootPath: string | undefined):
   return rootEntries
 }
 
-function filterFolderEntries(entries: VaultEntry[], selection: Extract<SidebarSelection, { kind: 'folder' }>): VaultEntry[] {
-  if (!selection.path) return filterRootEntries(entries, selection.rootPath)
-  // Folder view shows ALL files (text + binary), not just markdown
-  return entries.filter((entry) => isEntryInSelectedFolder(entry.path, selection.path, selection.rootPath))
+function filterFolderEntries(
+  entries: VaultEntry[],
+  selection: Extract<SidebarSelection, { kind: 'folder' }>,
+  showNonMarkdown: boolean,
+): VaultEntry[] {
+  const folderEntries = !selection.path
+    ? filterRootEntries(entries, selection.rootPath)
+    : entries.filter((entry) => isEntryInSelectedFolder(entry.path, selection.path, selection.rootPath))
+  return showNonMarkdown ? folderEntries : folderEntries.filter(isMarkdown)
 }
 
 function filterTopLevelEntries(
@@ -268,7 +274,9 @@ function filterByKind(
   selection: SidebarSelection,
   options: FilterEntriesOptions,
 ): VaultEntry[] {
-  if (selection.kind === 'folder') return filterFolderEntries(entries, selection)
+  if (selection.kind === 'folder') {
+    return filterFolderEntries(entries, selection, options.folderViewShowNonMarkdown === true)
+  }
   return filterTopLevelEntries(entries, selection, options)
 }
 

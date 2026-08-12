@@ -66,6 +66,8 @@ let mockSettings: Settings = {
   all_notes_show_pdfs: null,
   all_notes_show_images: null,
   all_notes_show_unsupported: null,
+  note_list_show_filename: null,
+  folder_view_show_non_markdown: null,
 }
 
 const DEFAULT_MOCK_VAULT_PATH = '/Users/mock/demo-vault-v2'
@@ -389,6 +391,8 @@ export const mockHandlers = {
       all_notes_show_pdfs: s.all_notes_show_pdfs ?? null,
       all_notes_show_images: s.all_notes_show_images ?? null,
       all_notes_show_unsupported: s.all_notes_show_unsupported ?? null,
+      note_list_show_filename: s.note_list_show_filename ?? null,
+      folder_view_show_non_markdown: s.folder_view_show_non_markdown ?? null,
       ...(s.multi_workspace_enabled !== undefined
         ? { multi_workspace_enabled: s.multi_workspace_enabled ?? null }
         : {}),

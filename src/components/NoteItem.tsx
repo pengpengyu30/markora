@@ -122,18 +122,25 @@ function NoteSnippet({ snippet }: { snippet?: string | null }) {
   )
 }
 
+function noteListFilename(entry: Pick<VaultEntry, 'filename' | 'fileKind'>): string {
+  if (entry.fileKind === 'text' || entry.fileKind === 'binary') return entry.filename
+  return entry.filename.replace(/\.md$/iu, '')
+}
+
 function InteractiveNoteDetails({
   entry,
   noteStatus,
   isSelected,
+  showFilename,
 }: {
   entry: VaultEntry
   noteStatus: NoteStatus
   isSelected: boolean
+  showFilename: boolean
 }) {
   return (
     <>
-      <NoteTitleRow entry={entry} isBinary={false} isSelected={isSelected} noteStatus={noteStatus} />
+      <NoteTitleRow entry={entry} isBinary={false} isSelected={isSelected} noteStatus={noteStatus} showFilename={showFilename} />
       <NoteSnippet snippet={entry.snippet} />
       <NoteDateRow entry={entry} />
     </>
@@ -146,6 +153,7 @@ function StandardNoteContent(options: {
   isUnavailableBinary: boolean
   noteStatus: NoteStatus
   isSelected: boolean
+  showFilename: boolean
 }) {
   const {
     entry,
@@ -153,18 +161,20 @@ function StandardNoteContent(options: {
     isUnavailableBinary,
     noteStatus,
     isSelected,
+    showFilename,
   } = options
 
   return (
     <>
       <div className="space-y-2" data-testid="note-content-stack">
         {isBinary ? (
-          <NoteTitleRow entry={entry} isBinary={isUnavailableBinary} isSelected={isSelected} noteStatus={noteStatus} />
+          <NoteTitleRow entry={entry} isBinary={isUnavailableBinary} isSelected={isSelected} noteStatus={noteStatus} showFilename={showFilename} />
         ) : (
           <InteractiveNoteDetails
             entry={entry}
             noteStatus={noteStatus}
             isSelected={isSelected}
+            showFilename={showFilename}
           />
         )}
       </div>
@@ -177,11 +187,13 @@ function NoteTitleRow({
   isBinary,
   isSelected,
   noteStatus,
+  showFilename,
 }: {
   entry: VaultEntry
   isBinary: boolean
   isSelected: boolean
   noteStatus: NoteStatus
+  showFilename: boolean
 }) {
   return (
     <div
@@ -193,7 +205,7 @@ function NoteTitleRow({
       data-testid="note-title-row"
     >
       {hasStatusDot(noteStatus) && !isBinary && <StatusDot noteStatus={noteStatus} />}
-      {entry.title}
+      {showFilename ? noteListFilename(entry) : entry.title}
     </div>
   )
 }
@@ -241,6 +253,7 @@ type NoteItemProps = {
   isMultiSelected?: boolean
   isHighlighted?: boolean
   noteStatus?: NoteStatus
+  showFilename?: boolean
   onClickNote: (entry: VaultEntry, e: ReactMouseEvent) => void
   onPrefetch?: (entry: VaultEntry) => void
   onContextMenu?: (entry: VaultEntry, e: ReactMouseEvent) => void
@@ -392,6 +405,7 @@ function NoteItemContent(options: {
   isUnavailableBinary: boolean
   isSelected: boolean
   noteStatus: NoteStatus
+  showFilename: boolean
 }) {
   const {
     entry,
@@ -399,6 +413,7 @@ function NoteItemContent(options: {
     isUnavailableBinary,
     isSelected,
     noteStatus,
+    showFilename,
   } = options
   return (
     <StandardNoteContent
@@ -407,6 +422,7 @@ function NoteItemContent(options: {
       isUnavailableBinary={isUnavailableBinary}
       noteStatus={noteStatus}
       isSelected={isSelected}
+      showFilename={showFilename}
     />
   )
 }
@@ -418,6 +434,7 @@ export function NoteItem(options: NoteItemProps) {
     isMultiSelected = false,
     isHighlighted = false,
     noteStatus = 'clean',
+    showFilename = false,
     onClickNote,
     onPrefetch,
     onContextMenu,
@@ -451,6 +468,7 @@ export function NoteItem(options: NoteItemProps) {
         isUnavailableBinary={isUnavailableBinary}
         isSelected={isSelected}
         noteStatus={noteStatus}
+        showFilename={showFilename}
       />
     </NoteItemRow>
   )
