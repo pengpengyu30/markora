@@ -124,51 +124,18 @@ describe('useCommandRegistry', () => {
     expect(findCommand(result.current, 'move-note-to-folder')?.enabled).toBe(false)
   })
 
-  it('exposes undo and redo commands only when action history has entries', () => {
-    const onUndo = vi.fn()
-    const onRedo = vi.fn()
-    const { result, rerender } = renderHook(
-      (props) => useCommandRegistry(props),
-      {
-        initialProps: makeConfig({
-          onUndo,
-          onRedo,
-          canUndo: true,
-          canRedo: false,
-          undoLabel: 'Archive Note',
-          redoLabel: null,
-        }),
-      },
-    )
-
-    expect(findCommand(result.current, 'undo-action')).toMatchObject({
-      enabled: true,
-      label: 'Undo Archive Note',
-      shortcut: formatShortcutDisplay({ display: '⌘Z' }),
-    })
-    expect(findCommand(result.current, 'redo-action')).toMatchObject({
-      enabled: false,
-      label: 'Redo',
-      shortcut: formatShortcutDisplay({ display: '⌘⇧Z' }),
-    })
-
-    findCommand(result.current, 'undo-action')?.execute()
-    expect(onUndo).toHaveBeenCalledOnce()
-
-    rerender(makeConfig({
-      onUndo,
-      onRedo,
-      canUndo: false,
+  it('does not expose app-level undo or redo commands', () => {
+    const { result } = renderHook(() => useCommandRegistry(makeConfig({
+      onUndo: vi.fn(),
+      onRedo: vi.fn(),
+      canUndo: true,
       canRedo: true,
-      undoLabel: null,
+      undoLabel: 'Archive Note',
       redoLabel: 'Archive Note',
-    }))
+    })))
 
-    expect(findCommand(result.current, 'undo-action')?.enabled).toBe(false)
-    expect(findCommand(result.current, 'redo-action')).toMatchObject({
-      enabled: true,
-      label: 'Redo Archive Note',
-    })
+    expect(findCommand(result.current, 'undo-action')).toBeUndefined()
+    expect(findCommand(result.current, 'redo-action')).toBeUndefined()
   })
 
   it('exposes active file actions when a note is selected', () => {

@@ -84,21 +84,6 @@ describe('useNoteActions hook', () => {
     await Promise.resolve()
   }
 
-  function savedNoteContentPaths() {
-    return vi.mocked(mockInvoke).mock.calls.flatMap(([cmd, args]) => {
-      if (cmd !== 'save_note_content') return []
-      if (hasStringPath(args)) return [args.path]
-      return []
-    })
-  }
-
-  function hasStringPath(value: unknown): value is { path: string } {
-    if (typeof value !== 'object') return false
-    if (value === null) return false
-    if (!('path' in value)) return false
-    return typeof value.path === 'string'
-  }
-
   async function createImmediateEntry() {
     vi.spyOn(Date, 'now').mockReturnValue(1700000000000)
     const { result } = renderActions()
@@ -227,6 +212,18 @@ describe('useNoteActions hook', () => {
     expect(setToastMessage).toHaveBeenCalledWith('Property updated')
   })
 
+  it('persists frontmatter updates without exposing app-level undo history', async () => {
+    const { result } = renderHook(() => useNoteActions(makeConfig()))
+
+    await act(async () => {
+      await result.current.handleUpdateFrontmatter('/vault/note.md', '_width', 'wide')
+    })
+
+    expect(updateEntry).toHaveBeenCalledWith('/vault/note.md', { noteWidth: 'wide' })
+    expect(Reflect.get(result.current, 'handleUndo')).toBeUndefined()
+    expect(Reflect.get(result.current, 'handleRedo')).toBeUndefined()
+  })
+
   it('does not rerender for unopened-note frontmatter content refreshes', async () => {
     let renders = 0
     const { result } = renderHook(() => {
@@ -268,38 +265,14 @@ describe('useNoteActions hook', () => {
     expect(order).toEqual(['mark:/vault/note.md', 'invoke:update_frontmatter'])
   })
 
-  it('records successful frontmatter updates for undo and redo', async () => {
-    const entry = makeEntry({ path: '/vault/note.md', noteWidth: 'normal' })
-    const { result } = renderHook(() => useNoteActions(makeConfig([entry])))
-
-    await act(async () => {
-      await result.current.handleUpdateFrontmatter('/vault/note.md', '_width', 'wide')
-    })
-
-    expect(result.current.canUndo).toBe(true)
-    expect(result.current.undoLabel).toBe('Update _width')
-
-    await act(async () => {
-      await result.current.handleUndo()
-    })
-    await act(async () => {
-      await result.current.handleRedo()
-    })
-
-    expect(updateEntry).toHaveBeenCalledWith('/vault/note.md', { noteWidth: 'normal' })
-    expect(updateEntry).toHaveBeenCalledWith('/vault/note.md', { noteWidth: 'wide' })
-    expect(updateEntry).toHaveBeenLastCalledWith('/vault/note.md', { noteWidth: 'wide' })
-  })
-
-  it('does not record silent or failed frontmatter updates', async () => {
+  it('keeps silent and failed frontmatter updates from changing note state', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-    const entry = makeEntry({ path: '/vault/note.md', noteWidth: 'normal' })
-    const { result } = renderHook(() => useNoteActions(makeConfig([entry])))
+    const { result } = renderHook(() => useNoteActions(makeConfig()))
 
     await act(async () => {
       await result.current.handleUpdateFrontmatter('/vault/note.md', '_width', 'wide', { silent: true })
     })
-    expect(result.current.canUndo).toBe(false)
+    expect(Reflect.get(result.current, 'handleUndo')).toBeUndefined()
 
     vi.mocked(updateMockFrontmatter).mockImplementationOnce(() => {
       throw new Error('disk full')
@@ -308,7 +281,7 @@ describe('useNoteActions hook', () => {
       await result.current.handleUpdateFrontmatter('/vault/note.md', '_width', 'wide')
     })
 
-    expect(result.current.canUndo).toBe(false)
+    expect(Reflect.get(result.current, 'handleUndo')).toBeUndefined()
     errorSpy.mockRestore()
   })
 
@@ -706,61 +679,6 @@ describe('useNoteActions hook', () => {
         expect.objectContaining({ path: '/test/vault/new-name.md', title: 'New Name' }),
       )
       expect(onPathRenamed).toHaveBeenCalledWith('/test/vault/old-name.md', '/test/vault/new-name.md')
-    })
-
-    it('routes undoable frontmatter changes to the renamed note path', async () => {
-      const oldPath = '/test/vault/old-name.md'
-      const newPath = '/test/vault/new-name.md'
-      const entry = makeEntry({
-        path: oldPath,
-        filename: 'old-name.md',
-        title: 'Old Name',
-        noteWidth: 'normal',
-      })
-      const config = makeConfig([entry])
-      config.onPathRenamed = vi.fn()
-      config.replaceEntry = vi.fn()
-
-      vi.mocked(mockInvoke).mockImplementation(async (cmd: string) => {
-        if (cmd === 'rename_note') return { new_path: newPath, updated_files: 1 }
-        if (cmd === 'get_note_content') return '---\ntitle: New Name\n_width: wide\n---\n# New Name\n'
-        if (cmd === 'save_note_content') return undefined
-        return ''
-      })
-
-      const { result } = renderHook(() => useNoteActions(config))
-
-      await act(async () => { result.current.handleSelectNote(entry) })
-      await act(async () => {
-        await result.current.handleUpdateFrontmatter(oldPath, '_width', 'wide')
-      })
-      await act(async () => {
-        await result.current.handleRenameNote(oldPath, 'New Name', '/test/vault', config.replaceEntry!)
-      })
-      vi.mocked(mockInvoke).mockClear()
-
-      await act(async () => {
-        await result.current.handleUndo()
-      })
-
-      const savePathsAfterUndo = savedNoteContentPaths()
-
-      expect(savePathsAfterUndo).toContain(newPath)
-      expect(savePathsAfterUndo).not.toContain(oldPath)
-      expect(updateEntry).toHaveBeenCalledWith(newPath, expect.objectContaining({ noteWidth: 'normal' }))
-
-      vi.mocked(mockInvoke).mockClear()
-      vi.mocked(updateEntry).mockClear()
-
-      await act(async () => {
-        await result.current.handleRedo()
-      })
-
-      const savePathsAfterRedo = savedNoteContentPaths()
-
-      expect(savePathsAfterRedo).toContain(newPath)
-      expect(savePathsAfterRedo).not.toContain(oldPath)
-      expect(updateEntry).toHaveBeenCalledWith(newPath, expect.objectContaining({ noteWidth: 'wide' }))
     })
 
     it('handleUpdateFrontmatter does not trigger rename for non-title keys', async () => {

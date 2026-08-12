@@ -759,13 +759,11 @@ function MainApp() {
   })
   const activeEditorVaultPath = activeTab ? vaultPathForEntry(activeTab.entry, resolvedPath) : resolvedPath
   const undoCommand = useCallback(() => {
-    if (runNativeTextHistoryCommand('undo')) return
-    void notes.handleUndo()
-  }, [notes])
+    runNativeTextHistoryCommand('undo')
+  }, [])
   const redoCommand = useCallback(() => {
-    if (runNativeTextHistoryCommand('redo')) return
-    void notes.handleRedo()
-  }, [notes])
+    runNativeTextHistoryCommand('redo')
+  }, [])
 
   const commands = useAppCommands({
     activeTabPath: notes.activeTabPath, activeTabPathRef: notes.activeTabPathRef,
@@ -783,10 +781,6 @@ function MainApp() {
     onSave: appSave.handleSave,
     onUndo: undoCommand,
     onRedo: redoCommand,
-    canUndo: notes.canUndo,
-    canRedo: notes.canRedo,
-    undoLabel: notes.undoLabel,
-    redoLabel: notes.redoLabel,
     onOpenSettings: handleOpenSettings,
     onDeleteNote: deleteActions.handleDeleteNote,
     onSetViewMode: handleSetViewMode,

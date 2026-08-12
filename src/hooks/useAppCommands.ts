@@ -25,10 +25,6 @@ interface AppCommandsConfig {
   onFindInNote?: () => void
   onUndo?: () => void
   onRedo?: () => void
-  canUndo?: boolean
-  canRedo?: boolean
-  undoLabel?: string | null
-  redoLabel?: string | null
   onReplaceInNote?: () => void
   onPastePlainText: () => void
   onCreateNote: (options?: ImmediateCreateOptions) => void
@@ -107,12 +103,6 @@ type CommandRegistryCoreActions = Pick<
   | 'onQuickOpen'
   | 'onCreateNote'
   | 'onSave'
-  | 'onUndo'
-  | 'onRedo'
-  | 'canUndo'
-  | 'canRedo'
-  | 'undoLabel'
-  | 'redoLabel'
   | 'onFindInNote'
   | 'onReplaceInNote'
   | 'onPastePlainText'
@@ -171,8 +161,6 @@ function createKeyboardActions(
     onSave: config.onSave,
     onUndo: config.onUndo,
     onRedo: config.onRedo,
-    canUndo: config.canUndo,
-    canRedo: config.canRedo,
     onOpenSettings: config.onOpenSettings,
     onDeleteNote: config.onDeleteNote,
     onSetViewMode: config.onSetViewMode,
@@ -322,12 +310,6 @@ function createCommandRegistryCoreConfig(
     onQuickOpen: config.onQuickOpen,
     onCreateNote: config.onCreateNote,
     onSave: config.onSave,
-    onUndo: config.onUndo,
-    onRedo: config.onRedo,
-    canUndo: config.canUndo,
-    canRedo: config.canRedo,
-    undoLabel: config.undoLabel,
-    redoLabel: config.redoLabel,
     onOpenSettings: config.onOpenSettings,
     onDeleteNote: config.onDeleteNote,
     onSetViewMode: config.onSetViewMode,

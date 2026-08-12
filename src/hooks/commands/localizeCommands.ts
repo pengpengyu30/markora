@@ -50,34 +50,8 @@ const STATIC_LABEL_KEYS: Partial<Record<string, TranslationKey>> = {
   'toggle-gitignored-files-visibility': 'command.settings.toggleGitignoredFilesVisibility',
 }
 
-function stripKnownPrefix(label: string, prefix: string): string {
-  return label.startsWith(prefix) ? label.slice(prefix.length) : label
-}
-
 function parenthesizedSuffix(label: string): string | null {
   return label.match(/\(([^)]+)\)$/)?.[1] ?? null
-}
-
-function localizeUndoRedoCommand(command: CommandAction, t: Translate): string | null {
-  if (command.id === 'undo-action') {
-    const action = stripKnownPrefix(command.label, 'Undo ')
-    return action && action !== command.label
-      ? t('command.note.undoAction', { action })
-      : t('command.note.undo')
-  }
-
-  if (command.id === 'redo-action') {
-    const action = stripKnownPrefix(command.label, 'Redo ')
-    return action && action !== command.label
-      ? t('command.note.redoAction', { action })
-      : t('command.note.redo')
-  }
-
-  return null
-}
-
-function localizeNoteStateCommand(command: CommandAction, t: Translate): string | null {
-  return localizeUndoRedoCommand(command, t)
 }
 
 type CommandLocalizer = (command: CommandAction, t: Translate) => string
@@ -99,7 +73,6 @@ export function localizeCommandGroup(group: CommandGroup, locale: AppLocale = 'e
 }
 
 const DYNAMIC_COMMAND_LOCALIZERS: readonly NullableCommandLocalizer[] = [
-  localizeNoteStateCommand,
   localizeViewStateCommand,
 ]
 

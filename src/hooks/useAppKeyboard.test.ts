@@ -176,9 +176,9 @@ describe('useAppKeyboard', () => {
     })
   })
 
-  it('lets focused editor surfaces own undo even when app history is available', () => {
+  it('lets focused editor surfaces own undo without an app history fallback', () => {
     setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64)')
-    const actions = { ...makeActions(), canUndo: true }
+    const actions = makeActions()
     renderHook(() => useAppKeyboard(actions))
 
     withFocusedEditorSurface((editable) => {

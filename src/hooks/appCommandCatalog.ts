@@ -163,8 +163,6 @@ const MENU_LABEL_KEYS = {
   'Quick Open (Cmd+O)': 'menu.file.quickOpenCmdO',
   'Quick Open (Ctrl+O)': 'menu.file.quickOpenCtrlO',
   Save: 'menu.file.save',
-  Undo: 'command.note.undo',
-  Redo: 'command.note.redo',
   'Paste without Formatting': 'menu.edit.pasteWithoutFormatting',
   'Find in Note': 'command.note.findInNote',
   'Replace in Note': 'command.note.replaceInNote',

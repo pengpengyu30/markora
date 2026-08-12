@@ -244,17 +244,23 @@ test.describe('keyboard command routing', () => {
     await expect(page.getByRole('button', { name: 'Set note as organized' })).toBeVisible({ timeout: 5_000 })
   })
 
-  test('app command bridge undoes and redoes organized state through action history', async ({ page }) => {
+  test('edit undo outside the editor does not switch the active note @smoke', async ({ page }) => {
     await openAlphaProjectInEditor(page)
+    const noteList = page.getByTestId('note-list-container')
 
-    await triggerMenuCommand(page, APP_COMMAND_IDS.noteToggleOrganized)
-    await expect(page.getByRole('button', { name: 'Set note as not organized' })).toBeVisible({ timeout: 5_000 })
+    await expect(page.getByTestId('breadcrumb-filename-trigger')).toContainText('alpha-project', { timeout: 5_000 })
+
+    const noteWidthButton = page.getByRole('button', { name: 'Switch to wide note width' })
+    await expect(noteWidthButton).toBeVisible({ timeout: 5_000 })
+    await noteWidthButton.click()
+    await expect(page.getByRole('button', { name: 'Switch to normal note width' })).toBeVisible({ timeout: 5_000 })
+
+    await noteList.getByText('Note B', { exact: true }).click()
+    await expect(page.getByTestId('breadcrumb-filename-trigger')).toContainText('note-b', { timeout: 5_000 })
+    await noteList.focus()
 
     await dispatchAppCommand(page, APP_COMMAND_IDS.editUndo)
-    await expect(page.getByRole('button', { name: 'Set note as organized' })).toBeVisible({ timeout: 5_000 })
-
-    await dispatchAppCommand(page, APP_COMMAND_IDS.editRedo)
-    await expect(page.getByRole('button', { name: 'Set note as not organized' })).toBeVisible({ timeout: 5_000 })
+    await expect(page.getByTestId('breadcrumb-filename-trigger')).toContainText('note-b', { timeout: 5_000 })
   })
 
   test('renderer shortcut bridge toggles the raw editor through the shared keyboard handler', async ({ page }) => {

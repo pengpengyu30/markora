@@ -32,10 +32,7 @@ export type KeyboardActions = Pick<
   | 'onToggleBacklinks'
   | 'activeTabPathRef'
   | 'multiSelectionCommandRef'
-> & {
-  canUndo?: boolean
-  canRedo?: boolean
-}
+>
 
 const TEXT_EDITING_KEYS = new Set(['Backspace', 'Delete'])
 const TEXT_EDITING_BLOCKED_COMMANDS = new Set<AppCommandId>([

@@ -37,12 +37,6 @@ interface CommandRegistryConfig {
   onQuickOpen: () => void
   onCreateNote: (options?: ImmediateCreateOptions) => void
   onSave: () => void
-  onUndo?: () => void
-  onRedo?: () => void
-  canUndo?: boolean
-  canRedo?: boolean
-  undoLabel?: string | null
-  redoLabel?: string | null
   onPastePlainText: () => void
   onOpenSettings: () => void
   onOpenVault?: () => void
@@ -91,7 +85,7 @@ function currentFolderCreateOptions(selection: SidebarSelection | undefined): Im
 export function useCommandRegistry(config: CommandRegistryConfig): import('./commands/types').CommandAction[] {
   const {
     activeTabPath, entries,
-    onQuickOpen, onCreateNote, onSave, onUndo, onRedo, canUndo, canRedo, undoLabel, redoLabel,
+    onQuickOpen, onCreateNote, onSave,
     onPastePlainText, onOpenSettings,
     onDeleteNote,
     onSetViewMode, onToggleBacklinks, onToggleRawEditor, onFindInNote, onReplaceInNote,
@@ -137,7 +131,6 @@ export function useCommandRegistry(config: CommandRegistryConfig): import('./com
   const noteCommands = useMemo(() => buildNoteCommands({
     hasActiveNote, activeTabPath, activeFileKind: activeEntry?.fileKind ?? 'markdown', locale,
     currentFolderCreateOptions: folderCreateOptions, onCreateNote, onSave,
-    onUndo, onRedo, canUndo, canRedo, undoLabel, redoLabel,
     onFindInNote, onReplaceInNote, onPastePlainText,
     onDeleteNote,
     onMoveNoteToFolder, canMoveNoteToFolder,
@@ -146,7 +139,7 @@ export function useCommandRegistry(config: CommandRegistryConfig): import('./com
     onExportNoteAsPdf,
   }), [
     hasActiveNote, activeTabPath, activeEntry?.fileKind, locale,
-    folderCreateOptions, onCreateNote, onSave, onUndo, onRedo, canUndo, canRedo, undoLabel, redoLabel,
+    folderCreateOptions, onCreateNote, onSave,
     onFindInNote, onReplaceInNote, onPastePlainText, onDeleteNote,
     onMoveNoteToFolder, canMoveNoteToFolder, onTurnCurrentBlockInto,
     onRevealActiveFile, onCopyActiveFilePath, onOpenActiveFileExternal,
