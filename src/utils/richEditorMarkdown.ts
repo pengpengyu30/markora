@@ -9,6 +9,7 @@ import {
 import { portableFileAttachmentUrls } from './fileAttachmentMarkdown'
 import { logRichEditorSerializationTrace } from './editorPerformanceTrace'
 import { injectMarkdownHighlightsInBlocks } from './markdownHighlightMarkdown'
+import { injectLinkedCodeInBlocks, preProcessLinkedCodeMarkdown } from './linkedCodeMarkdown'
 import { injectMathInBlocks, preProcessMathMarkdown } from './mathMarkdown'
 import { advanceMarkdownFence, type MarkdownFence } from './markdownFences'
 import { preProcessSingleTildeStrikethrough } from './markdownStrikethrough'
@@ -48,6 +49,11 @@ interface RichEditorBlockSerializationOptions {
 const EMPTY_CHECKLIST_ITEM_FILLER = '\u200B'
 const EMPTY_CHECKLIST_ITEM_LINE_RE = /^([ \t]*[-*+][ \t]+\[[ xX]\])[ \t]*$/u
 const BLANK_PARAGRAPH_PLACEHOLDER = '\u200B'
+
+interface ParsedBlockquoteSourceLine {
+  content: string
+  marker: string
+}
 
 interface MarkdownSourceLine {
   content: string
@@ -94,16 +100,19 @@ export function preProcessRichEditorMarkdown(
 ): PreprocessedMarkdown {
   const withDurableBlocks = preProcessDurableEditorMarkdown({ markdown })
   const withEmptyChecklists = preProcessEmptyChecklistItems(withDurableBlocks)
-  const withBlankParagraphs = preProcessBlankParagraphs(withEmptyChecklists)
+  const withBlankQuotes = preProcessBlankBlockquoteParagraphs(withEmptyChecklists)
+  const withBlankParagraphs = preProcessBlankParagraphs(withBlankQuotes)
   const withBareImages = normalizeBareImageUrls(withBlankParagraphs)
   const withImages = vaultPath ? resolveImageUrls(withBareImages, vaultPath, notePath) : withBareImages
-  const withWikilinks = preProcessWikilinks(withImages)
+  const withLinkedCode = preProcessLinkedCodeMarkdown(withImages)
+  const withWikilinks = preProcessWikilinks(withLinkedCode)
   const withMath = preProcessMathMarkdown({ markdown: withWikilinks })
   return preProcessSingleTildeStrikethrough({ markdown: withMath })
 }
 
 export function injectRichEditorMarkdownBlocks(blocks: EditorBlocksSnapshot): EditorBlocksSnapshot {
-  const withWikilinks = injectWikilinks(blocks)
+  const withLinkedCode = injectLinkedCodeInBlocks(blocks)
+  const withWikilinks = injectWikilinks(withLinkedCode)
   const withMath = injectMathInBlocks(withWikilinks)
   const withHighlights = injectMarkdownHighlightsInBlocks(withMath)
   const withDurableBlocks = injectDurableEditorMarkdownBlocks(withHighlights)
@@ -141,8 +150,9 @@ function serializeRichEditorBodyToMarkdownWithTrace(
   const directEditor = editor as DirectMarkdownCapableSerializer
   delete directEditor.__tolariaLastDirectMarkdownMetrics
   const document = blocks
+  const serialized = serializeDurableEditorBlocks(editor, document, vaultPath)
   const body = compactMarkdown(
-    serializeDurableEditorBlocks(editor, document, vaultPath),
+    restoreBlankBlockquoteParagraphs(serialized),
     { preserveConsecutiveBlankLines: true },
   )
   const metrics = readDirectMarkdownMetrics(directEditor)
@@ -167,6 +177,79 @@ function preProcessEmptyChecklistItems(markdown: MarkdownBody): MarkdownBody {
 function preProcessEmptyChecklistLine(line: MarkdownBody): MarkdownBody {
   const match = EMPTY_CHECKLIST_ITEM_LINE_RE.exec(line)
   return match ? `${match[1]} ${EMPTY_CHECKLIST_ITEM_FILLER}` : line
+}
+
+function preProcessBlankBlockquoteParagraphs(markdown: MarkdownBody): MarkdownBody {
+  const lines = splitMarkdownSourceLines(markdown)
+  return lines.map((line, index) => {
+    const parsed = parseBlockquoteSourceLine(line.content)
+    if (parsed?.content.trim() !== '') return markdownSourceLineText(line)
+    if (!hasQuotedContentNeighbor(lines, index - 1) || !hasQuotedContentNeighbor(lines, index + 1)) {
+      return markdownSourceLineText(line)
+    }
+
+    const newline = line.newline || '\n'
+    const marker = parsed.marker.trimEnd()
+    return `${newline}${marker} ${BLANK_PARAGRAPH_PLACEHOLDER}${newline}${newline}`
+  }).join('')
+}
+
+function hasQuotedContentNeighbor(lines: MarkdownSourceLine[], index: number): boolean {
+  const content = lines.at(index)?.content
+  if (content === undefined) return false
+  const parsed = parseBlockquoteSourceLine(content)
+  return parsed !== null && parsed.content.trim() !== ''
+}
+
+export function restoreBlankBlockquoteParagraphs(markdown: MarkdownBody): MarkdownBody {
+  const lines = markdown.split('\n').values()
+  const restored: string[] = []
+  let current = lines.next()
+
+  while (!current.done) {
+    const line = current.value
+    const next = lines.next()
+    const parsed = parseBlockquoteSourceLine(line)
+    if (!isBlankSerializedBlockquoteGap(parsed, restored.at(-1), next.value)) {
+      restored.push(line)
+      current = next
+      continue
+    }
+
+    restored.pop()
+    restored.push(parsed.marker.trimEnd())
+    current = lines.next()
+  }
+
+  return restored.join('\n')
+}
+
+function isBlankSerializedBlockquoteGap(
+  parsed: ParsedBlockquoteSourceLine | null,
+  previous: string | undefined,
+  next: string | undefined,
+): parsed is ParsedBlockquoteSourceLine {
+  if (!parsed) return false
+  if (parsed.content.trim() !== '') return false
+  if (previous !== '') return false
+  return next === ''
+}
+
+function parseBlockquoteSourceLine(line: string): ParsedBlockquoteSourceLine | null {
+  let cursor = 0
+  while (cursor < 3 && isHorizontalWhitespace(line.charAt(cursor))) cursor += 1
+  if (line.charAt(cursor) !== '>') return null
+
+  do {
+    cursor += 1
+    if (isHorizontalWhitespace(line.charAt(cursor))) cursor += 1
+  } while (line.charAt(cursor) === '>')
+
+  return { content: line.slice(cursor), marker: line.slice(0, cursor) }
+}
+
+function isHorizontalWhitespace(character: string): boolean {
+  return character === ' ' || character === '\t'
 }
 
 function preProcessBlankParagraphs(markdown: MarkdownBody): MarkdownBody {
@@ -300,7 +383,8 @@ function injectBlankParagraphBlock(block: unknown): unknown {
 }
 
 function isBlankParagraphPlaceholderBlock(block: Record<string, unknown>): boolean {
-  return block.type === 'paragraph' && isBlankParagraphPlaceholderContent(block.content)
+  return (block.type === 'paragraph' || block.type === 'quote')
+    && isBlankParagraphPlaceholderContent(block.content)
 }
 
 function isBlankParagraphPlaceholderContent(content: unknown): boolean {

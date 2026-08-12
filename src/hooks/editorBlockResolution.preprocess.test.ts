@@ -24,6 +24,23 @@ afterEach(() => {
   tauriMode.enabled = false
 })
 
+async function reloadRichEditorMarkdown(content: string, targetPath: string) {
+  const editor = BlockNoteEditor.create({ schema })
+  installRichEditorMarkdownSerializer(editor)
+  const resolved = await resolveBlocksForTarget({
+    cache: new Map(),
+    content,
+    editor,
+    targetPath,
+  })
+  const markdown = serializeRichEditorDocumentToMarkdown({
+    blocks: resolved.blocks,
+    editor,
+    tabContent: content,
+  })
+  return { blocks: resolved.blocks, markdown }
+}
+
 describe('preProcessRichEditorMarkdown', () => {
   it('normalizes bare image paths for BlockNote parsing while preserving fenced code', () => {
     const markdown = [
@@ -141,6 +158,40 @@ describe('preProcessRichEditorMarkdown', () => {
     })).toBe(`${content}\n`)
   })
 
+  it('preserves linked inline code through a small-note rich-editor round trip', async () => {
+    const content = 'See [`some-symbol`](https://example.com) for details.'
+
+    const resolved = await reloadRichEditorMarkdown(content, 'linked-inline-code.md')
+
+    expect(resolved.blocks).toContainEqual(expect.objectContaining({
+      type: 'paragraph',
+      content: expect.arrayContaining([
+        expect.objectContaining({
+          type: 'link',
+          href: 'https://example.com',
+          content: [expect.objectContaining({
+            type: 'text',
+            text: 'some-symbol',
+            styles: expect.objectContaining({ code: true }),
+          })],
+        }),
+      ]),
+    }))
+    expect(resolved.markdown).toBe(`${content}\n`)
+  })
+
+  it('preserves linked inline code when another block requires BlockNote parsing', async () => {
+    const content = [
+      'See [`some-symbol`](https://example.com) for details.',
+      '',
+      '![Diagram](https://example.com/diagram.png)',
+    ].join('\n')
+
+    const resolved = await reloadRichEditorMarkdown(content, 'linked-inline-code-with-image.md')
+
+    expect(resolved.markdown).toBe(`${content}\n`)
+  })
+
   it('keeps underscored wikilinks stable across repeated rich-editor reloads', async () => {
     const editor = BlockNoteEditor.create({ schema })
     installRichEditorMarkdownSerializer(editor)
@@ -207,32 +258,27 @@ describe('preProcessRichEditorMarkdown', () => {
     })).toBe(`${content}\n`)
   })
 
-  it('preserves manually inserted blank paragraphs through rich/raw round-trips', async () => {
-    const editor = BlockNoteEditor.create({ schema })
-    installRichEditorMarkdownSerializer(editor)
-    const content = [
-      'First paragraph.',
-      '',
-      '',
-      'Second paragraph.',
-    ].join('\n')
-
-    const resolved = await resolveBlocksForTarget({
-      cache: new Map(),
-      content,
-      editor,
+  it.each([
+    {
+      content: ['First paragraph.', '', '', 'Second paragraph.'].join('\n'),
+      expectedType: 'paragraph',
+      name: 'manually inserted blank paragraphs through rich/raw round-trips',
       targetPath: 'blank-paragraph-spacing.md',
-    })
+    },
+    {
+      content: ['> First quoted paragraph.', '>', '> Second quoted paragraph.'].join('\n'),
+      expectedType: 'quote',
+      name: 'blank quoted paragraphs through rich-editor reloads',
+      targetPath: 'blockquote-paragraph-spacing.md',
+    },
+  ])('preserves $name', async ({ content, expectedType, targetPath }) => {
+    const resolved = await reloadRichEditorMarkdown(content, targetPath)
 
     expect(resolved.blocks).toEqual([
-      expect.objectContaining({ type: 'paragraph', content: expect.any(Array) }),
-      expect.objectContaining({ type: 'paragraph', content: [] }),
-      expect.objectContaining({ type: 'paragraph', content: expect.any(Array) }),
+      expect.objectContaining({ type: expectedType, content: expect.any(Array) }),
+      expect.objectContaining({ type: expectedType, content: [] }),
+      expect.objectContaining({ type: expectedType, content: expect.any(Array) }),
     ])
-    expect(serializeRichEditorDocumentToMarkdown({
-      blocks: resolved.blocks,
-      editor,
-      tabContent: content,
-    })).toBe(`${content}\n`)
+    expect(resolved.markdown).toBe(`${content}\n`)
   })
 })
