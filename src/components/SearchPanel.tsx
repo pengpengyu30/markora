@@ -5,13 +5,15 @@ import { useUnifiedSearch } from '../hooks/useUnifiedSearch'
 import { formatSearchSubtitle } from '../utils/noteListHelpers'
 import type { DateDisplayFormat } from '../utils/dateDisplay'
 import { scrollSelectedHTMLChildIntoView } from '../utils/domScroll'
-import { useDateDisplayFormat } from '../hooks/useAppPreferences'
+import { useAppLocale, useDateDisplayFormat } from '../hooks/useAppPreferences'
+import { translate } from '../lib/i18n'
 
 interface SearchPanelProps {
   open: boolean
-  vaultPath: string
+  vaultPath: string | string[]
   entries: VaultEntry[]
   onSelectNote: (entry: VaultEntry) => void
+  onSelectSearchResult?: (entry: VaultEntry, query: string) => void
   onClose: () => void
 }
 
@@ -246,8 +248,8 @@ function useSearchKeyboard({
   })
 }
 
-function useSearchPanelController({ open, vaultPath, entries, onSelectNote, onClose }: SearchPanelProps) {
-  const { query, setQuery, results, selectedIndex, setSelectedIndex, loading, elapsedMs } = useUnifiedSearch(
+function useSearchPanelController({ open, vaultPath, entries, onSelectNote, onSelectSearchResult, onClose }: SearchPanelProps) {
+  const { query, setQuery, results, selectedIndex, setSelectedIndex, loading, elapsedMs, totalMatches } = useUnifiedSearch(
     vaultPath,
     open,
   )
@@ -263,12 +265,13 @@ function useSearchPanelController({ open, vaultPath, entries, onSelectNote, onCl
   const handleSelect = useCallback(
     (result: SearchResult) => {
       const entry = entries.find((e) => e.path === result.path)
-    if (entry) {
-      onSelectNote(entry)
-      onClose()
-    }
+      if (entry) {
+        onSelectSearchResult?.(entry, query)
+        onSelectNote(entry)
+        onClose()
+      }
     },
-    [entries, onSelectNote, onClose],
+    [entries, onClose, onSelectNote, onSelectSearchResult, query],
   )
 
   useEffect(() => {
@@ -287,6 +290,7 @@ function useSearchPanelController({ open, vaultPath, entries, onSelectNote, onCl
 
   return {
     elapsedMs,
+    totalMatches,
     handleSelect,
     inputRef,
     listRef,
@@ -300,7 +304,8 @@ function useSearchPanelController({ open, vaultPath, entries, onSelectNote, onCl
   }
 }
 
-export function SearchPanel({ open, vaultPath, entries, onSelectNote, onClose }: SearchPanelProps) {
+export function SearchPanel({ open, vaultPath, entries, onSelectNote, onSelectSearchResult, onClose }: SearchPanelProps) {
+  const locale = useAppLocale()
   const dateDisplayFormat = useDateDisplayFormat()
   const rootRef = useRef<HTMLDivElement>(null)
   const {
@@ -315,11 +320,13 @@ export function SearchPanel({ open, vaultPath, entries, onSelectNote, onClose }:
         selectedIndex,
         setQuery,
         setSelectedIndex,
+        totalMatches,
       } = useSearchPanelController({
         open,
         vaultPath,
         entries,
         onSelectNote,
+        onSelectSearchResult,
         onClose,
       })
       const handleResultHover = useCallback(
@@ -360,6 +367,8 @@ export function SearchPanel({ open, vaultPath, entries, onSelectNote, onClose }:
               selectedIndex={selectedIndex}
               loading={loading}
               elapsedMs={elapsedMs}
+              totalMatches={totalMatches}
+              locale={locale}
               entryLookup={entryLookup}
               dateDisplayFormat={dateDisplayFormat}
               listRef={listRef}
@@ -424,6 +433,8 @@ export function SearchPanel({ open, vaultPath, entries, onSelectNote, onClose }:
       selectedIndex: number
       loading: boolean
       elapsedMs: number | null
+      totalMatches: number
+      locale: import('../lib/i18n').AppLocale
       entryLookup: Map<string, VaultEntry>
       dateDisplayFormat: DateDisplayFormat
       listRef: React.RefObject<HTMLDivElement | null>
@@ -535,6 +546,27 @@ export function SearchPanel({ open, vaultPath, entries, onSelectNote, onClose }:
       )
     }
 
+    function SearchTruncationFooter({
+      current,
+      total,
+      locale,
+    }: {
+      current: number
+      total: number
+      locale: import('../lib/i18n').AppLocale
+    }) {
+      if (total <= current) return null
+
+      return (
+        <p
+          className="border-t border-border/50 px-4 py-2 text-center text-[11px] text-muted-foreground"
+          data-testid="search-truncation-footer"
+        >
+          {translate(locale, 'search.truncated', { current, total })}
+        </p>
+      )
+    }
+
     function SearchContent(options: SearchContentProps) {
       const {
         query,
@@ -542,6 +574,8 @@ export function SearchPanel({ open, vaultPath, entries, onSelectNote, onClose }:
         selectedIndex,
         loading,
         elapsedMs,
+        totalMatches,
+        locale,
         entryLookup,
         dateDisplayFormat,
         listRef,
@@ -572,6 +606,7 @@ export function SearchPanel({ open, vaultPath, entries, onSelectNote, onClose }:
               />
             ))}
           </div>
+          <SearchTruncationFooter current={results.length} total={totalMatches} locale={locale} />
         </>
       )}
     </div>

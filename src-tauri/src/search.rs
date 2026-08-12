@@ -15,6 +15,7 @@ pub struct SearchResult {
 #[derive(Debug, Serialize)]
 pub struct SearchResponse {
     pub results: Vec<SearchResult>,
+    pub total_matches: usize,
     pub elapsed_ms: u64,
     pub query: String,
     pub mode: String,
@@ -39,6 +40,7 @@ struct SnippetRequest<'a> {
 }
 
 struct MatchScoreRequest<'a> {
+    filename_lower: &'a str,
     title_lower: &'a str,
     content_lower: &'a str,
     query_lower: &'a str,
@@ -75,6 +77,10 @@ impl Utf8Boundary<'_> {
 
 impl SnippetRequest<'_> {
     fn extract(&self) -> String {
+        if self.query_lower.is_empty() {
+            return String::new();
+        }
+
         let content_lower = self.content.to_lowercase();
         let lower_pos = match content_lower.find(self.query_lower) {
             Some(p) => p,
@@ -102,20 +108,29 @@ impl SnippetRequest<'_> {
 
 impl MatchScoreRequest<'_> {
     fn score(&self) -> f64 {
-        let title_exact = self.title_lower.contains(self.query_lower);
-        let title_word = self
-            .title_lower
-            .split_whitespace()
-            .any(|word| word == self.query_lower);
-        let content_count = self.content_lower.matches(self.query_lower).count();
-
         let mut score = 0.0;
-        if title_word {
-            score += 10.0;
-        } else if title_exact {
-            score += 5.0;
+        for token in self.query_lower.split_whitespace() {
+            let filename_exact = self.filename_lower == token;
+            let filename_match = self.filename_lower.contains(token);
+            let title_exact = self.title_lower.contains(token);
+            let title_word = self
+                .title_lower
+                .split_whitespace()
+                .any(|word| word == token);
+            let content_count = self.content_lower.matches(token).count();
+
+            if filename_exact {
+                score += 12.0;
+            } else if filename_match {
+                score += 10.0;
+            }
+            if title_word {
+                score += 10.0;
+            } else if title_exact {
+                score += 5.0;
+            }
+            score += (content_count as f64).min(20.0) * 0.5;
         }
-        score += (content_count as f64).min(20.0) * 0.5;
         score
     }
 }
@@ -129,22 +144,40 @@ impl SearchContext {
             .file_name()
             .and_then(|value| value.to_str())
             .unwrap_or("");
+        let filename_lower = path
+            .file_stem()
+            .and_then(|value| value.to_str())
+            .unwrap_or("")
+            .to_lowercase();
         let title = crate::vault::derive_markdown_title_from_content(&content, filename);
         let title_lower = title.to_lowercase();
+        let query_tokens = self.query_lower.split_whitespace().collect::<Vec<_>>();
 
-        if !title_lower.contains(&self.query_lower) && !content_lower.contains(&self.query_lower) {
+        if query_tokens.is_empty()
+            || !query_tokens.iter().all(|token| {
+                filename_lower.contains(token)
+                    || title_lower.contains(token)
+                    || content_lower.contains(token)
+            })
+        {
             return None;
         }
 
         let score = MatchScoreRequest {
+            filename_lower: &filename_lower,
             title_lower: &title_lower,
             content_lower: &content_lower,
             query_lower: &self.query_lower,
         }
         .score();
+        let snippet_query = query_tokens
+            .iter()
+            .find(|token| content_lower.contains(*token))
+            .copied()
+            .unwrap_or("");
         let snippet = SnippetRequest {
             content: searchable,
-            query_lower: &self.query_lower,
+            query_lower: snippet_query,
         }
         .extract();
 
@@ -232,12 +265,14 @@ pub fn search_vault_with_options(options: SearchOptions) -> Result<SearchRespons
             .partial_cmp(&a.score)
             .unwrap_or(std::cmp::Ordering::Equal)
     });
+    let total_matches = results.len();
     results.truncate(options.limit);
 
     let elapsed_ms = start.elapsed().as_millis() as u64;
 
     Ok(SearchResponse {
         results,
+        total_matches,
         elapsed_ms,
         query: options.query,
         mode: options.mode,
@@ -271,6 +306,7 @@ mod tests {
     macro_rules! match_score {
         ($title_lower:expr, $content_lower:expr, $query_lower:expr) => {
             MatchScoreRequest {
+                filename_lower: "",
                 title_lower: $title_lower,
                 content_lower: $content_lower,
                 query_lower: $query_lower,
@@ -303,6 +339,27 @@ mod tests {
         let score = match_score!("unrelated", "some keyword text keyword", "keyword");
         assert!(score > 0.0);
         assert!(score < 10.0);
+    }
+
+    #[test]
+    fn test_score_filename_match_is_at_least_content_match() {
+        let repeated_content = "plan ".repeat(20);
+        let filename_score = MatchScoreRequest {
+            filename_lower: "quarterly-plan",
+            title_lower: "",
+            content_lower: "",
+            query_lower: "plan",
+        }
+        .score();
+        let content_score = MatchScoreRequest {
+            filename_lower: "",
+            title_lower: "",
+            content_lower: &repeated_content,
+            query_lower: "plan",
+        }
+        .score();
+
+        assert!(filename_score >= content_score);
     }
 
     #[test]
@@ -449,5 +506,117 @@ mod tests {
 
         assert_eq!(response.results.len(), 1);
         assert_eq!(response.results[0].title, "Body Match");
+    }
+
+    #[test]
+    fn test_search_matches_query_tokens_across_title_and_body() {
+        let dir = Builder::new()
+            .prefix("search-token-and-")
+            .tempdir_in(std::env::current_dir().unwrap())
+            .unwrap();
+        fs::write(
+            dir.path().join("separate-lines.md"),
+            "# Unrelated Notes\n\nThis line mentions project.\nThis line mentions plan.",
+        )
+        .unwrap();
+
+        let response =
+            search_vault(dir.path().to_str().unwrap(), "project plan", "keyword", 10).unwrap();
+
+        assert_eq!(response.results.len(), 1);
+        assert!(response.results[0].snippet.contains("project"));
+    }
+
+    #[test]
+    fn test_search_requires_every_query_token() {
+        let dir = Builder::new()
+            .prefix("search-token-and-missing-")
+            .tempdir_in(std::env::current_dir().unwrap())
+            .unwrap();
+        fs::write(
+            dir.path().join("project-only.md"),
+            "# Project Notes\n\nThis note only mentions project.",
+        )
+        .unwrap();
+
+        let response =
+            search_vault(dir.path().to_str().unwrap(), "project plan", "keyword", 10).unwrap();
+
+        assert!(response.results.is_empty());
+    }
+
+    #[test]
+    fn test_search_matches_filename_stem_when_title_and_body_do_not_match() {
+        let dir = Builder::new()
+            .prefix("search-filename-match-")
+            .tempdir_in(std::env::current_dir().unwrap())
+            .unwrap();
+        fs::write(
+            dir.path().join("quarterly-plan.md"),
+            "# Quarterly Review\n\nThe title and body avoid the filename token.",
+        )
+        .unwrap();
+
+        let response = search_vault(dir.path().to_str().unwrap(), "plan", "keyword", 10).unwrap();
+
+        assert_eq!(response.results.len(), 1);
+        assert!(response.results[0].score > 0.0);
+        assert!(response.results[0].snippet.is_empty());
+    }
+
+    #[test]
+    fn test_search_reports_total_matches_when_results_are_truncated() {
+        let dir = Builder::new()
+            .prefix("search-total-matches-")
+            .tempdir_in(std::env::current_dir().unwrap())
+            .unwrap();
+        for index in 0..250 {
+            fs::write(
+                dir.path().join(format!("matching-{index}.md")),
+                "# Matching Note\n\nneedle",
+            )
+            .unwrap();
+        }
+
+        let response = search_vault_with_options(SearchOptions {
+            vault_path: dir.path().to_string_lossy().into_owned(),
+            query: "needle".to_string(),
+            mode: "keyword".to_string(),
+            limit: 200,
+            hide_gitignored_files: false,
+            exclude_frontmatter: false,
+        })
+        .unwrap();
+
+        assert_eq!(response.results.len(), 200);
+        assert_eq!(response.total_matches, 250);
+    }
+
+    #[test]
+    fn test_search_reports_no_truncation_for_small_result_sets() {
+        let dir = Builder::new()
+            .prefix("search-total-matches-small-")
+            .tempdir_in(std::env::current_dir().unwrap())
+            .unwrap();
+        for index in 0..5 {
+            fs::write(
+                dir.path().join(format!("matching-{index}.md")),
+                "# Matching Note\n\nneedle",
+            )
+            .unwrap();
+        }
+
+        let response = search_vault_with_options(SearchOptions {
+            vault_path: dir.path().to_string_lossy().into_owned(),
+            query: "needle".to_string(),
+            mode: "keyword".to_string(),
+            limit: 200,
+            hide_gitignored_files: false,
+            exclude_frontmatter: false,
+        })
+        .unwrap();
+
+        assert_eq!(response.results.len(), 5);
+        assert_eq!(response.total_matches, 5);
     }
 }

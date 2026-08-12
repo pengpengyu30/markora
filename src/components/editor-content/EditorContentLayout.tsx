@@ -76,6 +76,7 @@ function RawModeEditorSection(
     | 'onSave'
     | 'rawLatestContentRef'
     | 'rawModeContent'
+    | 'searchHighlightRequest'
     | 'vaultPath'
   > & {
     rawMode: boolean
@@ -92,6 +93,7 @@ function RawModeEditorSection(
     onImageImportError,
     onSave,
     rawLatestContentRef,
+    searchHighlightRequest,
     vaultPath,
     locale,
   } = options
@@ -117,6 +119,7 @@ function RawModeEditorSection(
         }}
         onSave={onSave ?? (() => {})}
         latestContentRef={rawLatestContentRef}
+        searchHighlightRequest={searchHighlightRequest}
         vaultPath={vaultPath}
         locale={locale}
       />
@@ -271,6 +274,7 @@ type EditorCanvasProps = Pick<
   | 'onOpenExternalFile'
   | 'onRevealFile'
   | 'onCopyFilePath'
+  | 'searchHighlightRequest'
 >
 
 function EditorCanvas(props: EditorCanvasProps) {
@@ -302,6 +306,7 @@ function StandardEditorCanvas(options: EditorCanvasProps) {
     vaultPath,
     locale,
     onImageImportError,
+    searchHighlightRequest,
   } = options
   if (!richEditorContentReady) return null
 
@@ -314,6 +319,7 @@ function StandardEditorCanvas(options: EditorCanvasProps) {
           onNavigateWikilink={onNavigateWikilink}
           onChange={onEditorChange}
           onImageImportError={onImageImportError}
+          searchHighlightRequest={searchHighlightRequest}
           sourceEntry={activeTab?.entry ?? null}
           vaultPath={vaultPath}
           editable={!isDeletedPreview}
@@ -377,6 +383,7 @@ export function EditorContentLayout(model: EditorContentModel) {
     isDeletedPreview,
     rawLatestContentRef,
     rawModeContent,
+    searchHighlightRequest,
     noteWidth,
     isHtmlFile,
     legacyUnsupportedKind,
@@ -417,6 +424,7 @@ export function EditorContentLayout(model: EditorContentModel) {
             rawModeContent={rawModeContent}
             onRawContentChange={onRawContentChange}
             onImageImportError={onImageImportError}
+            searchHighlightRequest={searchHighlightRequest}
             onSave={onSave}
             rawLatestContentRef={rawLatestContentRef}
             vaultPath={vaultPath}
@@ -440,6 +448,7 @@ export function EditorContentLayout(model: EditorContentModel) {
             onOpenExternalFile={model.onOpenExternalFile}
             onRevealFile={model.onRevealFile}
             onCopyFilePath={model.onCopyFilePath}
+            searchHighlightRequest={searchHighlightRequest}
           />
         </>
       )}

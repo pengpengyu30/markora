@@ -276,6 +276,7 @@
   "noteList.title.notes": "ノート",
   "noteList.searchPlaceholder": "ノートを検索…",
   "noteList.searchAction": "メモを検索",
+  "search.truncated": "{total} 件の一致。最初の {current} 件を表示",
   "noteList.clearSearch": "検索をクリア",
   "noteList.quickOpenCreate": "メモ「{title}」を作成",
   "noteList.createNote": "新しいノートを作成",

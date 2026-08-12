@@ -276,6 +276,7 @@
   "noteList.title.notes": "Poznámky",
   "noteList.searchPlaceholder": "Hľadať v poznámkach...",
   "noteList.searchAction": "Hľadať v poznámkach",
+  "search.truncated": "{total} zhôd, zobrazených prvých {current}",
   "noteList.clearSearch": "Vymazať vyhľadávanie",
   "noteList.quickOpenCreate": "Vytvoriť poznámku „{title}“",
   "noteList.createNote": "Vytvoriť novú poznámku",

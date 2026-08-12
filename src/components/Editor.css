@@ -1,3 +1,22 @@
+.tolaria-search-highlight {
+  border-radius: 2px;
+  background-color: rgba(250, 204, 21, 0.58);
+  box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.18);
+  animation: tolaria-search-highlight-fade 2s ease-out forwards;
+}
+
+@keyframes tolaria-search-highlight-fade {
+  0%, 22% {
+    background-color: rgba(250, 204, 21, 0.58);
+    box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.18);
+  }
+
+  100% {
+    background-color: transparent;
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
 /* Wikilink inline content — color is set via inline style per note type */
 .wikilink {
   text-decoration: underline;
@@ -548,6 +567,10 @@ body.mac-chrome .app:not(:has(.app__sidebar), :has(.app__note-list)) .breadcrumb
 .editor__blocknote-container *::after {
   transition: none !important;
   animation: none !important;
+}
+
+.editor__blocknote-container .tolaria-search-highlight {
+  animation: tolaria-search-highlight-fade 2s ease-out forwards !important;
 }
 
 /* Reduce padding at narrow editor widths so content isn't cramped */

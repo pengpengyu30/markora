@@ -72,6 +72,7 @@ import {
   shouldPreferOnboardingVaultPath,
 } from './utils/appOrchestration'
 import { buildTagCounts, filterEntriesByTags } from './utils/noteTags'
+import type { SearchHighlightRequest } from './utils/searchHighlight'
 import './App.css'
 
 // Type declarations for mock content storage and test overrides
@@ -93,8 +94,21 @@ function MainApp() {
   const [selection, setSelection] = useState<SidebarSelection>(DEFAULT_SELECTION)
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [pendingNoteListPdfExportPath, setPendingNoteListPdfExportPath] = useState<string | null>(null)
+  const [searchHighlightRequest, setSearchHighlightRequest] = useState<SearchHighlightRequest | null>(null)
+  const searchHighlightRequestIdRef = useRef(0)
   const handleSetSelection = useCallback((sel: SidebarSelection) => {
     setSelection(sel)
+  }, [])
+  const handleSelectSearchResult = useCallback((entry: VaultEntry, query: string) => {
+    const trimmedQuery = query.trim()
+    if (!trimmedQuery) return
+
+    searchHighlightRequestIdRef.current += 1
+    setSearchHighlightRequest({
+      id: searchHighlightRequestIdRef.current,
+      path: entry.path,
+      query: trimmedQuery,
+    })
   }, [])
   const layout = useLayoutPanels()
   const visibleNotesRef = useRef<VaultEntry[]>([])
@@ -928,6 +942,7 @@ function MainApp() {
               leftPanelsCollapsed={!sidebarVisible && !noteListVisible}
               flushPendingEditorContentRef={flushPendingEditorContentRef}
               flushPendingRawContentRef={flushPendingRawContentRef}
+              searchHighlightRequest={searchHighlightRequest}
               onToast={setToastMessage}
               locale={appLocale}
             />
@@ -954,7 +969,7 @@ function MainApp() {
           onRestored={handleDeletedNoteRestored}
           onToast={setToastMessage}
         />
-        <SearchPanel open={dialogs.showSearch} vaultPath={resolvedPath} entries={visibleEntries} onSelectNote={notes.handleSelectNote} onClose={dialogs.closeSearch} />
+        <SearchPanel open={dialogs.showSearch} vaultPath={visibleWorkspaceRoots} entries={visibleEntries} onSelectNote={notes.handleSelectNote} onSelectSearchResult={handleSelectSearchResult} onClose={dialogs.closeSearch} />
         <NoteRetargetingDialogs
           dialogState={noteRetargetingUi.dialogState}
           dialogEntry={noteRetargetingUi.dialogEntry}

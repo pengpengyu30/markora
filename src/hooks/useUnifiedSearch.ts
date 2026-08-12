@@ -14,10 +14,12 @@ interface SearchResultData {
 
 interface SearchResponseData {
   results: SearchResultData[]
+  total_matches?: number
   elapsed_ms: number
 }
 
 const DEBOUNCE_MS = 300
+const SEARCH_RESULT_LIMIT = 200
 
 function searchCall(args: Record<string, unknown>): Promise<SearchResponseData> {
   return isTauri()
@@ -86,6 +88,7 @@ export function useUnifiedSearch(vaultPath: string | string[], active: boolean) 
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [loading, setLoading] = useState(false)
   const [elapsedMs, setElapsedMs] = useState<number | null>(null)
+  const [totalMatches, setTotalMatches] = useState(0)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const searchGenRef = useRef(0)
 
@@ -94,6 +97,7 @@ export function useUnifiedSearch(vaultPath: string | string[], active: boolean) 
     setResults([])
     setSelectedIndex(0)
     setElapsedMs(null)
+    setTotalMatches(0)
     setLoading(false)
     searchGenRef.current++
   }, [])
@@ -101,7 +105,13 @@ export function useUnifiedSearch(vaultPath: string | string[], active: boolean) 
   useSearchLifecycle(active, reset, debounceRef, searchGenRef)
 
   const performSearch = useCallback(async (q: string) => {
-    if (!q.trim()) { setResults([]); setElapsedMs(null); setLoading(false); return }
+    if (!q.trim()) {
+      setResults([])
+      setElapsedMs(null)
+      setTotalMatches(0)
+      setLoading(false)
+      return
+    }
     searchGenRef.current++
     const gen = searchGenRef.current
     setLoading(true)
@@ -109,9 +119,19 @@ export function useUnifiedSearch(vaultPath: string | string[], active: boolean) 
       const paths = Array.isArray(vaultPath) ? vaultPath : [vaultPath]
       const responses = await Promise.all(paths
         .filter((path) => path.trim().length > 0)
-        .map((path) => searchCall({ vaultPath: path, query: q, mode: 'keyword', limit: 20 })))
+        .map((path) => searchCall({
+          vaultPath: path,
+          query: q,
+          mode: 'keyword',
+          limit: SEARCH_RESULT_LIMIT,
+        })))
       if (gen !== searchGenRef.current) return
-      setResults(mapResults(responses.flatMap((response) => response.results)).slice(0, 20))
+      const mappedResults = mapResults(responses.flatMap((response) => response.results))
+      setResults(mappedResults.slice(0, SEARCH_RESULT_LIMIT))
+      setTotalMatches(responses.reduce(
+        (sum, response) => sum + (response.total_matches ?? response.results.length),
+        0,
+      ))
       setElapsedMs(responses.reduce((sum, response) => sum + response.elapsed_ms, 0))
       setSelectedIndex(0)
     } catch {
@@ -128,6 +148,7 @@ export function useUnifiedSearch(vaultPath: string | string[], active: boolean) 
     debounceRef.current = null
     setResults([])
     setElapsedMs(null)
+    setTotalMatches(0)
     searchGenRef.current++
     setLoading(false)
   }, [])
@@ -149,5 +170,14 @@ export function useUnifiedSearch(vaultPath: string | string[], active: boolean) 
     query,
   })
 
-  return { query, setQuery: updateQuery, results, selectedIndex, setSelectedIndex, loading, elapsedMs }
+  return {
+    query,
+    setQuery: updateQuery,
+    results,
+    selectedIndex,
+    setSelectedIndex,
+    loading,
+    elapsedMs,
+    totalMatches,
+  }
 }

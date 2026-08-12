@@ -276,6 +276,7 @@
   "noteList.title.notes": "Natatki",
   "noteList.searchPlaceholder": "Šukać natatki...",
   "noteList.searchAction": "Pošuk natatak",
+  "search.truncated": "{total} supadzyennyau, pakazany pershyya {current}",
   "noteList.clearSearch": "Ačyscić pošuk",
   "noteList.quickOpenCreate": "Stvaryć natatku \"{title}\"",
   "noteList.createNote": "Stvaryć natatku",

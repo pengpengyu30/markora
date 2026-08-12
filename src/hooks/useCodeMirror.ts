@@ -19,6 +19,7 @@ import { zoomCursorFix } from '../extensions/zoomCursorFix'
 import { rawEditorTextInputAttributes } from '../lib/nativeTextAssistance'
 import { isInsideMarkdownFence } from '../utils/markdownFences'
 import { isWindows } from '../utils/platform'
+import { searchHighlightExtension } from '../extensions/searchHighlight'
 
 const FONT_FAMILY = '"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace'
 const RAW_EDITOR_COLORS = {
@@ -367,6 +368,7 @@ export function useCodeMirror(
         EditorView.cspNonce.of(RUNTIME_STYLE_NONCE),
         EditorView.contentAttributes.of(rawEditorTextInputAttributes),
         rawEditorLanguageExtensionsForPath(sourcePath),
+        searchHighlightExtension(),
         zoomCursorFix(),
         EditorView.updateListener.of((update) => {
           if (update.docChanged && !externalSyncRef.current) {

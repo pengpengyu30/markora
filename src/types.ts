@@ -226,6 +226,7 @@ export interface SearchResult {
 
 export interface SearchResponse {
   results: SearchResult[]
+  totalMatches: number
   elapsedMs: number
   query: string
   mode: string

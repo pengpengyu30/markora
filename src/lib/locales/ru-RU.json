@@ -276,6 +276,7 @@
   "noteList.title.notes": "Заметки",
   "noteList.searchPlaceholder": "Поиск заметок...",
   "noteList.searchAction": "Поиск по заметкам",
+  "search.truncated": "{total} совпадений, показаны первые {current}",
   "noteList.clearSearch": "Очистить поиск",
   "noteList.quickOpenCreate": "Создать заметку «{title}»",
   "noteList.createNote": "Создать новую заметку",

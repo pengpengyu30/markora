@@ -276,6 +276,7 @@
   "noteList.title.notes": "Catatan",
   "noteList.searchPlaceholder": "Cari catatan...",
   "noteList.searchAction": "Cari catatan",
+  "search.truncated": "{total} hasil, menampilkan {current} yang pertama",
   "noteList.clearSearch": "Hapus pencarian",
   "noteList.quickOpenCreate": "Buat catatan \"{title}\"",
   "noteList.createNote": "Buat catatan baru",

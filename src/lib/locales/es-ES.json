@@ -276,6 +276,7 @@
   "noteList.title.notes": "Notas",
   "noteList.searchPlaceholder": "Buscar notas…",
   "noteList.searchAction": "Buscar notas",
+  "search.truncated": "{total} resultados; se muestran los primeros {current}",
   "noteList.clearSearch": "Borrar búsqueda",
   "noteList.quickOpenCreate": "Crear nota «{title}»",
   "noteList.createNote": "Crear nueva nota",

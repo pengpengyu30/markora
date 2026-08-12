@@ -22,6 +22,13 @@ import {
 } from '../utils/plainTextPaste'
 import { rawEditorLanguageIdForPath } from '../utils/rawEditorLanguage'
 import {
+  applySearchHighlight,
+} from '../extensions/searchHighlight'
+import {
+  SEARCH_HIGHLIGHT_CLEANUP_DELAY_MS,
+  type SearchHighlightRequest,
+} from '../utils/searchHighlight'
+import {
   clipboardRemoteImages,
   importRemoteImages,
   rawRemoteImagePasteText,
@@ -41,11 +48,16 @@ export interface RawEditorViewProps {
   latestContentRef?: React.MutableRefObject<string | null>
   locale?: AppLocale
   findRequest?: RawEditorFindRequest | null
+  searchHighlightRequest?: SearchHighlightRequest | null
   onImageImportResult?: (result: Pick<RemoteImageImportResult, 'failedCount' | 'totalCount'>) => void
 }
 
 const DEBOUNCE_MS = 500
 const DROPDOWN_MAX_HEIGHT = 200
+
+function isCurrentEditorView(viewRef: React.MutableRefObject<EditorView | null>, view: EditorView): boolean {
+  return viewRef.current === view
+}
 
 type PendingChangeRefs = {
   debounceRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>
@@ -583,7 +595,7 @@ function RawEditorSurface(options: RawEditorSurfaceProps) {
 }
 
 export function RawEditorView(options: RawEditorViewProps) {
-  const { content, entries, findRequest, latestContentRef, locale = 'en', onContentChange, onImageImportResult, onSave, path, vaultPath } = options
+  const { content, entries, findRequest, latestContentRef, locale = 'en', onContentChange, onImageImportResult, onSave, path, searchHighlightRequest, vaultPath } = options
   const rootRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [rawDoc, setRawDoc] = useState(content)
@@ -631,6 +643,20 @@ export function RawEditorView(options: RawEditorViewProps) {
     },
     path,
   )
+  useEffect(() => {
+    const view = viewRef.current
+    if (!view || searchHighlightRequest?.path !== path) return
+
+    applySearchHighlight(view, searchHighlightRequest.query)
+    const cleanupTimer = window.setTimeout(() => {
+      if (isCurrentEditorView(viewRef, view)) applySearchHighlight(view, null)
+    }, SEARCH_HIGHLIGHT_CLEANUP_DELAY_MS)
+
+    return () => {
+      window.clearTimeout(cleanupTimer)
+      if (isCurrentEditorView(viewRef, view)) applySearchHighlight(view, null)
+    }
+  }, [path, searchHighlightRequest, viewRef])
   const handleRemoteImagePaste = useRawEditorRemoteImagePaste({
     onImageImportResult,
     vaultPath,

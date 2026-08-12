@@ -127,7 +127,7 @@ pub async fn search_vault(
     exclude_frontmatter: Option<bool>,
 ) -> Result<SearchResponse, String> {
     let vault_path = expand_tilde(&vault_path).into_owned();
-    let limit = limit.unwrap_or(20);
+    let limit = limit.unwrap_or(200);
     let exclude_frontmatter = exclude_frontmatter.unwrap_or(false);
     tokio::task::spawn_blocking(move || {
         search::search_vault_with_options(search::SearchOptions {
@@ -341,5 +341,32 @@ mod tests {
         .unwrap();
 
         assert_eq!(response.results.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn search_vault_command_defaults_to_two_hundred_results_and_reports_total() {
+        let dir = tempfile::Builder::new()
+            .prefix("scan-search-default-limit-")
+            .tempdir_in(std::env::current_dir().unwrap())
+            .unwrap();
+        for index in 0..250 {
+            write_note(
+                dir.path(),
+                &format!("matching-{index}.md"),
+                "# Matching Note\n\nneedle",
+            );
+        }
+
+        let response = search_vault(
+            dir.path().to_string_lossy().into_owned(),
+            "needle".to_string(),
+            None,
+            None,
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(response.results.len(), 200);
+        assert_eq!(response.total_matches, 250);
     }
 }

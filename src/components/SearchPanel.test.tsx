@@ -104,13 +104,22 @@ function renderSearchPanel({
   entries = MOCK_ENTRIES,
   onClose = vi.fn(),
   onSelectNote = vi.fn(),
+  onSelectSearchResult = vi.fn(),
 }: {
   entries?: VaultEntry[]
   onClose?: () => void
   onSelectNote?: (entry: VaultEntry) => void
+  onSelectSearchResult?: (entry: VaultEntry, query: string) => void
 } = {}) {
   render(
-    <SearchPanel open={true} vaultPath="/vault" entries={entries} onSelectNote={onSelectNote} onClose={onClose} />,
+    <SearchPanel
+      open={true}
+      vaultPath="/vault"
+      entries={entries}
+      onSelectNote={onSelectNote}
+      onSelectSearchResult={onSelectSearchResult}
+      onClose={onClose}
+    />,
   )
 }
 
@@ -125,6 +134,7 @@ async function renderSearchWithResults({
   query = 'test',
   visibleTitle = 'Search Patterns',
   onSelectNote = vi.fn(),
+  onSelectSearchResult = vi.fn(),
 }: {
   elapsedMs?: number
   entries?: VaultEntry[]
@@ -132,9 +142,10 @@ async function renderSearchWithResults({
   query?: string
   visibleTitle?: string
   onSelectNote?: (entry: VaultEntry) => void
+  onSelectSearchResult?: (entry: VaultEntry, query: string) => void
 } = {}) {
   mockSearchResults(results, elapsedMs)
-  renderSearchPanel({ entries, onSelectNote })
+  renderSearchPanel({ entries, onSelectNote, onSelectSearchResult })
 
   const input = screen.getByPlaceholderText(SEARCH_INPUT_PLACEHOLDER)
   fireEvent.change(input, { target: { value: query } })
@@ -283,13 +294,46 @@ describe('SearchPanel', () => {
         vaultPath: '/vault',
         query: 'api design',
         mode: 'keyword',
-        limit: 20,
+        limit: 200,
       })
     })
 
     await waitFor(() => {
       expect(screen.getByText('How to Design AI-first APIs')).toBeInTheDocument()
     })
+  })
+
+  it('searches every provided Project root', async () => {
+    mockInvokeFn.mockImplementation(async (_command, args) => {
+      const vaultPath = (args as { vaultPath: string }).vaultPath
+      return {
+        results: [{ ...API_SEARCH_RESULT, path: `${vaultPath}/search.md`, title: vaultPath }],
+        total_matches: 1,
+        elapsed_ms: 10,
+      }
+    })
+
+    render(
+      <SearchPanel
+        open={true}
+        vaultPath={['/vault', '/edgeclaw']}
+        entries={MOCK_ENTRIES}
+        onSelectNote={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    fireEvent.change(screen.getByPlaceholderText(SEARCH_INPUT_PLACEHOLDER), { target: { value: 'tom jerry' } })
+
+    await waitFor(() => expect(mockInvokeFn).toHaveBeenCalledTimes(2))
+    expect(mockInvokeFn).toHaveBeenNthCalledWith(1, 'search_vault', expect.objectContaining({
+      vaultPath: '/vault',
+      limit: 200,
+    }))
+    expect(mockInvokeFn).toHaveBeenNthCalledWith(2, 'search_vault', expect.objectContaining({
+      vaultPath: '/edgeclaw',
+      limit: 200,
+    }))
   })
 
   it('shows note title from VaultEntry instead of filename from search result', async () => {
@@ -418,6 +462,15 @@ describe('SearchPanel', () => {
     expect(onSelectNote).toHaveBeenCalledWith(THREE_RESULT_ENTRIES[2])
   })
 
+  it('passes the search query with the selected result for transient editor highlighting', async () => {
+    const onSelectSearchResult = vi.fn()
+    await renderSearchWithResults({ query: 'tom jerry', onSelectSearchResult })
+
+    fireEvent.click(resultRow('Search Patterns'))
+
+    expect(onSelectSearchResult).toHaveBeenCalledWith(THREE_RESULT_ENTRIES[2], 'tom jerry')
+  })
+
   it('selects result on Enter and calls onSelectNote', async () => {
     mockInvokeFn.mockResolvedValue({
       results: [
@@ -456,6 +509,37 @@ describe('SearchPanel', () => {
       expect(screen.getByText(/1 result/)).toBeInTheDocument()
       expect(screen.getByText(/123ms/)).toBeInTheDocument()
     })
+  })
+
+  it('shows the total match count when the backend truncates results', async () => {
+    mockInvokeFn.mockResolvedValue({
+      results: [API_SEARCH_RESULT],
+      total_matches: 347,
+      elapsed_ms: 123,
+    })
+
+    renderSearchPanel()
+    fireEvent.change(screen.getByPlaceholderText(SEARCH_INPUT_PLACEHOLDER), { target: { value: 'api' } })
+
+    await waitFor(() => {
+      expect(screen.getByText(/347 matches, showing the first 1/)).toBeInTheDocument()
+    })
+  })
+
+  it('does not show a truncation footer when all matches are returned', async () => {
+    mockInvokeFn.mockResolvedValue({
+      results: [API_SEARCH_RESULT],
+      total_matches: 1,
+      elapsed_ms: 123,
+    })
+
+    renderSearchPanel()
+    fireEvent.change(screen.getByPlaceholderText(SEARCH_INPUT_PLACEHOLDER), { target: { value: 'api' } })
+
+    await waitFor(() => {
+      expect(screen.getByText('How to Design AI-first APIs')).toBeInTheDocument()
+    })
+    expect(screen.queryByText(/showing the first/)).not.toBeInTheDocument()
   })
 
   it('shows metadata subtitle with word count and links', async () => {

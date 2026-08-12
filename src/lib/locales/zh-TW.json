@@ -277,6 +277,7 @@
   "noteList.title.notes": "筆記",
   "noteList.searchPlaceholder": "搜尋筆記...",
   "noteList.searchAction": "搜尋筆記",
+  "search.truncated": "{total} 個符合項目，顯示前 {current} 個",
   "noteList.clearSearch": "清除搜尋",
   "noteList.tags.filteredBy": "篩選條件",
   "noteList.tags.clear": "清除標籤篩選",

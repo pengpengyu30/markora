@@ -1,4 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
+import fs from 'fs'
+import path from 'path'
 import { APP_COMMAND_IDS } from '../../src/hooks/appCommandCatalog'
 import { RUNTIME_STYLE_NONCE } from '../../src/lib/runtimeStyleNonce'
 import {
@@ -112,7 +114,7 @@ async function installGlobalSearchResultsHarness(page: Page): Promise<void> {
 }
 
 function searchResultRow(page: Page, title: string) {
-  return page.locator('[role="option"]').filter({ hasText: title }).first()
+  return page.getByRole('listbox', { name: 'Search results' }).getByRole('option').filter({ hasText: title }).first()
 }
 
 async function expectSelectedSearchResult(page: Page, title: string): Promise<void> {
@@ -230,6 +232,49 @@ test.describe('keyboard command routing', () => {
     await page.waitForTimeout(550)
     await page.keyboard.press('ArrowUp')
     await expectSelectedSearchResult(page, 'Second Search Result')
+  })
+
+  test('global search briefly highlights the matching content after opening a note @smoke', async ({ page }) => {
+    const notePath = path.join(tempVaultDir, 'project', 'alpha-project.md')
+    fs.appendFileSync(notePath, '\nTom Jerry\n', 'utf-8')
+
+    await openFixtureVaultDesktopHarness(page, tempVaultDir)
+    await page.waitForFunction(() => Boolean(window.__mockHandlers?.search_vault))
+    await page.evaluate((result) => {
+      type Handler = (args?: Record<string, unknown>) => unknown
+      const handlers = window.__mockHandlers as Record<string, Handler>
+      handlers.search_vault = () => ({ results: [result], elapsed_ms: 1 })
+    }, {
+      title: 'Alpha Project',
+      path: notePath,
+      snippet: 'Tom Jerry',
+      score: 1,
+      note_type: null,
+    })
+
+    await page.locator('body').click()
+    await dispatchShortcutEvent(page, {
+      key: 'f',
+      code: 'KeyF',
+      ctrlKey: false,
+      metaKey: true,
+      shiftKey: true,
+      altKey: false,
+      bubbles: true,
+      cancelable: true,
+    })
+    const input = page.locator(GLOBAL_SEARCH_INPUT)
+    await expect(input).toBeVisible({ timeout: 5_000 })
+    await input.fill('tom jerry')
+
+    await expect(searchResultRow(page, 'Alpha Project')).toBeVisible({ timeout: 5_000 })
+    await input.press('Enter')
+
+    const highlights = page.locator('.bn-editor .tolaria-search-highlight')
+    await expect(highlights).toHaveCount(2, { timeout: 5_000 })
+    await expect.poll(async () => highlights.first().evaluate((element) => getComputedStyle(element).animationDuration)).toBe('2s')
+    await expect(page.getByRole('heading', { name: 'Alpha Project', level: 1 })).toBeVisible({ timeout: 5_000 })
+    await expect(highlights).toHaveCount(0, { timeout: 5_000 })
   })
 
   test('desktop menu-command bridge toggles organized state through the shared command path', async ({ page }) => {

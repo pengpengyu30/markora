@@ -16,6 +16,7 @@ const localStorageMock = (() => {
     clear: () => { store = {} },
   }
 })()
+const mockSearchPanel = vi.hoisted(() => vi.fn())
 Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock, writable: true })
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
@@ -227,6 +228,13 @@ vi.mock('./mock-tauri', () => ({
   trackMockChange: vi.fn(),
 }))
 
+vi.mock('./components/SearchPanel', () => ({
+  SearchPanel: (props: unknown) => {
+    mockSearchPanel(props)
+    return null
+  },
+}))
+
 vi.mock('./hooks/useUpdater', async () => {
   const actual = await vi.importActual<typeof import('./hooks/useUpdater')>('./hooks/useUpdater')
 
@@ -385,6 +393,25 @@ describe('App', () => {
       expect(screen.getAllByText('Test Project').length).toBeGreaterThan(0)
       expect(screen.getAllByText('Software Development').length).toBeGreaterThan(0)
     }, { timeout: SLOW_APP_READY_TIMEOUT_MS })
+  })
+
+  it('passes all visible Project roots to global search', async () => {
+    mockCommandResults.load_vault_list = {
+      vaults: [
+        { label: 'Test Vault', path: '/vault' },
+        { label: 'Edgeclaw', path: '/edgeclaw' },
+      ],
+      active_vault: '/vault',
+      hidden_defaults: [],
+    }
+
+    render(<App />)
+
+    await screen.findByTestId('status-bar')
+    await waitFor(() => {
+      const searchPanelProps = mockSearchPanel.mock.calls.at(-1)?.[0] as { vaultPath?: unknown } | undefined
+      expect(searchPanelProps?.vaultPath).toEqual(expect.arrayContaining(['/vault', '/edgeclaw']))
+    })
   })
 
   it('keeps one startup shell visible while the initial vault note scan is pending', async () => {

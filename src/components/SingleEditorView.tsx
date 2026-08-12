@@ -77,6 +77,17 @@ import {
   selectedEditorRange,
   writeRichEditorClipboardPayload,
 } from './editorRichCopy'
+import {
+  applyRichEditorSearchHighlight,
+  richEditorSearchHighlightView,
+  type SearchHighlightView,
+} from './searchHighlightExtension'
+import {
+  SEARCH_HIGHLIGHT_CLASS,
+  SEARCH_HIGHLIGHT_CLEANUP_DELAY_MS,
+  findSearchHighlightRanges,
+  type SearchHighlightRequest,
+} from '../utils/searchHighlight'
 
 const TEST_TABLE_MARKDOWN = `| Head 1 | Head 2 | Head 3 |
 | --- | --- | --- |
@@ -1168,6 +1179,65 @@ function refreshCodeBlockSyntaxHighlighting(editor: ReturnType<typeof useCreateB
   view.dispatch(transaction)
 }
 
+function useRichEditorSearchHighlight({
+  editor,
+  path,
+  request,
+}: {
+  editor: ReturnType<typeof useCreateBlockNote>
+  path?: string
+  request?: SearchHighlightRequest | null
+}) {
+  useEffect(() => {
+    if (!request || request.path !== path) return
+
+    let cancelled = false
+    let retryFrame = 0
+    let scrollFrame = 0
+    let cleanupTimer: number | null = null
+    const waitStartedAt = performance.now()
+    const editorWithView = editor as unknown as {
+      _tiptapEditor?: { view?: SearchHighlightView | null } | null
+      prosemirrorView?: SearchHighlightView | null
+    }
+
+    const applyWhenReady = () => {
+      if (cancelled) return
+
+      const view = richEditorSearchHighlightView(editorWithView)
+      const hasMatch = view && findSearchHighlightRanges(view.state.doc.textContent, request.query).length > 0
+      if (!hasMatch) {
+        if (performance.now() - waitStartedAt < 5000) {
+          retryFrame = window.requestAnimationFrame(applyWhenReady)
+        }
+        return
+      }
+
+      applyRichEditorSearchHighlight(view, request.query)
+      scrollFrame = window.requestAnimationFrame(() => {
+        const highlight = view.dom.querySelector(`.${SEARCH_HIGHLIGHT_CLASS}`)
+        if (highlight && typeof highlight.scrollIntoView === 'function') {
+          highlight.scrollIntoView({ block: 'center', behavior: 'smooth' })
+        }
+      })
+      cleanupTimer = window.setTimeout(() => {
+        if (!cancelled && richEditorSearchHighlightView(editorWithView) === view) {
+          applyRichEditorSearchHighlight(view, null)
+        }
+      }, SEARCH_HIGHLIGHT_CLEANUP_DELAY_MS)
+    }
+
+    applyWhenReady()
+
+    return () => {
+      cancelled = true
+      window.cancelAnimationFrame(retryFrame)
+      window.cancelAnimationFrame(scrollFrame)
+      if (cleanupTimer !== null) window.clearTimeout(cleanupTimer)
+    }
+  }, [editor, path, request])
+}
+
 /** Single BlockNote editor view — content is swapped via replaceBlocks */
 export function SingleEditorView(options: {
   editor: ReturnType<typeof useCreateBlockNote>
@@ -1179,8 +1249,9 @@ export function SingleEditorView(options: {
   vaultPath?: string
   editable?: boolean
   locale?: AppLocale
+  searchHighlightRequest?: SearchHighlightRequest | null
 }) {
-  const { editor, entries, onNavigateWikilink, onChange, onImageImportError, sourceEntry, vaultPath, editable = true, locale = 'en' } = options
+  const { editor, entries, onNavigateWikilink, onChange, onImageImportError, sourceEntry, vaultPath, editable = true, locale = 'en', searchHighlightRequest } = options
   const { cssVars } = useEditorTheme()
   const themeMode = useDocumentThemeMode()
   const previousThemeModeRef = useRef(themeMode)
@@ -1241,6 +1312,7 @@ export function SingleEditorView(options: {
   }, [])
 
   useSeedBlockNoteTableBridge(editor)
+  useRichEditorSearchHighlight({ editor, path: sourceEntry?.path, request: searchHighlightRequest })
 
   const baseItems = useMemo(() => buildBaseSuggestionItems(entries), [entries])
   const runEditorAction = useCallback(

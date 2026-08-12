@@ -46,6 +46,8 @@ import { useEditorPdfExport } from './useEditorPdfExport'
 import type { NotePdfExportSource } from '../utils/notePdfExport'
 import type { RichEditorBlockTypeDefinition } from '../utils/richEditorBlockTypes'
 import type { TagCount } from '../utils/noteTags'
+import type { SearchHighlightRequest } from '../utils/searchHighlight'
+import { createRichEditorSearchHighlightExtension } from './searchHighlightExtension'
 import { installRichEditorMarkdownSerializer } from '../utils/richEditorMarkdown'
 import { installRichEditorDispatchPerformanceProbe } from './richEditorDispatchPerformance'
 import { RICH_EDITOR_BLOCKNOTE_PERFORMANCE_OPTIONS } from './richEditorBlockNoteOptions'
@@ -113,6 +115,8 @@ export interface EditorProps {
   flushPendingEditorContentRef?: React.MutableRefObject<((path: string) => void) | null>
   /** Registers a hook that flushes the raw editor buffer into app state before external actions. */
   flushPendingRawContentRef?: React.MutableRefObject<((path: string) => void) | null>
+  /** Temporarily highlights the terms that led to opening the active note. */
+  searchHighlightRequest?: SearchHighlightRequest | null
   locale?: AppLocale
 }
 
@@ -244,6 +248,7 @@ function useEditorSetup(options: EditorSetupParams) {
       createRichEditorMarkdownInputTransformExtension(),
       createRichEditorTextDirectionExtension(),
       createRichEditorBlockSelectionExtension(),
+      createRichEditorSearchHighlightExtension(),
     ],
   })
   installRichEditorMarkdownSerializer(editor)
@@ -419,6 +424,7 @@ function useEditorSetup(options: EditorSetupParams) {
       rawModeContent: string | null
       findRequest?: RawEditorFindRequest | null
       rawLatestContentRef: React.MutableRefObject<string | null>
+      searchHighlightRequest?: SearchHighlightRequest | null
       onRenameFilename?: (path: string, newFilenameStem: string) => void
       noteWidth?: NoteWidthMode
       onToggleNoteWidth?: () => void
@@ -461,6 +467,7 @@ function useEditorSetup(options: EditorSetupParams) {
       rawModeContent,
       findRequest,
       rawLatestContentRef,
+      searchHighlightRequest,
       onRenameFilename,
       noteWidth,
       onToggleNoteWidth,
@@ -517,6 +524,7 @@ function useEditorSetup(options: EditorSetupParams) {
               rawModeContent={rawModeContent}
               findRequest={findRequest}
               rawLatestContentRef={rawLatestContentRef}
+              searchHighlightRequest={searchHighlightRequest}
               onRenameFilename={onRenameFilename}
               noteWidth={noteWidth}
               onToggleNoteWidth={onToggleNoteWidth}

@@ -8,6 +8,7 @@ import { deriveEditorContentState } from './editorContentState'
 import type { RawEditorFindRequest } from '../RawEditorFindBar'
 import type { ImageImportError } from '../../hooks/useImageDrop'
 import type { TagCount } from '../../utils/noteTags'
+import type { SearchHighlightRequest } from '../../utils/searchHighlight'
 
 export interface Tab {
   entry: VaultEntry
@@ -41,6 +42,7 @@ export interface EditorContentProps {
   rawModeContent?: string | null
   findRequest?: RawEditorFindRequest | null
   rawLatestContentRef?: React.MutableRefObject<string | null>
+  searchHighlightRequest?: SearchHighlightRequest | null
   onRenameFilename?: (path: string, newFilenameStem: string) => void
   noteWidth?: NoteWidthMode
   onToggleNoteWidth?: () => void

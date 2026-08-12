@@ -276,6 +276,7 @@
   "noteList.title.notes": "노트",
   "noteList.searchPlaceholder": "노트 검색...",
   "noteList.searchAction": "노트 검색",
+  "search.truncated": "{total}개 일치, 처음 {current}개 표시",
   "noteList.clearSearch": "검색 지우기",
   "noteList.quickOpenCreate": "메모 \"{title}\" 생성",
   "noteList.createNote": "새 노트 만들기",

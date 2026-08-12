@@ -276,6 +276,7 @@
   "noteList.title.notes": "Ghi chú",
   "noteList.searchPlaceholder": "Tìm ghi chú...",
   "noteList.searchAction": "Tìm ghi chú",
+  "search.truncated": "{total} kết quả, hiển thị {current} kết quả đầu tiên",
   "noteList.clearSearch": "Xóa tìm kiếm",
   "noteList.quickOpenCreate": "Tạo ghi chú \"{title}\"",
   "noteList.createNote": "Tạo ghi chú mới",

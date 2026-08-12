@@ -276,6 +276,7 @@
   "noteList.title.notes": "Нататкі",
   "noteList.searchPlaceholder": "Шукаць нататкі...",
   "noteList.searchAction": "Пошук нататак",
+  "search.truncated": "{total} супадзенняў, паказаны першыя {current}",
   "noteList.clearSearch": "Ачысціць пошук",
   "noteList.quickOpenCreate": "Стварыць нататку «{title}»",
   "noteList.createNote": "Стварыць нататку",

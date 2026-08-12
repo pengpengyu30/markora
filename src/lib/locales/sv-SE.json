@@ -276,6 +276,7 @@
   "noteList.title.notes": "Anteckningar",
   "noteList.searchPlaceholder": "Sök anteckningar...",
   "noteList.searchAction": "Sök anteckningar",
+  "search.truncated": "{total} träffar, visar de första {current}",
   "noteList.clearSearch": "Rensa sökning",
   "noteList.quickOpenCreate": "Skapa anteckning \"{title}\"",
   "noteList.createNote": "Skapa ny anteckning",

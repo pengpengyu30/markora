@@ -136,7 +136,7 @@ Rules:
 |---|---|---|
 | Command palette | `useCommandRegistry`, command domain modules | `Cmd+K` resolves actions, never note content |
 | Quick Open | `QuickOpenPalette`, `useTabManagement`, visible entries | `Cmd+O`, case-insensitive fuzzy/prefix matching, max 20 results |
-| Full-text search | `SearchPanel`, `useUnifiedSearch`, `search_vault` | `Cmd+Shift+F`, active Project root, case-insensitive literal search, snippets, max 20 default |
+| Full-text search | `SearchPanel`, `useUnifiedSearch`, `search_vault` | `Cmd+Shift+F`, all visible mounted Project roots, case-insensitive token-AND search across filename/title/content, snippets, max 200 default with truncation total |
 | Sidebar selection | `SidebarSelection`, `FolderTree`, tag section | Folder navigation and tag filtering are independent dimensions |
 | Tabs | `useTabManagement` | Path identity is stable; warm content is validated before reuse |
 

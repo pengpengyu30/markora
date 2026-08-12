@@ -276,6 +276,7 @@
   "noteList.title.notes": "Notizen",
   "noteList.searchPlaceholder": "Notizen durchsuchen …",
   "noteList.searchAction": "Notizen durchsuchen",
+  "search.truncated": "{total} Treffer, die ersten {current} werden angezeigt",
   "noteList.clearSearch": "Suche löschen",
   "noteList.quickOpenCreate": "Notiz „{title}“ erstellen",
   "noteList.createNote": "Neue Notiz erstellen",

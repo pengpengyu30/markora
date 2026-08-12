@@ -64,7 +64,7 @@ proposed → active → superseded
 | [0006](0006-flat-vault-structure.md) | Flat vault structure (no type-based folders) | active |
 | [0007](0007-title-filename-sync.md) | Title equals filename (slug sync) | active |
 | [0008](0008-underscore-system-properties.md) | Underscore convention for system properties | active |
-| [0009](0009-keyword-only-search.md) | Keyword-only search (remove semantic indexing) | active |
+| [0009](0009-keyword-only-search.md) | Keyword-only search (remove semantic indexing) | superseded -> [0176](0176-tokenized-full-text-search.md) |
 | [0010](0010-dynamic-wikilink-relationship-detection.md) | Dynamic wikilink relationship detection | active |
 | [0011](0011-mcp-server-for-ai-integration.md) | MCP server for AI tool integration | superseded → [0074](0074-explicit-external-ai-tool-setup-and-least-privilege-desktop-scope.md) |
 | [0012](0012-claude-cli-for-ai-agent.md) | Claude CLI subprocess for AI agent | active |
@@ -231,3 +231,5 @@ proposed → active → superseded
 | [0173](0173-future-calendar-version-recovery.md) | Future calendar version rejection and recovery | active |
 | [0174](0174-simplified-macos-markdown-notebook.md) | Simplified macOS Markdown notebook fork | active |
 | [0175](0175-simplification-fork-ledger.md) | Simplification fork ledger and retired decision families | active |
+| [0176](0176-tokenized-full-text-search.md) | Tokenized full-text search with bounded result reporting | active |
+| [0177](0177-mounted-project-global-search-scope.md) | Full-text search spans visible mounted Projects | active |

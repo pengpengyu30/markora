@@ -276,6 +276,7 @@
   "noteList.title.notes": "Notatki",
   "noteList.searchPlaceholder": "Szukaj notatek...",
   "noteList.searchAction": "Szukaj notatek",
+  "search.truncated": "{total} wyników, wyświetlono pierwszych {current}",
   "noteList.clearSearch": "Wyczyść wyszukiwanie",
   "noteList.quickOpenCreate": "Utwórz notatkę „{title}”",
   "noteList.createNote": "Utwórz nową notatkę",

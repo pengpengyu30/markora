@@ -166,7 +166,7 @@ The three search/navigation paths have intentionally different scopes:
 |---|---|---|
 | `Cmd+K` | Command palette | Commands and actions, not note content |
 | `Cmd+O` / Quick Open | Current visible Project graph | Case-insensitive fuzzy/prefix note-title/path matching; results are bounded to 20 |
-| `Cmd+Shift+F` | Full text in the active Project root | Recursive Markdown search, case-insensitive literal matching, snippets, bounded result list (20 by default) |
+| `Cmd+Shift+F` | Full text across all visible mounted Project roots | Recursive Markdown search, case-insensitive token-AND matching across filename/title/content, snippets, bounded result list (200 by default) with a truncation total |
 
 Gitignored visibility is applied at the native command boundary. The full-text implementation does not impose an application-level maximum query length; practical limits are the operating system, Rust string allocation, and available memory. Search results are derived data and do not change folder selection or tag state.
 

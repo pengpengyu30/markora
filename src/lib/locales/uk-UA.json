@@ -276,6 +276,7 @@
   "noteList.title.notes": "Нотатки",
   "noteList.searchPlaceholder": "Шукати нотатки...",
   "noteList.searchAction": "Шукати нотатки",
+  "search.truncated": "{total} збігів, показано перші {current}",
   "noteList.clearSearch": "Очистити пошук",
   "noteList.quickOpenCreate": "Створити нотатку «{title}»",
   "noteList.createNote": "Створити нову нотатку",
