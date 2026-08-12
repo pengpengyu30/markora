@@ -1,56 +1,27 @@
-import { useCallback, useEffect, useRef } from 'react'
-
-export const FOLDER_ROW_SINGLE_CLICK_DELAY_MS = 180
+import { useCallback } from 'react'
 
 interface UseFolderRowInteractionsInput {
   hasChildren: boolean
-  onRenameFolder?: () => void
+  isSelected: boolean
   onSelect: () => void
   onToggle: () => void
 }
 
 export function useFolderRowInteractions({
   hasChildren,
-  onRenameFolder,
+  isSelected,
   onSelect,
   onToggle,
 }: UseFolderRowInteractionsInput) {
-  const pendingToggleRef = useRef<number | null>(null)
-
-  const clearPendingToggle = useCallback(() => {
-    if (pendingToggleRef.current === null) return
-    window.clearTimeout(pendingToggleRef.current)
-    pendingToggleRef.current = null
-  }, [])
-
-  useEffect(() => clearPendingToggle, [clearPendingToggle])
-
-  const handleSelectClick = useCallback((clickDetail: number) => {
-    onSelect()
-    if (!hasChildren) return
-
-    if (clickDetail === 0) {
-      clearPendingToggle()
-      onToggle()
+  const handleSelectClick = useCallback(() => {
+    if (!isSelected) {
+      onSelect()
       return
     }
-
-    if (clickDetail !== 1) return
-
-    clearPendingToggle()
-    pendingToggleRef.current = window.setTimeout(() => {
-      pendingToggleRef.current = null
-      onToggle()
-    }, FOLDER_ROW_SINGLE_CLICK_DELAY_MS)
-  }, [clearPendingToggle, hasChildren, onSelect, onToggle])
-
-  const handleRenameDoubleClick = useCallback(() => {
-    clearPendingToggle()
-    onRenameFolder?.()
-  }, [clearPendingToggle, onRenameFolder])
+    if (hasChildren) onToggle()
+  }, [hasChildren, isSelected, onSelect, onToggle])
 
   return {
-    handleRenameDoubleClick,
     handleSelectClick,
   }
 }

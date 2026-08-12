@@ -15,7 +15,6 @@ interface FolderItemRowProps {
   node: FolderNode
   onOpenMenu: (node: FolderNode, event: ReactMouseEvent<HTMLElement>) => void
   onSelect: () => void
-  onStartRenameFolder?: (folderPath: string) => void
   onToggle: () => void
   canOpenMenu?: boolean
   onCanDropNote?: (notePath: string, folderPath: string) => boolean
@@ -67,16 +66,15 @@ export function FolderItemRow(options: FolderItemRowProps) {
     node,
     onOpenMenu,
     onSelect,
-    onStartRenameFolder,
     onToggle,
     canOpenMenu = true,
     onCanDropNote,
     onMoveNoteToFolder,
   } = options
   const hasChildren = node.children.length > 0
-  const { handleRenameDoubleClick, handleSelectClick } = useFolderRowInteractions({
+  const { handleSelectClick } = useFolderRowInteractions({
     hasChildren,
-    onRenameFolder: onStartRenameFolder ? () => onStartRenameFolder(node.path) : undefined,
+    isSelected,
     onSelect,
     onToggle,
   })
@@ -113,7 +111,6 @@ export function FolderItemRow(options: FolderItemRowProps) {
           onSelect()
           onOpenMenu(node, event)
         }}
-        onDoubleClick={handleRenameDoubleClick}
         onDragOver={noteDropHandlers.onDragOver}
         onDrop={noteDropHandlers.onDrop}
         isProjectRoot={isProjectRoot}
@@ -129,9 +126,8 @@ function FolderSelectButton(options: {
   isExpanded: boolean
   isSelected: boolean
   node: FolderNode
-  onClick: (clickDetail: number) => void
+  onClick: () => void
   onContextMenu: MouseEventHandler<HTMLButtonElement>
-  onDoubleClick: () => void
   onDragOver: DragEventHandler<HTMLButtonElement>
   onDrop: DragEventHandler<HTMLButtonElement>
   isProjectRoot: boolean
@@ -145,7 +141,6 @@ function FolderSelectButton(options: {
     node,
     onClick,
     onContextMenu,
-    onDoubleClick,
     onDragOver,
     onDrop,
     isProjectRoot,
@@ -167,9 +162,8 @@ function FolderSelectButton(options: {
       }}
       title={node.path || node.name}
       aria-expanded={hasChildren ? isExpanded : undefined}
-      onClick={(event) => onClick(event.detail)}
+      onClick={onClick}
       onContextMenu={onContextMenu}
-      onDoubleClick={onDoubleClick}
       onDragOver={onDragOver}
       onDrop={onDrop}
       data-testid={`folder-row:${node.path}`}

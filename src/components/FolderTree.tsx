@@ -39,7 +39,6 @@ interface FolderTreeBodyProps
   | 'onDeleteFolder'
   | 'onRenameFolder'
   | 'onSelect'
-  | 'onStartRenameFolder'
   | 'onCanDropNote'
   | 'onMoveNoteToFolder'
   | 'renamingFolderPath'
@@ -229,7 +228,6 @@ export const FolderTree = memo(function FolderTree(options: FolderTreeProps) {
             onOpenMenu={handleOpenMenu}
             onRenameFolder={onRenameFolder}
             onSelect={onSelect}
-            onStartRenameFolder={onStartRenameFolder}
             renamingFolderPath={renamingFolderPath}
             onCanDropNote={onCanDropNote}
             onMoveNoteToFolder={onMoveNoteToFolder}
@@ -254,7 +252,7 @@ export const FolderTree = memo(function FolderTree(options: FolderTreeProps) {
     })
 
     function FolderTreeBody(options: FolderTreeBodyProps) {
-      const { displayedExpanded, displayedFolders, isCreating, locale = 'en', creationParent, onCancelCreateFolder, onCancelRenameFolder, onCreateFolderSubmit, onDeleteFolder, onOpenMenu, onRenameFolder, onSelect, onStartRenameFolder, onCanDropNote, onMoveNoteToFolder, renamingFolderPath, rootPath, sectionCollapsed, selection, toggleFolder } = options
+      const { displayedExpanded, displayedFolders, isCreating, locale = 'en', creationParent, onCancelCreateFolder, onCancelRenameFolder, onCreateFolderSubmit, onDeleteFolder, onOpenMenu, onRenameFolder, onSelect, onCanDropNote, onMoveNoteToFolder, renamingFolderPath, rootPath, sectionCollapsed, selection, toggleFolder } = options
   if (sectionCollapsed) return null
 
   return (
@@ -273,7 +271,6 @@ export const FolderTree = memo(function FolderTree(options: FolderTreeProps) {
           onOpenMenu={onOpenMenu}
           onRenameFolder={onRenameFolder}
           onSelect={onSelect}
-          onStartRenameFolder={onStartRenameFolder}
           onCanDropNote={onCanDropNote}
           onMoveNoteToFolder={onMoveNoteToFolder}
           onToggle={toggleFolder}

@@ -18,7 +18,6 @@ interface FolderTreeRowProps {
   onOpenMenu: (node: FolderNode, event: ReactMouseEvent<HTMLElement>) => void
   onRenameFolder?: (folderPath: string, nextName: string) => Promise<boolean> | boolean
   onSelect: (selection: SidebarSelection) => void
-  onStartRenameFolder?: (folderPath: string) => void
   onToggle: (path: string) => void
   onCancelRenameFolder?: () => void
   onCanDropNote?: (notePath: string, folderPath: string) => boolean
@@ -143,7 +142,6 @@ function FolderChildren(options: FolderTreeRowProps) {
     onOpenMenu,
     onRenameFolder,
     onSelect,
-    onStartRenameFolder,
     onToggle,
     onCancelRenameFolder,
     onCanDropNote,
@@ -181,7 +179,6 @@ function FolderChildren(options: FolderTreeRowProps) {
           onOpenMenu={onOpenMenu}
           onRenameFolder={onRenameFolder}
           onSelect={onSelect}
-          onStartRenameFolder={onStartRenameFolder}
           onToggle={onToggle}
           onCancelRenameFolder={onCancelRenameFolder}
           onCanDropNote={onCanDropNote}
@@ -233,7 +230,6 @@ export const FolderTreeRow = memo(function FolderTreeRow(options: FolderTreeRowP
     onOpenMenu,
     onRenameFolder,
     onSelect,
-    onStartRenameFolder,
     onToggle,
     onCancelRenameFolder,
     onCanDropNote,
@@ -243,7 +239,7 @@ export const FolderTreeRow = memo(function FolderTreeRow(options: FolderTreeRowP
     rootPath,
     selection,
   } = options
-  const { nodeKey, nodeRootPath, isExpanded, isSelected, canUseDefaultFolderActions, canMutateFolder, isRenaming } = resolveFolderTreeRowState(options)
+  const { nodeKey, nodeRootPath, isExpanded, isSelected, canUseDefaultFolderActions, isRenaming } = resolveFolderTreeRowState(options)
   const depthIndent = getFolderDepthIndent(depth)
   const contentInset = FOLDER_ROW_CONTENT_INSET
   const selectFolder = useCallback(() => {
@@ -259,7 +255,6 @@ export const FolderTreeRow = memo(function FolderTreeRow(options: FolderTreeRowP
       node={node}
       onOpenMenu={onOpenMenu}
       onSelect={selectFolder}
-      onStartRenameFolder={canMutateFolder ? onStartRenameFolder : undefined}
       onToggle={() => onToggle(nodeKey)}
       onCanDropNote={onCanDropNote}
       onMoveNoteToFolder={onMoveNoteToFolder}
@@ -303,7 +298,6 @@ export const FolderTreeRow = memo(function FolderTreeRow(options: FolderTreeRowP
         onOpenMenu={onOpenMenu}
         onRenameFolder={onRenameFolder}
         onSelect={onSelect}
-        onStartRenameFolder={onStartRenameFolder}
         onToggle={onToggle}
         onCancelRenameFolder={onCancelRenameFolder}
         onCanDropNote={onCanDropNote}
@@ -329,7 +323,6 @@ function resolveFolderTreeRowState(options: Pick<FolderTreeRowProps, 'expanded' 
     isExpanded: (Reflect.get(expanded, nodeKey) as boolean | undefined) ?? false,
     isSelected: folderSelectionMatches(selection, { ...node, rootPath: nodeRootPath }, rootPath),
     canUseDefaultFolderActions,
-    canMutateFolder,
     isRenaming: canMutateFolder && renamingFolderPath === node.path,
   }
 }

@@ -2,7 +2,6 @@ import { useState, type ComponentProps } from 'react'
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { FolderTree } from './FolderTree'
-import { FOLDER_ROW_SINGLE_CLICK_DELAY_MS } from './folder-tree/useFolderRowInteractions'
 import { FOLDER_ROW_NESTING_INDENT, getFolderConnectorLeft } from './folder-tree/folderTreeLayout'
 import { CREATE_NOTE_IN_FOLDER_EVENT } from '../hooks/noteCreationRequests'
 import type { FolderNode, SidebarSelection } from '../types'
@@ -97,41 +96,28 @@ describe('FolderTree', () => {
 
 
   it('lets the vault root collapse and expand from the row', () => {
-    vi.useFakeTimers()
     render(
       <FolderTree
         folders={mockFolders}
-        selection={defaultSelection}
+        selection={{ kind: 'folder', path: '', rootPath: vaultRootPath }}
         onSelect={vi.fn()}
         vaultRootPath={vaultRootPath}
       />,
     )
 
     fireEvent.click(screen.getByTestId('folder-row:'))
-    act(() => {
-      vi.advanceTimersByTime(FOLDER_ROW_SINGLE_CLICK_DELAY_MS)
-    })
     expect(screen.queryByText('projects')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByTestId('folder-row:'))
-    act(() => {
-      vi.advanceTimersByTime(FOLDER_ROW_SINGLE_CLICK_DELAY_MS)
-    })
     expect(screen.getByText('projects')).toBeInTheDocument()
-    vi.useRealTimers()
   })
 
-  it('expands children when clicking a folder row', () => {
-    vi.useFakeTimers()
+  it('selects an unselected folder without changing its expansion', () => {
     render(<FolderTree folders={mockFolders} selection={defaultSelection} onSelect={vi.fn()} />)
     expect(screen.queryByText('laputa')).not.toBeInTheDocument()
     fireEvent.click(screen.getByTestId('folder-row:projects'))
-    act(() => {
-      vi.advanceTimersByTime(FOLDER_ROW_SINGLE_CLICK_DELAY_MS)
-    })
-    expect(screen.getByText('laputa')).toBeInTheDocument()
-    expect(screen.getByText('portfolio')).toBeInTheDocument()
-    vi.useRealTimers()
+    expect(screen.queryByText('laputa')).not.toBeInTheDocument()
+    expect(screen.queryByText('portfolio')).not.toBeInTheDocument()
   })
 
   it('calls onSelect with folder kind when clicking a folder row', () => {
@@ -156,8 +142,53 @@ describe('FolderTree', () => {
     expect(onSelect).toHaveBeenCalledWith({ kind: 'folder', path: 'areas', rootPath: vaultRootPath })
   })
 
-  it('expands children when single-clicking a folder row with children', () => {
-    vi.useFakeTimers()
+  it('expands an already-selected collapsed folder synchronously', () => {
+    function FolderTreeHarness() {
+      const [selection, setSelection] = useState<SidebarSelection>({ kind: 'folder', path: 'projects' })
+      return <FolderTree folders={mockFolders} selection={selection} onSelect={setSelection} />
+    }
+
+    render(<FolderTreeHarness />)
+
+    fireEvent.click(screen.getByTestId('folder-row:projects'))
+    expect(screen.getByText('laputa')).toBeInTheDocument()
+    expect(screen.getByText('portfolio')).toBeInTheDocument()
+  })
+
+  it('collapses an already-selected expanded folder synchronously', () => {
+    function FolderTreeHarness() {
+      const [selection, setSelection] = useState<SidebarSelection>({ kind: 'folder', path: 'projects' })
+      return <FolderTree folders={mockFolders} selection={selection} onSelect={setSelection} />
+    }
+
+    render(<FolderTreeHarness />)
+
+    fireEvent.click(screen.getByTestId('folder-row:projects'))
+    expect(screen.getByText('laputa')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('folder-row:projects'))
+    expect(screen.queryByText('laputa')).not.toBeInTheDocument()
+  })
+
+  it('toggles on every consecutive click without using click-count detail', () => {
+    function FolderTreeHarness() {
+      const [selection, setSelection] = useState<SidebarSelection>({ kind: 'folder', path: 'projects' })
+      return <FolderTree folders={mockFolders} selection={selection} onSelect={setSelection} />
+    }
+
+    render(<FolderTreeHarness />)
+    const row = screen.getByTestId('folder-row:projects')
+
+    fireEvent.click(row, { detail: 1 })
+    expect(screen.getByText('laputa')).toBeInTheDocument()
+
+    fireEvent.click(row, { detail: 2 })
+    expect(screen.queryByText('laputa')).not.toBeInTheDocument()
+
+    fireEvent.click(row, { detail: 3 })
+    expect(screen.getByText('laputa')).toBeInTheDocument()
+  })
+
+  it('keeps an expanded folder open when selecting a different folder', () => {
     function FolderTreeHarness() {
       const [selection, setSelection] = useState<SidebarSelection>(defaultSelection)
       return <FolderTree folders={mockFolders} selection={selection} onSelect={setSelection} />
@@ -166,20 +197,14 @@ describe('FolderTree', () => {
     render(<FolderTreeHarness />)
 
     fireEvent.click(screen.getByTestId('folder-row:projects'))
-    act(() => {
-      vi.advanceTimersByTime(FOLDER_ROW_SINGLE_CLICK_DELAY_MS)
-    })
+    fireEvent.click(screen.getByTestId('folder-row:projects'))
+    expect(screen.getByText('laputa')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('folder-row:areas'))
+    fireEvent.click(screen.getByTestId('folder-row:projects'))
 
     expect(screen.getByText('laputa')).toBeInTheDocument()
     expect(screen.getByText('portfolio')).toBeInTheDocument()
-
-    fireEvent.click(screen.getByTestId('folder-row:projects'))
-    act(() => {
-      vi.advanceTimersByTime(FOLDER_ROW_SINGLE_CLICK_DELAY_MS)
-    })
-
-    expect(screen.queryByText('laputa')).not.toBeInTheDocument()
-    vi.useRealTimers()
   })
 
   it('collapses section when clicking the FOLDERS header', () => {
@@ -316,7 +341,7 @@ describe('FolderTree', () => {
     expect(screen.getByRole('button', { name: 'projects' })).toHaveAttribute('aria-expanded', 'false')
   })
 
-  it('starts rename on folder double-click', () => {
+  it('does not start rename on folder double-click', () => {
     const onStartRenameFolder = vi.fn()
     render(
       <FolderTree
@@ -329,6 +354,23 @@ describe('FolderTree', () => {
       />,
     )
     fireEvent.doubleClick(screen.getByTestId('folder-row:projects'))
+    expect(onStartRenameFolder).not.toHaveBeenCalled()
+  })
+
+  it('starts rename from the folder context menu', () => {
+    const onStartRenameFolder = vi.fn()
+    render(
+      <FolderTree
+        folders={mockFolders}
+        selection={defaultSelection}
+        onSelect={vi.fn()}
+        onStartRenameFolder={onStartRenameFolder}
+      />,
+    )
+
+    fireEvent.contextMenu(screen.getByTestId('folder-row:projects'))
+    fireEvent.click(screen.getByText('Rename folder...'))
+
     expect(onStartRenameFolder).toHaveBeenCalledWith('projects')
   })
 
@@ -392,7 +434,6 @@ describe('FolderTree', () => {
   })
 
   it('keeps folder toggling healthy after cancelling rename', () => {
-    vi.useFakeTimers()
     const onCancelRenameFolder = vi.fn()
     const { rerender } = render(
       <FolderTree
@@ -420,16 +461,11 @@ describe('FolderTree', () => {
 
     const wasExpanded = screen.queryByText('laputa') !== null
     fireEvent.click(screen.getByTestId('folder-row:projects'))
-    act(() => {
-      vi.advanceTimersByTime(FOLDER_ROW_SINGLE_CLICK_DELAY_MS)
-    })
 
     expect(screen.queryByText('laputa') !== null).toBe(!wasExpanded)
-    vi.useRealTimers()
   })
 
   it('commits folder rename on blur so the row can collapse afterward', async () => {
-    vi.useFakeTimers()
     const renameSpy = vi.fn()
 
     function FolderTreeRenameHarness() {
@@ -461,12 +497,8 @@ describe('FolderTree', () => {
     expect(screen.queryByText('laputa')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByTestId('folder-row:projects'))
-    act(() => {
-      vi.advanceTimersByTime(FOLDER_ROW_SINGLE_CLICK_DELAY_MS)
-    })
 
     expect(screen.getByText('laputa')).toBeInTheDocument()
-    vi.useRealTimers()
   })
 
   it('opens a context menu with a delete action on right-click', () => {
