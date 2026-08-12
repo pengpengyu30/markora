@@ -56,17 +56,19 @@ function DialogOverlay({
 function DialogContent({
   className,
   children,
+  onOverlayWheelCapture,
   showCloseButton = true,
   ref,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
+  onOverlayWheelCapture?: React.WheelEventHandler<HTMLDivElement>
   showCloseButton?: boolean
 }) {
   const surfaceRef = useMacosDismissableEscapeSurfaceRef<HTMLDivElement>(ref)
 
   return (
     <DialogPortal data-slot="dialog-portal">
-      <DialogOverlay />
+      <DialogOverlay onWheelCapture={onOverlayWheelCapture} />
       <DialogPrimitive.Content
         ref={surfaceRef}
         data-slot="dialog-content"

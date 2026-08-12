@@ -215,6 +215,7 @@ macro_rules! app_invoke_handler {
             commands::get_deleted_note_preview,
             commands::restore_deleted_note,
             commands::reload_vault,
+            commands::ensure_vault_asset_scope,
             commands::reload_vault_entry,
             commands::open_vault_file_external,
             commands::reveal_path_in_file_manager,

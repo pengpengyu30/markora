@@ -120,6 +120,26 @@ describe('MermaidDiagram', () => {
     expect(onBlockPointer).not.toHaveBeenCalled()
   })
 
+  it('allows double-click to reach the editor lightbox handler', async () => {
+    const onDoubleClick = vi.fn()
+    render(
+      <div onDoubleClick={onDoubleClick}>
+        <MermaidDiagram
+          diagram={'flowchart LR\nA --> B'}
+          source={'```mermaid\nflowchart LR\nA --> B\n```'}
+        />
+      </div>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mermaid-diagram-viewport').querySelector('svg')).not.toBeNull()
+    })
+
+    fireEvent.doubleClick(screen.getByTestId('mermaid-diagram-viewport'))
+
+    expect(onDoubleClick).toHaveBeenCalledOnce()
+  })
+
   it('tags Mermaid SVG style elements with the runtime CSP nonce', async () => {
     mermaidMock.render.mockResolvedValueOnce({
       svg: '<svg aria-label="Rendered Mermaid"><style>.node{fill:#000}</style><g><text>A to B</text></g></svg>',

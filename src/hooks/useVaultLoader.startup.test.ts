@@ -82,4 +82,25 @@ describe('useVaultLoader startup recovery', () => {
       expect(result.current.entries.map((entry) => entry.title)).toEqual(['Reconciled'])
     })
   })
+
+  it('prepares the asset scope before exposing a startup snapshot', async () => {
+    const commands: string[] = []
+    backendInvokeFn.mockImplementation((command: string) => {
+      commands.push(command)
+      if (command === 'ensure_vault_asset_scope') return Promise.resolve(null)
+      if (command === 'read_vault_snapshot') return Promise.resolve([makeEntry()])
+      if (command === 'list_vault' || command === 'list_vault_folders' || command === 'get_modified_files') {
+        return Promise.resolve([])
+      }
+      return Promise.resolve(null)
+    })
+
+    const { result } = renderHook(() => useVaultLoader('/vault'))
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(commands.indexOf('ensure_vault_asset_scope')).toBeGreaterThanOrEqual(0)
+    expect(commands.indexOf('ensure_vault_asset_scope'))
+      .toBeLessThan(commands.indexOf('read_vault_snapshot'))
+  })
 })

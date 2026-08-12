@@ -4,6 +4,7 @@ export function installFixtureVaultDesktopBridgeInBrowser(): void {
     ?? (() => { throw new Error('Tolaria test bridge is missing dispatchBrowserMenuCommand') })
 
   const specialHandlers: Record<string, (args?: Record<string, unknown>) => unknown> = {
+    ensure_vault_asset_scope: () => null,
     trigger_menu_command: (args) => {
       dispatchBrowserMenuCommand(String(args?.id ?? ''))
       return null

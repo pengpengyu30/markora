@@ -58,6 +58,15 @@ export function tauriCall<T>({ command, tauriArgs, mockArgs }: TauriCallOptions)
   return isTauri() ? invoke<T>(command, tauriArgs) : mockInvoke<T>(command, mockArgs ?? tauriArgs)
 }
 
+async function ensureVaultAssetScope({ vaultPath }: VaultPathOptions): Promise<void> {
+  if (!isTauri()) return
+
+  await tauriCall<void>({
+    command: 'ensure_vault_asset_scope',
+    tauriArgs: { path: vaultPath },
+  })
+}
+
 export async function checkVaultPathAvailability({ vaultPath }: VaultPathOptions): Promise<boolean | null> {
   if (!hasVaultPath({ vaultPath })) return false
 
@@ -72,7 +81,11 @@ export async function checkVaultPathAvailability({ vaultPath }: VaultPathOptions
 }
 
 function loadVaultEntriesWithCommand({ vaultPath, command }: VaultPathOptions & { command: string }): Promise<VaultEntry[]> {
-  return tauriCall<unknown>({ command, tauriArgs: { path: vaultPath } })
+  const prepareAssetScope = command === 'list_vault'
+    ? ensureVaultAssetScope({ vaultPath })
+    : Promise.resolve()
+
+  return prepareAssetScope.then(() => tauriCall<unknown>({ command, tauriArgs: { path: vaultPath } }))
     .then((entries) => normalizeVaultEntries(entries, vaultPath))
 }
 
@@ -106,7 +119,12 @@ function loadWorkspaceEntriesWithCommand(
   defaultWorkspacePath?: string | null,
 ): Promise<VaultEntry[]> {
   const workspace = workspaceIdentityFromVault(vault, { defaultWorkspacePath })
-  return tauriCall<unknown>({ command, tauriArgs: { path: vault.path } })
+  const prepareAssetScope = command === 'list_vault'
+    ? ensureVaultAssetScope({ vaultPath: vault.path })
+    : Promise.resolve()
+
+  return prepareAssetScope
+    .then(() => tauriCall<unknown>({ command, tauriArgs: { path: vault.path } }))
     .then((entries) => normalizeVaultEntries(entries, vault.path, workspace))
 }
 
@@ -252,6 +270,8 @@ export async function loadStartupVaultData(options: MountedVaultEntriesOptions):
     const { entries } = await loadVaultData(options)
     return { entries, reconciliation: null, source: 'scan' }
   }
+
+  await ensureVaultAssetScope({ vaultPath: options.vaultPath })
 
   const snapshot = await tauriCall<unknown | null>({
     command: 'read_vault_snapshot',

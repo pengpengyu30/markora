@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type RefObject } from 'react'
-import { getDoubleClickedImageTarget, type ImageLightboxTarget } from '../utils/imageLightboxTarget'
+import { getDoubleClickedTarget, type ImageLightboxTarget } from '../utils/imageLightboxTarget'
 
 type UseImageLightboxArgs = {
   containerRef: RefObject<HTMLDivElement | null>
@@ -19,7 +19,7 @@ export function useImageLightbox({ containerRef }: UseImageLightboxArgs): UseIma
     if (!container) return
 
     const onDoubleClick = (event: MouseEvent) => {
-      const nextImage = getDoubleClickedImageTarget(event.target)
+      const nextImage = getDoubleClickedTarget(event.target)
       if (!nextImage) return
 
       event.preventDefault()

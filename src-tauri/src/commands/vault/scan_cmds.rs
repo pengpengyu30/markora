@@ -82,6 +82,25 @@ fn resolve_reload_vault_path(
 }
 
 #[tauri::command]
+pub fn ensure_vault_asset_scope(
+    app_handle: tauri::AppHandle,
+    path: String,
+) -> Result<(), String> {
+    let path = expand_tilde(&path).into_owned();
+
+    #[cfg(desktop)]
+    crate::sync_vault_asset_scope(&app_handle, Path::new(&path))?;
+
+    #[cfg(not(desktop))]
+    {
+        let _ = app_handle;
+        let _ = path;
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
 pub fn reload_vault_entry(
     path: PathBuf,
     vault_path: Option<PathBuf>,

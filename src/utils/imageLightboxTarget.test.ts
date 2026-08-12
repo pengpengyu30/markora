@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getDoubleClickedImageTarget } from './imageLightboxTarget'
+import { getDoubleClickedImageTarget, getDoubleClickedTarget } from './imageLightboxTarget'
 
 describe('getDoubleClickedImageTarget', () => {
   it('returns the src and alt when the target is an image element with a src', () => {
@@ -8,6 +8,7 @@ describe('getDoubleClickedImageTarget', () => {
     img.alt = 'Sleeping cat'
 
     expect(getDoubleClickedImageTarget(img)).toEqual({
+      kind: 'image',
       src: 'https://example.com/cat.png',
       alt: 'Sleeping cat',
     })
@@ -18,6 +19,7 @@ describe('getDoubleClickedImageTarget', () => {
     img.src = 'https://example.com/cat.png'
 
     expect(getDoubleClickedImageTarget(img)).toEqual({
+      kind: 'image',
       src: 'https://example.com/cat.png',
       alt: '',
     })
@@ -44,6 +46,7 @@ describe('getDoubleClickedImageTarget', () => {
     wrapper.appendChild(img)
 
     expect(getDoubleClickedImageTarget(wrapper)).toEqual({
+      kind: 'image',
       src: 'https://example.com/wrapped.png',
       alt: 'Wrapped image',
     })
@@ -83,6 +86,38 @@ describe('getDoubleClickedImageTarget', () => {
     Object.defineProperty(img, 'naturalWidth', { value: 0, configurable: true })
     Object.defineProperty(img, 'naturalHeight', { value: 0, configurable: true })
 
-    expect(getDoubleClickedImageTarget(img)?.src).toBe('https://example.com/loading.png')
+    expect(getDoubleClickedImageTarget(img)).toEqual({
+      kind: 'image',
+      src: 'https://example.com/loading.png',
+      alt: '',
+    })
+  })
+
+  it('returns an SVG target for a Mermaid double-click', () => {
+    const figure = document.createElement('figure')
+    figure.className = 'mermaid-diagram'
+    const viewport = document.createElement('div')
+    viewport.className = 'mermaid-diagram__viewport'
+    viewport.innerHTML = '<svg aria-label="Rendered Mermaid"><g><text>A to B</text></g></svg>'
+    figure.appendChild(viewport)
+
+    const text = viewport.querySelector('text')
+    expect(getDoubleClickedTarget(text)).toEqual({
+      kind: 'svg',
+      svg: '<svg aria-label="Rendered Mermaid"><g><text>A to B</text></g></svg>',
+      alt: 'Mermaid diagram',
+    })
+  })
+
+  it('ignores Mermaid controls when resolving a double-click target', () => {
+    const figure = document.createElement('figure')
+    figure.className = 'mermaid-diagram'
+    const button = document.createElement('button')
+    const viewport = document.createElement('div')
+    viewport.className = 'mermaid-diagram__viewport'
+    viewport.innerHTML = '<svg><text>A to B</text></svg>'
+    figure.append(button, viewport)
+
+    expect(getDoubleClickedTarget(button)).toBeNull()
   })
 })

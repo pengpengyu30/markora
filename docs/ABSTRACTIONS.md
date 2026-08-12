@@ -182,7 +182,7 @@ The command list in `src-tauri/src/lib.rs` is the authoritative registration. Ne
 
 | Group | Examples |
 |---|---|
-| Vault scan/load | `list_vault`, `read_vault_snapshot`, `reload_vault`, `list_vault_folders` |
+| Vault scan/load | `list_vault`, `read_vault_snapshot`, `reload_vault`, `list_vault_folders`, `ensure_vault_asset_scope` |
 | Note files | `get_note_content`, `save_note_content`, `create_note_content`, `delete_note`, rename/move commands |
 | Metadata | `update_frontmatter`, `delete_frontmatter_property`, `sync_note_title` |
 | Attachments | `save_image`, `copy_image_to_vault`, `download_remote_image_to_vault` |
@@ -193,6 +193,8 @@ The command list in `src-tauri/src/lib.rs` is the authoritative registration. Ne
 | Runtime | menu, icon, updater, clipboard, external open/reveal, PDF export |
 
 Avoid introducing a new command for a renderer-only transformation. Conversely, do not access the filesystem directly from React when a validated native command already exists.
+
+Startup snapshot and cached Project-list loads must prepare the cumulative Tauri asset scope before renderer content can resolve local attachment URLs. The scope remains limited to loaded Project roots; it is not a general filesystem capability.
 
 ## Events and watchers
 

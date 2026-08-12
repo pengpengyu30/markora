@@ -60,6 +60,8 @@ flowchart LR
 
 The renderer never receives an unrestricted filesystem capability. Path-bearing commands validate the target against the active or registered Project root before reading or writing. Commands return serializable data; React owns presentation and session state.
 
+Vault startup/load commands also initialize the cumulative Tauri asset scope for each loaded Project root before snapshot or cached entries are exposed to the renderer. This keeps local image and PDF asset URLs usable on the first document render while preserving the scoped asset-protocol boundary.
+
 ## Renderer structure
 
 `src/App.tsx` is the composition root. It coordinates the active Project graph, settings, dialogs, tabs, note selection, persistence, search, keyboard commands, and native event subscriptions. Feature logic is kept in hooks and utility modules so the main component mostly wires state owners together.

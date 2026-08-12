@@ -537,6 +537,48 @@ test('fullscreen Mermaid diagrams stay within the viewport while the app is zoom
   await expect.poll(() => dialogViewportFitsWindow(page)).toBe(true)
 })
 
+test('double-clicking a Mermaid diagram opens the shared zoomable lightbox @smoke', async ({ page }) => {
+  await openNote(page, 'Mermaid Reported')
+  await expectRenderedDiagramCount(page, 1)
+
+  await page.getByTestId('mermaid-diagram-viewport').first().dblclick()
+
+  const lightboxContent = page.getByTestId('image-lightbox-svg')
+  await expect(lightboxContent).toBeVisible()
+  const lightbox = page.getByTestId('image-lightbox')
+  const viewportSize = page.viewportSize()
+  const lightboxBounds = await lightbox.boundingBox()
+  expect(viewportSize).not.toBeNull()
+  expect(lightboxBounds).not.toBeNull()
+  expect(lightboxBounds!.width).toBeGreaterThan(viewportSize!.width * 0.8)
+  expect(lightboxBounds!.height).toBeGreaterThan(viewportSize!.height * 0.8)
+  await expect(lightboxContent).toHaveCSS('overflow', 'visible')
+
+  const toolbar = page.getByTestId('image-lightbox-zoom-toolbar')
+  await expect(toolbar).toBeVisible()
+
+  await lightbox.hover({ position: { x: 12, y: 12 } })
+  await page.mouse.wheel(0, -120)
+  await expect(toolbar).toContainText('110%')
+  await page.mouse.wheel(0, 120)
+  await expect(toolbar).toContainText('100%')
+
+  const backdrop = page.locator('[data-slot="dialog-overlay"]')
+  await backdrop.hover({ position: { x: 4, y: 4 } })
+  await page.mouse.wheel(0, -120)
+  await expect(toolbar).toContainText('110%')
+  await page.mouse.wheel(0, 120)
+  await expect(toolbar).toContainText('100%')
+
+  await toolbar.getByRole('button', { name: 'Zoom in' }).click()
+  await expect(toolbar).toContainText('125%')
+  await toolbar.getByRole('button', { name: 'Fit to window' }).click()
+  await expect(toolbar).toContainText('100%')
+
+  await page.keyboard.press('Escape')
+  await expect(lightboxContent).not.toBeVisible()
+})
+
 test('Mermaid diagrams stay mounted after property edits refresh frontmatter', async ({ page }) => {
   const pageErrors: string[] = []
   page.on('pageerror', error => pageErrors.push(error.message))

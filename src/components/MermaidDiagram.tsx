@@ -1,16 +1,11 @@
 import { ArrowsOut as Maximize2, PencilSimpleLine } from '@phosphor-icons/react'
 import { useEffect, useId, useMemo, useState, type SyntheticEvent } from 'react'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
 import { APP_COMMAND_EVENT_NAME, APP_COMMAND_IDS } from '../hooks/appCommandDispatcher'
-import { translate } from '../lib/i18n'
+import { useAppLocale } from '../hooks/useAppPreferences'
+import { translate, type AppLocale } from '../lib/i18n'
 import { SafeSvgDiv } from './SafeMarkup'
+import { ImageLightbox } from './ImageLightbox'
 
 type MermaidApi = typeof import('mermaid')['default']
 
@@ -163,7 +158,6 @@ function MermaidSvgViewport({ ariaLabel, className, svg, testId }: MermaidSvgVie
       data-testid={testId}
       draggable={false}
       onClick={stopMermaidViewportEvent}
-      onDoubleClick={stopMermaidViewportEvent}
       onMouseDown={stopMermaidViewportEvent}
       onMouseUp={stopMermaidViewportEvent}
       onPointerDown={stopMermaidViewportEvent}
@@ -206,34 +200,31 @@ function MermaidRawEditorButton() {
   )
 }
 
-function MermaidLightbox({ svg }: { svg: string }) {
+function MermaidLightbox({ locale, svg }: { locale: AppLocale; svg: string }) {
+  const [open, setOpen] = useState(false)
+
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button
-          aria-label="Open Mermaid diagram"
-          className="mermaid-diagram__expand-button"
-          size="icon-sm"
-          title="Open diagram"
-          type="button"
-          variant="outline"
-        >
-          <Maximize2 aria-hidden="true" />
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="mermaid-diagram__dialog" showCloseButton>
-        <DialogTitle className="sr-only">Mermaid diagram</DialogTitle>
-        <DialogDescription className="sr-only">
-          Expanded view of the rendered Mermaid diagram.
-        </DialogDescription>
-        <MermaidSvgViewport
-          ariaLabel="Expanded Mermaid diagram"
-          className="mermaid-diagram__dialog-viewport"
-          svg={svg}
-          testId="mermaid-diagram-dialog-viewport"
-        />
-      </DialogContent>
-    </Dialog>
+    <>
+      <Button
+        aria-label="Open Mermaid diagram"
+        className="mermaid-diagram__expand-button"
+        onClick={() => setOpen(true)}
+        size="icon-sm"
+        title="Open diagram"
+        type="button"
+        variant="outline"
+      >
+        <Maximize2 aria-hidden="true" />
+      </Button>
+      <ImageLightbox
+        contentClassName="mermaid-diagram__dialog-viewport"
+        contentTestId="mermaid-diagram-dialog-viewport"
+        dialogClassName="mermaid-diagram__dialog"
+        image={open ? { kind: 'svg', svg, alt: 'Mermaid diagram' } : null}
+        locale={locale}
+        onClose={() => setOpen(false)}
+      />
+    </>
   )
 }
 
@@ -242,6 +233,7 @@ function MermaidSourceFallback({ source }: { source: string }) {
 }
 
 export function MermaidDiagram({ diagram, source }: MermaidDiagramProps) {
+  const locale = useAppLocale()
   const reactId = useId()
   const renderId = useMemo(() => renderIdFromReactId(reactId), [reactId])
   const [state, setState] = useState<RenderState>({ diagram: '', svg: '', error: false })
@@ -275,7 +267,7 @@ export function MermaidDiagram({ diagram, source }: MermaidDiagramProps) {
   return (
     <figure className="mermaid-diagram" data-testid="mermaid-diagram">
       <MermaidRawEditorButton />
-      <MermaidLightbox svg={currentState.svg} />
+      <MermaidLightbox locale={locale} svg={currentState.svg} />
       <MermaidSvgViewport
         ariaLabel="Mermaid diagram"
         className="mermaid-diagram__viewport"
