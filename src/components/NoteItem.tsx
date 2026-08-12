@@ -26,16 +26,6 @@ const NOTE_STATUS_DOT: Record<VisibleNoteStatus, { color: string; testId: string
     testId: 'unsaved-indicator',
     title: 'Saving to disk…',
   },
-  new: {
-    color: 'var(--accent-green)',
-    testId: 'new-indicator',
-    title: 'New',
-  },
-  modified: {
-    color: 'var(--accent-orange)',
-    testId: 'modified-indicator',
-    title: 'Modified',
-  },
 }
 
 function hasStatusDot(noteStatus: NoteStatus): noteStatus is VisibleNoteStatus {

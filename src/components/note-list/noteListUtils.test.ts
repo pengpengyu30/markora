@@ -29,12 +29,8 @@ function makeMouseEvent(overrides = {}) {
   return { metaKey: false, ctrlKey: false, shiftKey: false, ...overrides }
 }
 
-function makeStatusResolver(activeStatus, modifiedFiles) {
-  return createNoteStatusResolver(
-    () => activeStatus,
-    modifiedFiles,
-    new Set(modifiedFiles.map((file) => file.path)),
-  )
+function makeStatusResolver(activeStatus) {
+  return createNoteStatusResolver(() => activeStatus)
 }
 
 describe('routeNoteClick', () => {
@@ -57,26 +53,15 @@ describe('routeNoteClick', () => {
 })
 
 describe('createNoteStatusResolver', () => {
-  it('keeps transient note status ahead of repository status', () => {
-    const modifiedFiles = [{
-      path: '/vault/note.md',
-      relativePath: 'note.md',
-      status: 'modified',
-    }]
-    const resolver = makeStatusResolver('unsaved', modifiedFiles)
+  it('returns the transient note status', () => {
+    const resolver = makeStatusResolver('unsaved')
 
     expect(resolver('/vault/note.md')).toBe('unsaved')
   })
 
-  it('uses modified files when active-vault status says the note is clean', () => {
-    const modifiedFiles = [{
-      path: '/other-vault/note.md',
-      relativePath: 'note.md',
-      status: 'untracked',
-      vaultPath: '/other-vault',
-    }]
-    const resolver = makeStatusResolver('clean', modifiedFiles)
+  it('does not synthesize a status from repository changes', () => {
+    const resolver = makeStatusResolver('clean')
 
-    expect(resolver('/other-vault/note.md')).toBe('new')
+    expect(resolver('/other-vault/note.md')).toBe('clean')
   })
 })

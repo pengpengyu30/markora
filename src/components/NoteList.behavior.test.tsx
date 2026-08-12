@@ -5,62 +5,53 @@ import { makeEntry, makeIndexedEntry, mockEntries, renderNoteList } from '../tes
 import type { NoteStatus } from '../types'
 
 describe('NoteList status indicators', () => {
-  it('shows a modified indicator for modified notes', () => {
-    const getNoteStatus = (path: string) => path === mockEntries[0].path ? 'modified' as const : 'clean' as const
+  it('does not show an indicator for clean notes', () => {
+    const getNoteStatus = () => 'clean' as const
     renderNoteList({ getNoteStatus })
 
-    const indicators = screen.getAllByTestId('modified-indicator')
-    expect(indicators).toHaveLength(1)
-    const noteRow = indicators[0].closest('[data-testid="modified-indicator"]')!.parentElement!.parentElement!
-    expect(noteRow.textContent).toContain('Build Laputa App')
+    expect(screen.queryByTestId('unsaved-indicator')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('pending-save-indicator')).not.toBeInTheDocument()
   })
 
   it('does not show indicators when everything is clean', () => {
     renderNoteList({ getNoteStatus: () => 'clean' as const })
-    expect(screen.queryByTestId('modified-indicator')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('new-indicator')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('unsaved-indicator')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('pending-save-indicator')).not.toBeInTheDocument()
   })
 
-  it('shows multiple modified indicators when multiple notes are dirty', () => {
-    const modifiedPaths = new Set([mockEntries[0].path, mockEntries[1].path])
-    const getNoteStatus = (path: string) => modifiedPaths.has(path) ? 'modified' as const : 'clean' as const
+  it('shows an unsaved indicator while a note has unflushed edits', () => {
+    const getNoteStatus = (path: string) => path === mockEntries[0].path ? 'unsaved' as const : 'clean' as const
 
     renderNoteList({ getNoteStatus })
-    expect(screen.getAllByTestId('modified-indicator')).toHaveLength(2)
+    expect(screen.getAllByTestId('unsaved-indicator')).toHaveLength(1)
   })
 
   it('does not show indicators when getNoteStatus is undefined', () => {
     renderNoteList()
-    expect(screen.queryByTestId('modified-indicator')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('new-indicator')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('unsaved-indicator')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('pending-save-indicator')).not.toBeInTheDocument()
   })
 
-  it('shows the green new indicator for new notes', () => {
-    const getNoteStatus = (path: string) => path === mockEntries[0].path ? 'new' as const : 'clean' as const
+  it('shows a pending-save indicator while a note is being written', () => {
+    const getNoteStatus = (path: string) => path === mockEntries[0].path ? 'pendingSave' as const : 'clean' as const
     renderNoteList({ getNoteStatus })
-    expect(screen.getAllByTestId('new-indicator')).toHaveLength(1)
-    expect(screen.queryByTestId('modified-indicator')).not.toBeInTheDocument()
+    expect(screen.getAllByTestId('pending-save-indicator')).toHaveLength(1)
   })
 
-  it('keeps the green indicator steady while a new note is edited and saved', () => {
+  it('removes the indicator after the transient save state clears', () => {
     const targetPath = mockEntries[0].path
     const getNoteStatus = (noteStatus: NoteStatus) => (path: string) => path === targetPath ? noteStatus : 'clean'
-    const { props, rerender } = renderNoteList({ getNoteStatus: getNoteStatus('new') })
+    const { props, rerender } = renderNoteList({ getNoteStatus: getNoteStatus('unsaved') })
     const rerenderWithStatus = (nextStatus: NoteStatus) => {
       rerender(<NoteList {...props} getNoteStatus={getNoteStatus(nextStatus)} />)
     }
-    const expectSteadyIndicator = (testId: string) => {
-      const indicator = screen.getByTestId(testId)
-      expect(indicator).not.toHaveClass('tab-status-pulse')
-    }
 
-    expectSteadyIndicator('new-indicator')
-    rerenderWithStatus('unsaved')
-    expectSteadyIndicator('unsaved-indicator')
+    expect(screen.getByTestId('unsaved-indicator')).toBeInTheDocument()
     rerenderWithStatus('pendingSave')
-    expectSteadyIndicator('pending-save-indicator')
-    rerenderWithStatus('new')
-    expectSteadyIndicator('new-indicator')
+    expect(screen.getByTestId('pending-save-indicator')).toBeInTheDocument()
+    rerenderWithStatus('clean')
+    expect(screen.queryByTestId('unsaved-indicator')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('pending-save-indicator')).not.toBeInTheDocument()
   })
 })
 

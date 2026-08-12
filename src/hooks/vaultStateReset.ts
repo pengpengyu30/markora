@@ -1,7 +1,6 @@
 import type { FolderNode, ModifiedFile, VaultEntry } from '../types'
 
 export interface VaultStateResetOptions {
-  clearNewPaths: () => void
   clearUnsaved: () => void
   setEntries: (entries: VaultEntry[]) => void
   setFolders: (folders: FolderNode[]) => void
@@ -16,6 +15,5 @@ export function resetVaultState(options: VaultStateResetOptions) {
   options.setModifiedFiles([])
   options.setModifiedFilesError(null)
   options.setIsLoading(false)
-  options.clearNewPaths()
   options.clearUnsaved()
 }

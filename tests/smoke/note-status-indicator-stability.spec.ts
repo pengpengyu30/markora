@@ -1,14 +1,11 @@
 import { test, expect, type Page } from '@playwright/test'
-import { APP_COMMAND_IDS } from '../../src/hooks/appCommandCatalog'
 import {
   createFixtureVaultCopy,
   openFixtureVaultDesktopHarness,
   removeFixtureVaultCopy,
 } from '../helpers/fixtureVault'
-import { triggerMenuCommand } from './testBridge'
 
 const STATUS_DOT_SELECTOR = [
-  '[data-testid="new-indicator"]',
   '[data-testid="unsaved-indicator"]',
   '[data-testid="pending-save-indicator"]',
 ].join(',')
@@ -63,23 +60,20 @@ test.afterEach(() => {
   removeFixtureVaultCopy(tempVaultDir)
 })
 
-test('new note status indicator stays steady through typing and autosave', async ({ page }) => {
-  await triggerMenuCommand(page, APP_COMMAND_IDS.fileNewNote)
-  await expect(page.getByTestId('breadcrumb-filename-trigger')).toContainText(/untitled-note-\d+/i, {
-    timeout: 5_000,
-  })
-  await expect(page.locator(STATUS_DOT_SELECTOR).first()).toBeVisible({ timeout: 5_000 })
-
+test('note status indicator is transient while typing and autosave @smoke', async ({ page }) => {
+  await page.getByRole('option').first().click()
+  await expect(page.getByTestId('breadcrumb-filename-trigger')).toBeVisible({ timeout: 5_000 })
   await startStatusDotSampler(page)
   await page.locator('.bn-editor').click()
   await page.keyboard.type('The sidebar status dot should stay steady while this note is edited. ', {
     delay: 25,
   })
+  await expect(page.locator(STATUS_DOT_SELECTOR).first()).toBeVisible({ timeout: 5_000 })
   await page.waitForTimeout(1_800)
 
   const samples = await stopStatusDotSampler(page)
   expect(samples.length).toBeGreaterThan(0)
-  expect(samples.filter((sample) => sample.testId === null)).toEqual([])
   expect(samples.some((sample) => sample.testId === 'unsaved-indicator')).toBe(true)
+  expect(samples.at(-1)?.testId).toBeNull()
   expect(samples.filter((sample) => sample.className?.includes('tab-status-pulse'))).toEqual([])
 })

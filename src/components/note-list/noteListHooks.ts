@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
-import type { VaultEntry, SidebarSelection, ModifiedFile, NoteStatus } from '../../types'
+import type { VaultEntry, SidebarSelection, NoteStatus } from '../../types'
 import type { ImmediateCreateOptions } from '../../hooks/useNoteCreation'
 import {
   type SortOption,
@@ -181,19 +181,16 @@ export function useMultiSelectKeyboard(
   }, [multiSelect, onBulkDelete])
 }
 
-// --- useModifiedFilesState ---
+// --- useNoteStatusState ---
 
-export function useModifiedFilesState(
-  modifiedFiles: ModifiedFile[] | undefined,
+export function useNoteStatusState(
   getNoteStatus: ((path: string) => NoteStatus) | undefined,
 ) {
-  const modifiedPathSet = useMemo(() => new Set((modifiedFiles ?? []).map((f) => f.path)), [modifiedFiles])
-  const modifiedSuffixes = useMemo(() => (modifiedFiles ?? []).map((f) => `/${f.relativePath}`), [modifiedFiles])
   const resolvedGetNoteStatus = useMemo<(path: string) => NoteStatus>(
-    () => createNoteStatusResolver(getNoteStatus, modifiedFiles, modifiedPathSet),
-    [getNoteStatus, modifiedFiles, modifiedPathSet],
+    () => createNoteStatusResolver(getNoteStatus),
+    [getNoteStatus],
   )
-  return { modifiedPathSet, modifiedSuffixes, resolvedGetNoteStatus }
+  return { resolvedGetNoteStatus }
 }
 
 // --- useVisibleNotesSync ---

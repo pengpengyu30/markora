@@ -80,7 +80,7 @@ export interface WorkspaceIdentity {
   defaultForNewNotes: boolean
 }
 
-export type NoteStatus = 'new' | 'modified' | 'clean' | 'pendingSave' | 'unsaved'
+export type NoteStatus = 'clean' | 'pendingSave' | 'unsaved'
 
 export interface GitCommit {
   hash: string

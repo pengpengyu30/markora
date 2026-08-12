@@ -216,18 +216,6 @@ function useCoalescedAsyncTask<T>(runTask: () => Promise<T>) {
   return task
 }
 
-function useNewNoteTracker() {
-  const [newPaths, setNewPaths] = useState<Set<string>>(new Set())
-
-  const trackNew = useCallback((path: string) => {
-    setNewPaths((prev) => new Set(prev).add(path))
-  }, [])
-
-  const clear = useCallback(() => setNewPaths(new Set()), [])
-
-  return { newPaths, trackNew, clear }
-}
-
 function useUnsavedTracker() {
   const [unsavedPaths, setUnsavedPaths] = useState<Set<string>>(new Set())
 
@@ -272,8 +260,6 @@ function usePendingSaveTracker() {
 
 interface ResolveNoteStatusOptions {
   path: string
-  newPaths: Set<string>
-  modifiedFiles: ModifiedFile[]
   pendingSavePaths?: Set<string>
   unsavedPaths?: Set<string>
 }
@@ -288,24 +274,13 @@ function resolveTransientNoteStatus({
   return null
 }
 
-function resolveGitBackedNoteStatus(file: ModifiedFile | undefined): NoteStatus {
-  if (!file) return 'clean'
-  if (file.status === 'untracked' || file.status === 'added') return 'new'
-  if (file.status === 'modified' || file.status === 'deleted') return 'modified'
-  return 'clean'
-}
-
 export function resolveNoteStatus({
   path,
-  newPaths,
-  modifiedFiles,
   pendingSavePaths,
   unsavedPaths,
 }: ResolveNoteStatusOptions): NoteStatus {
   const transientStatus = resolveTransientNoteStatus({ path, pendingSavePaths, unsavedPaths })
-  if (transientStatus) return transientStatus
-  if (newPaths.has(path)) return 'new'
-  return resolveGitBackedNoteStatus(modifiedFiles.find((file) => file.path === path))
+  return transientStatus ?? 'clean'
 }
 
 interface InitialVaultLoadOptions {
@@ -317,7 +292,6 @@ interface InitialVaultLoadOptions {
   isWorkspacePathLoaded: (path: string) => boolean
   vaultPath: string
   vaults?: VaultOption[]
-  tracker: ReturnType<typeof useNewNoteTracker>
   unsaved: ReturnType<typeof useUnsavedTracker>
   isCurrentVaultPath: (path: string) => boolean
   resetReloading: () => void
@@ -337,9 +311,8 @@ interface InitialVaultLoadSnapshot {
 
 interface InitialVaultLoadEffectOptions extends Omit<
   InitialVaultLoadOptions,
-  'forceReload' | 'isWorkspacePathLoaded' | 'reloadIfEmpty' | 'tracker' | 'unsaved' | 'vaults'
+  'forceReload' | 'isWorkspacePathLoaded' | 'reloadIfEmpty' | 'unsaved' | 'vaults'
 > {
-  clearNewPaths: () => void
   clearUnsaved: () => void
 }
 
@@ -364,7 +337,6 @@ function shouldReuseLoadedWorkspaceEntries(
 function resetInitialVaultLoadState(options: InitialVaultLoadEffectOptions, preserveWorkspaceEntries: boolean) {
   clearPrefetchCache()
   resetVaultState({
-    clearNewPaths: options.clearNewPaths,
     clearUnsaved: options.clearUnsaved,
     setEntries: preserveWorkspaceEntries ? () => {} : options.setEntries,
     setFolders: options.setFolders,
@@ -418,7 +390,6 @@ function useInitialVaultLoad(options: InitialVaultLoadOptions) {
     handleVaultUnavailable,
     isWorkspacePathLoaded,
     vaultPath,
-    tracker,
     unsaved,
     isCurrentVaultPath,
     resetReloading,
@@ -447,7 +418,6 @@ function useInitialVaultLoad(options: InitialVaultLoadOptions) {
     const effectOptions = {
       defaultWorkspacePath: loadOptions.defaultWorkspacePath, handleVaultAvailable, handleVaultUnavailable, isCurrentVaultPath,
       resetReloading,
-      clearNewPaths: tracker.clear,
       clearUnsaved: unsaved.clearAll,
       setEntries, setFolders, setHasCompletedInitialLoad, setIsLoading, setModifiedFiles, setModifiedFilesError,
       vaultPath, folderVaults,
@@ -471,7 +441,6 @@ function useInitialVaultLoad(options: InitialVaultLoadOptions) {
     handleVaultAvailable,
     handleVaultUnavailable,
     vaultPath,
-    tracker.clear,
     unsaved.clearAll,
     isCurrentVaultPath,
     isWorkspacePathLoaded,
@@ -531,18 +500,14 @@ function useModifiedFilesLoader(
   }
 }
 
-function useEntryMutations(
-  setEntries: Dispatch<SetStateAction<VaultEntry[]>>,
-  trackNew: (path: string) => void,
-) {
+function useEntryMutations(setEntries: Dispatch<SetStateAction<VaultEntry[]>>) {
   const addEntry = useCallback((entry: VaultEntry) => {
     const normalizedEntry = normalizeVaultEntry(entry)
     setEntries((prev) => {
       if (prev.some(e => e.path === normalizedEntry.path)) return prev
       return [normalizedEntry, ...prev]
     })
-    trackNew(normalizedEntry.path)
-  }, [setEntries, trackNew])
+  }, [setEntries])
 
   const updateEntry = useCallback((path: string, patch: Partial<VaultEntry>) => {
     setEntries((prev) => {
@@ -738,7 +703,6 @@ function useVaultState(vaultPath: string, loadModifiedFiles: boolean) {
   const [folders, setFolders] = useState<FolderNode[]>([])
   const [hasCompletedInitialLoad, setHasCompletedInitialLoad] = useState(false)
   const [isLoading, setIsLoading] = useState(() => hasVaultPath({ vaultPath }))
-  const tracker = useNewNoteTracker()
   const pendingSave = usePendingSaveTracker()
   const unsaved = useUnsavedTracker()
   const isCurrentVaultPath = useCurrentVaultPathGuard(vaultPath)
@@ -756,7 +720,6 @@ function useVaultState(vaultPath: string, loadModifiedFiles: boolean) {
     setFolders,
     setHasCompletedInitialLoad,
     setIsLoading,
-    tracker,
     unsaved,
   }
 }
@@ -768,12 +731,10 @@ function useVaultUnavailable(vaultPath: string, state: ReturnType<typeof useVaul
       setEntries,
       setFolders,
       setIsLoading,
-      tracker,
       unsaved,
     } = state
 
     return useUnavailableVaultState({
-      clearNewPaths: tracker.clear,
       clearUnsaved: unsaved.clearAll,
       isCurrentVaultPath,
       setEntries,
@@ -830,7 +791,6 @@ function useVaultUnavailable(vaultPath: string, state: ReturnType<typeof useVaul
     folderVaults,
     defaultWorkspacePath,
     isWorkspacePathLoaded,
-    tracker: state.tracker,
     unsaved: state.unsaved,
     isCurrentVaultPath: state.isCurrentVaultPath,
     resetReloading: vaultReloads.resetReloading,
@@ -1099,15 +1059,13 @@ function useVaultLoaderResult({
   unavailableVault,
   vaultReloads,
 }: VaultLoaderResultOptions) {
-  const { modified, pendingSave, tracker, unsaved } = state
+  const { modified, pendingSave, unsaved } = state
   const getNoteStatus = useCallback((path: string): NoteStatus =>
     resolveNoteStatus({
       path,
-      newPaths: tracker.newPaths,
-      modifiedFiles: modified.modifiedFiles,
       pendingSavePaths: pendingSave.pendingSavePaths,
       unsavedPaths: unsaved.unsavedPaths,
-    }), [tracker.newPaths, modified.modifiedFiles, pendingSave.pendingSavePaths, unsaved.unsavedPaths])
+    }), [pendingSave.pendingSavePaths, unsaved.unsavedPaths])
 
   return {
     entries: state.entries,
@@ -1140,7 +1098,7 @@ export function useVaultLoader(
 ) {
   const state = useVaultState(vaultPath, options.loadModifiedFiles !== false)
   const setInitialFolders = useInitialFolderSetter(folderVaults, state.setFolders)
-  const entryMutations = useEntryMutations(state.setEntries, state.tracker.trackNew)
+  const entryMutations = useEntryMutations(state.setEntries)
   const unavailableVault = useVaultUnavailable(vaultPath, state)
   const vaultReloads = useVaultReloads({
     handleVaultAvailable: unavailableVault.markVaultAvailable,

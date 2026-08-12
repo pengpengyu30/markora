@@ -1,4 +1,4 @@
-import type { VaultEntry, SidebarSelection, ModifiedFile, NoteStatus } from '../../types'
+import type { VaultEntry, SidebarSelection, NoteStatus } from '../../types'
 import { translate, type AppLocale } from '../../lib/i18n'
 import { vaultRelativePathLabel } from '../../utils/notePathIdentity'
 
@@ -52,19 +52,7 @@ export function routeNoteClick(entry: VaultEntry, e: React.MouseEvent, actions: 
 
 export function createNoteStatusResolver(
   getNoteStatus: ((path: string) => NoteStatus) | undefined,
-  modifiedFiles: ModifiedFile[] | undefined,
-  modifiedPathSet: Set<string>,
 ): (path: string) => NoteStatus {
-  if (modifiedFiles && modifiedFiles.length > 0) {
-    return (path: string) => {
-      const explicitStatus = getNoteStatus?.(path)
-      if (explicitStatus && explicitStatus !== 'clean') return explicitStatus
-
-      const modifiedFile = modifiedFiles.find((file) => file.path === path)
-      if (modifiedFile?.status === 'added' || modifiedFile?.status === 'untracked') return 'new'
-      return modifiedPathSet.has(path) ? 'modified' : 'clean'
-    }
-  }
   if (getNoteStatus) return getNoteStatus
   return () => 'clean'
 }

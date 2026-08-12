@@ -10,7 +10,6 @@ interface UnavailableVaultStateOptions extends VaultStateResetOptions {
 export function useUnavailableVaultState(options: UnavailableVaultStateOptions) {
   const [unavailableVaultPath, setUnavailableVaultPath] = useState<string | null>(null)
   const {
-    clearNewPaths,
     clearUnsaved,
     isCurrentVaultPath,
     setEntries,
@@ -25,7 +24,6 @@ export function useUnavailableVaultState(options: UnavailableVaultStateOptions) 
     if (!isCurrentVaultPath(path)) return
     clearPrefetchCache()
     resetVaultState({
-      clearNewPaths,
       clearUnsaved,
       setEntries,
       setFolders,
@@ -35,7 +33,6 @@ export function useUnavailableVaultState(options: UnavailableVaultStateOptions) 
     })
     setUnavailableVaultPath(path)
   }, [
-    clearNewPaths,
     clearUnsaved,
     isCurrentVaultPath,
     setEntries,

@@ -79,8 +79,8 @@ describe('Editor', () => {
   it.each([
     ['renders tab bar with open tabs', {}],
     ['shows BlockNote editor when a tab is active', {}],
-    ['renders editor for modified file without breadcrumb status', { getNoteStatus: () => 'modified' as const }],
-    ['renders editor for new file without breadcrumb status', { getNoteStatus: () => 'new' as const }],
+    ['renders editor for unsaved file without breadcrumb status', { getNoteStatus: () => 'unsaved' as const }],
+    ['renders editor for pending-save file without breadcrumb status', { getNoteStatus: () => 'pendingSave' as const }],
   ])('%s', (_label, overrides) => {
     renderEditor({
       tabs: [mockTab],

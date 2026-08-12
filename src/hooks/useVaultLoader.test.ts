@@ -476,44 +476,44 @@ describe('useVaultLoader', () => {
   })
 
   describe('getNoteStatus', () => {
-    it('returns modified for git-modified files', async () => {
+    it('returns clean for git-modified files', async () => {
       const { result } = renderHook(() => useVaultLoader('/vault'))
 
       await waitFor(() => {
         expect(result.current.modifiedFiles).toHaveLength(1)
       })
 
-      expect(result.current.getNoteStatus('/vault/note/hello.md')).toBe('modified')
+      expect(result.current.getNoteStatus('/vault/note/hello.md')).toBe('clean')
       expect(result.current.getNoteStatus('/vault/note/other.md')).toBe('clean')
     })
 
-    it('returns new for freshly added entries', async () => {
+    it('returns clean for freshly added entries', async () => {
       const { result } = await renderVaultLoader()
       const newEntry: VaultEntry = { ...mockEntries[0], path: '/vault/note/brand-new.md', filename: 'brand-new.md', title: 'Brand New' }
 
       act(() => { result.current.addEntry(newEntry) })
 
-      expect(result.current.getNoteStatus('/vault/note/brand-new.md')).toBe('new')
+      expect(result.current.getNoteStatus('/vault/note/brand-new.md')).toBe('clean')
     })
 
     it.each([
       {
-        name: 'returns new for git-untracked files (saved but not committed)',
+        name: 'returns clean for git-untracked files (saved but not committed)',
         path: '/vault/note/brand-new.md',
         relativePath: 'note/brand-new.md',
         status: 'untracked',
       },
       {
-        name: 'returns new for git-added files (staged but not committed)',
+        name: 'returns clean for git-added files (staged but not committed)',
         path: '/vault/note/staged.md',
         relativePath: 'note/staged.md',
         status: 'added',
       },
       {
-        name: 'treats untracked files as new (green dot, not orange)',
+        name: 'returns clean for git-modified files',
         path: '/vault/note/hello.md',
         relativePath: 'note/hello.md',
-        status: 'untracked',
+        status: 'modified',
       },
     ])('$name', async ({ path, relativePath, status }) => {
       backendInvokeFn.mockImplementation(buildVaultLoaderMock({
@@ -524,11 +524,10 @@ describe('useVaultLoader', () => {
 
       await waitForModifiedFiles(result)
 
-      expect(result.current.getNoteStatus(path)).toBe('new')
+      expect(result.current.getNoteStatus(path)).toBe('clean')
     })
 
-    it('new status takes priority over git modified', async () => {
-      // If a path is both new and in modifiedFiles, it should show as new
+    it('does not derive a status from a newly added entry or git state', async () => {
       backendInvokeFn.mockImplementation(buildVaultLoaderMock({
         modifiedFiles: [
           { path: '/vault/note/new.md', relativePath: 'note/new.md', status: 'modified' },
@@ -552,7 +551,7 @@ describe('useVaultLoader', () => {
         result.current.addEntry(newEntry)
       })
 
-      expect(result.current.getNoteStatus('/vault/note/new.md')).toBe('new')
+      expect(result.current.getNoteStatus('/vault/note/new.md')).toBe('clean')
     })
 
     it('returns unsaved for paths in unsavedPaths', async () => {
@@ -567,7 +566,7 @@ describe('useVaultLoader', () => {
       expect(result.current.getNoteStatus('/vault/note/draft.md')).toBe('unsaved')
     })
 
-    it('unsaved has higher priority than new', async () => {
+    it('returns unsaved while a path is tracked as unsaved', async () => {
       const { result } = await renderVaultLoader()
       const newEntry: VaultEntry = { ...mockEntries[0], path: '/vault/note/draft.md', filename: 'draft.md', title: 'Draft' }
 
@@ -576,11 +575,10 @@ describe('useVaultLoader', () => {
         result.current.trackUnsaved('/vault/note/draft.md')
       })
 
-      // addEntry also calls trackNew, so path is in both newPaths and unsavedPaths
       expect(result.current.getNoteStatus('/vault/note/draft.md')).toBe('unsaved')
     })
 
-    it('clearUnsaved transitions from unsaved to new', async () => {
+    it('clearUnsaved transitions from unsaved to clean', async () => {
       const { result } = await renderVaultLoader()
       const newEntry: VaultEntry = { ...mockEntries[0], path: '/vault/note/draft.md', filename: 'draft.md', title: 'Draft' }
 
@@ -593,7 +591,7 @@ describe('useVaultLoader', () => {
 
       act(() => { result.current.clearUnsaved('/vault/note/draft.md') })
 
-      expect(result.current.getNoteStatus('/vault/note/draft.md')).toBe('new')
+      expect(result.current.getNoteStatus('/vault/note/draft.md')).toBe('clean')
     })
 
     it('keeps unsaved state stable when repeated edits do not change tracked paths', async () => {
@@ -615,7 +613,7 @@ describe('useVaultLoader', () => {
       expect(result.current.unsavedPaths).toBe(clearedPaths)
     })
 
-    it('tracks and clears pendingSave states separately from unsaved/new markers', async () => {
+    it('tracks and clears pendingSave states separately from unsaved markers', async () => {
       const { result } = await renderVaultLoader()
 
       act(() => {
@@ -626,7 +624,7 @@ describe('useVaultLoader', () => {
       act(() => {
         result.current.removePendingSave('/vault/note/hello.md')
       })
-      expect(result.current.getNoteStatus('/vault/note/hello.md')).toBe('modified')
+      expect(result.current.getNoteStatus('/vault/note/hello.md')).toBe('clean')
     })
   })
 
@@ -981,85 +979,29 @@ describe('useVaultLoader', () => {
 })
 
 describe('resolveNoteStatus', () => {
-  const mf = (path: string, status: string): ModifiedFile => ({ path, relativePath: path.replace('/vault/', ''), status })
   const status = (
     path: string,
-    newPaths: Set<string>,
-    modifiedFiles: ModifiedFile[],
     pendingSavePaths?: Set<string>,
     unsavedPaths?: Set<string>,
-  ) => resolveNoteStatus({ path, newPaths, modifiedFiles, pendingSavePaths, unsavedPaths })
+  ) => resolveNoteStatus({ path, pendingSavePaths, unsavedPaths })
 
-  it('returns new when path is in newPaths (not yet on disk)', () => {
-    expect(status('/vault/x.md', new Set(['/vault/x.md']), [])).toBe('new')
+  it('returns clean when no transient status is tracked', () => {
+    expect(status('/vault/x.md')).toBe('clean')
   })
 
-  it('returns new for untracked files in git', () => {
-    expect(status('/vault/x.md', new Set(), [mf('/vault/x.md', 'untracked')])).toBe('new')
-  })
-
-  it('returns new for added files in git', () => {
-    expect(status('/vault/x.md', new Set(), [mf('/vault/x.md', 'added')])).toBe('new')
-  })
-
-  it('returns modified for git-modified files', () => {
-    expect(status('/vault/x.md', new Set(), [mf('/vault/x.md', 'modified')])).toBe('modified')
-  })
-
-  it('returns clean for files not in git status', () => {
-    expect(status('/vault/x.md', new Set(), [])).toBe('clean')
-  })
-
-  it('returns modified for deleted files so deleted previews keep diff affordances', () => {
-    expect(status('/vault/x.md', new Set(), [mf('/vault/x.md', 'deleted')])).toBe('modified')
-  })
-
-  it('returns clean for unsupported git statuses', () => {
-    expect(status('/vault/x.md', new Set(), [mf('/vault/x.md', 'renamed')])).toBe('clean')
-  })
-
-  it('newPaths takes priority over git modified', () => {
-    expect(status('/vault/x.md', new Set(['/vault/x.md']), [mf('/vault/x.md', 'modified')])).toBe('new')
-  })
-
-  it('pendingSave takes priority over new status', () => {
+  it('returns pendingSave while a disk write is in flight', () => {
     const pendingSave = new Set(['/vault/x.md'])
-    expect(status('/vault/x.md', new Set(['/vault/x.md']), [], pendingSave)).toBe('pendingSave')
+    expect(status('/vault/x.md', pendingSave)).toBe('pendingSave')
   })
 
-  it('pendingSave takes priority over modified status', () => {
-    const pendingSave = new Set(['/vault/x.md'])
-    expect(status('/vault/x.md', new Set(), [mf('/vault/x.md', 'modified')], pendingSave)).toBe('pendingSave')
-  })
-
-  it('pendingSave takes priority over clean status', () => {
-    const pendingSave = new Set(['/vault/x.md'])
-    expect(status('/vault/x.md', new Set(), [], pendingSave)).toBe('pendingSave')
-  })
-
-  it('without pendingSavePaths parameter, behavior is unchanged', () => {
-    // Omitting the optional parameter should produce the same results as before
-    expect(status('/vault/x.md', new Set(['/vault/x.md']), [])).toBe('new')
-    expect(status('/vault/x.md', new Set(), [mf('/vault/x.md', 'modified')])).toBe('modified')
-    expect(status('/vault/x.md', new Set(), [])).toBe('clean')
-  })
-
-  it('empty pendingSavePaths set does not affect other statuses', () => {
-    const emptyPending = new Set<string>()
-    expect(status('/vault/x.md', new Set(['/vault/x.md']), [], emptyPending)).toBe('new')
-    expect(status('/vault/x.md', new Set(), [mf('/vault/x.md', 'modified')], emptyPending)).toBe('modified')
-    expect(status('/vault/x.md', new Set(), [], emptyPending)).toBe('clean')
-  })
-
-  it('unsaved takes priority over all other statuses', () => {
+  it('returns unsaved while local editor content is unflushed', () => {
     const unsaved = new Set(['/vault/x.md'])
-    expect(status('/vault/x.md', new Set(['/vault/x.md']), [], undefined, unsaved)).toBe('unsaved')
-    expect(status('/vault/x.md', new Set(), [mf('/vault/x.md', 'modified')], undefined, unsaved)).toBe('unsaved')
-    expect(status('/vault/x.md', new Set(['/vault/x.md']), [], new Set(['/vault/x.md']), unsaved)).toBe('unsaved')
+    expect(status('/vault/x.md', undefined, unsaved)).toBe('unsaved')
   })
 
-  it('without unsavedPaths parameter, behavior is unchanged', () => {
-    expect(status('/vault/x.md', new Set(['/vault/x.md']), [])).toBe('new')
-    expect(status('/vault/x.md', new Set(), [mf('/vault/x.md', 'modified')])).toBe('modified')
+  it('gives unsaved content priority over pendingSave', () => {
+    const unsaved = new Set(['/vault/x.md'])
+    const pendingSave = new Set(['/vault/x.md'])
+    expect(status('/vault/x.md', pendingSave, unsaved)).toBe('unsaved')
   })
 })
