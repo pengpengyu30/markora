@@ -20,7 +20,6 @@ interface SettingsCommandsConfig {
   onCreateEmptyVault?: () => void
   onRemoveActiveVault?: () => void
   onRestoreGettingStarted?: () => void
-  onCheckForUpdates?: () => void
   onReloadVault?: () => void
   onRepairVault?: () => void
   onRestoreDeletedNote?: () => void
@@ -39,8 +38,7 @@ function commandKeywords(raw: string): string[] {
 function buildPrimarySettingsCommands({
   locale = 'en',
   onOpenSettings,
-  onCheckForUpdates,
-}: Pick<SettingsCommandsConfig, 'locale' | 'onOpenSettings' | 'onCheckForUpdates'>): CommandAction[] {
+}: Pick<SettingsCommandsConfig, 'locale' | 'onOpenSettings'>): CommandAction[] {
   const t = createTranslator(locale)
   return [
     {
@@ -60,7 +58,6 @@ function buildPrimarySettingsCommands({
       enabled: true,
       execute: onOpenSettings,
     },
-    { id: 'check-updates', label: t('command.checkUpdates'), group: 'Settings', keywords: ['update', 'version', 'upgrade', 'release'], enabled: true, execute: () => onCheckForUpdates?.() },
   ]
 }
 
@@ -184,12 +181,12 @@ export function buildSettingsCommands(config: SettingsCommandsConfig): CommandAc
   const {
     vaultCount, isGettingStartedHidden,
     onOpenSettings, onOpenVault, onCreateEmptyVault, onRemoveActiveVault, onRestoreGettingStarted,
-    onCheckForUpdates, onReloadVault, onRepairVault, onRestoreDeletedNote, onToggleGitignoredFilesVisibility,
+    onReloadVault, onRepairVault, onRestoreDeletedNote, onToggleGitignoredFilesVisibility,
     locale = 'en', systemLocale = locale, selectedUiLanguage = SYSTEM_UI_LANGUAGE, onSetUiLanguage, onSetThemeMode,
   } = config
 
   return [
-    ...buildPrimarySettingsCommands({ locale, onOpenSettings, onCheckForUpdates }),
+    ...buildPrimarySettingsCommands({ locale, onOpenSettings }),
     ...buildThemeCommands({ locale, onSetThemeMode }),
     ...buildLanguageCommands({
       locale,

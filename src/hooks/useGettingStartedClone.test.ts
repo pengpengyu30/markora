@@ -72,7 +72,7 @@ describe('useGettingStartedClone', () => {
     })
 
     expect(onSuccess).not.toHaveBeenCalled()
-    expect(onError).toHaveBeenCalledWith('Could not download Getting Started vault: git clone failed: fatal: unable to access')
+    expect(onError).toHaveBeenCalledWith('Could not create Getting Started vault locally: git clone failed: fatal: unable to access')
   })
 
   it('surfaces the restart-required message when folder picking is blocked after update install', async () => {
@@ -88,7 +88,7 @@ describe('useGettingStartedClone', () => {
 
     expect(onSuccess).not.toHaveBeenCalled()
     expect(onError).toHaveBeenCalledWith(
-      'Tolaria needs a restart before macOS can open another folder picker. Restart to apply the downloaded update and try again.',
+      'The app needs to restart before macOS can open another folder picker. Restart the app and try again.',
     )
   })
 })

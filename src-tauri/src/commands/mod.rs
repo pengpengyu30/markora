@@ -8,7 +8,6 @@ mod pdf_export;
 mod runtime;
 mod system;
 mod vault;
-mod version;
 
 use std::borrow::Cow;
 
@@ -22,7 +21,6 @@ pub use pdf_export::*;
 pub use runtime::*;
 pub use system::*;
 pub use vault::*;
-pub use version::*;
 
 /// Expand a leading `~` or `~/` in a path string to the user's home directory.
 /// Returns the original string unchanged if it doesn't start with `~` or if the
@@ -38,22 +36,6 @@ pub fn expand_tilde(path: &str) -> Cow<'_, str> {
             .strip_prefix("~/")
             .map(|rest| Cow::Owned(home.join(rest).to_string_lossy().into_owned()))
             .unwrap_or(Cow::Borrowed(path)),
-    }
-}
-
-fn is_numeric_version_part(part: &str) -> bool {
-    !part.is_empty() && part.chars().all(|ch| ch.is_ascii_digit())
-}
-
-fn is_legacy_build_version(minor: &str, patch: &str) -> bool {
-    minor.len() >= 6 && is_numeric_version_part(minor) && is_numeric_version_part(patch)
-}
-
-fn parse_legacy_build_label(version: &str) -> Option<String> {
-    let parts: Vec<&str> = version.split('.').collect();
-    match parts.as_slice() {
-        [_, minor, patch] if is_legacy_build_version(minor, patch) => Some(format!("b{}", patch)),
-        _ => None,
     }
 }
 

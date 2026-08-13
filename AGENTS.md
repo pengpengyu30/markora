@@ -60,11 +60,10 @@ pnpm test
 cargo test --manifest-path src-tauri/Cargo.toml
 ```
 
-For build or documentation changes, also run:
+For build changes, also run:
 
 ```bash
 pnpm build
-pnpm docs:build
 ```
 
 For changes touching Project open, note create/save/delete, search, wikilinks, or tags, run the relevant Playwright smoke test or `pnpm playwright:smoke`. For native-only behavior, run the local Tauri app and test the real filesystem/menu/webview path when available.

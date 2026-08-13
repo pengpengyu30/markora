@@ -161,7 +161,6 @@ function runCli() {
   }
   if (channel !== 'alpha') throw new Error('Usage: node scripts/release-version.mjs alpha|stable')
 
-  const changed = gitLines(['diff-tree', '--no-commit-id', '--name-only', '-r', 'HEAD'])
   const release = computeAlphaRelease({
     alphaTags: gitLines(['tag', '--list', 'alpha-v*']),
     stableTags: gitLines([
@@ -173,10 +172,7 @@ function runCli() {
     tagsAtHead: gitLines(['tag', '--points-at', 'HEAD']).filter((tag) => tag.startsWith('alpha-v')),
     today,
   })
-  const ignored = changed.every(
-    (path) => path.startsWith('site/') || path.startsWith('.circleci/') || path === '.github/workflows/README.md',
-  )
-  printReleaseEnv(release, changed.length > 0 && ignored, format)
+  printReleaseEnv(release, false, format)
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) runCli()

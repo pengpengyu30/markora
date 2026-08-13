@@ -392,7 +392,7 @@ describe('useVaultSwitcher', () => {
     })
 
     expect(onToast).toHaveBeenCalledWith(
-      'Tolaria needs a restart before macOS can open another folder picker. Restart to apply the downloaded update and try again.',
+      'The app needs to restart before macOS can open another folder picker. Restart the app and try again.',
     )
   })
 
@@ -576,7 +576,7 @@ describe('useVaultSwitcher', () => {
       expect(mockInvokeFn).toHaveBeenCalledWith('create_getting_started_vault', { targetPath: expectedDefaultVaultPath })
     })
 
-    it('shows a friendly toast and keeps the hidden vault hidden when cloning fails', async () => {
+  it('shows a friendly toast and keeps the hidden vault hidden when local preparation fails', async () => {
       setWorkVaultWithHiddenGettingStarted()
       setMockInvokeBehavior({
         checkVaultExists: false,
@@ -591,7 +591,7 @@ describe('useVaultSwitcher', () => {
 
       expect(result.current.vaultPath).toBe('/work/vault')
       expect(result.current.isGettingStartedHidden).toBe(true)
-      expect(onToast).toHaveBeenCalledWith('Getting Started requires internet. Clone it later.')
+      expect(onToast).toHaveBeenCalledWith('Could not prepare Getting Started vault locally: git clone failed: fatal: unable to access')
     })
   })
 

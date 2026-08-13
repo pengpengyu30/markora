@@ -18,19 +18,6 @@ function setWindowWidth(width: number) {
   })
 }
 
-async function expectTooltip(trigger: HTMLElement, ...parts: string[]) {
-  act(() => {
-    fireEvent.focus(trigger)
-  })
-  const tooltip = await screen.findByRole('tooltip')
-  for (const part of parts) {
-    expect(tooltip).toHaveTextContent(part)
-  }
-  act(() => {
-    fireEvent.blur(trigger)
-  })
-}
-
 describe('StatusBar', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -42,32 +29,15 @@ describe('StatusBar', () => {
     expect(screen.queryByText('9,200 notes')).not.toBeInTheDocument()
   })
 
-  it('displays build number when provided', () => {
-    render(<StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} buildNumber="b223" />)
-    expect(screen.getByText('b223')).toBeInTheDocument()
-  })
-
-  it('displays fallback build number when not provided', () => {
-    render(<StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} />)
-    expect(screen.getByText('b?')).toBeInTheDocument()
-  })
-
   it('shows the vault reload badge while a reload is active', () => {
     render(<StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} isVaultReloading />)
     expect(screen.getByTestId('status-vault-reloading')).toHaveAccessibleName('Reloading Project from disk')
   })
 
-  it('calls onCheckForUpdates when clicking build number', () => {
-    const onCheckForUpdates = vi.fn()
-    render(<StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} buildNumber="b281" onCheckForUpdates={onCheckForUpdates} />)
-    fireEvent.click(screen.getByTestId('status-build-number'))
-    expect(onCheckForUpdates).toHaveBeenCalledOnce()
+  it('does not render the former update/build entry', () => {
+    render(<StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} />)
+    expect(screen.queryByTestId('status-build-number')).not.toBeInTheDocument()
   })
-
-  it('build number shows the update tooltip on focus', async () => {
-    render(<StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} buildNumber="b281" onCheckForUpdates={vi.fn()} />)
-    await expectTooltip(screen.getByRole('button', { name: 'Check for updates' }), 'Check for updates')
-  }, 10_000)
 
   it('shows and opens Docs from the bottom bar', () => {
     const onOpenDocs = vi.fn()

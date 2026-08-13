@@ -53,13 +53,13 @@ test('Getting Started template shows inline retry on clone failure and opens aft
   await page.getByTestId('welcome-create-vault').click()
 
   await expect(page.getByTestId('welcome-error')).toContainText(
-    'Could not download Getting Started vault: git clone failed: fatal: unable to access',
+    'Could not create Getting Started vault locally: git clone failed: fatal: unable to access',
   )
   await expect(page.getByTestId('welcome-retry-template')).toBeVisible()
 
   await page.getByTestId('welcome-retry-template').click()
 
   await expect(page.getByTestId('welcome-screen')).not.toBeVisible()
-  await expect(page.getByText(`Getting Started vault cloned and opened at ${clonedPath}`)).toBeVisible()
+  await expect(page.getByText(`Getting Started vault created locally and opened at ${clonedPath}`)).toBeVisible()
   await expect(page.locator('[data-testid="note-list-container"]')).toBeVisible()
 })

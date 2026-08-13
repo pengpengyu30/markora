@@ -134,7 +134,8 @@ describe('SettingsPanel', () => {
       <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
     )
     expect(screen.getByText('Settings')).toBeInTheDocument()
-    expect(screen.getAllByText('Sync & Updates').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Appearance').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Sync & Updates')).not.toBeInTheDocument()
   })
 
   it('updates the draft language when stored settings finish loading', () => {
@@ -440,67 +441,6 @@ describe('SettingsPanel', () => {
 
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
       theme_mode: 'dark',
-    }))
-  })
-
-  it('defaults the release channel trigger to stable', () => {
-    render(
-      <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
-    )
-
-    expect(screen.getByTestId('settings-release-channel')).toHaveAttribute('data-value', 'stable')
-    expect(screen.queryByText(/Beta\/Stable/i)).not.toBeInTheDocument()
-  })
-
-  it('defaults automatic update checks to on', () => {
-    render(
-      <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
-    )
-
-    expect(screen.getByRole('switch', { name: 'Check for updates automatically' })).toHaveAttribute('aria-checked', 'true')
-  })
-
-  it('saves the automatic update checks preference when toggled off', () => {
-    render(
-      <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
-    )
-
-    fireEvent.click(screen.getByRole('switch', { name: 'Check for updates automatically' }))
-    fireEvent.click(screen.getByTestId('settings-save'))
-
-    expectSettingsSaved({
-      automatic_update_checks_enabled: false,
-    })
-  })
-
-  it('treats a legacy beta release channel as stable', () => {
-    render(
-      <SettingsPanel
-        open={true}
-        settings={{ ...emptySettings, release_channel: 'beta' }}
-        onSave={onSave}
-        onClose={onClose}
-      />
-    )
-
-    expect(screen.getByTestId('settings-release-channel')).toHaveAttribute('data-value', 'stable')
-    expect(screen.queryByText('Beta')).not.toBeInTheDocument()
-  })
-
-  it('preserves alpha when alpha is already selected', () => {
-    const alphaSettings: Settings = {
-      ...emptySettings,
-      release_channel: 'alpha',
-    }
-
-    render(
-      <SettingsPanel open={true} settings={alphaSettings} onSave={onSave} onClose={onClose} />
-    )
-
-    fireEvent.click(screen.getByTestId('settings-save'))
-
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
-      release_channel: 'alpha',
     }))
   })
 

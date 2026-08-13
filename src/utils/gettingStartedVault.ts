@@ -1,6 +1,6 @@
 export const GETTING_STARTED_VAULT_NAME = 'Getting Started'
 
-const CLONE_PATH_ERRORS = [
+const PATH_ERRORS = [
   'already exists and is not empty',
   'already exists and is not a directory',
   'Failed to create parent directory',
@@ -54,27 +54,27 @@ export function formatGettingStartedCloneError(err: unknown): string {
         ? err.message
         : `${err}`
 
-  if (CLONE_PATH_ERRORS.some(fragment => message.includes(fragment))) {
+  if (PATH_ERRORS.some(fragment => message.includes(fragment))) {
     return message
   }
 
   const lower = message.toLowerCase()
   if (GIT_NOT_FOUND_ERRORS.some(fragment => lower.includes(fragment))) {
-    return 'Git is required to download the Getting Started vault. Install Git and try again.'
+    return 'Git is required to create the Getting Started vault. Install Git and try again.'
   }
   if (AUTH_ERRORS.some(fragment => lower.includes(fragment))) {
-    return 'Could not download Getting Started vault. Check your GitHub access and try again.'
+    return 'Could not create Getting Started vault locally. Check your Git installation and try again.'
   }
   if (NETWORK_ERRORS.some(fragment => lower.includes(fragment))) {
-    return 'Could not download Getting Started vault. Check your connection and try again.'
+    return 'Could not create Getting Started vault locally. Try again.'
   }
 
-  return `Could not download Getting Started vault: ${firstCloneErrorLine(message)}`
+  return `Could not create Getting Started vault locally: ${firstCloneErrorLine(message)}`
 }
 
 function firstCloneErrorLine(message: string): string {
   return message
     .split(/\r?\n/)
     .map(line => line.trim())
-    .find(Boolean) ?? 'git reported an unknown error'
+    .find(Boolean) ?? 'the local template could not be prepared'
 }

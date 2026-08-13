@@ -12,7 +12,7 @@ date: 2026-03-30
 
 ## Decision
 
-**Replace `commands.rs` with a `commands/` module split by domain: `vault.rs`, `git.rs`, `github.rs`, `ai.rs`, `system.rs`, and `mod.rs` (shared utilities + re-exports).** Each file owns the Tauri command handlers for its domain and the `#[cfg(desktop)]` / `#[cfg(mobile)]` stubs for platform-conditional availability. `mod.rs` is kept thin (≤100 lines) with no command logic — only re-exports and shared helpers (`expand_tilde`, `parse_build_label`).
+**Replace `commands.rs` with a `commands/` module split by domain: `vault.rs`, `git.rs`, `github.rs`, `ai.rs`, `system.rs`, and `mod.rs` (shared utilities + re-exports).** Each file owns the Tauri command handlers for its domain and the `#[cfg(desktop)]` / `#[cfg(mobile)]` stubs for platform-conditional availability. `mod.rs` is kept thin (≤100 lines) with no command logic — only re-exports and shared helpers such as `expand_tilde`.
 
 ## Options considered
 

@@ -159,7 +159,7 @@ describe('WelcomeScreen', () => {
       render(
         <WelcomeScreen
           {...defaultProps}
-          error="Could not download Getting Started vault. Check your connection and try again."
+          error="Could not create Getting Started vault locally. Try again."
           canRetryTemplate={true}
           onRetryCreateVault={onRetryCreateVault}
         />,

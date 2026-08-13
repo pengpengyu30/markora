@@ -1,4 +1,4 @@
-import { Article, ArrowsClockwise as RefreshCw, FolderOpen, Palette, type IconProps } from '@phosphor-icons/react'
+import { Article, FolderOpen, Palette, type IconProps } from '@phosphor-icons/react'
 import type { ComponentType } from 'react'
 import type { TranslationKey } from '../lib/i18n'
 import { Button } from './ui/button'
@@ -17,7 +17,6 @@ interface SettingsNavItem {
 export function SettingsBodyNav({ t }: SettingsBodyNavProps) {
   const items: SettingsNavItem[] = [
     { id: SETTINGS_SECTION_IDS.projects, label: t('settings.projects.title'), Icon: FolderOpen },
-    { id: SETTINGS_SECTION_IDS.sync, label: t('settings.sync.title'), Icon: RefreshCw },
     { id: SETTINGS_SECTION_IDS.appearance, label: t('settings.appearance.title'), Icon: Palette },
     { id: SETTINGS_SECTION_IDS.content, label: t('settings.vaultContent.title'), Icon: Article },
   ]

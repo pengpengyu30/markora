@@ -52,7 +52,6 @@ interface CommandRegistryConfig {
   onSetNoteWidth?: (mode: NoteWidthMode) => void
   onSetDefaultNoteWidth?: (mode: NoteWidthMode) => void
   onToggleTableOfContents?: () => void
-  onCheckForUpdates?: () => void
   onZoomIn: () => void
   onZoomOut: () => void
   onZoomReset: () => void
@@ -93,7 +92,6 @@ export function useCommandRegistry(config: CommandRegistryConfig): import('./com
     onZoomIn, onZoomOut, onZoomReset, zoomLevel,
     onSelect, onRenameFolder, onDeleteFolder, onRevealSelectedFolder, onCopySelectedFolderPath,
     onGoBack, onGoForward, canGoBack, canGoForward,
-    onCheckForUpdates,
     onRemoveActiveVault, onRestoreGettingStarted, isGettingStartedHidden, vaultCount,
     onReloadVault, onRepairVault, onRestoreDeletedNote,
     locale, systemLocale, selectedUiLanguage, onSetUiLanguage, onSetThemeMode,
@@ -158,12 +156,12 @@ export function useCommandRegistry(config: CommandRegistryConfig): import('./com
   const settingsCommands = useMemo(() => buildSettingsCommands({
     vaultCount, isGettingStartedHidden,
     onOpenSettings, onOpenVault, onCreateEmptyVault, onRemoveActiveVault, onRestoreGettingStarted,
-    onCheckForUpdates, onReloadVault, onRepairVault, onRestoreDeletedNote,
+    onReloadVault, onRepairVault, onRestoreDeletedNote,
     locale, systemLocale, selectedUiLanguage, onSetUiLanguage, onSetThemeMode,
   }), [
     vaultCount, isGettingStartedHidden, onOpenSettings,
     onOpenVault, onCreateEmptyVault, onRemoveActiveVault, onRestoreGettingStarted,
-    onCheckForUpdates, onReloadVault, onRepairVault, onRestoreDeletedNote,
+    onReloadVault, onRepairVault, onRestoreDeletedNote,
     locale, systemLocale, selectedUiLanguage, onSetUiLanguage, onSetThemeMode,
   ])
 

@@ -1,8 +1,16 @@
 use std::path::{Path, PathBuf};
 
-/// Public starter vault cloned when the user chooses Getting Started.
-pub const GETTING_STARTED_REPO_URL: &str =
-    "https://github.com/refactoringhq/tolaria-getting-started.git";
+/// Files written when the user creates the local Getting Started Project.
+const GETTING_STARTED_TEMPLATE: [(&str, &str); 2] = [
+    (
+        "welcome.md",
+        "# Welcome to your notebook\n\nThis starter Project was created locally.\n",
+    ),
+    (
+        "views/active-projects.yml",
+        "title: Active Projects\nfilters: []\n",
+    ),
+];
 
 /// Default location for the Getting Started vault.
 pub fn default_vault_path() -> Result<PathBuf, String> {
@@ -49,32 +57,75 @@ fn has_getting_started_template_marker(path: &Path) -> bool {
         .any(|file| path.join(file).is_file())
 }
 
-/// Clone the public starter vault into the requested path.
+/// Create the local starter vault in the requested path.
 pub fn create_getting_started_vault(target_path: &str) -> Result<String, String> {
-    let vault_path = create_getting_started_vault_from_repo(
-        Path::new(target_path),
-        &getting_started_repo_url(),
-    )?;
-    Ok(vault_path.to_string_lossy().to_string())
-}
-
-fn create_getting_started_vault_from_repo(
-    target_path: &Path,
-    repo_url: &str,
-) -> Result<PathBuf, String> {
+    let target_path = Path::new(target_path);
     let target_path_str = target_path.to_string_lossy();
     if target_path_str.trim().is_empty() {
         return Err("Target path is required".to_string());
     }
 
-    crate::git::clone_repo(repo_url, &target_path_str)?;
-    canonical_vault_path(target_path)
+    let destination_preexisted = target_path.is_dir();
+    ensure_empty_destination(target_path)?;
+
+    let result = write_local_template(target_path).and_then(|()| {
+        crate::git::ensure_vault_repository(target_path)?;
+        canonical_vault_path(target_path)
+    });
+
+    if result.is_err() && !destination_preexisted {
+        let _ = std::fs::remove_dir_all(target_path);
+    }
+
+    result.map(|path| path.to_string_lossy().to_string())
 }
 
-fn getting_started_repo_url() -> String {
-    std::env::var("TOLARIA_GETTING_STARTED_REPO_URL")
-        .or_else(|_| std::env::var("LAPUTA_GETTING_STARTED_REPO_URL"))
-        .unwrap_or_else(|_| GETTING_STARTED_REPO_URL.to_string())
+fn ensure_empty_destination(target_path: &Path) -> Result<(), String> {
+    if target_path.exists() && !target_path.is_dir() {
+        return Err(format!(
+            "Destination '{}' already exists and is not a directory",
+            target_path.display()
+        ));
+    }
+
+    if target_path.exists()
+        && target_path
+            .read_dir()
+            .map_err(|error| {
+                format!(
+                    "Failed to inspect destination '{}': {error}",
+                    target_path.display()
+                )
+            })?
+            .next()
+            .is_some()
+    {
+        return Err(format!(
+            "Destination '{}' already exists and is not empty",
+            target_path.display()
+        ));
+    }
+
+    Ok(())
+}
+
+fn write_local_template(target_path: &Path) -> Result<(), String> {
+    for (relative_path, content) in GETTING_STARTED_TEMPLATE {
+        let path = target_path.join(relative_path);
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).map_err(|error| {
+                format!(
+                    "Failed to create starter directory '{}': {error}",
+                    parent.display()
+                )
+            })?;
+        }
+        std::fs::write(&path, content).map_err(|error| {
+            format!("Failed to write starter file '{}': {error}", path.display())
+        })?;
+    }
+
+    Ok(())
 }
 
 fn canonical_vault_path(target_path: &Path) -> Result<PathBuf, String> {
@@ -90,48 +141,6 @@ fn canonical_vault_path(target_path: &Path) -> Result<PathBuf, String> {
 mod tests {
     use super::*;
     use std::fs;
-    use std::path::Path;
-    use std::process::Command as StdCommand;
-
-    fn init_source_repo(path: &Path) {
-        fs::create_dir_all(path.join("views")).unwrap();
-        fs::write(
-            path.join("welcome.md"),
-            "# Welcome to Tolaria\n\nThis is the starter vault.\n",
-        )
-        .unwrap();
-        fs::write(
-            path.join("views").join("active-projects.yml"),
-            "title: Active Projects\nfilters: []\n",
-        )
-        .unwrap();
-
-        StdCommand::new("git")
-            .args(["init"])
-            .current_dir(path)
-            .output()
-            .unwrap();
-        StdCommand::new("git")
-            .args(["config", "user.email", "tolaria@app.local"])
-            .current_dir(path)
-            .output()
-            .unwrap();
-        StdCommand::new("git")
-            .args(["config", "user.name", "Tolaria App"])
-            .current_dir(path)
-            .output()
-            .unwrap();
-        StdCommand::new("git")
-            .args(["add", "."])
-            .current_dir(path)
-            .output()
-            .unwrap();
-        StdCommand::new("git")
-            .args(["commit", "-m", "Initial starter vault"])
-            .current_dir(path)
-            .output()
-            .unwrap();
-    }
 
     #[test]
     fn default_vault_path_appends_getting_started() {
@@ -140,11 +149,22 @@ mod tests {
     }
 
     #[test]
-    fn default_getting_started_repo_url_uses_tolaria_slug() {
+    fn create_getting_started_vault_writes_the_template_locally() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let dest = dir.path().join("Getting Started");
+
+        let result = create_getting_started_vault(dest.to_str().unwrap()).unwrap();
+
+        assert_eq!(result, dest.canonicalize().unwrap().to_string_lossy());
         assert_eq!(
-            GETTING_STARTED_REPO_URL,
-            "https://github.com/refactoringhq/tolaria-getting-started.git"
+            fs::read_to_string(dest.join("welcome.md")).unwrap(),
+            "# Welcome to your notebook\n\nThis starter Project was created locally.\n"
         );
+        assert_eq!(
+            fs::read_to_string(dest.join("views").join("active-projects.yml")).unwrap(),
+            "title: Active Projects\nfilters: []\n"
+        );
+        assert!(dest.join(".git").is_dir());
     }
 
     #[test]
@@ -173,16 +193,13 @@ mod tests {
     }
 
     #[test]
-    fn create_getting_started_vault_clones_repo_without_guidance_files() {
+    fn create_getting_started_vault_writes_local_template_without_guidance_files() {
         let dir = tempfile::TempDir::new().unwrap();
-        let source = dir.path().join("starter");
         let dest = dir.path().join("Getting Started");
-        init_source_repo(&source);
 
-        let result =
-            create_getting_started_vault_from_repo(&dest, source.to_str().unwrap()).unwrap();
+        let result = create_getting_started_vault(dest.to_str().unwrap()).unwrap();
 
-        assert_eq!(result, dest.canonicalize().unwrap());
+        assert_eq!(result, dest.canonicalize().unwrap().to_string_lossy());
         assert!(dest.join("welcome.md").exists());
         assert!(dest.join("views").join("active-projects.yml").exists());
         assert!(dest.join(".git").exists());
@@ -192,13 +209,11 @@ mod tests {
     }
 
     #[test]
-    fn canonical_getting_started_path_accepts_cloned_starter_vault() {
+    fn canonical_getting_started_path_accepts_local_starter_vault() {
         let dir = tempfile::TempDir::new().unwrap();
-        let source = dir.path().join("starter");
         let default_path = dir.path().join("Getting Started");
-        init_source_repo(&source);
 
-        create_getting_started_vault_from_repo(&default_path, source.to_str().unwrap()).unwrap();
+        create_getting_started_vault(default_path.to_str().unwrap()).unwrap();
 
         assert!(vault_exists_with_default_path(
             &default_path,
@@ -209,45 +224,28 @@ mod tests {
     #[test]
     fn create_getting_started_vault_rejects_nonempty_destination() {
         let dir = tempfile::TempDir::new().unwrap();
-        let source = dir.path().join("starter");
         let dest = dir.path().join("Getting Started");
-        init_source_repo(&source);
         fs::create_dir_all(&dest).unwrap();
         fs::write(dest.join("existing.md"), "# Existing\n").unwrap();
 
-        let error =
-            create_getting_started_vault_from_repo(&dest, source.to_str().unwrap()).unwrap_err();
+        let error = create_getting_started_vault(dest.to_str().unwrap()).unwrap_err();
 
         assert!(error.contains("already exists and is not empty"));
     }
 
     #[test]
-    fn create_getting_started_vault_cleans_partial_clone_on_failure() {
+    fn create_getting_started_vault_initializes_repository_without_remote() {
         let dir = tempfile::TempDir::new().unwrap();
-        let missing_repo = dir.path().join("missing");
         let dest = dir.path().join("Getting Started");
 
-        let error = create_getting_started_vault_from_repo(&dest, missing_repo.to_str().unwrap())
-            .unwrap_err();
+        create_getting_started_vault(dest.to_str().unwrap()).unwrap();
 
-        assert!(error.contains("git clone failed"));
-        assert!(!dest.exists());
-    }
-
-    #[test]
-    fn create_getting_started_vault_leaves_clean_worktree() {
-        let dir = tempfile::TempDir::new().unwrap();
-        let source = dir.path().join("starter");
-        let dest = dir.path().join("Getting Started");
-        init_source_repo(&source);
-
-        create_getting_started_vault_from_repo(&dest, source.to_str().unwrap()).unwrap();
-
-        let output = StdCommand::new("git")
-            .args(["status", "--porcelain"])
+        let output = std::process::Command::new("git")
+            .args(["remote", "get-url", "origin"])
             .current_dir(&dest)
             .output()
             .unwrap();
+        assert!(!output.status.success());
         assert!(String::from_utf8_lossy(&output.stdout).trim().is_empty());
     }
 }

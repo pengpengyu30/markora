@@ -595,13 +595,7 @@ function useLoadPersistedVaultState(store: PersistedVaultStore, onSwitchRef: Mut
     function formatGettingStartedRestoreError(err: unknown): string {
       const message = typeof err === 'string' ? err : err instanceof Error ? err.message : `${err}`
 
-      const networkErrors = ['unable to access', 'Could not resolve host', 'network', 'timed out']
-
-      if (networkErrors.some((fragment) => message.includes(fragment))) {
-        return 'Getting Started requires internet. Clone it later.'
-      }
-
-      return `Could not prepare Getting Started vault: ${message}`
+      return `Could not prepare Getting Started vault locally: ${message}`
     }
 
     function formatCreateEmptyVaultError(err: unknown): string {

@@ -67,8 +67,6 @@ interface StatusBarProps {
   onZoomReset?: () => void
   onToggleThemeMode?: () => void
   onOpenDocs?: () => void
-  buildNumber?: string
-  onCheckForUpdates?: () => void
   onRemoveVault?: (path: string) => void
   onReorderVaults?: (orderedPaths: string[]) => void
   onUpdateWorkspaceIdentity?: (path: string, patch: Partial<VaultOption>) => void

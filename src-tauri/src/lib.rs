@@ -1,6 +1,5 @@
 mod app_config;
 mod app_icon;
-pub mod app_updater;
 mod asset_scope;
 mod commands;
 pub mod frontmatter;
@@ -89,9 +88,6 @@ fn setup_desktop_plugins(app: &mut tauri::App) -> Result<(), Box<dyn std::error:
 
 #[cfg(desktop)]
 fn install_desktop_runtime_plugins(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-    app.handle()
-        .plugin(tauri_plugin_updater::Builder::new().build())?;
-    app.handle().plugin(tauri_plugin_process::init())?;
     app.handle().plugin(tauri_plugin_opener::init())?;
     Ok(())
 }
@@ -208,7 +204,6 @@ macro_rules! app_invoke_handler {
             commands::update_wikilinks_for_renames,
             commands::get_modified_files,
             commands::git_snapshot,
-            commands::get_build_number,
             commands::git_workspace_info,
             commands::ensure_git_repository,
             commands::list_deleted_notes,
@@ -231,14 +226,12 @@ macro_rules! app_invoke_handler {
             commands::delete_vault_folder,
             commands::get_settings,
             macos_fullscreen_escape::set_macos_dismissable_escape_surface_open,
-            commands::check_for_app_update,
             commands::update_menu_state,
             commands::update_app_icon,
             commands::trigger_menu_command,
             commands::update_current_window_min_size,
             commands::perform_current_window_titlebar_double_click,
             commands::save_settings,
-            commands::download_and_install_app_update,
             commands::load_vault_list,
             commands::save_vault_list,
             commands::search_vault,

@@ -325,7 +325,6 @@ export const mockHandlers = {
     mockSavedSinceCommit.clear()
     return `[main abc1234] tolaria: snapshot\n ${count} files changed`
   },
-  get_build_number: () => 'bDEV',
   git_workspace_info: ({ vaultPath }: { vaultPath?: string } = {}) => ({
     vaultRoot: vaultPath ?? '/mock-vault',
     gitRoot: vaultPath ?? '/mock-vault',

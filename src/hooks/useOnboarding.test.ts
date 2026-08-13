@@ -262,7 +262,7 @@ describe('useOnboarding', () => {
       await result.current.handleCreateVault()
     })
 
-    expect(result.current.error).toBe('Could not download Getting Started vault: git clone failed: fatal: unable to access')
+    expect(result.current.error).toBe('Could not create Getting Started vault locally: git clone failed: fatal: unable to access')
     expect(result.current.state.status).toBe('welcome')
   })
 
@@ -371,7 +371,7 @@ describe('useOnboarding', () => {
     })
 
     expect(result.current.error).toBe(
-      'Tolaria needs a restart before macOS can open another folder picker. Restart to apply the downloaded update and try again.',
+      'The app needs to restart before macOS can open another folder picker. Restart the app and try again.',
     )
     expect(result.current.state.status).toBe('welcome')
   })

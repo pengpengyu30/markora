@@ -38,7 +38,6 @@ function makeHandlers(): MenuEventHandlers {
     onPastePlainText: vi.fn(),
     onGoBack: vi.fn(),
     onGoForward: vi.fn(),
-    onCheckForUpdates: vi.fn(),
     onSelectFilter: vi.fn(),
     onOpenVault: vi.fn(),
     onRemoveActiveVault: vi.fn(),
@@ -218,12 +217,6 @@ describe('dispatchMenuEvent', () => {
     const h = makeHandlers()
     dispatchMenuEvent('view-go-forward', h)
     expect(h.onGoForward).toHaveBeenCalled()
-  })
-
-  it('app-check-for-updates triggers check for updates', () => {
-    const h = makeHandlers()
-    dispatchMenuEvent('app-check-for-updates', h)
-    expect(h.onCheckForUpdates).toHaveBeenCalled()
   })
 
   // New Edit menu items

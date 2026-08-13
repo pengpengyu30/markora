@@ -21,7 +21,6 @@ import { useNoteActions } from './hooks/useNoteActions'
 import { useAppCommands } from './hooks/useAppCommands'
 import { useDialogs } from './hooks/useDialogs'
 import { useVaultSwitcher } from './hooks/useVaultSwitcher'
-import { useUpdater, restartApp } from './hooks/useUpdater'
 import { useOnboarding } from './hooks/useOnboarding'
 import { useGettingStartedClone } from './hooks/useGettingStartedClone'
 import { useNetworkStatus } from './hooks/useNetworkStatus'
@@ -38,20 +37,14 @@ import { useAppWindowControls } from './hooks/useAppWindowControls'
 import { ConfirmDeleteDialog } from './components/ConfirmDeleteDialog'
 import { RestoreDeletedNoteDialog } from './components/RestoreDeletedNoteDialog'
 import { DeleteProgressNotice } from './components/DeleteProgressNotice'
-import { UpdateBanner } from './components/UpdateBanner'
 import { invoke } from '@tauri-apps/api/core'
 import { isTauri, mockInvoke } from './mock-tauri'
 import type { SidebarSelection, VaultEntry } from './types'
 import { refreshPulledVaultState } from './utils/pulledVaultRefresh'
 import { RenameDetectedBanner } from './components/RenameDetectedBanner'
 import type { NoteListMultiSelectionCommands } from './components/note-list/multiSelectionCommands'
-import { areAutomaticUpdateChecksEnabled } from './lib/automaticUpdateChecks'
 import { TOLARIA_DOCS_URL } from './constants/docs'
 import { openExternalUrl } from './utils/url'
-import {
-  translate,
-} from './lib/i18n'
-import { normalizeReleaseChannel } from './lib/releaseChannel'
 import { requestPlainTextPaste } from './utils/plainTextPaste'
 import { SETTINGS_SECTION_IDS } from './components/settingsSectionIds'
 import { vaultPathForEntry } from './utils/workspaces'
@@ -170,13 +163,13 @@ function MainApp() {
 
   const handleGettingStartedVaultReady = useCallback((vaultPath: string) => {
     rememberVaultChoice(vaultPath)
-    setToastMessage(`Getting Started vault cloned and opened at ${vaultPath}`)
+    setToastMessage(`Getting Started vault created locally and opened at ${vaultPath}`)
   }, [rememberVaultChoice])
 
   const handleOnboardingVaultReady = useCallback((vaultPath: string, source: 'template' | 'empty' | 'existing') => {
     rememberVaultChoice(vaultPath)
     if (source === 'template') {
-      setToastMessage(`Getting Started vault cloned and opened at ${vaultPath}`)
+      setToastMessage(`Getting Started vault created locally and opened at ${vaultPath}`)
     }
   }, [rememberVaultChoice])
   const cloneGettingStartedVault = useGettingStartedClone({
@@ -670,7 +663,6 @@ function MainApp() {
 
   const {
     backlinksToggleRef,
-    buildNumber,
     findInNoteRef,
     handleCollapseSidebar,
     handleSetViewMode,
@@ -685,32 +677,6 @@ function MainApp() {
     layout,
   })
   const turnCurrentBlockIntoRef = useRef<((target: RichEditorBlockTypeDefinition) => void) | null>(null)
-
-  const { status: updateStatus, actions: updateActions } = useUpdater(
-    settings.release_channel,
-    areAutomaticUpdateChecksEnabled(settings),
-  )
-
-  const handleCheckForUpdates = useCallback(async () => {
-    if (updateStatus.state === 'downloading') {
-      setToastMessage('Update is downloading…')
-      return
-    }
-    if (updateStatus.state === 'ready') {
-      await restartApp()
-      return
-    }
-    setToastMessage(translate(appLocale, 'update.checking'))
-    const result = await updateActions.checkForUpdates()
-    if (result.kind === 'up-to-date') {
-      const checkedChannel = normalizeReleaseChannel(settings.release_channel)
-      setToastMessage(`No newer ${checkedChannel} update is available right now`)
-    } else if (result.kind === 'available') {
-      setToastMessage(`Tolaria ${result.displayVersion} is available`)
-    } else {
-      setToastMessage(result.message)
-    }
-  }, [appLocale, settings.release_channel, updateActions, updateStatus.state])
 
   const handleRepairVault = useCallback(async () => {
     if (!resolvedPath) return
@@ -890,7 +856,6 @@ function MainApp() {
     canGoBack: canGoBack, canGoForward: canGoForward,
     onOpenVault: vaultSwitcher.handleOpenLocalFolder,
     onCreateEmptyVault: vaultSwitcher.handleCreateEmptyVault,
-    onCheckForUpdates: handleCheckForUpdates,
     onRemoveActiveVault: removeActiveVaultCommand,
     onRestoreGettingStarted: cloneGettingStartedVault,
     isGettingStartedHidden: vaultSwitcher.isGettingStartedHidden,
@@ -1022,9 +987,8 @@ function MainApp() {
             />
           </div>
         </div>
-        <UpdateBanner status={updateStatus} actions={updateActions} locale={appLocale} />
         <RenameDetectedBanner renames={detectedRenames} onUpdate={handleUpdateWikilinks} onDismiss={handleDismissRenames} />
-              <StatusBar noteCount={visibleEntries.length} vaultPath={resolvedPath} defaultWorkspacePath={defaultWorkspacePath} vaults={vaultSwitcher.allVaults} multiWorkspaceEnabled={multiWorkspaceEnabled} onSwitchVault={vaultSwitcher.switchVault} onSetDefaultWorkspace={handleSetDefaultWorkspace} onOpenSettings={handleOpenSettings} onOpenVaultSettings={handleOpenProjectSettings} onOpenDocs={openDocs} onOpenLocalFolder={vaultSwitcher.handleOpenLocalFolder} onCreateEmptyVault={vaultSwitcher.handleCreateEmptyVault} onCloneGettingStarted={cloneGettingStartedVault} isOffline={networkStatus.isOffline} isVaultReloading={vault.isReloading || isVaultContentLoading} zoomLevel={zoom.zoomLevel} themeMode={documentThemeMode} onZoomReset={zoom.zoomReset} onToggleThemeMode={settingsLoaded ? handleToggleThemeMode : undefined} buildNumber={buildNumber} onCheckForUpdates={handleCheckForUpdates} onRemoveVault={vaultSwitcher.removeVault} onReorderVaults={vaultSwitcher.reorderVaults} onUpdateWorkspaceIdentity={vaultSwitcher.updateWorkspaceIdentity} locale={appLocale} />
+              <StatusBar noteCount={visibleEntries.length} vaultPath={resolvedPath} defaultWorkspacePath={defaultWorkspacePath} vaults={vaultSwitcher.allVaults} multiWorkspaceEnabled={multiWorkspaceEnabled} onSwitchVault={vaultSwitcher.switchVault} onSetDefaultWorkspace={handleSetDefaultWorkspace} onOpenSettings={handleOpenSettings} onOpenVaultSettings={handleOpenProjectSettings} onOpenDocs={openDocs} onOpenLocalFolder={vaultSwitcher.handleOpenLocalFolder} onCreateEmptyVault={vaultSwitcher.handleCreateEmptyVault} onCloneGettingStarted={cloneGettingStartedVault} isOffline={networkStatus.isOffline} isVaultReloading={vault.isReloading || isVaultContentLoading} zoomLevel={zoom.zoomLevel} themeMode={documentThemeMode} onZoomReset={zoom.zoomReset} onToggleThemeMode={settingsLoaded ? handleToggleThemeMode : undefined} onRemoveVault={vaultSwitcher.removeVault} onReorderVaults={vaultSwitcher.reorderVaults} onUpdateWorkspaceIdentity={vaultSwitcher.updateWorkspaceIdentity} locale={appLocale} />
         <DeleteProgressNotice count={deleteActions.pendingDeleteCount} />
         <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />
         <QuickOpenPalette open={dialogs.showQuickOpen} entries={visibleEntries} isLoading={vault.isLoading} onSelect={notes.handleSelectNote} onCreateNote={(title) => notes.handleCreateNote(title, 'quick_open')} onClose={dialogs.closeQuickOpen} locale={appLocale} />

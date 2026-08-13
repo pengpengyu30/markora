@@ -24,8 +24,6 @@
     "core:webview:allow-print",
     "core:event:default",
     "dialog:default",
-    "updater:default",
-    "process:default",
     "opener:default"
   ]
 }

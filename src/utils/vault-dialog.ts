@@ -6,15 +6,15 @@
 
 import { isTauri } from '../mock-tauri'
 import {
-  isRestartRequiredAfterUpdate,
-  markRestartRequiredAfterUpdate,
-  RESTART_REQUIRED_FOLDER_PICKER_MESSAGE,
-} from '../lib/appUpdater'
+  isNativeFolderPickerBlocked,
+  markNativeFolderPickerBlocked,
+  NATIVE_FOLDER_PICKER_BLOCKED_MESSAGE,
+} from '../lib/nativeFolderPickerState'
 
 const NS_OPEN_PANEL_UNAVAILABLE_MARKER = 'unexpected NULL returned from +[NSOpenPanel openPanel]'
 
 export class NativeFolderPickerBlockedError extends Error {
-  constructor(message = RESTART_REQUIRED_FOLDER_PICKER_MESSAGE) {
+  constructor(message = NATIVE_FOLDER_PICKER_BLOCKED_MESSAGE) {
     super(message)
     this.name = 'NativeFolderPickerBlockedError'
   }
@@ -86,7 +86,7 @@ function normalizePickedFolderPath(selected: string | string[] | null): string |
 let folderPickerRequestInFlight = false
 
 async function pickNativeFolder(title?: string): Promise<string | null> {
-  if (isRestartRequiredAfterUpdate()) {
+  if (isNativeFolderPickerBlocked()) {
     throw new NativeFolderPickerBlockedError()
   }
 
@@ -100,7 +100,7 @@ async function pickNativeFolder(title?: string): Promise<string | null> {
     return normalizePickedFolderPath(selected)
   } catch (error) {
     if (isUnavailableNativeFolderPicker(error)) {
-      markRestartRequiredAfterUpdate()
+      markNativeFolderPickerBlocked()
       throw new NativeFolderPickerBlockedError()
     }
     throw error

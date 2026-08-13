@@ -1,11 +1,11 @@
-import { BookOpen, GearSix as Settings, Moon, Package, Sun, type IconProps } from '@phosphor-icons/react'
+import { BookOpen, GearSix as Settings, Moon, Sun, type IconProps } from '@phosphor-icons/react'
 import type { ComponentType, MouseEventHandler } from 'react'
 import type { ThemeMode } from '../../lib/themeMode'
 import { translate, type AppLocale, type TranslationKey } from '../../lib/i18n'
 import { ActionTooltip } from '@/components/ui/action-tooltip'
 import { Button } from '@/components/ui/button'
 import { OfflineBadge, VaultReloadingBadge } from './StatusBarBadges'
-import { ICON_STYLE, SEP_STYLE } from './styles'
+import { ICON_STYLE } from './styles'
 import type { VaultOption } from './types'
 import { VaultMenu } from './VaultMenu'
 import { formatShortcutDisplay } from '../../hooks/appCommandCatalog'
@@ -26,8 +26,6 @@ interface StatusBarPrimarySectionProps {
   onCloneGettingStarted?: () => void
   isOffline?: boolean
   isVaultReloading?: boolean
-  buildNumber?: string
-  onCheckForUpdates?: () => void
   onRemoveVault?: (path: string) => void
   onReorderVaults?: (orderedPaths: string[]) => void
   onUpdateWorkspaceIdentity?: (path: string, patch: Partial<VaultOption>) => void
@@ -47,42 +45,6 @@ interface StatusBarSecondarySectionProps {
   stacked?: boolean
   compact?: boolean
   locale?: AppLocale
-}
-
-function BuildNumberButton({
-  buildNumber,
-  onCheckForUpdates,
-  compact,
-  locale,
-}: {
-  buildNumber?: string
-  onCheckForUpdates?: () => void
-  compact: boolean
-  locale: AppLocale
-}) {
-  const className = compact
-    ? 'h-6 min-w-0 gap-1 rounded-sm px-1 py-0.5 text-[12px] font-medium text-muted-foreground hover:bg-[var(--hover)] hover:text-foreground'
-    : 'h-auto gap-1 rounded-sm px-1 py-0.5 text-[12px] font-medium text-muted-foreground hover:bg-[var(--hover)] hover:text-foreground'
-
-  return (
-    <ActionTooltip copy={{ label: translate(locale, 'status.update.check') }} side="top">
-      <Button
-        type="button"
-        variant="ghost"
-        size="xs"
-        className={className}
-        onClick={onCheckForUpdates}
-        aria-label={translate(locale, 'status.update.check')}
-        aria-disabled={onCheckForUpdates ? undefined : true}
-        data-testid="status-build-number"
-      >
-        <span style={ICON_STYLE}>
-          <Package size={13} weight="regular" />
-          {compact ? null : (buildNumber ?? translate(locale, 'status.build.unknown'))}
-        </span>
-      </Button>
-    </ActionTooltip>
-  )
 }
 
 type StatusLinkButtonProps = {
@@ -138,10 +100,6 @@ function primarySectionStyle(stacked: boolean, compact: boolean) {
   } as const
 }
 
-function PrimarySeparator({ compact }: { compact: boolean }) {
-  return compact ? null : <span style={SEP_STYLE}>|</span>
-}
-
 export function StatusBarPrimarySection(options: StatusBarPrimarySectionProps) {
   const {
     vaultPath,
@@ -156,8 +114,6 @@ export function StatusBarPrimarySection(options: StatusBarPrimarySectionProps) {
     onCloneGettingStarted,
     isOffline = false,
     isVaultReloading = false,
-    buildNumber,
-    onCheckForUpdates,
     onRemoveVault,
     onReorderVaults,
     onUpdateWorkspaceIdentity,
@@ -185,8 +141,6 @@ export function StatusBarPrimarySection(options: StatusBarPrimarySectionProps) {
         compact={compact}
         locale={locale}
       />
-      <PrimarySeparator compact={compact} />
-      <BuildNumberButton buildNumber={buildNumber} onCheckForUpdates={onCheckForUpdates} compact={compact} locale={locale} />
       <OfflineBadge isOffline={isOffline} showSeparator={!compact} compact={compact} locale={locale} />
       <VaultReloadingBadge isReloading={isVaultReloading} showSeparator={!compact} compact={compact} locale={locale} />
     </div>

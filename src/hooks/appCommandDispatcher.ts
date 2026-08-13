@@ -50,7 +50,6 @@ export interface AppCommandHandlers {
   onExportNoteAsPdf?: () => void
   onGoBack?: () => void
   onGoForward?: () => void
-  onCheckForUpdates?: () => void
   onSelectFilter?: (filter: SidebarFilter) => void
   onOpenVault?: () => void
   onRemoveActiveVault?: () => void
@@ -64,7 +63,6 @@ export interface AppCommandHandlers {
 type SimpleHandlerKey = keyof Pick<
   AppCommandHandlers,
   | 'onOpenSettings'
-  | 'onCheckForUpdates'
   | 'onCreateNote'
   | 'onQuickOpen'
   | 'onSave'
@@ -101,7 +99,6 @@ type ActiveTabHandlerExecutor = (handlers: AppCommandHandlers, path: string) => 
 
 const SIMPLE_HANDLER_EXECUTORS: readonly [SimpleHandlerKey, SimpleHandlerExecutor][] = [
   ['onOpenSettings', (handlers) => handlers.onOpenSettings()],
-  ['onCheckForUpdates', (handlers) => handlers.onCheckForUpdates?.()],
   ['onCreateNote', (handlers) => handlers.onCreateNote()],
   ['onQuickOpen', (handlers) => handlers.onQuickOpen()],
   ['onSave', (handlers) => handlers.onSave()],

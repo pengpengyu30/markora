@@ -54,7 +54,6 @@ interface AppCommandsConfig {
   onOpenVault?: () => void
   onCreateEmptyVault?: () => void
   onToggleTableOfContents?: () => void
-  onCheckForUpdates?: () => void
   onRemoveActiveVault?: () => void
   onRestoreGettingStarted?: () => void
   isGettingStartedHidden?: boolean
@@ -122,7 +121,6 @@ type CommandRegistryVaultActions = Pick<
   CommandRegistryConfig,
   | 'onOpenVault'
   | 'onCreateEmptyVault'
-  | 'onCheckForUpdates'
   | 'locale'
   | 'systemLocale'
   | 'selectedUiLanguage'
@@ -215,7 +213,6 @@ function createMenuEventActionHandlers(
   | 'onExportNoteAsPdf'
   | 'onGoBack'
   | 'onGoForward'
-  | 'onCheckForUpdates'
   | 'onSelectFilter'
 > {
   return {
@@ -241,7 +238,6 @@ function createMenuEventActionHandlers(
     onExportNoteAsPdf: config.onExportNoteAsPdf,
     onGoBack: config.onGoBack,
     onGoForward: config.onGoForward,
-    onCheckForUpdates: config.onCheckForUpdates,
     onSelectFilter: selectFilter,
   }
 }
@@ -333,7 +329,6 @@ function createCommandRegistryVaultConfig(
   return {
     onOpenVault: config.onOpenVault,
     onCreateEmptyVault: config.onCreateEmptyVault,
-    onCheckForUpdates: config.onCheckForUpdates,
     locale: config.locale,
     systemLocale: config.systemLocale,
     selectedUiLanguage: config.selectedUiLanguage,

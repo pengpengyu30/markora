@@ -19,9 +19,7 @@ import {
   type ThemeMode,
   writeStoredThemeMode,
 } from '../lib/themeMode'
-import { normalizeReleaseChannel, serializeReleaseChannel, type ReleaseChannel } from '../lib/releaseChannel'
 import { shouldHideGitignoredFiles } from '../lib/gitignoredVisibility'
-import { areAutomaticUpdateChecksEnabled } from '../lib/automaticUpdateChecks'
 import { ProjectSettingsSection } from './ProjectSettingsSection'
 import { SettingsBodyNav } from './SettingsBodyNav'
 import {
@@ -30,7 +28,6 @@ import {
   SettingsGroup,
   SettingsRow,
   SettingsSection,
-  SettingsSwitchRow,
 } from './SettingsControls'
 import { SettingsFooter } from './SettingsFooter'
 import { VaultContentSettingsSection } from './VaultContentSettingsSection'
@@ -64,8 +61,6 @@ interface SettingsPanelProps {
 }
 
 interface SettingsDraft {
-  releaseChannel: ReleaseChannel
-  automaticUpdateChecksEnabled: boolean
   themeMode: ThemeMode
   uiLanguage: UiLanguagePreference
   dateDisplayFormat: DateDisplayFormat
@@ -80,10 +75,6 @@ interface SettingsDraft {
 
 interface SettingsBodyProps {
   t: Translate
-  releaseChannel: ReleaseChannel
-  setReleaseChannel: (value: ReleaseChannel) => void
-  automaticUpdateChecksEnabled: boolean
-  setAutomaticUpdateChecksEnabled: (value: boolean) => void
   themeMode: ThemeMode
   setThemeMode: (value: ThemeMode) => void
   uiLanguage: UiLanguagePreference
@@ -122,8 +113,6 @@ function isSaveShortcut(event: { ctrlKey: boolean; key: string; metaKey: boolean
 
 function createSettingsDraft(settings: Settings): SettingsDraft {
   return {
-    releaseChannel: normalizeReleaseChannel(settings.release_channel),
-    automaticUpdateChecksEnabled: areAutomaticUpdateChecksEnabled(settings),
     themeMode: resolveSettingsDraftThemeMode(settings.theme_mode),
     uiLanguage: settings.ui_language ?? SYSTEM_UI_LANGUAGE,
     dateDisplayFormat: normalizeDateDisplayFormat(settings.date_display_format) ?? DEFAULT_DATE_DISPLAY_FORMAT,
@@ -146,8 +135,6 @@ function resolveSettingsDraftThemeMode(themeMode: Settings['theme_mode']): Theme
 function buildSettingsFromDraft(settings: Settings, draft: SettingsDraft): Settings {
   const nextSettings = {
     ...settings,
-    release_channel: serializeReleaseChannel(draft.releaseChannel),
-    automatic_update_checks_enabled: draft.automaticUpdateChecksEnabled ? null : false,
     theme_mode: draft.themeMode,
     ui_language: serializeUiLanguagePreference(draft.uiLanguage),
     date_display_format: draft.dateDisplayFormat,
@@ -419,10 +406,6 @@ function SettingsBodyFromDraft(options: SettingsBodyFromDraftProps) {
       t={t}
       locale={locale}
       systemLocale={systemLocale}
-      releaseChannel={draft.releaseChannel}
-      setReleaseChannel={(value) => updateDraft('releaseChannel', value)}
-      automaticUpdateChecksEnabled={draft.automaticUpdateChecksEnabled}
-      setAutomaticUpdateChecksEnabled={(value) => updateDraft('automaticUpdateChecksEnabled', value)}
       themeMode={draft.themeMode}
       setThemeMode={setThemeMode}
       uiLanguage={draft.uiLanguage}
@@ -499,32 +482,21 @@ function SettingsProjectSections(options: SettingsBodyProps) {
 }
 
 function SettingsSyncAndAppearanceSections(options: SettingsBodyProps) {
-  const { t, locale, systemLocale, releaseChannel, setReleaseChannel, automaticUpdateChecksEnabled, setAutomaticUpdateChecksEnabled, themeMode, setThemeMode, uiLanguage, setUiLanguage } = options
+  const { t, locale, systemLocale, themeMode, setThemeMode, uiLanguage, setUiLanguage } = options
   return (
-    <>
-      <SettingsSection id={SETTINGS_SECTION_IDS.sync} showDivider={false}>
-        <SyncAndUpdatesSection
+    <SettingsSection id={SETTINGS_SECTION_IDS.appearance}>
+      <SectionHeading title={t('settings.appearance.title')} />
+      <SettingsGroup>
+        <AppearanceSettingsSection t={t} themeMode={themeMode} setThemeMode={setThemeMode} />
+        <LanguageSettingsSection
           t={t}
-          releaseChannel={releaseChannel}
-          setReleaseChannel={setReleaseChannel}
-          automaticUpdateChecksEnabled={automaticUpdateChecksEnabled}
-          setAutomaticUpdateChecksEnabled={setAutomaticUpdateChecksEnabled}
+          locale={locale}
+          systemLocale={systemLocale}
+          uiLanguage={uiLanguage}
+          setUiLanguage={setUiLanguage}
         />
-      </SettingsSection>
-      <SettingsSection id={SETTINGS_SECTION_IDS.appearance}>
-        <SectionHeading title={t('settings.appearance.title')} />
-        <SettingsGroup>
-          <AppearanceSettingsSection t={t} themeMode={themeMode} setThemeMode={setThemeMode} />
-          <LanguageSettingsSection
-            t={t}
-            locale={locale}
-            systemLocale={systemLocale}
-            uiLanguage={uiLanguage}
-            setUiLanguage={setUiLanguage}
-          />
-        </SettingsGroup>
-      </SettingsSection>
-    </>
+      </SettingsGroup>
+    </SettingsSection>
   )
 }
 
@@ -550,50 +522,6 @@ function SettingsContentSections(options: SettingsBodyProps) {
         setFolderViewShowNonMarkdown={setFolderViewShowNonMarkdown}
       />
     </SettingsSection>
-  )
-}
-
-function SyncAndUpdatesSection({
-  t,
-  releaseChannel,
-  setReleaseChannel,
-  automaticUpdateChecksEnabled,
-  setAutomaticUpdateChecksEnabled,
-}: Pick<
-  SettingsBodyProps,
-  | 't'
-  | 'releaseChannel'
-  | 'setReleaseChannel'
-  | 'automaticUpdateChecksEnabled'
-  | 'setAutomaticUpdateChecksEnabled'
->) {
-  return (
-    <>
-      <SectionHeading title={t('settings.sync.title')} />
-
-      <SettingsGroup>
-        <SettingsRow label={t('settings.releaseChannel')} description={t('settings.releaseChannelDescription')}>
-          <SelectControl
-            ariaLabel={t('settings.releaseChannel')}
-            value={releaseChannel}
-            onValueChange={(value) => setReleaseChannel(value as ReleaseChannel)}
-            options={[
-              { value: 'stable', label: t('settings.releaseStable') },
-              { value: 'alpha', label: t('settings.releaseAlpha') },
-            ]}
-            testId="settings-release-channel"
-          />
-        </SettingsRow>
-
-        <SettingsSwitchRow
-          label={t('settings.automaticUpdateChecks')}
-          description={t('settings.automaticUpdateChecksDescription')}
-          checked={automaticUpdateChecksEnabled}
-          onChange={setAutomaticUpdateChecksEnabled}
-          testId="settings-automatic-update-checks"
-        />
-      </SettingsGroup>
-    </>
   )
 }
 

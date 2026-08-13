@@ -7,7 +7,6 @@ import {
 } from './useMainWindowSizeConstraints'
 import { useViewMode, type ViewMode } from './useViewMode'
 import { useZoom } from './useZoom'
-import { useBuildNumber } from './useBuildNumber'
 import type { useLayoutPanels } from './useLayoutPanels'
 import type { NotePdfExportSource } from '../utils/notePdfExport'
 import { isWindows } from '../utils/platform'
@@ -34,7 +33,6 @@ interface AppWindowActionRefs {
 
 interface AppWindowControls {
   backlinksToggleRef: MutableRefObject<() => void>
-  buildNumber: string | undefined
   findInNoteRef: MutableRefObject<FindInNoteHandler | null>
   handleCollapseSidebar: () => void
   handleSetViewMode: (mode: ViewMode) => void
@@ -97,7 +95,6 @@ export function useAppWindowControls({
 
   const { setViewMode, sidebarVisible, noteListVisible } = useViewMode()
   const zoom = useZoom()
-  const buildNumber = useBuildNumber()
   const updateMainWindowConstraints = useMainWindowConstraintUpdater(layout)
 
   const handleSetViewMode = useCallback((mode: ViewMode) => {
@@ -132,7 +129,6 @@ export function useAppWindowControls({
 
   return {
     backlinksToggleRef,
-    buildNumber,
     findInNoteRef,
     handleCollapseSidebar,
     handleSetViewMode,

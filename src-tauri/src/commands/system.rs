@@ -8,13 +8,9 @@ use crate::vault_list;
 use crate::vault_list::VaultList;
 use serde::Deserialize;
 #[cfg(desktop)]
-use tauri::ipc::Channel;
-#[cfg(desktop)]
 use tauri::LogicalSize;
 #[cfg(desktop)]
 use tauri::Window;
-
-use super::parse_build_label;
 
 #[cfg(desktop)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -256,12 +252,6 @@ pub fn perform_current_window_titlebar_double_click(_window: tauri::Window) -> R
 // ── Settings & config commands ──────────────────────────────────────────────
 
 #[tauri::command]
-pub fn get_build_number(app_handle: tauri::AppHandle) -> String {
-    let version = app_handle.package_info().version.to_string();
-    parse_build_label(&version)
-}
-
-#[tauri::command]
 pub fn get_settings() -> Result<Settings, String> {
     crate::settings::get_settings()
 }
@@ -269,52 +259,6 @@ pub fn get_settings() -> Result<Settings, String> {
 #[tauri::command]
 pub fn save_settings(settings: Settings) -> Result<(), String> {
     crate::settings::save_settings(settings)
-}
-
-#[cfg(desktop)]
-#[tauri::command]
-pub async fn check_for_app_update(
-    app_handle: tauri::AppHandle,
-    release_channel: Option<String>,
-) -> Result<Option<crate::app_updater::AppUpdateMetadata>, String> {
-    crate::app_updater::check_for_app_update(app_handle, release_channel).await
-}
-
-#[cfg(mobile)]
-#[tauri::command]
-pub async fn check_for_app_update(
-    _app_handle: tauri::AppHandle,
-    _release_channel: Option<String>,
-) -> Result<Option<crate::app_updater::AppUpdateMetadata>, String> {
-    Ok(None)
-}
-
-#[cfg(desktop)]
-#[tauri::command]
-pub async fn download_and_install_app_update(
-    app_handle: tauri::AppHandle,
-    release_channel: Option<String>,
-    expected_version: String,
-    on_event: Channel<crate::app_updater::AppUpdateDownloadEvent>,
-) -> Result<(), String> {
-    crate::app_updater::download_and_install_app_update(
-        app_handle,
-        release_channel,
-        expected_version,
-        on_event,
-    )
-    .await
-}
-
-#[cfg(mobile)]
-#[tauri::command]
-pub async fn download_and_install_app_update(
-    _app_handle: tauri::AppHandle,
-    _release_channel: Option<String>,
-    _expected_version: String,
-    _on_event: tauri::ipc::Channel<crate::app_updater::AppUpdateDownloadEvent>,
-) -> Result<(), String> {
-    Err("App updates are not available on mobile".into())
 }
 
 #[tauri::command]

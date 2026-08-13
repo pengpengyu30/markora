@@ -22,6 +22,14 @@ function expectOpenSettingsCommand(id: string, label: string) {
 }
 
 describe('buildSettingsCommands', () => {
+  it('does not expose an update command while the replacement updater is unavailable', () => {
+    const commands = buildSettingsCommands({
+      onOpenSettings: vi.fn(),
+    })
+
+    expect(commands.some((command) => command.id === 'check-updates')).toBe(false)
+  })
+
   it('adds a discoverable H1 auto-rename settings command', () => {
     expectOpenSettingsCommand('open-h1-auto-rename-setting', 'Open H1 Auto-Rename Setting')
   })
