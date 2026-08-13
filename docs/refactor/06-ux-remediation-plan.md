@@ -1085,6 +1085,34 @@ Investigate at minimum:
   snapshot. Two notes created in the same second in different folders are handled by the `-2`
   suffix, but confirm there is no window where `entries` lags enough to collide.
 
+### Part A finding and implementation record (2026-08-13)
+
+The #5 reproduction did not confirm a disk overwrite. The three candidate paths were checked:
+
+- Rapid immediate creation in two different folders now has a regression test asserting distinct
+  full paths. `generateUntitledFilename` deliberately reserves a globally unique basename for the
+  session, while `immediateNoteRelativePath` still includes the requested folder.
+- `useVaultWatcher` filters recent app-owned writes, and `refreshPulledVaultState` refuses to
+  replace an active tab while it has unsaved content. Existing watcher and pulled-refresh tests
+  cover those protections.
+- `resolvePathBeforeSave` waits for tracked H1 renames to settle. Pending saves only clear when the
+  persisted snapshot still matches the latest buffered path/content, so a stale in-flight save
+  cannot clear newer edits.
+
+The timing-sensitive #7 reproduction passed for 200ms, 700ms, 1,400ms, and 2,900ms delays, with
+the assertion made against the fixture file on disk after switching away and back. No separate #5
+mechanism was found beyond the already-visible stale-rendering risk; no speculative overwrite fix
+was added.
+
+Part B is implemented as follows: rich serialization is 300ms, application autosave is 800ms, the
+editor waits for the outgoing path's pending write before a rich document swap, and blur,
+visibility-change, native close, and mounted-Project/default-workspace selection paths use the same
+coalesced flush boundary. Repeated callbacks carrying the content that has just been persisted are
+treated as already clean, so the boundary cannot schedule a second write after the switch. Failed
+writes show the existing save-error toast and retain the unsaved marker. The write timeline is
+debug-gated by `__TOLARIA_WRITE_SAFETY_DEBUG__` and is silent by default. ADR-0178 supersedes
+ADR-0102 for the timing values while retaining its stale in-flight-save protection.
+
 ### Part B — hardening (ships regardless of Part A's outcome)
 
 Per **D13**:

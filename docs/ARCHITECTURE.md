@@ -114,6 +114,11 @@ sequenceDiagram
 
 - A note save writes to disk before the confirmed state is treated as clean.
 - A failed write does not become durable renderer state; optimistic flows have an error/reload path.
+- Rich-editor serialization is flushed into the save buffer before navigation, and the outgoing
+  path's pending write is awaited before the editor is repointed. Blur, visibility changes, native
+  close requests, mounted-Project/default-workspace selection, raw-mode transitions, and manual
+  saves use the same coalesced persistence boundary; a repeated callback for the just-persisted
+  content does not schedule a second write.
 - Frontmatter writes are narrow. Tags may update only the `tags` key; unrelated keys and formatting are preserved by the existing frontmatter path.
 - Renames and folder moves use validated paths and transactional recovery helpers.
 - External changes are reconciled by watcher events. A clean active note may be refreshed; unsaved content is preserved according to the editor save contract.

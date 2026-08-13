@@ -32,6 +32,7 @@ import { useFileActions } from './hooks/useFileActions'
 import { useLayoutPanels } from './hooks/useLayoutPanels'
 import { useLastActiveNote } from './hooks/useLastActiveNote'
 import { useAppSave } from './hooks/useAppSave'
+import { useWindowSaveFlush } from './hooks/useWindowSaveFlush'
 import { useNoteRetargetingUi } from './hooks/useNoteRetargetingUi'
 import { useAppWindowControls } from './hooks/useAppWindowControls'
 import { ConfirmDeleteDialog } from './components/ConfirmDeleteDialog'
@@ -127,11 +128,17 @@ function MainApp() {
   }, [])
   const networkStatus = useNetworkStatus()
   const { settings, loaded: settingsLoaded, saveSettings } = useSettings()
+  const flushBeforeVaultSwitchRef = useRef<(() => Promise<void>) | null>(null)
+  const handleBeforeVaultSwitch = useCallback(
+    () => flushBeforeVaultSwitchRef.current?.() ?? Promise.resolve(),
+    [],
+  )
 
   // onSwitch closure captures `notes` declared below — safe because it's only
   // called on user interaction, never during render (refs inside the hook
   // guarantee the latest closure is always used).
   const vaultSwitcher = useVaultSwitcher({
+    onBeforeSwitch: handleBeforeVaultSwitch,
     onSwitch: () => {
       handleSetSelection(DEFAULT_SELECTION)
       setSelectedTags([])
@@ -144,6 +151,7 @@ function MainApp() {
     defaultWorkspacePath,
     registerVaultSelection,
     selectedVaultPath,
+    setDefaultWorkspace,
     syncVaultSelection,
     switchVault,
   } = vaultSwitcher
@@ -316,11 +324,28 @@ function MainApp() {
   const flushPendingEditorContentRef = useRef<((path: string) => void) | null>(null)
   const flushPendingRawContentRef = useRef<((path: string) => void) | null>(null)
   const appSaveFlushBeforeActionRef = useRef<((path: string) => Promise<unknown>) | null>(null)
-  const flushEditorStateBeforeAction = useCallback(async (path: string) => {
-    dispatchRichEditorExternalFlush()
-    flushPendingEditorContentRef.current?.(path)
-    flushPendingRawContentRef.current?.(path)
-    await appSaveFlushBeforeActionRef.current?.(path)
+  const pendingEditorStateFlushRef = useRef<{ path: string; promise: Promise<void> } | null>(null)
+  const flushEditorStateBeforeAction = useCallback((path: string) => {
+    const pending = pendingEditorStateFlushRef.current
+    if (pending?.path === path) return pending.promise
+
+    const promise = (async () => {
+      dispatchRichEditorExternalFlush()
+      flushPendingEditorContentRef.current?.(path)
+      flushPendingRawContentRef.current?.(path)
+      await appSaveFlushBeforeActionRef.current?.(path)
+    })()
+    const nextPending = { path, promise }
+    pendingEditorStateFlushRef.current = nextPending
+    void promise.then(
+      () => {
+        if (pendingEditorStateFlushRef.current === nextPending) pendingEditorStateFlushRef.current = null
+      },
+      () => {
+        if (pendingEditorStateFlushRef.current === nextPending) pendingEditorStateFlushRef.current = null
+      },
+    )
+    return promise
   }, [])
   const handleCreatedVaultEntryPersisting = useCallback((path: string) => {
     markRecentVaultWrite(path)
@@ -373,6 +398,18 @@ function MainApp() {
   }, [handleUpdateFrontmatter])
   const noteActiveTabPath = notes.activeTabPath
   const noteActiveTabPathRef = notes.activeTabPathRef
+  const handleSetDefaultWorkspace = useCallback(async (path: string) => {
+    const activePath = noteActiveTabPathRef.current
+    if (activePath) await flushEditorStateBeforeAction(activePath)
+    setDefaultWorkspace(path)
+  }, [flushEditorStateBeforeAction, noteActiveTabPathRef, setDefaultWorkspace])
+  // The note action exposes a stable ref; only the stable flush callback can change.
+  useEffect(() => {
+    flushBeforeVaultSwitchRef.current = async () => {
+      const path = noteActiveTabPathRef.current
+      if (path) await flushEditorStateBeforeAction(path)
+    }
+  }, [flushEditorStateBeforeAction]) // eslint-disable-line react-hooks/exhaustive-deps -- noteActiveTabPathRef is stable
   useLastActiveNote({
     activeTabPath: noteActiveTabPath,
     enabled: true,
@@ -483,6 +520,11 @@ function MainApp() {
   useEffect(() => {
     appSaveFlushBeforeActionRef.current = appSave.flushBeforeAction
   }, [appSave.flushBeforeAction])
+  const flushCurrentNote = useCallback(() => {
+    const path = noteActiveTabPathRef.current
+    return path ? flushEditorStateBeforeAction(path) : Promise.resolve()
+  }, [flushEditorStateBeforeAction, noteActiveTabPathRef])
+  useWindowSaveFlush(flushCurrentNote)
 
   const handleCreateFolder = useCallback(async (
     name: string,
@@ -956,6 +998,7 @@ function MainApp() {
               onOpenExternalFile={fileActions.openExternalFile}
               onDeleteNote={deleteActions.handleDeleteNote}
               onContentChange={handleTrackedContentChange}
+              flushBeforeSwap={flushEditorStateBeforeAction}
               onSave={handleTrackedSave}
               onRenameFilename={appSave.handleFilenameRename}
               noteWidth={activeNoteWidth}
@@ -981,7 +1024,7 @@ function MainApp() {
         </div>
         <UpdateBanner status={updateStatus} actions={updateActions} locale={appLocale} />
         <RenameDetectedBanner renames={detectedRenames} onUpdate={handleUpdateWikilinks} onDismiss={handleDismissRenames} />
-        <StatusBar noteCount={visibleEntries.length} vaultPath={resolvedPath} defaultWorkspacePath={defaultWorkspacePath} vaults={vaultSwitcher.allVaults} multiWorkspaceEnabled={multiWorkspaceEnabled} onSwitchVault={vaultSwitcher.switchVault} onSetDefaultWorkspace={vaultSwitcher.setDefaultWorkspace} onOpenSettings={handleOpenSettings} onOpenVaultSettings={handleOpenProjectSettings} onOpenDocs={openDocs} onOpenLocalFolder={vaultSwitcher.handleOpenLocalFolder} onCreateEmptyVault={vaultSwitcher.handleCreateEmptyVault} onCloneGettingStarted={cloneGettingStartedVault} isOffline={networkStatus.isOffline} isVaultReloading={vault.isReloading || isVaultContentLoading} zoomLevel={zoom.zoomLevel} themeMode={documentThemeMode} onZoomReset={zoom.zoomReset} onToggleThemeMode={settingsLoaded ? handleToggleThemeMode : undefined} buildNumber={buildNumber} onCheckForUpdates={handleCheckForUpdates} onRemoveVault={vaultSwitcher.removeVault} onReorderVaults={vaultSwitcher.reorderVaults} onUpdateWorkspaceIdentity={vaultSwitcher.updateWorkspaceIdentity} locale={appLocale} />
+              <StatusBar noteCount={visibleEntries.length} vaultPath={resolvedPath} defaultWorkspacePath={defaultWorkspacePath} vaults={vaultSwitcher.allVaults} multiWorkspaceEnabled={multiWorkspaceEnabled} onSwitchVault={vaultSwitcher.switchVault} onSetDefaultWorkspace={handleSetDefaultWorkspace} onOpenSettings={handleOpenSettings} onOpenVaultSettings={handleOpenProjectSettings} onOpenDocs={openDocs} onOpenLocalFolder={vaultSwitcher.handleOpenLocalFolder} onCreateEmptyVault={vaultSwitcher.handleCreateEmptyVault} onCloneGettingStarted={cloneGettingStartedVault} isOffline={networkStatus.isOffline} isVaultReloading={vault.isReloading || isVaultContentLoading} zoomLevel={zoom.zoomLevel} themeMode={documentThemeMode} onZoomReset={zoom.zoomReset} onToggleThemeMode={settingsLoaded ? handleToggleThemeMode : undefined} buildNumber={buildNumber} onCheckForUpdates={handleCheckForUpdates} onRemoveVault={vaultSwitcher.removeVault} onReorderVaults={vaultSwitcher.reorderVaults} onUpdateWorkspaceIdentity={vaultSwitcher.updateWorkspaceIdentity} locale={appLocale} />
         <DeleteProgressNotice count={deleteActions.pendingDeleteCount} />
         <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />
         <QuickOpenPalette open={dialogs.showQuickOpen} entries={visibleEntries} isLoading={vault.isLoading} onSelect={notes.handleSelectNote} onCreateNote={(title) => notes.handleCreateNote(title, 'quick_open')} onClose={dialogs.closeQuickOpen} locale={appLocale} />

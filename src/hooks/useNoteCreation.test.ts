@@ -301,6 +301,34 @@ describe('useNoteCreation hook', () => {
     vi.restoreAllMocks()
   })
 
+  it('keeps rapid creations in different folders on distinct backing paths', async () => {
+    vi.useFakeTimers()
+    vi.spyOn(Date, 'now').mockReturnValue(1700000000000)
+    vi.mocked(isTauri).mockReturnValue(true)
+    vi.mocked(invoke).mockResolvedValue(undefined)
+    const { result } = renderHook(() => useNoteCreation(makeConfig(), tabDeps))
+
+    await act(async () => {
+      result.current.handleCreateNoteImmediate({ creationPath: 'folder_header', folderPath: 'one' })
+      result.current.handleCreateNoteImmediate({ creationPath: 'folder_header', folderPath: 'two' })
+      await flushImmediateCreate()
+    })
+    await act(async () => {
+      vi.advanceTimersByTime(RAPID_CREATE_NOTE_SETTLE_MS)
+      await flushImmediateCreate()
+    })
+
+    const createdPaths = vi.mocked(invoke).mock.calls
+      .filter(([command]) => command === 'create_note_content')
+      .map(([, args]) => String((args as { path: string }).path))
+    expect(new Set(createdPaths).size).toBe(2)
+    expect(createdPaths).toEqual([
+      '/test/vault/one/untitled-note-1700000000.md',
+      '/test/vault/two/untitled-note-1700000000-2.md',
+    ])
+    vi.restoreAllMocks()
+  })
+
   it('persists before opening an immediate note', async () => {
     vi.mocked(isTauri).mockReturnValue(true)
     vi.mocked(invoke).mockResolvedValueOnce(undefined)

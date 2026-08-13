@@ -19,7 +19,6 @@ import {
 } from './editorContentSwapApply'
 import {
   consumeRawModeTransition,
-  flushBeforePathChange,
   flushBeforeRawMode,
   useDebouncedEditorChange,
 } from './editorChangeDebounce'
@@ -52,6 +51,7 @@ import {
 import { useParsedBlockPreload } from './editorParsedBlockPreload'
 import { scheduleParsedBlockSwap } from './editorParsedBlockSwap'
 import { useEditorContentPathSignal } from './useEditorContentPathSignal'
+import { logWriteSafetyTrace } from '../utils/writeSafetyTrace'
 export { extractEditorBody, getH1TextFromBlocks, replaceTitleInFrontmatter } from './editorTabContent'
 export { RICH_EDITOR_CHANGE_DEBOUNCE_MS } from './editorChangeDebounce'
 
@@ -79,6 +79,13 @@ interface UseEditorTabSwapOptions {
   /** When true, the BlockNote editor is hidden (raw/CodeMirror mode active). */
   rawMode?: boolean
   vaultPath?: string
+  /** Await persistence for the outgoing note before applying the next document. */
+  flushBeforeSwap?: (path: string) => Promise<void>
+}
+
+interface PendingPathFlush {
+  promise: Promise<void>
+  targetPath: string | null
 }
 
 interface RunTabSwapEffectOptions {
@@ -98,6 +105,11 @@ interface RunTabSwapEffectOptions {
   editorContentPathRef: EditorContentPathRef
   pendingLocalContentRef: MutableRefObject<PendingLocalContent | null>
   flushPendingEditorChange: () => boolean
+  flushBeforeSwap?: (path: string) => Promise<void>
+  pendingPathFlushRef: MutableRefObject<PendingPathFlush | null>
+  activeTabPathLatestRef: MutableRefObject<string | null>
+  rawModeLatestRef: MutableRefObject<boolean>
+  skipPendingPathFlush?: boolean
   vaultPath?: string
 }
 
@@ -293,7 +305,16 @@ function useEditorChangeHandler(options: {
     onContentChangeRef.current?.(path, next.content)
   }, [editor, editorContentPathRef, onContentChangeRef, pendingLocalContentRef, prevActivePathRef, tabCacheRef, tabsRef, vaultPathRef])
 
-  return useDebouncedEditorChange({ onFlush: propagateEditorChange, suppressChangeRef })
+  const tracePath = useCallback(
+    () => activeEditorChangePath({ prevActivePathRef, editorContentPathRef }),
+    [editorContentPathRef, prevActivePathRef],
+  )
+
+  return useDebouncedEditorChange({
+    onFlush: propagateEditorChange,
+    suppressChangeRef,
+    tracePath,
+  })
 }
 
 function cachePreviousTabOnPathChange(options: {
@@ -826,11 +847,13 @@ function scheduleTabSwap(options: {
   } = options
 
   const token = createSwapToken(swapSeqRef, targetPath, activeTab.content)
+  logWriteSafetyTrace('tab-swap-requested', { path: targetPath, operationSeq: token.seq })
   suppressChangeRef.current = true
 
   const doSwap = () => {
     if (shouldAbortSwap({ prevActivePathRef, suppressChangeRef, swapSeqRef, tabsRef, token })) return
     if (clearStaleSwap({ targetPath, prevActivePathRef, suppressChangeRef })) return
+    logWriteSafetyTrace('tab-swap-applied', { path: targetPath, operationSeq: token.seq })
     rawSwapPendingRef.current = false
     if (clearDomSelection) clearEditorDomSelection()
 
@@ -982,6 +1005,11 @@ function runTabSwapEffect(options: RunTabSwapEffectOptions) {
     editorContentPathRef,
     pendingLocalContentRef,
     flushPendingEditorChange,
+    flushBeforeSwap,
+    pendingPathFlushRef,
+    activeTabPathLatestRef,
+    rawModeLatestRef,
+    skipPendingPathFlush = false,
     vaultPath,
   } = options
 
@@ -995,8 +1023,36 @@ function runTabSwapEffect(options: RunTabSwapEffectOptions) {
     rawModeJustEnded,
   })
   if (state.pathChanged) invalidatePendingSwap({ pendingSwapRef, swapSeqRef })
-  flushBeforePathChange({ pathChanged: state.pathChanged, flushPendingEditorChange })
+  if (state.pathChanged) flushPendingEditorChange()
   if (!state.pathChanged && flushPendingEditorChange()) return
+
+  if (state.pathChanged && state.prevPath && flushBeforeSwap && !skipPendingPathFlush) {
+    const pendingFlush = pendingPathFlushRef.current
+    if (pendingFlush?.targetPath === activeTabPath) return
+
+    const promise = Promise.resolve().then(() => flushBeforeSwap(state.prevPath!))
+    const nextPendingFlush: PendingPathFlush = {
+      promise,
+      targetPath: activeTabPath,
+    }
+    pendingPathFlushRef.current = nextPendingFlush
+    void promise
+      .catch((error) => {
+        console.warn('Failed to persist note before editor swap:', error)
+      })
+      .then(() => {
+        if (pendingPathFlushRef.current !== nextPendingFlush) return
+        pendingPathFlushRef.current = null
+        runTabSwapEffect({
+          ...options,
+          tabs: tabsRef.current,
+          activeTabPath: activeTabPathLatestRef.current,
+          rawMode: rawModeLatestRef.current,
+          skipPendingPathFlush: true,
+        })
+      })
+    return
+  }
 
   if (shouldSkipScheduledTabSwap({
     state,
@@ -1049,6 +1105,10 @@ function useTabSwapEffect(options: UseTabSwapEffectOptions) {
     pendingLocalContentRef,
     vaultPathRef,
     flushPendingEditorChange,
+    flushBeforeSwap,
+    pendingPathFlushRef,
+    activeTabPathLatestRef,
+    rawModeLatestRef,
   } = options
 
   useEffect(() => {
@@ -1069,6 +1129,10 @@ function useTabSwapEffect(options: UseTabSwapEffectOptions) {
       editorContentPathRef,
       pendingLocalContentRef,
       flushPendingEditorChange,
+      flushBeforeSwap,
+      pendingPathFlushRef,
+      activeTabPathLatestRef,
+      rawModeLatestRef,
       vaultPath: vaultPathRef.current,
     })
   }, [
@@ -1089,6 +1153,10 @@ function useTabSwapEffect(options: UseTabSwapEffectOptions) {
     pendingLocalContentRef,
     vaultPathRef,
     flushPendingEditorChange,
+    flushBeforeSwap,
+    pendingPathFlushRef,
+    activeTabPathLatestRef,
+    rawModeLatestRef,
   ])
 }
 
@@ -1137,7 +1205,7 @@ function usePrepareParsedBlocks(options: {
  * Returns the onChange callback for SingleEditorView and a flush hook for
  * save/navigation paths that need the latest rich-editor content immediately.
  */
-export function useEditorTabSwap({ tabs, activeTabPath, editor, onContentChange, rawMode, vaultPath }: UseEditorTabSwapOptions) {
+export function useEditorTabSwap({ tabs, activeTabPath, editor, onContentChange, rawMode, vaultPath, flushBeforeSwap }: UseEditorTabSwapOptions) {
   const tabCacheRef = useRef<Map<string, CachedTabState>>(new Map())
   const pendingLocalContentRef = useRef<PendingLocalContent | null>(null)
   const prevActivePathRef = useRef<string | null>(null)
@@ -1146,6 +1214,7 @@ export function useEditorTabSwap({ tabs, activeTabPath, editor, onContentChange,
   const editorContentPathRef = useRef<string | null>(null)
   const editorMountedRef = useRef(false)
   const pendingSwapRef = useRef<(() => void) | null>(null)
+  const pendingPathFlushRef = useRef<PendingPathFlush | null>(null)
   const swapSeqRef = useRef(0)
   const prevRawModeRef = useRef(!!rawMode)
   const rawModeLatestRef = useLatestRef(!!rawMode)
@@ -1168,6 +1237,9 @@ export function useEditorTabSwap({ tabs, activeTabPath, editor, onContentChange,
   const { foregroundWorkAtRef, handleForegroundEditorChange } = useForegroundWorkTracker(activeTabPath, handleEditorChange)
   const prepareParsedBlocks = usePrepareParsedBlocks({ editor, tabCacheRef, vaultPathRef })
   useEditorMountState(editor, editorMountedRef, pendingSwapRef)
+  useEffect(() => () => {
+    pendingPathFlushRef.current = null
+  }, [])
   useParsedBlockPreload({
     activeTabPathRef: activeTabPathLatestRef,
     editorMountedRef,
@@ -1193,6 +1265,10 @@ export function useEditorTabSwap({ tabs, activeTabPath, editor, onContentChange,
     pendingLocalContentRef,
     vaultPathRef,
     flushPendingEditorChange,
+    flushBeforeSwap,
+    pendingPathFlushRef,
+    activeTabPathLatestRef,
+    rawModeLatestRef,
   })
 
   return {

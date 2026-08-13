@@ -25,7 +25,11 @@ export const DEFAULT_VAULTS: VaultOption[] = [{ label: GETTING_STARTED_LABEL, pa
 interface UseVaultSwitcherOptions {
   onSwitch: () => void
   onToast: (msg: string) => void
+  onBeforeSwitch?: () => Promise<void>
 }
+
+type BeforeVaultSwitch = () => Promise<void>
+type BeforeVaultSwitchRef = MutableRefObject<BeforeVaultSwitch | null>
 
 interface PersistedVaultState {
   defaultAvailable: boolean
@@ -73,6 +77,7 @@ interface PersistedVaultStore {
 
 interface VaultActionOptions extends PersistedVaultState, VaultCollections {
   onSwitchRef: MutableRefObject<() => void>
+  beforeSwitchRef: BeforeVaultSwitchRef
   onToastRef: MutableRefObject<(msg: string) => void>
 }
 
@@ -694,6 +699,7 @@ function useLoadPersistedVaultState(store: PersistedVaultStore, onSwitchRef: Mut
     function applyRegisteredVaultSelection(
       options: RegisteredVaultSelection & {
         onSwitchRef: MutableRefObject<() => void>
+        beforeSwitchRef: BeforeVaultSwitchRef
         setDefaultAvailable: Dispatch<SetStateAction<boolean>>
         setExtraVaults: Dispatch<SetStateAction<VaultOption[]>>
         setHiddenDefaults: Dispatch<SetStateAction<string[]>>
@@ -701,7 +707,7 @@ function useLoadPersistedVaultState(store: PersistedVaultStore, onSwitchRef: Mut
         setVaultPath: Dispatch<SetStateAction<string>>
       },
     ) {
-      const { nextDefaultAvailable, nextExtraVaults, nextHiddenDefaults, nextSelectedVaultPath, onSwitchRef, setDefaultAvailable, setExtraVaults, setHiddenDefaults, setSelectedVaultPath, setVaultPath } = options
+      const { nextDefaultAvailable, nextExtraVaults, nextHiddenDefaults, nextSelectedVaultPath, onSwitchRef, beforeSwitchRef, setDefaultAvailable, setExtraVaults, setHiddenDefaults, setSelectedVaultPath, setVaultPath } = options
   setDefaultAvailable(nextDefaultAvailable)
   setExtraVaults(nextExtraVaults)
   setHiddenDefaults(nextHiddenDefaults)
@@ -709,6 +715,7 @@ function useLoadPersistedVaultState(store: PersistedVaultStore, onSwitchRef: Mut
     setSelectedVaultPath,
     setVaultPath,
     onSwitchRef,
+    beforeSwitchRef,
     path: nextSelectedVaultPath,
   })
 }
@@ -717,16 +724,33 @@ function switchVaultPath({
   setSelectedVaultPath,
   setVaultPath,
   onSwitchRef,
+  beforeSwitchRef,
   path,
 }: {
   setSelectedVaultPath: Dispatch<SetStateAction<string | null>>
   setVaultPath: Dispatch<SetStateAction<string>>
   onSwitchRef: MutableRefObject<() => void>
+  beforeSwitchRef?: BeforeVaultSwitchRef
   path: string
 }) {
-  setSelectedVaultPath(path)
-  setVaultPath(path)
-  onSwitchRef.current()
+  const applySwitch = () => {
+    setSelectedVaultPath(path)
+    setVaultPath(path)
+    onSwitchRef.current()
+  }
+  const beforeSwitch = beforeSwitchRef?.current
+  if (!beforeSwitch) {
+    applySwitch()
+    return
+  }
+
+  void beforeSwitch()
+    .then(() => {
+      applySwitch()
+    })
+    .catch(() => {
+      // The flush boundary already reports the failure; keep the current vault open.
+    })
 }
 
 async function ensureVaultCanBeRegistered(path: string): Promise<void> {
@@ -742,6 +766,7 @@ interface RegisterVaultSelectionActionDeps {
   hiddenDefaults: string[]
   lastPersistedSnapshotRef: MutableRefObject<string | null>
   onSwitchRef: MutableRefObject<() => void>
+  beforeSwitchRef: BeforeVaultSwitchRef
   setDefaultAvailable: Dispatch<SetStateAction<boolean>>
   setDefaultWorkspacePath: Dispatch<SetStateAction<string | null>>
   setExtraVaults: Dispatch<SetStateAction<VaultOption[]>>
@@ -822,6 +847,7 @@ function getRemovedVaultLabel({
 
 function useSwitchVaultAction(
   onSwitchRef: MutableRefObject<() => void>,
+  beforeSwitchRef: BeforeVaultSwitchRef,
   setSelectedVaultPath: Dispatch<SetStateAction<string | null>>,
   setVaultPath: Dispatch<SetStateAction<string>>,
 ) {
@@ -831,10 +857,11 @@ function useSwitchVaultAction(
         setSelectedVaultPath,
         setVaultPath,
         onSwitchRef,
+        beforeSwitchRef,
         path,
       })
     },
-    [onSwitchRef, setSelectedVaultPath, setVaultPath],
+    [beforeSwitchRef, onSwitchRef, setSelectedVaultPath, setVaultPath],
   )
 }
 
@@ -860,6 +887,7 @@ function useRegisterVaultSelectionAction(functionOptions: RegisterVaultSelection
     hiddenDefaults,
     lastPersistedSnapshotRef,
     onSwitchRef,
+    beforeSwitchRef,
     setDefaultAvailable,
     setDefaultWorkspacePath,
     setExtraVaults,
@@ -892,6 +920,7 @@ function useRegisterVaultSelectionAction(functionOptions: RegisterVaultSelection
     applyRegisteredVaultSelection({
       ...nextSelection,
       onSwitchRef,
+      beforeSwitchRef,
       setDefaultAvailable,
       setExtraVaults,
       setHiddenDefaults,
@@ -906,6 +935,7 @@ function useRegisterVaultSelectionAction(functionOptions: RegisterVaultSelection
     extraVaults,
     hiddenDefaults,
     lastPersistedSnapshotRef,
+    beforeSwitchRef,
     onSwitchRef,
     setDefaultAvailable,
     setDefaultWorkspacePath,
@@ -923,13 +953,14 @@ function useSyncVaultSelectionAction(options: {
   extraVaults: VaultOption[]
   hiddenDefaults: string[]
   onSwitchRef: MutableRefObject<() => void>
+  beforeSwitchRef: BeforeVaultSwitchRef
   setDefaultAvailable: Dispatch<SetStateAction<boolean>>
   setExtraVaults: Dispatch<SetStateAction<VaultOption[]>>
   setHiddenDefaults: Dispatch<SetStateAction<string[]>>
   setSelectedVaultPath: Dispatch<SetStateAction<string | null>>
   setVaultPath: Dispatch<SetStateAction<string>>
 }) {
-  const { defaultAvailable, defaultPath, extraVaults, hiddenDefaults, onSwitchRef, setDefaultAvailable, setExtraVaults, setHiddenDefaults, setSelectedVaultPath, setVaultPath } = options
+  const { defaultAvailable, defaultPath, extraVaults, hiddenDefaults, onSwitchRef, beforeSwitchRef, setDefaultAvailable, setExtraVaults, setHiddenDefaults, setSelectedVaultPath, setVaultPath } = options
   return useCallback(
     (path: string, label: string) => {
     const nextSelection = buildRegisteredVaultSelection({
@@ -943,6 +974,7 @@ function useSyncVaultSelectionAction(options: {
     applyRegisteredVaultSelection({
       ...nextSelection,
       onSwitchRef,
+      beforeSwitchRef,
       setDefaultAvailable,
       setExtraVaults,
       setHiddenDefaults,
@@ -955,6 +987,7 @@ function useSyncVaultSelectionAction(options: {
     defaultPath,
     extraVaults,
     hiddenDefaults,
+    beforeSwitchRef,
     onSwitchRef,
     setDefaultAvailable,
     setExtraVaults,
@@ -1070,7 +1103,7 @@ function useRestoreGettingStartedAction(options: RestoreGettingStartedOptions) {
 }
 
 function useVaultActions(options: VaultActionOptions) {
-  const { allVaults, defaultAvailable, defaultPath, defaultWorkspacePath, defaultVaults, extraVaults, hiddenDefaults, lastPersistedSnapshotRef, onSwitchRef, onToastRef, setDefaultAvailable, setDefaultWorkspacePath, setExtraVaults, setHiddenDefaults, selectedVaultPath, setSelectedVaultPath, setVaultPath, vaultPath } = options
+  const { allVaults, defaultAvailable, defaultPath, defaultWorkspacePath, defaultVaults, extraVaults, hiddenDefaults, lastPersistedSnapshotRef, onSwitchRef, beforeSwitchRef, onToastRef, setDefaultAvailable, setDefaultWorkspacePath, setExtraVaults, setHiddenDefaults, selectedVaultPath, setSelectedVaultPath, setVaultPath, vaultPath } = options
   const addVault = useCallback(
     (path: string, label: string) => {
     addVaultToList({ setExtraVaults, path, label })
@@ -1078,7 +1111,7 @@ function useVaultActions(options: VaultActionOptions) {
     [setExtraVaults],
   )
 
-  const switchVault = useSwitchVaultAction(onSwitchRef, setSelectedVaultPath, setVaultPath)
+  const switchVault = useSwitchVaultAction(onSwitchRef, beforeSwitchRef, setSelectedVaultPath, setVaultPath)
   const workspaceIdentityActions = useWorkspaceIdentityActions({
     setDefaultWorkspacePath,
     setExtraVaults,
@@ -1092,6 +1125,7 @@ function useVaultActions(options: VaultActionOptions) {
     hiddenDefaults,
     lastPersistedSnapshotRef,
     onSwitchRef,
+    beforeSwitchRef,
     setDefaultAvailable,
     setDefaultWorkspacePath,
     setExtraVaults,
@@ -1105,6 +1139,7 @@ function useVaultActions(options: VaultActionOptions) {
     extraVaults,
     hiddenDefaults,
     onSwitchRef,
+    beforeSwitchRef,
     setDefaultAvailable,
     setExtraVaults,
     setHiddenDefaults,
@@ -1179,13 +1214,15 @@ async function restoreGettingStartedVault({
 
 /** Manages vault path, extra vaults, switching, cloning, and local folder opening.
  *  Vault list and active vault are persisted via Tauri backend to survive app updates. */
-export function useVaultSwitcher({ onSwitch, onToast }: UseVaultSwitcherOptions) {
+export function useVaultSwitcher({ onSwitch, onToast, onBeforeSwitch }: UseVaultSwitcherOptions) {
   const onSwitchRef = useRef(onSwitch)
+  const beforeSwitchRef = useRef<BeforeVaultSwitch | null>(onBeforeSwitch ?? null)
   const onToastRef = useRef(onToast)
   useEffect(() => {
     onSwitchRef.current = onSwitch
+    beforeSwitchRef.current = onBeforeSwitch ?? null
     onToastRef.current = onToast
-  })
+  }, [onBeforeSwitch, onSwitch, onToast])
 
   const persistedState = usePersistedVaultState(onSwitchRef)
   const {
@@ -1222,6 +1259,7 @@ export function useVaultSwitcher({ onSwitch, onToast }: UseVaultSwitcherOptions)
     defaultVaults,
     isGettingStartedHidden,
     onSwitchRef,
+    beforeSwitchRef,
     onToastRef,
   })
 

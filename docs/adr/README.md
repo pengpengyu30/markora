@@ -233,3 +233,4 @@ proposed → active → superseded
 | [0175](0175-simplification-fork-ledger.md) | Simplification fork ledger and retired decision families | active |
 | [0176](0176-tokenized-full-text-search.md) | Tokenized full-text search with bounded result reporting | active |
 | [0177](0177-mounted-project-global-search-scope.md) | Full-text search spans visible mounted Projects | active |
+| [0178](0178-write-safe-editor-flush-windows.md) | Write-safe editor flush windows | active |

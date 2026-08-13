@@ -128,7 +128,7 @@ test('@smoke autosave waits for idle typing and persists the latest draft only',
   await openNote(page, 'Note B')
   await openRawMode(page)
   await setRawEditorContent(page, firstDraft)
-  await page.waitForTimeout(900)
+  await page.waitForTimeout(700)
   await setRawEditorContent(page, latestDraft)
   await page.waitForTimeout(450)
 

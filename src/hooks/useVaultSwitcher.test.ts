@@ -44,6 +44,14 @@ type MockInvokeOverrides = {
   createGettingStartedVault?: (args: { targetPath: string }) => Promise<unknown> | unknown
 }
 
+function createDeferred<T>() {
+  let resolve!: (value: T) => void
+  const promise = new Promise<T>((res) => {
+    resolve = res
+  })
+  return { promise, resolve }
+}
+
 describe('useVaultSwitcher', () => {
   const onSwitch = vi.fn()
   const onToast = vi.fn()
@@ -219,6 +227,32 @@ describe('useVaultSwitcher', () => {
       }))
     })
     expect(onSwitch).toHaveBeenCalled()
+  })
+
+  it('waits for pending editor content before switching vaults', async () => {
+    mockVaultListStore = {
+      vaults: [{ label: 'Work', path: '/work/vault' }],
+      active_vault: null,
+    }
+    const beforeSwitch = createDeferred<void>()
+    const { result } = renderHook(() => useVaultSwitcher({
+      onSwitch,
+      onToast,
+      onBeforeSwitch: () => beforeSwitch.promise,
+    }))
+
+    await waitFor(() => { expect(result.current.loaded).toBe(true) })
+
+    act(() => {
+      result.current.switchVault('/work/vault')
+    })
+
+    expect(result.current.vaultPath).toBe(expectedDefaultVaultPath)
+    beforeSwitch.resolve()
+
+    await waitFor(() => {
+      expect(result.current.vaultPath).toBe('/work/vault')
+    })
   })
 
   it('does not persist the implicit default vault as an active selection', async () => {

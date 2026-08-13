@@ -48,3 +48,17 @@ fn native_desktop_menu_is_macos_only() {
     assert!(!should_use_native_desktop_menu("windows"));
     assert!(!should_use_native_desktop_menu("linux"));
 }
+
+#[test]
+fn desktop_capabilities_allow_close_requested_handler_to_destroy_window() {
+    let capabilities: serde_json::Value =
+        serde_json::from_str(include_str!("../capabilities/default.json")).unwrap();
+    let permissions = capabilities
+        .get("permissions")
+        .and_then(serde_json::Value::as_array)
+        .unwrap();
+
+    assert!(permissions.iter().any(|permission| {
+        permission.as_str() == Some("core:window:allow-destroy")
+    }));
+}

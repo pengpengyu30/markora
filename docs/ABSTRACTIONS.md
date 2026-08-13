@@ -146,7 +146,11 @@ Search is not a semantic index and does not use an AI/MCP service. Gitignored vi
 
 ### Rich/raw ownership
 
-BlockNote owns rich editor interaction and durable Markdown conversion. CodeMirror owns raw text editing. `useEditorSave`, `useAppSave`, and `useEditorSaveWithLinks` coordinate persistence, title synchronization, wikilink updates, autosave, and external-change rules.
+BlockNote owns rich editor interaction and durable Markdown conversion. CodeMirror owns raw text editing. `useEditorSave`, `useAppSave`, and `useEditorSaveWithLinks` coordinate persistence, title synchronization, wikilink updates, autosave, and external-change rules. `useEditorTabSwap` must flush and await the outgoing path before applying a new rich document; mounted-Project/default-workspace selection uses the same coalesced boundary; `useWindowSaveFlush` applies it to blur, visibility changes, and native close requests.
+
+The current write window is 300ms for rich-editor serialization followed by 800ms for application
+autosave. Failed writes remain pending and keep the note marked unsaved. Diagnostic write timeline
+logging is gated by the explicit `__TOLARIA_WRITE_SAFETY_DEBUG__` global flag.
 
 The boundary is source text, not an in-memory editor block tree:
 

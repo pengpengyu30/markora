@@ -797,6 +797,41 @@ describe('useEditorTabSwap raw mode sync', () => {
     }
   })
 
+  it('waits for the outgoing pending write before applying a new tab', async () => {
+    const tabA = makeTab('a.md', 'Note A')
+    const tabB = makeTab('b.md', 'Note B')
+    let resolveFlush!: () => void
+    const flushBeforeSwap = vi.fn(() => new Promise<void>((resolve) => {
+      resolveFlush = resolve
+    }))
+    const { mockEditor, rerenderWith, result } = await createSwapHarness({
+      initialProps: { tabs: [tabA], activeTabPath: 'a.md', rawMode: false },
+    })
+    mockEditor.replaceBlocks.mockClear()
+
+    act(() => {
+      result.current.handleEditorChange()
+    })
+
+    await rerenderWith({
+      tabs: [tabA, tabB],
+      activeTabPath: 'b.md',
+      flushBeforeSwap,
+    })
+
+    expect(flushBeforeSwap).toHaveBeenCalledWith('a.md')
+    expect(mockEditor.replaceBlocks).not.toHaveBeenCalled()
+
+    await act(async () => {
+      resolveFlush()
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    await flushEditorTick()
+
+    expect(mockEditor.replaceBlocks).toHaveBeenCalled()
+  })
+
   it('reopens a switched-away note with the rich-editor content that was flushed during the switch', async () => {
     const tabA = makeTab('a.md', 'Note A')
     const tabB = makeTab('b.md', 'Note B')

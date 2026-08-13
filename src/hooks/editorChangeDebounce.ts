@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useRef, type MutableRefObject } from 'react'
+import { logWriteSafetyTrace } from '../utils/writeSafetyTrace'
 
-export const RICH_EDITOR_CHANGE_DEBOUNCE_MS = 1_500
+export const RICH_EDITOR_CHANGE_DEBOUNCE_MS = 300
 
 export function useDebouncedEditorChange({
   onFlush,
   suppressChangeRef,
+  tracePath,
 }: {
   onFlush: () => void
   suppressChangeRef: MutableRefObject<boolean>
+  tracePath?: () => string | null
 }) {
   const pendingRef = useRef(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -22,9 +25,10 @@ export function useDebouncedEditorChange({
     if (!pendingRef.current) return false
     clearTimer()
     pendingRef.current = false
+    logWriteSafetyTrace('editor-change-flush', { path: tracePath?.() })
     onFlush()
     return true
-  }, [clearTimer, onFlush])
+  }, [clearTimer, onFlush, tracePath])
 
   const handleEditorChange = useCallback(() => {
     if (suppressChangeRef.current) return

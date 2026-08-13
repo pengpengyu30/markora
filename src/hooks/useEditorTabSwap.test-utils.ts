@@ -103,6 +103,7 @@ export type SwapHarnessProps = {
   activeTabPath: string | null
   rawMode?: boolean
   vaultPath?: string
+  flushBeforeSwap?: (path: string) => Promise<void>
 }
 
 export async function createSwapHarness(options: {
@@ -122,6 +123,7 @@ export async function createSwapHarness(options: {
       ...props,
       editor: mockEditor as never,
       onContentChange: options.onContentChange,
+      flushBeforeSwap: props.flushBeforeSwap,
     }),
     { initialProps: currentProps },
   )

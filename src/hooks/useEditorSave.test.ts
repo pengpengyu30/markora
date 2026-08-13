@@ -404,7 +404,7 @@ describe('useEditorSave', () => {
     afterEach(() => { vi.useRealTimers() })
 
     it('waits for a longer idle window so slower typing does not save mid-keystream', async () => {
-      const lowEndTypingIntervalMs = 900
+      const lowEndTypingIntervalMs = 700
       const { result } = renderHook(() =>
         useEditorSave({ updateVaultContent, setTabs, setToastMessage })
       )
@@ -482,6 +482,23 @@ describe('useEditorSave', () => {
         content: 'auto-saved content',
       })
       expect(onNotePersisted).toHaveBeenCalledWith('/test/note.md', 'auto-saved content')
+    })
+
+    it('does not schedule a duplicate write when the persisted content is reported again', async () => {
+      const onNotePersisted = vi.fn()
+      const { result } = renderHook(() =>
+        useEditorSave({ updateVaultContent, setTabs, setToastMessage, onNotePersisted })
+      )
+
+      act(() => { result.current.handleContentChange('/test/note.md', 'persisted content') })
+      await act(async () => { await result.current.handleSave() })
+
+      onNotePersisted.mockClear()
+      act(() => { result.current.handleContentChange('/test/note.md', 'persisted content') })
+      await act(async () => { await vi.advanceTimersByTimeAsync(AUTO_SAVE_DEBOUNCE_MS) })
+
+      expect(mockInvokeFn).toHaveBeenCalledTimes(1)
+      expect(onNotePersisted).toHaveBeenCalledWith('/test/note.md', 'persisted content')
     })
 
     it('resets debounce timer on each content change', async () => {

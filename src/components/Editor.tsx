@@ -115,6 +115,8 @@ export interface EditorProps {
   flushPendingEditorContentRef?: React.MutableRefObject<((path: string) => void) | null>
   /** Registers a hook that flushes the raw editor buffer into app state before external actions. */
   flushPendingRawContentRef?: React.MutableRefObject<((path: string) => void) | null>
+  /** Awaits persistence of the outgoing note before the rich editor swaps documents. */
+  flushBeforeSwap?: (path: string) => Promise<void>
   /** Temporarily highlights the terms that led to opening the active note. */
   searchHighlightRequest?: SearchHighlightRequest | null
   locale?: AppLocale
@@ -156,6 +158,7 @@ interface EditorSetupParams {
   activeTabPath: string | null
   vaultPath?: string
   onContentChange?: (path: string, content: string) => void
+  flushBeforeSwap?: (path: string) => Promise<void>
   rawToggleRef?: React.MutableRefObject<() => void>
   onImageImportError?: ImageImportErrorHandler
 }
@@ -189,6 +192,7 @@ function useEditorSetup(options: EditorSetupParams) {
     activeTabPath,
     vaultPath,
     onContentChange,
+    flushBeforeSwap,
     rawToggleRef,
     onImageImportError,
   } = options
@@ -310,6 +314,7 @@ function useEditorSetup(options: EditorSetupParams) {
         onContentChange,
         rawMode,
         vaultPath,
+        flushBeforeSwap,
       })
       const richEditorContentReady = richEditorTabUnavailable
         || !activeTab
@@ -582,6 +587,7 @@ export const Editor = memo(function Editor(props: EditorProps) {
     activeTabPath: props.activeTabPath,
     vaultPath: props.vaultPath,
     onContentChange: props.onContentChange,
+    flushBeforeSwap: props.flushBeforeSwap,
     rawToggleRef: props.rawToggleRef,
     onImageImportError: handleImageImportError,
   })

@@ -200,6 +200,13 @@ test('switching vaults clears stale pending editor saves @smoke', async ({ page 
 
   await switchToPersonalVault(page)
   await expect(page.getByTestId('note-list-container').getByText('Personal Home', { exact: true })).toBeVisible()
+  await expect.poll(() => readSaveProbe(page)).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      activeVaultPath: data.workVaultPath,
+      content: '# Work Home\n\nUnsaved draft before vault switch',
+      path: `${data.workVaultPath}/work-home.md`,
+    }),
+  ]))
   expect(await readSaveProbe(page)).not.toEqual(expect.arrayContaining([
     expect.objectContaining({
       activeVaultPath: data.personalVaultPath,
