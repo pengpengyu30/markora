@@ -54,6 +54,13 @@ import { normalizeReleaseChannel } from './lib/releaseChannel'
 import { requestPlainTextPaste } from './utils/plainTextPaste'
 import { SETTINGS_SECTION_IDS } from './components/settingsSectionIds'
 import { vaultPathForEntry } from './utils/workspaces'
+import { uniqueNonBlankWorkspacePaths } from './utils/workspacePaths'
+import {
+  resolveActiveProject,
+  resolveProjectLocation,
+  selectionForProjectLocation,
+  sidebarSelectionsEqual,
+} from './utils/activeProject'
 import { notePathsMatch } from './utils/notePathIdentity'
 import { entrySupportsPreviewSourceToggle } from './utils/filePreview'
 import { isMarkdownEntry } from './utils/typeDefinitions'
@@ -211,6 +218,24 @@ function MainApp() {
     multiWorkspaceEnabled,
     visibleWorkspacePathList,
   })
+  const activeProject = useMemo(
+    () => resolveActiveProject(selection, resolvedPath),
+    [resolvedPath, selection],
+  )
+  const projectPaths = useMemo(
+    () => uniqueNonBlankWorkspacePaths([
+      ...visibleWorkspaceRoots,
+      ...visibleEntries.map((entry) => entry.workspace?.path ?? ''),
+    ]),
+    [visibleEntries, visibleWorkspaceRoots],
+  )
+  const handleRevealNote = useCallback((entry: VaultEntry) => {
+    const nextSelection = selectionForProjectLocation(resolveProjectLocation(entry.path, projectPaths, resolvedPath))
+    setSelection((current) => {
+      if (sidebarSelectionsEqual(current, nextSelection)) return current
+      return nextSelection
+    })
+  }, [projectPaths, resolvedPath])
   const tagFilteredEntries = useMemo(
     () => filterEntriesByTags(visibleEntries, selectedTags),
     [selectedTags, visibleEntries],
@@ -255,7 +280,7 @@ function MainApp() {
     locale: appLocale,
     selection: effectiveSelection,
     setToastMessage,
-    vaultPath: resolvedPath,
+    vaultPath: activeProject.projectPath,
   })
   const loadDefaultVaultModifiedFiles = vault.loadModifiedFiles
   const refreshGitModifiedFiles = useCallback(async () => {
@@ -318,7 +343,8 @@ function MainApp() {
     reloadVault: vault.reloadVault,
     setToastMessage,
     updateEntry: vault.updateEntry,
-    vaultPath: resolvedPath,
+    activeProject,
+    vaultPath: activeProject.projectPath,
     defaultWorkspacePath: multiWorkspaceEnabled ? defaultWorkspacePath : null,
     vaults: graphVaults ?? [],
     addPendingSave: handleCreatedVaultEntryPersisting,
@@ -334,6 +360,7 @@ function MainApp() {
     onFrontmatterPersisted: refreshGitModifiedFiles,
     onPathRenamed: (oldPath, newPath) => appSave.trackRenamedPath(oldPath, newPath),
     onOpenExternalFile: fileActions.openExternalFile,
+    onRevealNote: handleRevealNote,
   })
   const {
     handleSelectNote,
@@ -462,8 +489,10 @@ function MainApp() {
     parent?: { path: string; rootPath?: string },
   ) => {
     try {
-      const vaultPath = parent?.rootPath?.trim() ? parent.rootPath : resolvedPath
-      const parentPath = parent?.path && parent.path.length > 0 ? parent.path : null
+      const vaultPath = parent?.rootPath?.trim() ? parent.rootPath : activeProject.projectPath
+      const parentPath = parent
+        ? (parent.path.length > 0 ? parent.path : null)
+        : (activeProject.folderPath || null)
       const args = { vaultPath, folderName: name, parentPath }
       if (isTauri()) {
         await invoke('create_vault_folder', args)
@@ -477,10 +506,10 @@ function MainApp() {
       setToastMessage(`Failed to create folder: ${e}`)
       return false
     }
-  }, [resolvedPath, vault])
+  }, [activeProject, vault])
 
   const folderActions = useFolderActions({
-    vaultPath: resolvedPath,
+    vaultPath: activeProject.projectPath,
     selection: effectiveSelection,
     setSelection: handleSetSelection,
     setTabs: notes.setTabs,
@@ -877,6 +906,7 @@ function MainApp() {
                   onDeleteFolder={folderActions.requestDeleteFolder}
                   folderFileActions={fileActions.folderActions}
                   renamingFolderPath={folderActions.renamingFolderPath}
+                  renamingFolderRootPath={folderActions.renamingFolderRootPath}
                   onStartRenameFolder={folderActions.startFolderRename}
                   onCancelRenameFolder={folderActions.cancelFolderRename}
                   onCanDropNoteOnFolder={noteRetargetingUi.canDropNoteOnFolder}
@@ -890,6 +920,7 @@ function MainApp() {
                   locale={appLocale}
                   loading={isVaultContentLoading}
                   vaultRootPath={resolvedPath}
+                  writableVaultPaths={writableVaultPaths}
                 />
               </div>
               <ResizeHandle onResize={layout.handleSidebarResize} />
@@ -898,7 +929,7 @@ function MainApp() {
           {noteListVisible && (
             <>
               <div className="app__note-list" style={{ width: layout.noteListWidth }}>
-                <NoteList vaultPath={resolvedPath} entries={tagFilteredEntries} selection={effectiveSelection} selectedNote={activeTab?.entry ?? null} selectedTags={selectedTags} onClearTagFilter={handleClearTagFilter} loading={isVaultContentLoading} getNoteStatus={vault.getNoteStatus} sidebarCollapsed={!sidebarVisible} onSelectNote={notes.handleSelectNote} onReplaceActiveTab={notes.handleReplaceActiveTab} onCreateNote={notes.handleCreateNoteImmediate} onBulkDeletePermanently={deleteActions.handleBulkDeletePermanently} onRenameFilename={appSave.handleFilenameRename} onExportPdf={handleExportNotePdfFromList} onRevealFile={fileActions.revealFile} onCopyFilePath={fileActions.copyFilePath} visibleNotesRef={visibleNotesRef} allNotesFileVisibility={allNotesFileVisibility} folderViewShowNonMarkdown={folderViewShowNonMarkdown} showFilename={noteListShowFilename} multiSelectionCommandRef={multiSelectionCommandRef} locale={appLocale} />
+                <NoteList vaultPath={activeProject.projectPath} entries={tagFilteredEntries} selection={effectiveSelection} selectedNote={activeTab?.entry ?? null} selectedTags={selectedTags} onClearTagFilter={handleClearTagFilter} loading={isVaultContentLoading} getNoteStatus={vault.getNoteStatus} sidebarCollapsed={!sidebarVisible} onSelectNote={notes.handleSelectNote} onReplaceActiveTab={notes.handleReplaceActiveTab} onCreateNote={notes.handleCreateNoteImmediate} onBulkDeletePermanently={deleteActions.handleBulkDeletePermanently} onRenameFilename={appSave.handleFilenameRename} onExportPdf={handleExportNotePdfFromList} onRevealFile={fileActions.revealFile} onCopyFilePath={fileActions.copyFilePath} visibleNotesRef={visibleNotesRef} allNotesFileVisibility={allNotesFileVisibility} folderViewShowNonMarkdown={folderViewShowNonMarkdown} showFilename={noteListShowFilename} multiSelectionCommandRef={multiSelectionCommandRef} locale={appLocale} />
               </div>
               <ResizeHandle onResize={layout.handleNoteListResize} />
             </>

@@ -141,6 +141,25 @@ describe('useNoteActions hook', () => {
     expect(result.current.activeTabPath).toBe('/vault/target.md')
   })
 
+  it('reveals the owning Project after opening a note', async () => {
+    const entry = makeEntry({
+      path: '/project-b/notes/topic.md',
+      filename: 'topic.md',
+      workspace: { path: '/project-b' } as NonNullable<VaultEntry['workspace']>,
+    })
+    const onRevealNote = vi.fn()
+    const { result } = renderHook(() => useNoteActions({
+      ...makeConfig([entry]),
+      onRevealNote,
+    }))
+
+    await act(async () => {
+      await result.current.handleSelectNote(entry)
+    })
+
+    expect(onRevealNote).toHaveBeenCalledWith(entry)
+  })
+
   it.each(['html', 'HTM'])('loads .%s vault files into the editor for in-app preview', async (extension) => {
     const entry = makeEntry({
       path: `/test/vault/generated/report.${extension}`,

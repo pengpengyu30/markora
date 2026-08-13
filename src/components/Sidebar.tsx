@@ -17,15 +17,17 @@ interface SidebarProps {
   onSelect: (selection: SidebarSelection) => void
   folders?: FolderNode[]
   onCreateFolder?: (name: string, parent?: FolderCreationParent) => Promise<boolean> | boolean
-  onRenameFolder?: (folderPath: string, nextName: string) => Promise<boolean> | boolean
-  onDeleteFolder?: (folderPath: string) => void
+  onRenameFolder?: (folderPath: string, nextName: string, rootPath?: string) => Promise<boolean> | boolean
+  onDeleteFolder?: (folderPath: string, rootPath?: string) => void
   folderFileActions?: FolderFileActions
   renamingFolderPath?: string | null
-  onStartRenameFolder?: (folderPath: string) => void
+  renamingFolderRootPath?: string | null
+  onStartRenameFolder?: (folderPath: string, rootPath?: string) => void
   onCancelRenameFolder?: () => void
   onCanDropNoteOnFolder?: (notePath: string, folderPath: string) => boolean
   onMoveNoteToFolder?: (notePath: string, folderPath: string) => Promise<unknown> | unknown
   vaultRootPath?: string
+  writableVaultPaths?: readonly string[]
   allNotesFileVisibility?: AllNotesFileVisibility
   locale?: AppLocale
   onCollapse?: () => void
@@ -50,11 +52,13 @@ interface SidebarNavigationProps
     | 'onDeleteFolder'
     | 'folderFileActions'
     | 'renamingFolderPath'
+    | 'renamingFolderRootPath'
     | 'onStartRenameFolder'
     | 'onCancelRenameFolder'
     | 'onCanDropNoteOnFolder'
     | 'onMoveNoteToFolder'
     | 'vaultRootPath'
+    | 'writableVaultPaths'
     | 'locale'
     | 'loading'
   > {
@@ -72,11 +76,13 @@ type SidebarFoldersNavigationProps = Pick<
   | 'onDeleteFolder'
   | 'folderFileActions'
   | 'renamingFolderPath'
+  | 'renamingFolderRootPath'
   | 'onStartRenameFolder'
   | 'onCancelRenameFolder'
   | 'onCanDropNoteOnFolder'
   | 'onMoveNoteToFolder'
   | 'vaultRootPath'
+  | 'writableVaultPaths'
   | 'groupCollapsed'
   | 'toggleGroup'
   | 'locale'
@@ -94,11 +100,13 @@ function SidebarFoldersNavigation(options: SidebarFoldersNavigationProps) {
     onDeleteFolder,
     folderFileActions,
     renamingFolderPath,
+    renamingFolderRootPath,
     onStartRenameFolder,
     onCancelRenameFolder,
     onCanDropNoteOnFolder,
     onMoveNoteToFolder,
     vaultRootPath,
+    writableVaultPaths,
     groupCollapsed,
     toggleGroup,
     locale,
@@ -118,6 +126,7 @@ function SidebarFoldersNavigation(options: SidebarFoldersNavigationProps) {
       onDeleteFolder={onDeleteFolder}
       folderFileActions={folderFileActions}
       renamingFolderPath={renamingFolderPath}
+      renamingFolderRootPath={renamingFolderRootPath}
       onStartRenameFolder={onStartRenameFolder}
       onCancelRenameFolder={onCancelRenameFolder}
       onCanDropNote={onCanDropNoteOnFolder}
@@ -126,6 +135,7 @@ function SidebarFoldersNavigation(options: SidebarFoldersNavigationProps) {
       locale={locale}
       onToggle={() => toggleGroup('folders')}
       vaultRootPath={vaultRootPath}
+      writableVaultPaths={writableVaultPaths}
     />
   )
 }

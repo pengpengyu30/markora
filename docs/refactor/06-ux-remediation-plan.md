@@ -917,7 +917,7 @@ Consumers:
 |---|---|---|
 | New note (`+` button, `Cmd+N`, command palette) | Default Project root | Active Project + Active Folder |
 | New folder (sidebar `+`) | Default/active Project root when `rootPath` missing | Active Project + Active Folder |
-| `Cmd+Shift+F` | `resolvedPath` | Active Project, whole tree |
+| `Cmd+Shift+F` | `resolvedPath` | All visible mounted Project roots; selecting a Project does not narrow global search |
 | Sidebar context menus | Only the registry active Project's rows | Any **mounted** Project's rows |
 | Opening any note | No sidebar change | Expand ancestors, select the containing folder, switch the Active Project (**D2**) |
 
@@ -962,8 +962,8 @@ follows `selection`; once reveal writes `selection`, the list follows for free.
    selection is a filter, and the fallback with the selection's folder when `rootPath` is absent.
 2. Creating a note while `selection` points at `ProjectB/docs` writes to `ProjectB/docs/`, not
    to the Default Project root. **This is #10.**
-3. `SearchPanel` receives the Active Project path, not `resolvedPath`, when a non-active
-   Project's folder is selected. **This is #12a.**
+3. `SearchPanel` receives all visible Project roots, not only `resolvedPath` or the selected
+   Project, so `Cmd+Shift+F` can find documents in every mounted Project. **This is #12a.**
 4. `handleCreateFolder` creates inside the Active Project when a non-active Project's folder is
    selected. **This is #13.**
 5. Opening a note in `ProjectB/notes/x.md` sets `selection` to
@@ -992,8 +992,8 @@ the regressions this milestone is meant to fix.
 
 ### Definition of done
 
-- With two mounted Projects: selecting a folder in either one makes new notes, new folders, and
-  `Cmd+Shift+F` all target that Project.
+- With two mounted Projects: selecting a folder in either one makes new notes and new folders
+  target that Project, while `Cmd+Shift+F` searches all visible Project roots.
 - Opening a note from Quick Open reveals it in the sidebar and switches the Active Project.
 - Context menus work on folders in every mounted Project.
 - Single-Project mode is behaviourally unchanged.

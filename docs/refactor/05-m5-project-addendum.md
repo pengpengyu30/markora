@@ -59,8 +59,8 @@ This is the most easily misunderstood boundary after the Project refactor. Do no
 
 - **Cmd+K**: command palette. It searches and executes commands; it does not search document content.
 - **Cmd+O / Cmd+P**: Quick Open. It uses the current `visibleEntries`, so multi-Project mode covers the currently visible Projects. It matches note titles, note aliases, and filenames using case-insensitive normalization and fuzzy/prefix matching. The frontend shows at most 20 results; an empty query returns the 20 most recently modified entries.
-- **Cmd+Shift+F**: full-text search. `App.tsx` currently passes a single `resolvedPath`, so the actual scope is the current active Project, not every displayed Project. The backend recursively scans `.md` files, skips hidden directories, applies the Git-ignored visibility setting, includes frontmatter by default, performs case-insensitive literal substring matching, ranks results by relevance, and returns at most 20 results.
-- Full-text search has no application-defined maximum query-string length. Practical limits come from IPC, memory, and scan time. The result limit is 20 and an individual snippet is approximately 200 characters. Do not change Cmd+Shift+F to search across Projects without product confirmation and regression tests.
+- **Cmd+Shift+F**: full-text search across every visible Project root. `App.tsx` passes the visible Project root list, and `useUnifiedSearch` runs one bounded search per root before merging and de-duplicating the results. Selecting a Project or folder changes the active write/edit context; it does not narrow this global search. The backend recursively scans `.md` files, skips hidden directories, applies the Git-ignored visibility setting, includes frontmatter by default, performs case-insensitive token-AND matching, ranks results by relevance, and returns at most 200 results with a truncation total.
+- Full-text search has no application-defined maximum query-string length. Practical limits come from IPC, memory, and scan time. An individual snippet is approximately 200 characters. This all-visible-Project scope is an intentional correction confirmed after M7 validation; preserve it unless a new product decision changes the global-search contract.
 
 ## 5. Implementation map for future agents
 
@@ -78,7 +78,7 @@ Read these files before changing Project behavior:
 | `src/components/ProjectSettingsSection.tsx`, `ProjectSettingsRows.tsx`, `ProjectMoveButtons.tsx` | Project configuration and ordering in Settings |
 | `src/components/status-bar/VaultMenu.tsx` | Switching, mounting, and default-target actions in the status-bar Project menu |
 | `src/components/QuickOpenPalette.tsx`, `src/hooks/useNoteSearch.ts` | Quick Open search over visible multi-Project entries |
-| `src/components/SearchPanel.tsx`, `src/hooks/useUnifiedSearch.ts`, `src-tauri/src/search.rs` | Current-Project full-text search for Cmd+Shift+F |
+| `src/components/SearchPanel.tsx`, `src/hooks/useUnifiedSearch.ts`, `src-tauri/src/search.rs` | All-visible-Project full-text search for Cmd+Shift+F |
 
 Technical naming note: `useWorkspaceGraphState`, `workspaceIdentityFromVault`, and similar names do not currently mean “obsolete Workspace code to delete.” They are internal implementations reused by the Project refactor. A complete internal rename to Project should be planned as a separate compatibility migration, not mixed into another milestone's deletion work.
 

@@ -19,6 +19,7 @@ import {
 import { isWritableFrontmatterKey, runFrontmatterAndApply, type FrontmatterOpOptions } from './frontmatterOps'
 import { findByNotePath, notePathFilename, notePathsMatch } from '../utils/notePathIdentity'
 import type { VaultOption } from '../components/status-bar/types'
+import type { ActiveProject } from '../utils/activeProject'
 
 export interface NoteActionsConfig {
   addEntry: (entry: VaultEntry) => void
@@ -30,6 +31,7 @@ export interface NoteActionsConfig {
   setToastMessage: (msg: string | null) => void
   updateEntry: (path: string, patch: Partial<VaultEntry>) => void
   vaultPath: string
+  activeProject?: ActiveProject
   defaultWorkspacePath?: string | null
   vaults?: readonly VaultOption[]
   addPendingSave?: (path: string) => void
@@ -51,6 +53,8 @@ export interface NoteActionsConfig {
   onInternalVaultWrite?: (path: string) => void
   /** Opens generated HTML in the system viewer without loading active content in Tolaria. */
   onOpenExternalFile?: (path: string) => void
+  /** Reveals the selected note's project and containing folder in the sidebar. */
+  onRevealNote?: (entry: VaultEntry) => void | Promise<void>
 }
 
 function isTitleKey(key: string): boolean {
@@ -509,14 +513,15 @@ function buildNoteActionsResult({
 }
 
 export function useNoteActions(config: NoteActionsConfig) {
-  const { entries, setToastMessage, updateEntry } = config
+  const { entries, onRevealNote, setToastMessage, updateEntry } = config
   const tabMgmt = useTabManagement(buildTabManagementOptions(config))
   const { setTabs, handleSelectNote: selectTab, openTabWithContent, activeTabPathRef, handleSwitchTab } = tabMgmt
   const handleSelectNote = useCallback(
     async (entry: VaultEntry) => {
     await selectTab(entry)
+    await onRevealNote?.(entry)
     },
-    [selectTab],
+    [onRevealNote, selectTab],
   )
   useGitignoredVisibilityTabCleanup({
     activeTabPathRef,

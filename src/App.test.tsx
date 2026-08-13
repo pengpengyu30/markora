@@ -395,7 +395,7 @@ describe('App', () => {
     }, { timeout: SLOW_APP_READY_TIMEOUT_MS })
   })
 
-  it('passes all visible Project roots to global search', async () => {
+  it('passes every visible Project root to global search', async () => {
     mockCommandResults.load_vault_list = {
       vaults: [
         { label: 'Test Vault', path: '/vault' },
@@ -410,7 +410,7 @@ describe('App', () => {
     await screen.findByTestId('status-bar')
     await waitFor(() => {
       const searchPanelProps = mockSearchPanel.mock.calls.at(-1)?.[0] as { vaultPath?: unknown } | undefined
-      expect(searchPanelProps?.vaultPath).toEqual(expect.arrayContaining(['/vault', '/edgeclaw']))
+      expect(searchPanelProps?.vaultPath).toEqual(['/vault', expectedDefaultVaultPath, '/edgeclaw'])
     })
   })
 

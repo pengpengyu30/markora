@@ -126,6 +126,17 @@ describe('resolveNewNote', () => {
     expect(content).toBe('')
   })
 
+  it('creates a named note in the Active Project and Active Folder', () => {
+    const { entry } = resolveNewNote({
+      activeProject: { projectPath: '/project-b', folderPath: 'docs' },
+      title: 'Project Note',
+      vaultPath: '/project-a',
+    })
+
+    expect(entry.path).toBe('/project-b/docs/project-note.md')
+    expect(entry.workspace?.path).toBe('/project-b')
+  })
+
 })
 
 describe('planNewNoteCreation', () => {
@@ -225,6 +236,27 @@ describe('useNoteCreation hook', () => {
     })
     expect(addEntry).toHaveBeenCalledWith(expect.objectContaining({
       path: createdPath,
+    }))
+    vi.restoreAllMocks()
+  })
+
+  it('uses the Active Project and Active Folder for default immediate creation', async () => {
+    vi.mocked(isTauri).mockReturnValue(true)
+    vi.mocked(invoke).mockResolvedValueOnce(undefined)
+    vi.spyOn(Date, 'now').mockReturnValue(1700000000000)
+    const { result } = renderHook(() => useNoteCreation({
+      ...makeConfig(),
+      activeProject: { projectPath: '/project-b', folderPath: 'docs' },
+    }, tabDeps))
+
+    await act(async () => {
+      result.current.handleCreateNoteImmediate()
+      await flushImmediateCreate()
+    })
+
+    expect(invoke).toHaveBeenCalledWith('create_note_content', expect.objectContaining({
+      path: '/project-b/docs/untitled-note-1700000000.md',
+      vaultPath: '/project-b',
     }))
     vi.restoreAllMocks()
   })

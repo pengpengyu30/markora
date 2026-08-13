@@ -15,6 +15,7 @@ import { labelFromWorkspacePath, workspaceIdentityFromVault } from '../utils/wor
 import type { VaultOption } from '../components/status-bar/types'
 import { useCreateNoteInFolderRequests } from './noteCreationRequests'
 import { requestEditorFocus } from './useEditorFocus'
+import type { ActiveProject } from '../utils/activeProject'
 
 export interface NewEntryParams {
   path: string
@@ -125,18 +126,22 @@ export interface NewNoteParams {
   vaultPath: string
   defaultWorkspacePath?: string | null
   vaults?: readonly VaultOption[]
+  activeProject?: ActiveProject
 }
 
 export function resolveNewNote(options: NewNoteParams): {
   entry: VaultEntry
   content: string
 } {
-  const { title, vaultPath, defaultWorkspacePath, vaults = [] } = options
-  const creationVaultPath = resolveCreationVaultPath(vaultPath, defaultWorkspacePath, vaults)
+  const { activeProject, title, vaultPath, defaultWorkspacePath, vaults = [] } = options
+  const creationVaultPath = activeProject?.projectPath?.trim()
+    ? activeProject.projectPath
+    : resolveCreationVaultPath(vaultPath, defaultWorkspacePath, vaults)
+  const folderPath = activeProject?.folderPath ?? ''
   const slug = slugify(title)
   const entry = {
     ...buildNewEntry({
-      path: joinVaultPath(creationVaultPath, `${slug}.md`),
+      path: joinVaultPath(creationVaultPath, folderPath ? `${folderPath}/${slug}.md` : `${slug}.md`),
       slug,
       title,
     }),
@@ -177,8 +182,9 @@ function buildCreationCollisionMessage({
 }
 
 export function planNewNoteCreation(options: NewNoteParams & { entries: VaultEntry[] }): NoteCreationPlan {
-  const { defaultWorkspacePath, entries, title, vaultPath, vaults } = options
+  const { activeProject, defaultWorkspacePath, entries, title, vaultPath, vaults } = options
   const resolved = resolveNewNote({
+    activeProject,
     title,
     vaultPath,
     defaultWorkspacePath,
@@ -272,6 +278,7 @@ function persistOptimistic(request: PersistNewNoteRequest, cbs: PersistCallbacks
 type PersistResolvedEntryFn = (resolved: ResolvedEntry) => Promise<void>
 
 interface CreationDeps {
+  activeProject?: ActiveProject
   defaultWorkspacePath?: string | null
   entries: VaultEntry[]
   vaultPath: string
@@ -286,8 +293,9 @@ interface NoteCreationRequest extends CreationDeps {
 }
 
 async function createNamedNote(options: NoteCreationRequest): Promise<boolean> {
-  const { entries, defaultWorkspacePath, title, vaultPath, vaults, setToastMessage, persistResolvedEntry } = options
+  const { activeProject, entries, defaultWorkspacePath, title, vaultPath, vaults, setToastMessage, persistResolvedEntry } = options
   const plan = planNewNoteCreation({
+    activeProject,
     entries,
     title,
     vaultPath,
@@ -310,6 +318,7 @@ async function createNamedNote(options: NoteCreationRequest): Promise<boolean> {
 
 interface ImmediateCreateDeps {
   addPendingSave?: (path: string) => void
+  activeProject?: ActiveProject
   defaultWorkspacePath?: string | null
   entries: VaultEntry[]
   vaultPath: string
@@ -338,6 +347,7 @@ type ImmediateCreateRequest = ImmediateCreateOptions
 
 interface ImmediateCreateQueueConfig {
   addPendingSave?: (path: string) => void
+  activeProject?: ActiveProject
   defaultWorkspacePath?: string | null
   entries: VaultEntry[]
   vaultPath: string
@@ -390,7 +400,10 @@ async function persistImmediateEntry(deps: ImmediateCreateDeps, entry: VaultEntr
 
 /** Create an untitled note and write its backing file before opening it. */
 function resolveImmediateCreationVaultPath(deps: ImmediateCreateDeps, request: ImmediateCreateRequest): string {
-  return request.vaultPath ?? resolveCreationVaultPath(deps.vaultPath, deps.defaultWorkspacePath, deps.vaults)
+  const activeProjectPath = deps.activeProject?.projectPath?.trim()
+  return request.vaultPath
+    ?? (activeProjectPath ? deps.activeProject?.projectPath : undefined)
+    ?? resolveCreationVaultPath(deps.vaultPath, deps.defaultWorkspacePath, deps.vaults)
 }
 
 function immediateNoteRelativePath(slug: string, folderPath?: string): string {
@@ -402,7 +415,7 @@ async function createNoteImmediate(deps: ImmediateCreateDeps, request: Immediate
   const slug = generateUntitledFilename(deps.entries, 'Note', deps.pendingSlugs)
   const title = slug_to_title(slug)
   const creationVaultPath = resolveImmediateCreationVaultPath(deps, request)
-  const relativePath = immediateNoteRelativePath(slug, request.folderPath)
+  const relativePath = immediateNoteRelativePath(slug, request.folderPath ?? deps.activeProject?.folderPath)
   const entry = {
     ...buildNewEntry({
       path: joinVaultPath(creationVaultPath, relativePath),
@@ -430,6 +443,7 @@ function useLatestImmediateCreateDeps(
   pendingSlugsRef: MutableRefObject<Set<string>>,
 ) {
   const {
+    activeProject,
     defaultWorkspacePath,
     entries,
     vaultPath,
@@ -445,6 +459,7 @@ function useLatestImmediateCreateDeps(
   const syncDeps = useCallback(() => {
     latestDepsRef.current = {
       entries,
+      activeProject,
       defaultWorkspacePath,
       vaultPath,
       vaults,
@@ -458,6 +473,7 @@ function useLatestImmediateCreateDeps(
     }
   }, [
     entries,
+    activeProject,
     defaultWorkspacePath,
     vaultPath,
     vaults,
@@ -553,6 +569,7 @@ export interface NoteCreationConfig {
   entries: VaultEntry[]
   setToastMessage: (msg: string | null) => void
   vaultPath: string
+  activeProject?: ActiveProject
   defaultWorkspacePath?: string | null
   vaults?: readonly VaultOption[]
   addPendingSave?: (path: string) => void
@@ -604,13 +621,14 @@ function usePersistResolvedEntry(config: NoteCreationConfig, openTabWithContent:
   return persistResolvedEntry
 }
 
-function useNamedCreationActions(options: Pick<NoteCreationConfig, 'defaultWorkspacePath' | 'entries' | 'setToastMessage' | 'vaultPath' | 'vaults'> & {
+function useNamedCreationActions(options: Pick<NoteCreationConfig, 'activeProject' | 'defaultWorkspacePath' | 'entries' | 'setToastMessage' | 'vaultPath' | 'vaults'> & {
   persistResolvedEntry: PersistResolvedEntryFn
 }) {
-  const { defaultWorkspacePath, entries, persistResolvedEntry, setToastMessage, vaultPath, vaults } = options
+  const { activeProject, defaultWorkspacePath, entries, persistResolvedEntry, setToastMessage, vaultPath, vaults } = options
   const handleCreateNote = useCallback(
     (title: string, creationPath: 'plus_button' | 'quick_open' = 'plus_button'): Promise<boolean> =>
       createNamedNote({
+        activeProject,
         entries,
         vaultPath,
         defaultWorkspacePath,
@@ -620,17 +638,18 @@ function useNamedCreationActions(options: Pick<NoteCreationConfig, 'defaultWorks
         title,
         creationPath,
       }),
-    [entries, vaultPath, defaultWorkspacePath, vaults, setToastMessage, persistResolvedEntry],
+    [activeProject, entries, vaultPath, defaultWorkspacePath, vaults, setToastMessage, persistResolvedEntry],
   )
 
   return { handleCreateNote }
 }
 
 export function useNoteCreation(config: NoteCreationConfig, tabDeps: CreationTabDeps) {
-  const { addEntry, defaultWorkspacePath, entries, setToastMessage, addPendingSave, removePendingSave, vaultPath, vaults, onNewNotePersisted } = config
+  const { activeProject, addEntry, defaultWorkspacePath, entries, setToastMessage, addPendingSave, removePendingSave, vaultPath, vaults, onNewNotePersisted } = config
   const { openTabWithContent } = tabDeps
   const persistResolvedEntry = usePersistResolvedEntry(config, openTabWithContent)
   const { handleCreateNote } = useNamedCreationActions({
+    activeProject,
     defaultWorkspacePath,
     entries,
     persistResolvedEntry,
@@ -640,6 +659,7 @@ export function useNoteCreation(config: NoteCreationConfig, tabDeps: CreationTab
   })
 
   const handleCreateNoteImmediate = useImmediateCreateQueue({
+    activeProject,
     entries,
     vaultPath,
     defaultWorkspacePath,

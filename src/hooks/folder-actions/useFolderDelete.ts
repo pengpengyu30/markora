@@ -27,10 +27,11 @@ export function useFolderDelete(options: UseFolderDeleteInput) {
   const [confirmDeleteFolder, setConfirmDeleteFolder] = useState<ConfirmFolderDeleteState | null>(null)
 
   const requestDeleteFolder = useCallback(
-    (folderPath: string) => {
+    (folderPath: string, rootPath?: string) => {
     clearFolderRename()
     setConfirmDeleteFolder({
       path: folderPath,
+      rootPath,
       title: `Delete "${folderLabel({ folderPath })}" and everything inside it?`,
         message:
           'This permanently removes the folder, all nested folders, and every note or file inside it. This cannot be undone.',
@@ -46,15 +47,16 @@ export function useFolderDelete(options: UseFolderDeleteInput) {
     if (!confirmDeleteFolder) return
 
     const folderPath = confirmDeleteFolder.path
+    const operationVaultPath = confirmDeleteFolder.rootPath ?? vaultPath
     try {
       setConfirmDeleteFolder(null)
-      await invokeDeleteFolder({ vaultPath, folderPath })
+      await invokeDeleteFolder({ vaultPath: operationVaultPath, folderPath })
       clearDeletedFolderTabs({
         activeTabPathRef,
         closeAllTabs,
         folderPath,
         setTabs,
-        vaultPath,
+        vaultPath: operationVaultPath,
       })
       await reloadFolders()
       await reloadVault()
@@ -62,6 +64,7 @@ export function useFolderDelete(options: UseFolderDeleteInput) {
         folderPath,
         selection,
         setSelection,
+        rootPath: confirmDeleteFolder.rootPath,
       })
       setToastMessage(`Deleted folder "${folderLabel({ folderPath })}"`)
     } catch (error) {
@@ -82,7 +85,7 @@ export function useFolderDelete(options: UseFolderDeleteInput) {
 
   const deleteSelectedFolder = useCallback(() => {
     if (selection.kind !== 'folder' || !selection.path) return
-    requestDeleteFolder(selection.path)
+    requestDeleteFolder(selection.path, selection.rootPath)
   }, [requestDeleteFolder, selection])
 
   return {

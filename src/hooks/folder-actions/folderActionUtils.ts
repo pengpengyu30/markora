@@ -14,6 +14,7 @@ export interface FolderTab {
 
 export interface ConfirmFolderDeleteState {
   path: string
+  rootPath?: string
   title: string
   message: string
   confirmLabel: string
@@ -79,23 +80,28 @@ export function updateSelectionAfterFolderRename(params: {
   renameResult: FolderRenameResult
   selection: SidebarSelection
   setSelection: (selection: SidebarSelection) => void
+  rootPath?: string
 }) {
   const {
     renameResult,
     selection,
     setSelection,
+    rootPath,
   } = params
 
   if (selection.kind === 'folder') {
+    if (rootPath && selection.rootPath && selection.rootPath !== rootPath) return
     if (!isWithinPrefix({ path: selection.path, prefix: renameResult.old_path })) return
-    setSelection({
+    const nextSelection: SidebarSelection = {
       kind: 'folder',
       path: replaceRelativeFolderPrefix({
         path: selection.path,
         oldPrefix: renameResult.old_path,
         newPrefix: renameResult.new_path,
       }),
-    })
+    }
+    if (rootPath || selection.rootPath) nextSelection.rootPath = rootPath ?? selection.rootPath
+    setSelection(nextSelection)
     return
   }
 
@@ -162,14 +168,20 @@ export function resetSelectionIfFolderDeleted(params: {
   folderPath: string
   selection: SidebarSelection
   setSelection: (selection: SidebarSelection) => void
+  rootPath?: string
 }) {
   const {
     folderPath,
     selection,
     setSelection,
+    rootPath,
   } = params
 
-  if (selection.kind === 'folder' && isWithinPrefix({ path: selection.path, prefix: folderPath })) {
+  if (
+    selection.kind === 'folder'
+    && (!rootPath || !selection.rootPath || selection.rootPath === rootPath)
+    && isWithinPrefix({ path: selection.path, prefix: folderPath })
+  ) {
     setSelection(DEFAULT_SELECTION)
     return
   }

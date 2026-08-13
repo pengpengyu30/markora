@@ -6,10 +6,15 @@ interface UseFolderTreeDisclosureInput {
   collapsed?: boolean
   onToggle?: () => void
   renamingFolderPath?: string | null
+  renamingFolderRootPath?: string | null
   selection: SidebarSelection
 }
 
-function useExpandedFolders(selection: SidebarSelection, renamingFolderPath?: string | null) {
+function useExpandedFolders(
+  selection: SidebarSelection,
+  renamingFolderPath?: string | null,
+  renamingFolderRootPath?: string | null,
+) {
   const [manualExpanded, setManualExpanded] = useState<Record<string, boolean>>({})
   const requiredExpandedPaths = useMemo(() => {
     const nextPaths: string[] = []
@@ -17,9 +22,9 @@ function useExpandedFolders(selection: SidebarSelection, renamingFolderPath?: st
       if (selection.path && selection.rootPath) nextPaths.push(folderNodeKey({ path: '', rootPath: selection.rootPath }))
       nextPaths.push(...scopedFolderKeys(ancestorTreePaths(selection.path), selection.rootPath))
     }
-    if (renamingFolderPath) nextPaths.push(...expandedTreePaths(renamingFolderPath))
+    if (renamingFolderPath) nextPaths.push(...scopedFolderKeys(expandedTreePaths(renamingFolderPath), renamingFolderRootPath))
     return [...new Set(nextPaths)]
-  }, [renamingFolderPath, selection])
+  }, [renamingFolderPath, renamingFolderRootPath, selection])
 
   const expanded = useMemo(
     () => mergeExpandedPaths(manualExpanded, requiredExpandedPaths),
@@ -91,9 +96,10 @@ export function useFolderTreeDisclosure({
   collapsed: externalCollapsed,
   onToggle,
   renamingFolderPath,
+  renamingFolderRootPath,
   selection,
 }: UseFolderTreeDisclosureInput) {
-  const { expanded, expandFolder, toggleFolder } = useExpandedFolders(selection, renamingFolderPath)
+  const { expanded, expandFolder, toggleFolder } = useExpandedFolders(selection, renamingFolderPath, renamingFolderRootPath)
   const {
     closeCreateForm,
     handleToggleSection,

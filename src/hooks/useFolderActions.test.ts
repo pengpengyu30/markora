@@ -146,4 +146,29 @@ describe('useFolderActions', () => {
     expect(result.current.activeTabPath).toBeNull()
     expect(setToastMessage).toHaveBeenCalledWith('Deleted folder "projects"')
   })
+
+  it('uses the selected Project root when renaming a folder outside the active Project', async () => {
+    const renamedEntry = { ...folderEntry, path: '/project-b/work/note.md' }
+    reloadVault.mockResolvedValue([renamedEntry])
+    mockInvokeFn.mockResolvedValue({ old_path: 'projects', new_path: 'work' })
+
+    const { result } = renderFolderActions({
+      initialSelection: { kind: 'folder', path: 'projects', rootPath: '/project-b' },
+      initialTabs: [{ entry: { ...folderEntry, path: '/project-b/projects/note.md' }, content: '# Note' }],
+      reloadVault,
+      reloadFolders,
+      setToastMessage,
+    })
+
+    await act(async () => {
+      await result.current.actions.renameFolder('projects', 'work', '/project-b')
+    })
+
+    expect(mockInvokeFn).toHaveBeenCalledWith('rename_vault_folder', {
+      vaultPath: '/project-b',
+      folderPath: 'projects',
+      newName: 'work',
+    })
+    expect(result.current.selection).toEqual({ kind: 'folder', path: 'work', rootPath: '/project-b' })
+  })
 })

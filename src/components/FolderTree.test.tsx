@@ -22,6 +22,21 @@ const mockFolders: FolderNode[] = [
 const defaultSelection: SidebarSelection = { kind: 'filter', filter: 'all' }
 const vaultRootPath = '/Users/luca/Laputa'
 
+const multiProjectFolders: FolderNode[] = [
+  {
+    name: 'Project A',
+    path: '',
+    rootPath: '/projects/a',
+    children: [{ name: 'docs-a', path: 'docs-a', rootPath: '/projects/a', children: [] }],
+  },
+  {
+    name: 'Project B',
+    path: '',
+    rootPath: '/projects/b',
+    children: [{ name: 'docs-b', path: 'docs-b', rootPath: '/projects/b', children: [] }],
+  },
+]
+
 function renderTree(props: Partial<ComponentProps<typeof FolderTree>> = {}) {
   const onSelect = props.onSelect ?? vi.fn()
   render(
@@ -516,6 +531,48 @@ describe('FolderTree', () => {
     expect(screen.getByTestId('folder-context-menu')).toBeInTheDocument()
     fireEvent.click(screen.getByTestId('delete-folder-menu-item'))
     expect(onDeleteFolder).toHaveBeenCalledWith('projects')
+  })
+
+  it('enables context actions for a writable non-active Project and preserves its root', () => {
+    const onDeleteFolder = vi.fn()
+    const onStartRenameFolder = vi.fn()
+    render(
+      <FolderTree
+        folders={multiProjectFolders}
+        selection={defaultSelection}
+        onSelect={vi.fn()}
+        onDeleteFolder={onDeleteFolder}
+        onStartRenameFolder={onStartRenameFolder}
+        writableVaultPaths={['/projects/a', '/projects/b']}
+      />,
+    )
+
+    fireEvent.contextMenu(screen.getByText('docs-b'))
+    fireEvent.click(screen.getByText('Rename folder...'))
+    expect(onStartRenameFolder).toHaveBeenCalledWith('docs-b', '/projects/b')
+
+    fireEvent.contextMenu(screen.getByText('docs-b'))
+    fireEvent.click(screen.getByTestId('delete-folder-menu-item'))
+    expect(onDeleteFolder).toHaveBeenCalledWith('docs-b', '/projects/b')
+  })
+
+  it('scrolls the selected Project folder into view after selection changes', () => {
+    const scrollIntoView = vi.fn()
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollIntoView,
+    })
+
+    render(
+      <FolderTree
+        folders={multiProjectFolders}
+        selection={{ kind: 'folder', path: 'docs-b', rootPath: '/projects/b' }}
+        onSelect={vi.fn()}
+        writableVaultPaths={['/projects/a', '/projects/b']}
+      />,
+    )
+
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' })
   })
 
   it('sizes the folder context menu to visible actions instead of filling the viewport', () => {

@@ -22,26 +22,29 @@ interface UseFolderRenameInput {
 
 export function useFolderRename(options: UseFolderRenameInput) {
   const { activeTabPathRef, handleSwitchTab, reloadFolders, reloadVault, selection, setSelection, setTabs, setToastMessage, vaultPath } = options
-  const [renamingFolderPath, setRenamingFolderPath] = useState<string | null>(null)
+  const [renamingFolder, setRenamingFolder] = useState<{ path: string; rootPath?: string } | null>(null)
 
-  const cancelFolderRename = useCallback(() => setRenamingFolderPath(null), [])
-  const startFolderRename = useCallback((folderPath: string) => setRenamingFolderPath(folderPath), [])
+  const cancelFolderRename = useCallback(() => setRenamingFolder(null), [])
+  const startFolderRename = useCallback((folderPath: string, rootPath?: string) => {
+    setRenamingFolder({ path: folderPath, rootPath })
+  }, [])
 
   const renameFolder = useCallback(
-    async (folderPath: string, nextName: string) => {
+    async (folderPath: string, nextName: string, rootPath?: string) => {
     const trimmedName = nextName.trim()
     if (trimmedName === folderLabel({ folderPath })) {
-      setRenamingFolderPath(null)
+      setRenamingFolder(null)
       return true
     }
 
     try {
+        const operationVaultPath = rootPath ?? vaultPath
         const renameResult = await invokeRenameFolder({
-          vaultPath,
+          vaultPath: operationVaultPath,
           folderPath,
           newName: trimmedName,
         })
-      setRenamingFolderPath(null)
+      setRenamingFolder(null)
       await reloadFolders()
       const refreshedEntries = await reloadVault()
       updateTabsAfterFolderRename({
@@ -50,12 +53,13 @@ export function useFolderRename(options: UseFolderRenameInput) {
         refreshedEntries,
         renameResult,
         setTabs,
-        vaultPath,
+        vaultPath: operationVaultPath,
       })
       updateSelectionAfterFolderRename({
         renameResult,
         selection,
         setSelection,
+        rootPath,
       })
       setToastMessage(`Renamed folder to "${trimmedName}"`)
       return true
@@ -79,14 +83,15 @@ export function useFolderRename(options: UseFolderRenameInput) {
 
   const renameSelectedFolder = useCallback(() => {
     if (selection.kind !== 'folder' || !selection.path) return
-    startFolderRename(selection.path)
+    startFolderRename(selection.path, selection.rootPath)
   }, [selection, startFolderRename])
 
   return {
     cancelFolderRename,
     renameFolder,
     renameSelectedFolder,
-    renamingFolderPath,
+    renamingFolderPath: renamingFolder?.path ?? null,
+    renamingFolderRootPath: renamingFolder?.rootPath ?? null,
     startFolderRename,
   }
 }

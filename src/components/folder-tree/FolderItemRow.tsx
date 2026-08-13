@@ -1,4 +1,4 @@
-import { useCallback, type DragEventHandler, type MouseEvent as ReactMouseEvent, type MouseEventHandler } from 'react'
+import { useCallback, useEffect, useRef, type DragEventHandler, type MouseEvent as ReactMouseEvent, type MouseEventHandler } from 'react'
 import { Folder, FolderOpen } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -6,6 +6,7 @@ import type { FolderNode } from '../../types'
 import { useFolderRowInteractions } from './useFolderRowInteractions'
 import { readDraggedNotePath } from '../../utils/noteDragDrop'
 import { WORKSPACE_COLORS } from '../../utils/workspaces'
+import { folderNodeKey } from './folderTreeUtils'
 
 interface FolderItemRowProps {
   contentInset: number
@@ -71,6 +72,7 @@ export function FolderItemRow(options: FolderItemRowProps) {
     onCanDropNote,
     onMoveNoteToFolder,
   } = options
+  const rowRef = useRef<HTMLDivElement>(null)
   const hasChildren = node.children.length > 0
   const { handleSelectClick } = useFolderRowInteractions({
     hasChildren,
@@ -88,13 +90,20 @@ export function FolderItemRow(options: FolderItemRowProps) {
     ? `var(--accent-${node.color})`
     : undefined
 
+  useEffect(() => {
+    if (!isSelected) return
+    rowRef.current?.scrollIntoView({ block: 'nearest' })
+  }, [isSelected])
+
   return (
     <div
+      ref={rowRef}
       className={cn(
         'group relative flex items-center gap-1 rounded transition-colors',
         isSelected ? 'bg-[var(--accent-blue-light)] text-primary' : 'text-foreground hover:bg-accent',
       )}
       style={{ paddingLeft: depthIndent, borderRadius: 4 }}
+      data-folder-key={folderNodeKey(node)}
     >
       <FolderSelectButton
         contentInset={contentInset}
