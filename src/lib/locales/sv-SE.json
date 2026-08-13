@@ -314,6 +314,7 @@
   "editor.find.replacePlaceholder": "Ersätt",
   "editor.find.matchCount": "{current} / {total}",
   "editor.find.noMatches": "Inga träffar",
+  "editor.find.rawSyntaxHint": "Markdown syntax characters are searchable in Raw mode",
   "editor.find.invalidRegex": "Ogiltigt reguljärt uttryck",
   "editor.find.regexMustMatchText": "Det reguljära uttrycket måste matcha text",
   "editor.find.previousMatch": "Föregående träff",

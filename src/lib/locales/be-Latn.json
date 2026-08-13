@@ -333,6 +333,7 @@
   "editor.find.replacePlaceholder": "Zamianić",
   "editor.find.matchCount": "{current} / {total}",
   "editor.find.noMatches": "Niama supadzienniaŭ",
+  "editor.find.rawSyntaxHint": "Markdown syntax characters are searchable in Raw mode",
   "editor.find.invalidRegex": "Niapraviĺny regex",
   "editor.find.regexMustMatchText": "Regex pavinien adpaviadać tekstu",
   "editor.find.previousMatch": "Papiaredniaje supadziennie",

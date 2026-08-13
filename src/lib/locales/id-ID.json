@@ -314,6 +314,7 @@
   "editor.find.replacePlaceholder": "Ganti",
   "editor.find.matchCount": "{current} / {total}",
   "editor.find.noMatches": "Tidak ada yang cocok",
+  "editor.find.rawSyntaxHint": "Markdown syntax characters are searchable in Raw mode",
   "editor.find.invalidRegex": "Regex tidak valid",
   "editor.find.regexMustMatchText": "Regex harus cocok dengan teks",
   "editor.find.previousMatch": "Kecocokan sebelumnya",

@@ -314,6 +314,7 @@
   "editor.find.replacePlaceholder": "Substituir",
   "editor.find.matchCount": "{current} / {total}",
   "editor.find.noMatches": "Sem correspondências",
+  "editor.find.rawSyntaxHint": "Markdown syntax characters are searchable in Raw mode",
   "editor.find.invalidRegex": "Regex inválida",
   "editor.find.regexMustMatchText": "A expressão regular (regex) tem de corresponder ao texto",
   "editor.find.previousMatch": "Correspondência anterior",

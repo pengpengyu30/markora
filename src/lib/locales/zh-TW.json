@@ -326,6 +326,7 @@
   "editor.find.replacePlaceholder": "替換",
   "editor.find.matchCount": "{current} / {total}",
   "editor.find.noMatches": "無匹配",
+  "editor.find.rawSyntaxHint": "Markdown syntax characters are searchable in Raw mode",
   "editor.find.invalidRegex": "無效正則",
   "editor.find.regexMustMatchText": "正則必須匹配文字",
   "editor.find.previousMatch": "上一個匹配",

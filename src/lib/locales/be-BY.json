@@ -314,6 +314,7 @@
   "editor.find.replacePlaceholder": "Замяніць",
   "editor.find.matchCount": "{current} / {total}",
   "editor.find.noMatches": "Няма супадзенняў",
+  "editor.find.rawSyntaxHint": "Markdown syntax characters are searchable in Raw mode",
   "editor.find.invalidRegex": "Няправільны regex",
   "editor.find.regexMustMatchText": "Regex павінен адпавядаць тэксту",
   "editor.find.previousMatch": "Папярэдняе супадзенне",

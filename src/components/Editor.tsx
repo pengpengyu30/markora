@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, memo, useMemo, useState } from 'react'
+import { useRef, useEffect, useCallback, memo, useMemo } from 'react'
 import { useEditorTabSwap } from '../hooks/useEditorTabSwap'
 import { useCreateBlockNote } from '@blocknote/react'
 import '@blocknote/mantine/style.css'
@@ -48,11 +48,13 @@ import type { RichEditorBlockTypeDefinition } from '../utils/richEditorBlockType
 import type { TagCount } from '../utils/noteTags'
 import type { SearchHighlightRequest } from '../utils/searchHighlight'
 import { createRichEditorSearchHighlightExtension } from './searchHighlightExtension'
+import { createRichEditorFindExtension } from './richEditorFindExtension'
 import { installRichEditorMarkdownSerializer } from '../utils/richEditorMarkdown'
 import { installRichEditorDispatchPerformanceProbe } from './richEditorDispatchPerformance'
 import { RICH_EDITOR_BLOCKNOTE_PERFORMANCE_OPTIONS } from './richEditorBlockNoteOptions'
 import { markStartupPhase } from '../lib/startupPerformance'
 import { useTurnCurrentBlockIntoCommand } from './useTurnCurrentBlockIntoCommand'
+import { useEditorFindCommand } from './useEditorFindCommand'
 import './Editor.css'
 import './EditorTheme.css'
 
@@ -253,6 +255,7 @@ function useEditorSetup(options: EditorSetupParams) {
       createRichEditorTextDirectionExtension(),
       createRichEditorBlockSelectionExtension(),
       createRichEditorSearchHighlightExtension(),
+      createRichEditorFindExtension(),
     ],
   })
   installRichEditorMarkdownSerializer(editor)
@@ -358,46 +361,6 @@ function useEditorSetup(options: EditorSetupParams) {
         isLoadingNewTab,
         richEditorContentReady,
       }
-    }
-
-    function useEditorFindCommand({
-      activeTab,
-      findInNoteRef,
-      handleToggleRawExclusive,
-      rawMode,
-    }: {
-      activeTab: Tab | null
-      findInNoteRef?: EditorProps['findInNoteRef']
-      handleToggleRawExclusive: () => void
-      rawMode: boolean
-    }): RawEditorFindRequest | null {
-      const [findRequest, setFindRequest] = useState<RawEditorFindRequest | null>(null)
-      const handleFindInNote = useCallback(
-        (options: { replace?: boolean } = {}) => {
-        if (!activeTab || activeTab.entry.fileKind === 'binary') return
-        if (!rawMode) handleToggleRawExclusive()
-
-        setFindRequest((current) => ({
-          id: (current?.id ?? 0) + 1,
-          path: activeTab.entry.path,
-          replace: options.replace === true,
-        }))
-        },
-        [activeTab, handleToggleRawExclusive, rawMode],
-      )
-
-      useEffect(() => {
-        if (!findInNoteRef) return
-
-        findInNoteRef.current = handleFindInNote
-        return () => {
-          if (findInNoteRef.current === handleFindInNote) {
-            findInNoteRef.current = null
-          }
-        }
-      }, [findInNoteRef, handleFindInNote])
-
-      return findRequest
     }
 
     function EditorLayout(options: {

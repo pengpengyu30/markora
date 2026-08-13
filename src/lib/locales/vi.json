@@ -314,6 +314,7 @@
   "editor.find.replacePlaceholder": "Thay thế",
   "editor.find.matchCount": "{current} / {total}",
   "editor.find.noMatches": "Không có kết quả trùng khớp",
+  "editor.find.rawSyntaxHint": "Markdown syntax characters are searchable in Raw mode",
   "editor.find.invalidRegex": "Biểu thức chính quy không hợp lệ",
   "editor.find.regexMustMatchText": "Biểu thức chính quy phải khớp với văn bản",
   "editor.find.previousMatch": "Kết quả trước",

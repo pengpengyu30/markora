@@ -348,6 +348,7 @@
   "editor.find.replacePlaceholder": "Replace",
   "editor.find.matchCount": "{current} / {total}",
   "editor.find.noMatches": "No matches",
+  "editor.find.rawSyntaxHint": "Markdown syntax characters are searchable in Raw mode",
   "editor.find.invalidRegex": "Invalid regex",
   "editor.find.regexMustMatchText": "Regex must match text",
   "editor.find.previousMatch": "Previous match",

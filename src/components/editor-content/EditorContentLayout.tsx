@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { AppLocale } from '../../lib/i18n'
 import type { VaultEntry } from '../../types'
@@ -8,6 +8,7 @@ import { dispatchEditorFindAvailability } from '../../utils/editorFindEvents'
 import { BreadcrumbBar } from '../BreadcrumbBar'
 import { FilePreview } from '../FilePreview'
 import { RawEditorView } from '../RawEditorView'
+import { RichEditorFindBar } from '../RichEditorFindBar'
 import { SingleEditorView } from '../SingleEditorView'
 import type { useEditorContentModel } from './useEditorContentModel'
 
@@ -275,6 +276,7 @@ type EditorCanvasProps = Pick<
   | 'onRevealFile'
   | 'onCopyFilePath'
   | 'searchHighlightRequest'
+  | 'findRequest'
 >
 
 function EditorCanvas(props: EditorCanvasProps) {
@@ -307,11 +309,24 @@ function StandardEditorCanvas(options: EditorCanvasProps) {
     locale,
     onImageImportError,
     searchHighlightRequest,
+    findRequest,
   } = options
+  const [closedFindRequestId, setClosedFindRequestId] = useState<number | null>(null)
+  const path = activeTab?.entry.path ?? ''
+  const currentFindRequest = findRequest?.path === path ? findRequest : null
+  const findOpen = currentFindRequest?.id !== closedFindRequestId && currentFindRequest !== null
   if (!richEditorContentReady) return null
 
   return (
     <EditorFindScope className="editor-scroll-area" style={cssVars as React.CSSProperties}>
+      <RichEditorFindBar
+        editor={editor}
+        locale={locale}
+        onClose={() => setClosedFindRequestId(currentFindRequest?.id ?? null)}
+        open={findOpen && findRequest?.path === path}
+        path={path}
+        request={currentFindRequest}
+      />
       <div className="editor-content-wrapper" data-note-pdf-export-root="true">
         <SingleEditorView
           editor={editor}
@@ -449,6 +464,7 @@ export function EditorContentLayout(model: EditorContentModel) {
             onRevealFile={model.onRevealFile}
             onCopyFilePath={model.onCopyFilePath}
             searchHighlightRequest={searchHighlightRequest}
+            findRequest={findRequest}
           />
         </>
       )}

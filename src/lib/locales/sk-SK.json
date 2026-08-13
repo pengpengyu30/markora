@@ -314,6 +314,7 @@
   "editor.find.replacePlaceholder": "Nahradiť",
   "editor.find.matchCount": "{current} / {total}",
   "editor.find.noMatches": "Žiadne zhody",
+  "editor.find.rawSyntaxHint": "Markdown syntax characters are searchable in Raw mode",
   "editor.find.invalidRegex": "Neplatný regulárny výraz",
   "editor.find.regexMustMatchText": "Regex sa musí zhodovať s textom",
   "editor.find.previousMatch": "Predchádzajúca zhoda",

@@ -314,6 +314,7 @@
   "editor.find.replacePlaceholder": "Replace",
   "editor.find.matchCount": "{current} / {total}",
   "editor.find.noMatches": "일치하는 항목 없음",
+  "editor.find.rawSyntaxHint": "Markdown syntax characters are searchable in Raw mode",
   "editor.find.invalidRegex": "유효하지 않은 정규 표현식",
   "editor.find.regexMustMatchText": "정규 표현식은 텍스트와 일치해야 합니다.",
   "editor.find.previousMatch": "이전 일치 항목",

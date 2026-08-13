@@ -17,6 +17,18 @@
   }
 }
 
+.tolaria-rich-editor-find-match {
+  border-radius: 2px;
+  background-color: rgba(250, 204, 21, 0.42);
+  box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.16);
+}
+
+.tolaria-rich-editor-find-match-active {
+  border-radius: 2px;
+  background-color: rgba(249, 115, 22, 0.62);
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.22);
+}
+
 /* Wikilink inline content — color is set via inline style per note type */
 .wikilink {
   text-decoration: underline;
