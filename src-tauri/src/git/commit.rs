@@ -92,7 +92,7 @@ fn run_commit(workspace: &GitWorkspace, message: &str) -> Result<String, CommitF
     }
     command.args([
         "-c",
-        "user.name=Tolaria",
+        "user.name=Markora",
         "-c",
         "user.email=tolaria@local",
         "-c",
@@ -176,7 +176,7 @@ mod tests {
             .unwrap();
         assert_eq!(
             String::from_utf8_lossy(&author.stdout).trim(),
-            "Tolaria <tolaria@local> tolaria: snapshot"
+            "Markora <tolaria@local> tolaria: snapshot"
         );
     }
 

@@ -1,5 +1,5 @@
 {
-  "name": "tolaria",
+  "name": "markora",
   "private": true,
   "license": "AGPL-3.0-or-later",
   "version": "0.1.0",
@@ -20,7 +20,7 @@
     "perf:editor:update": "pnpm build && node scripts/editor-performance-benchmark.mjs --scenario small,large --update",
     "preview": "vite preview",
     "tauri": "node scripts/tauri-cli.mjs",
-    "test": "vitest run && node --test scripts/release-version.test.mjs",
+    "test": "vitest run && node --test scripts/release-version.test.mjs && node --test scripts/product-identity.test.mjs",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "playwright:smoke": "playwright test --config playwright.smoke.config.ts tests/smoke/autosave-low-end-typing.spec.ts tests/smoke/delete-note-nonblocking.spec.ts tests/smoke/h1-untitled-auto-rename.spec.ts tests/smoke/keyboard-command-routing.spec.ts tests/smoke/missing-string-metadata-open-note.spec.ts tests/smoke/multibyte-search-snippet.spec.ts tests/smoke/note-list-search-keyboard-toggle.spec.ts tests/smoke/rapid-tab-switch-content-loss.spec.ts tests/smoke/tags.spec.ts tests/smoke/tldraw-whiteboard-notes.spec.ts tests/smoke/vault-switch-clears-stale-editor.spec.ts tests/smoke/wikilink-cmd-click-history.spec.ts tests/smoke/wikilink-path-fix.spec.ts",

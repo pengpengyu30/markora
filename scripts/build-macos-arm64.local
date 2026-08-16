@@ -50,7 +50,7 @@ precheck_system() {
   xcode-select -p >/dev/null || fail "Apple Command Line Tools are not installed"
   xcrun --sdk macosx --show-sdk-path >/dev/null || fail "The macOS SDK is unavailable"
 
-  test -f "$ROOT_DIR/package.json" || fail "This script is not inside the Tolaria repository"
+  test -f "$ROOT_DIR/package.json" || fail "This script is not inside the Markora repository"
   test -f "$ROOT_DIR/pnpm-lock.yaml" || fail "pnpm-lock.yaml is missing"
   test -f "$ROOT_DIR/src-tauri/Cargo.lock" || fail "src-tauri/Cargo.lock is missing"
   test -f "$ROOT_DIR/src-tauri/tauri.conf.json" || fail "The Tauri configuration is missing"
@@ -227,11 +227,11 @@ build_app() {
 }
 
 verify_app() {
-  APP_PATH="$ROOT_DIR/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/Tolaria Dev.app"
-  APP_BINARY="$APP_PATH/Contents/MacOS/tolaria"
+  APP_PATH="$ROOT_DIR/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/Markora Dev.app"
+  APP_BINARY="$APP_PATH/Contents/MacOS/markora"
 
-  test -d "$APP_PATH" || fail "Tolaria Dev.app was not created"
-  test -x "$APP_BINARY" || fail "The Tolaria ARM64 executable was not created"
+  test -d "$APP_PATH" || fail "Markora Dev.app was not created"
+  test -x "$APP_BINARY" || fail "The Markora ARM64 executable was not created"
 
   test "$(lipo -archs "$APP_BINARY")" = "arm64" || \
     fail "The build output is not pure arm64"

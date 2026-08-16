@@ -5,7 +5,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 LOCAL_DIR="$ROOT_DIR/.tolaria-build.local"
-APP_PATH="$ROOT_DIR/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/Tolaria Dev.app"
+APP_PATH="$ROOT_DIR/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/Markora Dev.app"
 CONFIG_ROOT="$LOCAL_DIR/runtime/config"
 CONFIG_DIR="$CONFIG_ROOT/com.tolaria.app.dev"
 
@@ -15,7 +15,7 @@ LAST_VAULT_FILE="$CONFIG_DIR/last-vault.txt"
 AI_SESSIONS_FILE="$CONFIG_DIR/ai-workspace-sessions.json"
 
 test -d "$APP_PATH" || {
-  echo "FAILED: Tolaria Dev.app has not been built" >&2
+  echo "FAILED: Markora Dev.app has not been built" >&2
   echo "Run ./scripts/build-macos-arm64.local first" >&2
   exit 1
 }

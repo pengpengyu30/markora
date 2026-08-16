@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Tolaria",
+  "productName": "Markora",
   "version": "0.1.0",
-  "identifier": "club.refactoring.tolaria",
+  "identifier": "io.github.pengpengyu30.markora",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5202",
@@ -14,7 +14,7 @@
     "macOSPrivateApi": true,
     "windows": [
       {
-        "title": "Tolaria",
+        "title": "Markora",
         "width": 1400,
         "height": 900,
         "minWidth": 480,
