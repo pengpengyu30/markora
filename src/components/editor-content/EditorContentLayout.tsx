@@ -277,6 +277,8 @@ type EditorCanvasProps = Pick<
   | 'onCopyFilePath'
   | 'searchHighlightRequest'
   | 'findRequest'
+  | 'availableTags'
+  | 'onUpdateTags'
 >
 
 function EditorCanvas(props: EditorCanvasProps) {
@@ -310,6 +312,8 @@ function StandardEditorCanvas(options: EditorCanvasProps) {
     onImageImportError,
     searchHighlightRequest,
     findRequest,
+    availableTags,
+    onUpdateTags,
   } = options
   const [closedFindRequestId, setClosedFindRequestId] = useState<number | null>(null)
   const path = activeTab?.entry.path ?? ''
@@ -339,6 +343,8 @@ function StandardEditorCanvas(options: EditorCanvasProps) {
           vaultPath={vaultPath}
           editable={!isDeletedPreview}
           locale={locale}
+          availableTags={availableTags}
+          onUpdateTags={onUpdateTags}
         />
       </div>
     </EditorFindScope>
@@ -465,6 +471,8 @@ export function EditorContentLayout(model: EditorContentModel) {
             onCopyFilePath={model.onCopyFilePath}
             searchHighlightRequest={searchHighlightRequest}
             findRequest={findRequest}
+            availableTags={model.availableTags}
+            onUpdateTags={model.onUpdateTags}
           />
         </>
       )}

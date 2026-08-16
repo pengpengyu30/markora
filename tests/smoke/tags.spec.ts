@@ -25,7 +25,7 @@ test('@smoke adds a tag, filters by it, and clears the session-only filter', asy
   const noteList = page.getByTestId('note-list-container')
   await noteList.getByText('Tag Alpha', { exact: true }).click()
 
-  await page.getByTestId('breadcrumb-tag-add').click()
+  await page.getByTestId('note-tag-property-add').click()
   await page.getByRole('textbox', { name: 'Add tag' }).fill('New-Tag')
   await page.getByRole('button', { name: 'Create "new-tag"' }).click()
   await expect(page.getByTestId('note-tag-row')).toContainText('new-tag')

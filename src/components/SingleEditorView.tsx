@@ -1,5 +1,6 @@
 import { ArrowSquareOut as ExternalLink, Copy } from '@phosphor-icons/react'
 import { Component, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import {
   BlockNoteViewRaw,
   ComponentsContext,
@@ -32,6 +33,7 @@ import { observeNativeTextAssistanceDisabled } from '../lib/nativeTextAssistance
 import { getRuntimeStyleNonce } from '../lib/runtimeStyleNonce'
 import { WikilinkSuggestionMenu, type WikilinkSuggestionItem } from './WikilinkSuggestionMenu'
 import type { VaultEntry } from '../types'
+import { getEntryTags, normalizeNoteTags, type TagCount } from '../utils/noteTags'
 import { _wikilinkEntriesRef } from './editorSchema'
 import { handleEditorFileBlockClick, openEditorAttachmentOrUrl } from './editorAttachmentActions'
 import { insertImageBlockAfterCursor } from './editorImageInsertion'
@@ -45,6 +47,8 @@ import { findNearestTextCursorBlock } from './blockNoteCursorTarget'
 import { ImageLightbox } from './ImageLightbox'
 import { ActionTooltip } from './ui/action-tooltip'
 import { Button } from './ui/button'
+import { NoteTagsPropertyRow } from './NoteTagsRow'
+import { createNoteTagsPropertyPlugin, noteTagsPropertyPluginKey } from './noteTagsPropertyPlugin'
 import { subscribeRichEditorExternalChange } from './editorExternalChangeEvents'
 import {
   activatePlainTextPasteTarget,
@@ -1250,13 +1254,42 @@ export function SingleEditorView(options: {
   editable?: boolean
   locale?: AppLocale
   searchHighlightRequest?: SearchHighlightRequest | null
+  availableTags?: TagCount[]
+  onUpdateTags?: (path: string, tags: string[]) => void | Promise<void>
 }) {
-  const { editor, entries, onNavigateWikilink, onChange, onImageImportError, sourceEntry, vaultPath, editable = true, locale = 'en', searchHighlightRequest } = options
+  const { editor, entries, onNavigateWikilink, onChange, onImageImportError, sourceEntry, vaultPath, editable = true, locale = 'en', searchHighlightRequest, availableTags = [], onUpdateTags } = options
   const { cssVars } = useEditorTheme()
   const themeMode = useDocumentThemeMode()
   const previousThemeModeRef = useRef(themeMode)
   const containerRef = useRef<HTMLDivElement>(null)
   const suppressNextContainerClickRef = useRef(false)
+  const [tagPropertyHost] = useState(() => {
+    const host = document.createElement('div')
+    host.className = 'note-tags-editor-property'
+    host.setAttribute('contenteditable', 'false')
+    host.setAttribute('data-note-tags-editor-property', 'true')
+    return host
+  })
+  const tags = useMemo(() => sourceEntry ? getEntryTags(sourceEntry) : [], [sourceEntry])
+  const showTagProperty = editable && !!sourceEntry && !!onUpdateTags
+
+  useEffect(() => {
+    if (!showTagProperty) return
+    const tiptapEditor = editor._tiptapEditor
+    tiptapEditor.registerPlugin(createNoteTagsPropertyPlugin(tagPropertyHost))
+    return () => {
+      tiptapEditor.unregisterPlugin(noteTagsPropertyPluginKey)
+    }
+  }, [editor, showTagProperty, tagPropertyHost])
+
+  const handleAddTag = useCallback((tag: string) => {
+    if (!sourceEntry || !onUpdateTags) return
+    void onUpdateTags(sourceEntry.path, normalizeNoteTags([...tags, tag]))
+  }, [onUpdateTags, sourceEntry, tags])
+  const handleRemoveTag = useCallback((tag: string) => {
+    if (!sourceEntry || !onUpdateTags) return
+    void onUpdateTags(sourceEntry.path, tags.filter((currentTag) => currentTag !== tag))
+  }, [onUpdateTags, sourceEntry, tags])
   const handleContainerClick = useEditorContainerClickHandler({
     editable,
     editor,
@@ -1419,6 +1452,16 @@ export function SingleEditorView(options: {
           </SharedContextBlockNoteView>
         )}
       </BlockNoteRenderRecoveryBoundary>
+      {showTagProperty && createPortal(
+        <NoteTagsPropertyRow
+          tags={tags}
+          availableTags={availableTags}
+          locale={locale}
+          onAddTag={handleAddTag}
+          onRemoveTag={handleRemoveTag}
+        />,
+        tagPropertyHost,
+      )}
       {copyTarget && <CodeBlockCopyButton copyTarget={copyTarget} locale={locale} />}
       <ImageLightbox image={lightbox.image} locale={locale} onClose={lightbox.close} />
     </div>

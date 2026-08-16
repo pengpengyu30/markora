@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils'
 import type { FolderNode } from '../../types'
 import { useFolderRowInteractions } from './useFolderRowInteractions'
 import { readDraggedNotePath } from '../../utils/noteDragDrop'
-import { WORKSPACE_COLORS } from '../../utils/workspaces'
 import { folderNodeKey } from './folderTreeUtils'
 
 interface FolderItemRowProps {
@@ -86,9 +85,6 @@ export function FolderItemRow(options: FolderItemRowProps) {
     onMoveNoteToFolder,
   })
   const isProjectRoot = node.path === '' && !!node.rootPath
-  const projectColor = isProjectRoot && node.color && WORKSPACE_COLORS.includes(node.color as typeof WORKSPACE_COLORS[number])
-    ? `var(--accent-${node.color})`
-    : undefined
 
   useEffect(() => {
     if (!isSelected) return
@@ -100,7 +96,7 @@ export function FolderItemRow(options: FolderItemRowProps) {
       ref={rowRef}
       className={cn(
         'group relative flex items-center gap-1 rounded transition-colors',
-        isSelected ? 'bg-[var(--accent-blue-light)] text-primary' : 'text-foreground hover:bg-accent',
+        isSelected ? 'bg-[var(--accent-blue-light)] text-foreground' : 'text-foreground hover:bg-accent',
       )}
       style={{ paddingLeft: depthIndent, borderRadius: 4 }}
       data-folder-key={folderNodeKey(node)}
@@ -123,7 +119,6 @@ export function FolderItemRow(options: FolderItemRowProps) {
         onDragOver={noteDropHandlers.onDragOver}
         onDrop={noteDropHandlers.onDrop}
         isProjectRoot={isProjectRoot}
-        projectColor={projectColor}
       />
     </div>
   )
@@ -140,7 +135,6 @@ function FolderSelectButton(options: {
   onDragOver: DragEventHandler<HTMLButtonElement>
   onDrop: DragEventHandler<HTMLButtonElement>
   isProjectRoot: boolean
-  projectColor?: string
 }) {
   const {
     contentInset,
@@ -153,16 +147,12 @@ function FolderSelectButton(options: {
     onDragOver,
     onDrop,
     isProjectRoot,
-    projectColor,
   } = options
   return (
     <Button
       type="button"
       variant="ghost"
-      className={cn(
-        'h-auto flex-1 justify-start gap-2 rounded text-left text-[13px] font-medium hover:bg-transparent',
-        isSelected ? 'text-primary hover:text-primary' : 'text-foreground hover:text-foreground',
-      )}
+      className="h-auto flex-1 justify-start gap-2 rounded text-left text-[13px] font-medium text-foreground hover:bg-transparent hover:text-foreground"
       style={{
         paddingTop: 6,
         paddingBottom: 6,
@@ -179,9 +169,9 @@ function FolderSelectButton(options: {
       data-project-root={isProjectRoot ? node.rootPath : undefined}
     >
       {isSelected || isExpanded ? (
-        <FolderOpen size={17} weight="fill" className="size-[17px] shrink-0" style={{ color: projectColor }} />
+        <FolderOpen size={17} weight="fill" className="size-[17px] shrink-0" />
       ) : (
-        <Folder size={17} className="size-[17px] shrink-0" style={{ color: projectColor }} />
+        <Folder size={17} className="size-[17px] shrink-0" />
       )}
       <span className="truncate">{node.name}</span>
     </Button>

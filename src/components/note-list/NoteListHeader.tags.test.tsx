@@ -21,16 +21,21 @@ const baseProps = {
 describe('NoteListHeader tag filter', () => {
   it('shows the current tag filter and clears it', () => {
     const onClearTagFilter = vi.fn()
+    const onToggleTag = vi.fn()
     render(
       <NoteListHeader
         {...baseProps}
         selectedTags={['alpha', 'shared']}
+        onToggleTag={onToggleTag}
         onClearTagFilter={onClearTagFilter}
       />,
     )
 
     expect(screen.getByTestId('note-list-tag-filter')).toHaveTextContent('alpha')
     expect(screen.getByTestId('note-list-tag-filter')).toHaveTextContent('shared')
+    expect(screen.getByText('alpha').closest('[data-tag-color]')).toHaveAttribute('data-tag-color')
+    fireEvent.click(screen.getByRole('button', { name: 'Remove tag alpha' }))
+    expect(onToggleTag).toHaveBeenCalledWith('alpha')
     fireEvent.click(screen.getByRole('button', { name: 'Clear tag filter' }))
     expect(onClearTagFilter).toHaveBeenCalledTimes(1)
   })

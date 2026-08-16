@@ -24,7 +24,13 @@ vi.mock('../FilePreview', () => ({
 }))
 
 vi.mock('../SingleEditorView', () => ({
-  SingleEditorView: () => <div data-testid="single-editor-view" />,
+  SingleEditorView: ({ availableTags, onUpdateTags }: { availableTags?: unknown[]; onUpdateTags?: unknown }) => (
+    <div
+      data-testid="single-editor-view"
+      data-available-tags={availableTags?.length ?? 0}
+      data-has-update-tags={onUpdateTags ? 'true' : 'false'}
+    />
+  ),
 }))
 
 function createModel(overrides: Record<string, unknown> = {}) {
@@ -139,6 +145,16 @@ describe('EditorContentLayout', () => {
       'data-content',
       '---\ntitle: Reference Planning Notes\n---\n\nBody',
     )
+  })
+
+  it('passes tag editing controls into the rich editor surface', () => {
+    render(<EditorContentLayout {...createModel({
+      availableTags: [{ name: 'product', count: 2 }],
+      onUpdateTags: vi.fn(),
+    })} />)
+
+    expect(screen.getByTestId('single-editor-view')).toHaveAttribute('data-available-tags', '1')
+    expect(screen.getByTestId('single-editor-view')).toHaveAttribute('data-has-update-tags', 'true')
   })
 
   it('keeps raw mode out of the rich-editor content wrapper', () => {

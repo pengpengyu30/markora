@@ -243,6 +243,7 @@ function NoteListLayoutHeader(
   | 'setSearch'
   | 'handleSearchKeyDown'
   | 'selectedTags'
+  | 'onToggleTag'
   | 'onClearTagFilter'
   >,
 ) {
@@ -262,6 +263,7 @@ function NoteListLayoutHeader(
     setSearch,
     handleSearchKeyDown,
     selectedTags,
+    onToggleTag,
     onClearTagFilter,
   } = options
   return (
@@ -281,6 +283,7 @@ function NoteListLayoutHeader(
       onSearchChange={setSearch}
       onSearchKeyDown={handleSearchKeyDown}
       selectedTags={selectedTags}
+      onToggleTag={onToggleTag}
       onClearTagFilter={onClearTagFilter}
     />
   )

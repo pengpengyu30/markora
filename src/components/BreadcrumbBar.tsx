@@ -21,9 +21,7 @@ import { translate, type AppLocale } from '../lib/i18n'
 import { APP_COMMAND_IDS, formatShortcutDisplay, getAppCommandShortcutDisplay } from '../hooks/appCommandCatalog'
 import { extractFrontmatterTitleFromContent, extractH1TitleFromContent } from '../utils/noteTitle'
 import { isHtmlFileEntry } from '../utils/filePreview'
-import { getEntryTags, normalizeNoteTags, type TagCount } from '../utils/noteTags'
-import { isMarkdownEntry } from '../utils/typeDefinitions'
-import { NoteTagsPicker, NoteTagsRow } from './NoteTagsRow'
+import type { TagCount } from '../utils/noteTags'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ActionTooltip, type ActionTooltipCopy } from '@/components/ui/action-tooltip'
@@ -792,9 +790,6 @@ function BreadcrumbTitleSkeleton() {
 function BreadcrumbActions(options: Omit<BreadcrumbBarProps, 'wordCount' | 'barRef' | 'onRenameFilename'> & {
   actionsRef: React.RefObject<HTMLDivElement | null>
   overflowCollapsed: boolean
-  showTagControls: boolean
-  tags: string[]
-  onAddTag: (tag: string) => void
 }) {
   const {
     entry,
@@ -811,9 +806,6 @@ function BreadcrumbActions(options: Omit<BreadcrumbBarProps, 'wordCount' | 'barR
     onDelete,
     actionsRef,
     overflowCollapsed,
-    showTagControls,
-    tags,
-    onAddTag,
     locale = 'en',
 } = options
   let noteWidthAction = onToggleNoteWidth,
@@ -831,15 +823,6 @@ function BreadcrumbActions(options: Omit<BreadcrumbBarProps, 'wordCount' | 'barR
       data-overflow-collapsed={overflowCollapsed}
       style={{ gap: 8 }}
     >
-      {showTagControls && (
-        <NoteTagsPicker
-          tags={tags}
-          availableTags={options.availableTags ?? []}
-          locale={locale}
-          onAddTag={onAddTag}
-          triggerTestId="breadcrumb-tag-add"
-        />
-      )}
       {!forceRawMode && <RawToggleButton rawMode={rawMode} locale={locale} onToggleRaw={onToggleRaw} />}
       <OverflowToolbarAction>
         <NoteWidthAction noteWidth={noteWidth} locale={locale} onToggleNoteWidth={noteWidthAction} />
@@ -959,11 +942,7 @@ function BreadcrumbTitle({
   locale,
   loadingTitle,
   onRenameFilename,
-  tags,
-  onRemoveTag,
 }: Pick<BreadcrumbBarProps, 'content' | 'entry' | 'locale' | 'loadingTitle' | 'onRenameFilename'> & {
-  tags: string[]
-  onRemoveTag: (tag: string) => void
 }) {
 
   return (
@@ -975,7 +954,6 @@ function BreadcrumbTitle({
             : <FilenameCrumb content={content} entry={entry} locale={locale} onRenameFilename={onRenameFilename} />}
         </div>
       </div>
-      <NoteTagsRow tags={tags} locale={locale ?? 'en'} onRemoveTag={onRemoveTag} />
     </div>
   )
 }
@@ -995,17 +973,6 @@ export const BreadcrumbBar = memo(function BreadcrumbBar({
   const actionsRef = useRef<HTMLDivElement | null>(null)
   const titleRef = useRef<HTMLDivElement | null>(null)
   const overflowCollapsed = useBreadcrumbOverflow(titleRef, actionsRef)
-  const tags = isMarkdownEntry(entry) ? getEntryTags(entry) : []
-  const showTagControls = isMarkdownEntry(entry) && !!actionProps.onUpdateTags && !loadingTitle
-  const showTagRow = showTagControls && tags.length > 0
-  const handleAddTag = (tag: string) => {
-    if (!actionProps.onUpdateTags) return
-    void actionProps.onUpdateTags(entry.path, normalizeNoteTags([...tags, tag]))
-  }
-  const handleRemoveTag = (tag: string) => {
-    if (!actionProps.onUpdateTags) return
-    void actionProps.onUpdateTags(entry.path, tags.filter((currentTag) => currentTag !== tag))
-  }
   const [activeTooltipLabel, setActiveTooltipLabel] = useState<string | null>(null)
   const tooltipController = useMemo(() => ({
     activeTooltipLabel,
@@ -1031,7 +998,7 @@ export const BreadcrumbBar = memo(function BreadcrumbBar({
           data-title-hidden=""
           className="breadcrumb-bar flex shrink-0 items-center border-b border-transparent"
           style={{
-            height: showTagRow ? 78 : 52,
+            height: 52,
             background: 'var(--background)',
             padding: '6px 16px 6px var(--breadcrumb-bar-left-padding, 16px)',
             boxSizing: 'border-box',
@@ -1044,8 +1011,6 @@ export const BreadcrumbBar = memo(function BreadcrumbBar({
               locale={locale}
               loadingTitle={loadingTitle}
               onRenameFilename={onRenameFilename}
-              tags={tags}
-              onRemoveTag={handleRemoveTag}
             />
           </div>
           <div
@@ -1058,9 +1023,6 @@ export const BreadcrumbBar = memo(function BreadcrumbBar({
             entry={entry}
             locale={locale}
             overflowCollapsed={overflowCollapsed}
-            showTagControls={showTagControls}
-            tags={tags}
-            onAddTag={handleAddTag}
             {...actionProps}
           />
         </div>

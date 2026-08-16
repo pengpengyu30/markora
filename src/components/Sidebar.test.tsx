@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Sidebar } from './Sidebar'
 import type { SidebarSelection, VaultEntry } from '../types'
@@ -100,6 +100,9 @@ describe('Sidebar', () => {
     const projectsLabel = screen.getByText('Projects')
     expect(tagsSection.compareDocumentPosition(projectsLabel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(screen.queryByRole('button', { name: /shared.*1/i })).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'TAGS' }))
+    expect(screen.getByRole('button', { name: /shared.*1/i })).toBeInTheDocument()
   })
 
   it('does not show a separate all-notes count', () => {

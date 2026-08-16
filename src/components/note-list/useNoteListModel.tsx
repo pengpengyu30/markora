@@ -313,6 +313,7 @@ export interface NoteListProps {
   showFilename?: boolean
   locale?: AppLocale
   selectedTags?: string[]
+  onToggleTag?: (tag: string) => void
   onClearTagFilter?: () => void
 }
 
@@ -328,6 +329,7 @@ function buildNoteListLayoutModel(params: {
     renderItem: (entry: VaultEntry, options?: { forceSelected?: boolean }) => React.ReactNode
   }
   selectedTags?: string[]
+  onToggleTag?: (tag: string) => void
   onClearTagFilter?: () => void
 }) {
   return {
@@ -365,12 +367,13 @@ function buildNoteListLayoutModel(params: {
     contextMenuNode: params.interaction.noteListContextMenu.contextMenuNode,
     dialogNode: null,
     selectedTags: params.selectedTags,
+    onToggleTag: params.onToggleTag,
     onClearTagFilter: params.onClearTagFilter,
   }
 }
 
 export function useNoteListModel(options: NoteListProps) {
-  const { entries, vaultPath, selection, selectedNote, loading = false, getNoteStatus, sidebarCollapsed, onReplaceActiveTab, onCreateNote, onBulkDeletePermanently, onRenameFilename, onExportPdf, onRevealFile, onCopyFilePath, visibleNotesRef, allNotesFileVisibility, folderViewShowNonMarkdown, showFilename, locale = 'en', selectedTags, onClearTagFilter } = options
+  const { entries, vaultPath, selection, selectedNote, loading = false, getNoteStatus, sidebarCollapsed, onReplaceActiveTab, onCreateNote, onBulkDeletePermanently, onRenameFilename, onExportPdf, onRevealFile, onCopyFilePath, visibleNotesRef, allNotesFileVisibility, folderViewShowNonMarkdown, showFilename, locale = 'en', selectedTags, onToggleTag, onClearTagFilter } = options
   const selectedNotePath = selectedNote?.path ?? null
   const { resolvedGetNoteStatus } = useNoteStatusState(
     getNoteStatus,
@@ -445,6 +448,7 @@ export function useNoteListModel(options: NoteListProps) {
       renderItem,
     },
     selectedTags,
+    onToggleTag,
     onClearTagFilter,
   })
 }

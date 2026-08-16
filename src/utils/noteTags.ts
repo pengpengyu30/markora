@@ -5,6 +5,19 @@ export interface TagCount {
   count: number
 }
 
+export type TagColorVariant = 'blue' | 'amber' | 'green' | 'violet' | 'rose' | 'teal'
+
+const TAG_COLOR_VARIANTS: TagColorVariant[] = ['green', 'amber', 'blue', 'violet', 'rose', 'teal']
+
+export function getTagColorVariant(tag: string): TagColorVariant {
+  let hash = 2166136261
+  for (const character of tag.trim().toLowerCase()) {
+    hash ^= character.charCodeAt(0)
+    hash = Math.imul(hash, 16777619)
+  }
+  return TAG_COLOR_VARIANTS[(hash >>> 0) % TAG_COLOR_VARIANTS.length]
+}
+
 export const TAG_MAX_LENGTH = 15
 
 export type TagInputError = 'invalid' | 'tooLong'

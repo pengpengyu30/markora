@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import { NoteTagsPicker, NoteTagsRow } from './NoteTagsRow'
+import { NoteTagsPicker, NoteTagsPropertyRow, NoteTagsRow } from './NoteTagsRow'
 
 const options = [
   { name: 'shared', count: 3 },
@@ -8,6 +8,21 @@ const options = [
 ]
 
 describe('NoteTagsRow', () => {
+  it('uses stable colored chips for document tags', () => {
+    render(
+      <NoteTagsPropertyRow
+        tags={['product', 'planning']}
+        availableTags={[]}
+        locale="en"
+        onAddTag={vi.fn()}
+        onRemoveTag={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText('product').closest('[data-tag-color]')).toHaveAttribute('data-tag-color', 'blue')
+    expect(screen.getByText('planning').closest('[data-tag-color]')).toHaveAttribute('data-tag-color', 'green')
+  })
+
   it('renders tags with fixed-width truncation and exposes the full name on hover', () => {
     render(
       <NoteTagsRow

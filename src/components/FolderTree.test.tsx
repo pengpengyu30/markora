@@ -27,12 +27,14 @@ const multiProjectFolders: FolderNode[] = [
     name: 'Project A',
     path: '',
     rootPath: '/projects/a',
+    color: 'orange',
     children: [{ name: 'docs-a', path: 'docs-a', rootPath: '/projects/a', children: [] }],
   },
   {
     name: 'Project B',
     path: '',
     rootPath: '/projects/b',
+    color: 'purple',
     children: [{ name: 'docs-b', path: 'docs-b', rootPath: '/projects/b', children: [] }],
   },
 ]
@@ -229,10 +231,13 @@ describe('FolderTree', () => {
     expect(screen.queryByText('projects')).not.toBeInTheDocument()
   })
 
-  it('highlights the selected folder row', () => {
+  it('highlights the selected folder with a background while keeping neutral text', () => {
     const selection: SidebarSelection = { kind: 'folder', path: 'areas' }
     render(<FolderTree folders={mockFolders} selection={selection} onSelect={vi.fn()} />)
-    expect(screen.getByTestId('folder-row:areas').className).toContain('text-primary')
+    const row = screen.getByTestId('folder-row:areas')
+    expect(row.parentElement).toHaveClass('bg-[var(--accent-blue-light)]')
+    expect(row).toHaveClass('text-foreground')
+    expect(row).not.toHaveClass('text-primary')
   })
 
   it('opens the create-folder input from the header action', () => {
@@ -573,6 +578,22 @@ describe('FolderTree', () => {
     )
 
     expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' })
+  })
+
+  it('renders Project root icons without their configured identity colors', () => {
+    render(
+      <FolderTree
+        folders={multiProjectFolders}
+        selection={defaultSelection}
+        onSelect={vi.fn()}
+      />,
+    )
+
+    const projectAIcon = screen.getByRole('button', { name: 'Project A' }).querySelector('svg')
+    const projectBIcon = screen.getByRole('button', { name: 'Project B' }).querySelector('svg')
+
+    expect(projectAIcon).not.toHaveAttribute('style')
+    expect(projectBIcon).not.toHaveAttribute('style')
   })
 
   it('sizes the folder context menu to visible actions instead of filling the viewport', () => {

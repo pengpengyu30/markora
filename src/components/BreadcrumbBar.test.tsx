@@ -269,25 +269,23 @@ describe('BreadcrumbBar — file actions', () => {
 })
 
 describe('BreadcrumbBar — tags', () => {
-  it('places the icon-only add-tag action in the toolbar and keeps tags below the filename', () => {
+  it('keeps document tags out of the breadcrumb chrome', () => {
     const entry = makeEntry({ properties: { tags: ['a-very-long-tag-name'] } })
     const { container } = renderBreadcrumb(entry, {
       availableTags: [{ name: 'a-very-long-tag-name', count: 1 }],
       onUpdateTags: vi.fn(),
     })
 
-    expect(screen.getByTestId('breadcrumb-tag-add')).toBeInTheDocument()
-    expect(screen.queryByText('+ Add tag')).not.toBeInTheDocument()
-    expect(screen.getByTestId('note-tag-row')).toBeInTheDocument()
-    expect(screen.getByText('a-very-long-tag-name')).toHaveAttribute('title', 'a-very-long-tag-name')
-    expect(container.querySelector('.breadcrumb-bar')).toHaveStyle({ height: '78px' })
+    expect(screen.queryByTestId('breadcrumb-tag-add')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('note-tags-property-row')).not.toBeInTheDocument()
+    expect(container.querySelector('.breadcrumb-bar')).toHaveStyle({ height: '52px' })
   })
 
-  it('keeps the toolbar add-tag action available without an empty tag row', () => {
+  it('keeps empty document tag controls out of the breadcrumb chrome', () => {
     const { container } = renderBreadcrumb({}, { onUpdateTags: vi.fn() })
 
-    expect(screen.getByTestId('breadcrumb-tag-add')).toBeInTheDocument()
-    expect(screen.queryByTestId('note-tag-row')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('breadcrumb-tag-add')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('note-tags-property-row')).not.toBeInTheDocument()
     expect(container.querySelector('.breadcrumb-bar')).toHaveStyle({ height: '52px' })
   })
 })
