@@ -1,0 +1,25 @@
+Markora
+Copyright (C) 2026 pengpengyu30
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version. See the LICENSE file for the full text.
+
+----------------------------------------------------------------------
+
+Markora is an independent project based on the open-source codebase of Tolaria.
+
+  Original work: Tolaria
+  Copyright (C) Luca Rossi and the Tolaria contributors
+  Source: https://github.com/refactoringhq/tolaria
+  License: GNU Affero General Public License v3.0 or later
+
+Modifications Copyright (C) 2026 pengpengyu30.
+
+This project is not the official Tolaria project and is not affiliated with or
+endorsed by the Tolaria project, Luca Rossi, or Refactoring. It uses its own
+name and branding.
+
+"Tolaria" and the Tolaria logo are trademarks of their respective owner and
+are referenced here only to identify the original work.

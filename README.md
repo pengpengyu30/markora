@@ -7,8 +7,10 @@ with their notes. Your content stays in ordinary Markdown and related files on d
 Projects, while rich editing, raw text editing, navigation, search, tags, and media previews make
 those files comfortable to use every day.
 
-Markora is developed independently, with its own product direction, design principles, and
-development process. It is built around privacy, portability, and a focused writing experience.
+Markora is an independent open-source project based on the AGPL-licensed codebase of
+[Tolaria](https://github.com/refactoringhq/tolaria). It has its own product direction, design
+principles, and development process, and is not affiliated with or endorsed by the original
+project or its maintainers.
 
 ## Why Markora
 
@@ -114,4 +116,4 @@ tests before changing behavior. Prefer small, understandable boundaries over fea
 ## License
 
 Markora is licensed under the GNU Affero General Public License, version 3 or later. See
-[LICENSE](LICENSE).
+[LICENSE](LICENSE) and [NOTICE](NOTICE) for license, attribution, and modification details.
