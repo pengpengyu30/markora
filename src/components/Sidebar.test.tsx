@@ -86,6 +86,24 @@ describe('Sidebar', () => {
     expect(screen.getByText('Projects')).toBeInTheDocument()
   })
 
+  it('highlights the active project independently from the all-notes selection', () => {
+    render(
+      <Sidebar
+        entries={[]}
+        folders={[
+          { name: 'Project A', path: '', rootPath: '/projects/a', children: [] },
+          { name: 'Project B', path: '', rootPath: '/projects/b', children: [] },
+        ]}
+        selection={defaultSelection}
+        activeProjectPath="/projects/b"
+        onSelect={() => {}}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: 'Project B' })).toHaveAttribute('data-active-project', 'true')
+    expect(screen.getByRole('button', { name: 'Project A' })).not.toHaveAttribute('data-active-project')
+  })
+
   it('places Tags above Projects and keeps the group collapsed by default', () => {
     render(
       <Sidebar

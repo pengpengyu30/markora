@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { SidebarSelection } from '../types'
-import { resolveActiveProject, resolveProjectLocation, sidebarSelectionsEqual } from './activeProject'
+import type { SidebarSelection, VaultEntry } from '../types'
+import { resolveActiveProject, resolveActiveProjectForNote, resolveProjectLocation, sidebarSelectionsEqual } from './activeProject'
 
 describe('resolveActiveProject', () => {
   it('uses a selected folder root as the active Project', () => {
@@ -45,6 +45,27 @@ describe('resolveProjectLocation', () => {
       projectPath: '/projects/default',
       folderPath: '',
     })
+  })
+})
+
+describe('resolveActiveProjectForNote', () => {
+  it('uses the note owning Project instead of the selected fallback Project', () => {
+    expect(resolveActiveProjectForNote(
+      {
+        path: '/projects/edgeclaw/product/01-overview.md',
+        workspace: { path: '/projects/edgeclaw' } as NonNullable<VaultEntry['workspace']>,
+      },
+      ['/projects/lbc-apisix'],
+      { projectPath: '/projects/lbc-apisix', folderPath: '' },
+    )).toEqual({
+      projectPath: '/projects/edgeclaw',
+      folderPath: 'product',
+    })
+  })
+
+  it('keeps the fallback Project when there is no active note', () => {
+    const fallbackProject = { projectPath: '/projects/lbc-apisix', folderPath: 'kb' }
+    expect(resolveActiveProjectForNote(null, ['/projects/edgeclaw'], fallbackProject)).toEqual(fallbackProject)
   })
 })
 

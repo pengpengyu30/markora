@@ -30,6 +30,7 @@ interface FolderTreeProps {
   locale?: AppLocale
   onToggle?: () => void
   vaultRootPath?: string
+  activeProjectPath?: string | null
   writableVaultPaths?: readonly string[]
 }
 
@@ -46,6 +47,7 @@ interface FolderTreeBodyProps
   | 'renamingFolderPath'
   | 'renamingFolderRootPath'
   | 'selection'
+  | 'activeProjectPath'
 > {
   displayedExpanded: Record<string, boolean>
   displayedFolders: FolderNode[]
@@ -146,7 +148,7 @@ function useCreateFolderSubmit({
 }
 
 export const FolderTree = memo(function FolderTree(options: FolderTreeProps) {
-  const { folders, selection, onSelect, onCreateFolder, onRenameFolder, onDeleteFolder, folderFileActions, renamingFolderPath, renamingFolderRootPath, onStartRenameFolder, onCancelRenameFolder, onCanDropNote, onMoveNoteToFolder, collapsed: externalCollapsed, locale = 'en', onToggle, vaultRootPath, writableVaultPaths } = options
+  const { folders, selection, onSelect, onCreateFolder, onRenameFolder, onDeleteFolder, folderFileActions, renamingFolderPath, renamingFolderRootPath, onStartRenameFolder, onCancelRenameFolder, onCanDropNote, onMoveNoteToFolder, collapsed: externalCollapsed, locale = 'en', onToggle, vaultRootPath, activeProjectPath, writableVaultPaths } = options
   const [creationParent, setCreationParent] = useState<FolderCreationParent | undefined>(undefined)
   const {
         closeCreateForm,
@@ -241,6 +243,7 @@ export const FolderTree = memo(function FolderTree(options: FolderTreeProps) {
             onCanDropNote={onCanDropNote}
             onMoveNoteToFolder={onMoveNoteToFolder}
             rootPath={vaultRootPath}
+            activeProjectPath={activeProjectPath}
             writableVaultPaths={writableVaultPaths}
             sectionCollapsed={sectionCollapsed}
             selection={selection}
@@ -262,7 +265,7 @@ export const FolderTree = memo(function FolderTree(options: FolderTreeProps) {
     })
 
     function FolderTreeBody(options: FolderTreeBodyProps) {
-      const { displayedExpanded, displayedFolders, isCreating, locale = 'en', creationParent, onCancelCreateFolder, onCancelRenameFolder, onCreateFolderSubmit, onDeleteFolder, onOpenMenu, onRenameFolder, onSelect, onCanDropNote, onMoveNoteToFolder, renamingFolderPath, renamingFolderRootPath, rootPath, sectionCollapsed, selection, toggleFolder, writableVaultPaths } = options
+      const { displayedExpanded, displayedFolders, isCreating, locale = 'en', creationParent, onCancelCreateFolder, onCancelRenameFolder, onCreateFolderSubmit, onDeleteFolder, onOpenMenu, onRenameFolder, onSelect, onCanDropNote, onMoveNoteToFolder, renamingFolderPath, renamingFolderRootPath, rootPath, sectionCollapsed, selection, activeProjectPath, toggleFolder, writableVaultPaths } = options
   if (sectionCollapsed) return null
 
   return (
@@ -290,6 +293,7 @@ export const FolderTree = memo(function FolderTree(options: FolderTreeProps) {
           renamingFolderRootPath={renamingFolderRootPath}
           rootPath={rootPath}
           selection={selection}
+          activeProjectPath={activeProjectPath}
           writableVaultPaths={writableVaultPaths}
         />
       ))}

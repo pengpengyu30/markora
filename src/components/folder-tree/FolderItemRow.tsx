@@ -12,6 +12,7 @@ interface FolderItemRowProps {
   depthIndent: number
   isExpanded: boolean
   isSelected: boolean
+  isActiveProject?: boolean
   node: FolderNode
   onOpenMenu: (node: FolderNode, event: ReactMouseEvent<HTMLElement>) => void
   onSelect: () => void
@@ -63,6 +64,7 @@ export function FolderItemRow(options: FolderItemRowProps) {
     depthIndent,
     isExpanded,
     isSelected,
+    isActiveProject = false,
     node,
     onOpenMenu,
     onSelect,
@@ -96,7 +98,7 @@ export function FolderItemRow(options: FolderItemRowProps) {
       ref={rowRef}
       className={cn(
         'group relative flex items-center gap-1 rounded transition-colors',
-        isSelected ? 'bg-[var(--accent-blue-light)] text-foreground' : 'text-foreground hover:bg-accent',
+        isSelected || isActiveProject ? 'bg-[var(--accent-blue-light)] text-foreground' : 'text-foreground hover:bg-accent',
       )}
       style={{ paddingLeft: depthIndent, borderRadius: 4 }}
       data-folder-key={folderNodeKey(node)}
@@ -106,6 +108,7 @@ export function FolderItemRow(options: FolderItemRowProps) {
         hasChildren={hasChildren}
         isExpanded={isExpanded}
         isSelected={isSelected}
+        isActiveProject={isActiveProject}
         node={node}
         onClick={handleSelectClick}
         onContextMenu={(event) => {
@@ -129,6 +132,7 @@ function FolderSelectButton(options: {
   hasChildren: boolean
   isExpanded: boolean
   isSelected: boolean
+  isActiveProject: boolean
   node: FolderNode
   onClick: () => void
   onContextMenu: MouseEventHandler<HTMLButtonElement>
@@ -141,6 +145,7 @@ function FolderSelectButton(options: {
     hasChildren,
     isExpanded,
     isSelected,
+    isActiveProject,
     node,
     onClick,
     onContextMenu,
@@ -167,6 +172,7 @@ function FolderSelectButton(options: {
       onDrop={onDrop}
       data-testid={`folder-row:${node.path}`}
       data-project-root={isProjectRoot ? node.rootPath : undefined}
+      data-active-project={isActiveProject ? 'true' : undefined}
     >
       {isSelected || isExpanded ? (
         <FolderOpen size={17} weight="fill" className="size-[17px] shrink-0" />

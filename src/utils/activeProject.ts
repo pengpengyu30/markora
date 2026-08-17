@@ -1,4 +1,4 @@
-import type { SidebarSelection } from '../types'
+import type { SidebarSelection, VaultEntry } from '../types'
 import {
   normalizeNotePathSeparators,
   normalizeVaultRelativePath,
@@ -48,6 +48,21 @@ export function resolveActiveProject(
     projectPath: fallbackProjectPath,
     folderPath: selection.kind === 'folder' ? normalizeVaultRelativePath(selection.path) : '',
   }
+}
+
+export function resolveActiveProjectForNote(
+  entry: Pick<VaultEntry, 'path' | 'workspace'> | null | undefined,
+  projectPaths: readonly string[],
+  fallbackProject: ActiveProject,
+): ActiveProject {
+  const noteProjectPath = entry?.workspace?.path?.trim()
+  return entry
+    ? resolveProjectLocation(
+      entry.path,
+      noteProjectPath ? [...projectPaths, noteProjectPath] : projectPaths,
+      fallbackProject.projectPath,
+    )
+    : fallbackProject
 }
 
 export function resolveProjectLocation(

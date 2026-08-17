@@ -27,6 +27,7 @@ interface SidebarProps {
   onCanDropNoteOnFolder?: (notePath: string, folderPath: string) => boolean
   onMoveNoteToFolder?: (notePath: string, folderPath: string) => Promise<unknown> | unknown
   vaultRootPath?: string
+  activeProjectPath?: string | null
   writableVaultPaths?: readonly string[]
   allNotesFileVisibility?: AllNotesFileVisibility
   locale?: AppLocale
@@ -58,6 +59,7 @@ interface SidebarNavigationProps
     | 'onCanDropNoteOnFolder'
     | 'onMoveNoteToFolder'
     | 'vaultRootPath'
+    | 'activeProjectPath'
     | 'writableVaultPaths'
     | 'locale'
     | 'loading'
@@ -82,6 +84,7 @@ type SidebarFoldersNavigationProps = Pick<
   | 'onCanDropNoteOnFolder'
   | 'onMoveNoteToFolder'
   | 'vaultRootPath'
+  | 'activeProjectPath'
   | 'writableVaultPaths'
   | 'groupCollapsed'
   | 'toggleGroup'
@@ -106,6 +109,7 @@ function SidebarFoldersNavigation(options: SidebarFoldersNavigationProps) {
     onCanDropNoteOnFolder,
     onMoveNoteToFolder,
     vaultRootPath,
+    activeProjectPath,
     writableVaultPaths,
     groupCollapsed,
     toggleGroup,
@@ -135,6 +139,7 @@ function SidebarFoldersNavigation(options: SidebarFoldersNavigationProps) {
       locale={locale}
       onToggle={() => toggleGroup('folders')}
       vaultRootPath={vaultRootPath}
+      activeProjectPath={activeProjectPath}
       writableVaultPaths={writableVaultPaths}
     />
   )

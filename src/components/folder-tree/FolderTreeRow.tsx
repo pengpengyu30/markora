@@ -27,6 +27,7 @@ interface FolderTreeRowProps {
   renamingFolderRootPath?: string | null
   rootPath?: string
   selection: SidebarSelection
+  activeProjectPath?: string | null
   writableVaultPaths?: readonly string[]
 }
 
@@ -160,6 +161,7 @@ function FolderChildren(options: FolderTreeRowProps) {
     renamingFolderRootPath,
     rootPath,
     selection,
+    activeProjectPath,
     writableVaultPaths,
   } = options
   const isExpanded = expanded[folderNodeKey({ path: node.path, rootPath: node.rootPath ?? rootPath })] ?? false
@@ -199,6 +201,7 @@ function FolderChildren(options: FolderTreeRowProps) {
           renamingFolderRootPath={renamingFolderRootPath}
           rootPath={rootPath}
           selection={selection}
+          activeProjectPath={activeProjectPath}
           writableVaultPaths={writableVaultPaths}
         />
       ))}
@@ -252,9 +255,10 @@ export const FolderTreeRow = memo(function FolderTreeRow(options: FolderTreeRowP
     renamingFolderRootPath,
     rootPath,
     selection,
+    activeProjectPath,
     writableVaultPaths,
   } = options
-  const { nodeKey, nodeRootPath, isExpanded, isSelected, canUseDefaultFolderActions, isRenaming } = resolveFolderTreeRowState(options)
+  const { nodeKey, nodeRootPath, isExpanded, isSelected, isActiveProject, canUseDefaultFolderActions, isRenaming } = resolveFolderTreeRowState(options)
   const depthIndent = getFolderDepthIndent(depth)
   const contentInset = FOLDER_ROW_CONTENT_INSET
   const selectFolder = useCallback(() => {
@@ -267,6 +271,7 @@ export const FolderTreeRow = memo(function FolderTreeRow(options: FolderTreeRowP
       depthIndent={depthIndent}
       isExpanded={isExpanded}
       isSelected={isSelected}
+      isActiveProject={isActiveProject}
       node={node}
       onOpenMenu={onOpenMenu}
       onSelect={selectFolder}
@@ -323,14 +328,15 @@ export const FolderTreeRow = memo(function FolderTreeRow(options: FolderTreeRowP
         renamingFolderRootPath={renamingFolderRootPath}
         rootPath={rootPath}
         selection={selection}
+        activeProjectPath={activeProjectPath}
         writableVaultPaths={writableVaultPaths}
       />
     </>
   )
 })
 
-function resolveFolderTreeRowState(options: Pick<FolderTreeRowProps, 'expanded' | 'node' | 'renamingFolderPath' | 'renamingFolderRootPath' | 'rootPath' | 'selection' | 'writableVaultPaths'>) {
-  const { expanded, node, renamingFolderPath, renamingFolderRootPath, rootPath, selection, writableVaultPaths } = options
+function resolveFolderTreeRowState(options: Pick<FolderTreeRowProps, 'activeProjectPath' | 'expanded' | 'node' | 'renamingFolderPath' | 'renamingFolderRootPath' | 'rootPath' | 'selection' | 'writableVaultPaths'>) {
+  const { activeProjectPath, expanded, node, renamingFolderPath, renamingFolderRootPath, rootPath, selection, writableVaultPaths } = options
   const nodeRootPath = node.rootPath ?? rootPath
   const nodeKey = folderNodeKey({ path: node.path, rootPath: nodeRootPath })
   const canUseDefaultFolderActions = !nodeRootPath
@@ -341,6 +347,7 @@ function resolveFolderTreeRowState(options: Pick<FolderTreeRowProps, 'expanded' 
     nodeRootPath,
     isExpanded: (Reflect.get(expanded, nodeKey) as boolean | undefined) ?? false,
     isSelected: folderSelectionMatches(selection, { ...node, rootPath: nodeRootPath }, rootPath),
+    isActiveProject: node.path === '' && nodeRootPath != null && nodeRootPath === activeProjectPath,
     canUseDefaultFolderActions,
     isRenaming: canMutateFolder
       && renamingFolderPath === node.path

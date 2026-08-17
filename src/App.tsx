@@ -51,6 +51,7 @@ import { vaultPathForEntry } from './utils/workspaces'
 import { uniqueNonBlankWorkspacePaths } from './utils/workspacePaths'
 import {
   resolveActiveProject,
+  resolveActiveProjectForNote,
   resolveProjectLocation,
   selectionForProjectLocation,
   sidebarSelectionsEqual,
@@ -388,6 +389,14 @@ function MainApp() {
     closeAllTabs,
     handleUpdateFrontmatter,
   } = notes
+  const activeNotePath = notes.activeTabPath
+  const noteTabs = notes.tabs
+  const sidebarActiveProject = useMemo(() => {
+    const activeTab = activeNotePath
+      ? noteTabs.find((tab) => notePathsMatch(tab.entry.path, activeNotePath))
+      : null
+    return resolveActiveProjectForNote(activeTab?.entry, projectPaths, activeProject)
+  }, [activeNotePath, activeProject, noteTabs, projectPaths])
   const handleUpdateTags = useCallback((path: string, tags: string[]) => {
     void handleUpdateFrontmatter(path, 'tags', tags, { silent: true })
   }, [handleUpdateFrontmatter])
@@ -929,6 +938,7 @@ function MainApp() {
                   locale={appLocale}
                   loading={isVaultContentLoading}
                   vaultRootPath={resolvedPath}
+                  activeProjectPath={sidebarActiveProject.projectPath}
                   writableVaultPaths={writableVaultPaths}
                 />
               </div>
