@@ -6,6 +6,7 @@ import {
   type AppCommandId,
   type AppCommandHandlers,
 } from './appCommandDispatcher'
+import { isActiveElementInsideEditorSurface } from '../utils/appOrchestration'
 
 export type KeyboardActions = Pick<
   AppCommandHandlers,
@@ -41,6 +42,10 @@ const TEXT_EDITING_BLOCKED_COMMANDS = new Set<AppCommandId>([
   APP_COMMAND_IDS.viewGoBack,
   APP_COMMAND_IDS.viewGoForward,
 ])
+const DOCUMENT_HISTORY_COMMANDS = new Set<AppCommandId>([
+  APP_COMMAND_IDS.editUndo,
+  APP_COMMAND_IDS.editRedo,
+])
 
 function isTextInputFocused(): boolean {
   const active = document.activeElement
@@ -70,6 +75,20 @@ export function handleAppKeyboardEvent(actions: KeyboardActions, event: Keyboard
   const commandId = findShortcutCommandIdForEvent(event)
   if (commandId === null) return
   if (commandId === APP_COMMAND_IDS.editFindInNote && !isEditorFindScopeFocused()) return
+
+  if (DOCUMENT_HISTORY_COMMANDS.has(commandId)) {
+    if (!actions.activeTabPathRef.current) {
+      event.preventDefault()
+      return
+    }
+
+    if (isActiveElementInsideEditorSurface()) {
+      event.preventDefault()
+      event.stopPropagation()
+      executeAppCommand(commandId, actions, 'renderer-keyboard')
+      return
+    }
+  }
 
   if (handleFocusedTextCommand(event, commandId)) return
 

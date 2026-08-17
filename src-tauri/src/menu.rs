@@ -548,6 +548,27 @@ mod tests {
     }
 
     #[test]
+    fn edit_history_menu_items_do_not_register_native_accelerators() {
+        let edit_section = manifest_section("Edit").unwrap();
+
+        for command_name in ["editUndo", "editRedo"] {
+            let item = edit_section
+                .items
+                .iter()
+                .find(|item| matches!(item, ManifestMenuItem::Command { command, .. } if command == command_name))
+                .unwrap_or_else(|| panic!("missing Edit menu command {command_name}"));
+
+            assert!(matches!(
+                item,
+                ManifestMenuItem::Command {
+                    accelerator: ManifestAccelerator::Suppressed,
+                    ..
+                }
+            ));
+        }
+    }
+
+    #[test]
     fn overridden_menu_item_ids_emit_their_primary_command() {
         assert_eq!(
             emitted_menu_event_id("file-quick-open-alias"),

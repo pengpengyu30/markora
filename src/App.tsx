@@ -69,8 +69,9 @@ import { shouldReplaceSyncedTabEntry } from './utils/tabEntrySync'
 import { dispatchRichEditorExternalFlush } from './components/editorExternalChangeEvents'
 import {
   isActiveElementInsideEditorSurface,
-  runNativeTextHistoryCommand,
+  runEditorHistoryCommand,
   shouldPreferOnboardingVaultPath,
+  type EditorHistoryCommands,
 } from './utils/appOrchestration'
 import { buildTagCounts, filterEntriesByTags } from './utils/noteTags'
 import type { SearchHighlightRequest } from './utils/searchHighlight'
@@ -316,6 +317,7 @@ function MainApp() {
 
   const flushPendingEditorContentRef = useRef<((path: string) => void) | null>(null)
   const flushPendingRawContentRef = useRef<((path: string) => void) | null>(null)
+  const editorHistoryRef = useRef<EditorHistoryCommands | null>(null)
   const appSaveFlushBeforeActionRef = useRef<((path: string) => Promise<unknown>) | null>(null)
   const pendingEditorStateFlushRef = useRef<{ path: string; promise: Promise<void> } | null>(null)
   const flushEditorStateBeforeAction = useCallback((path: string) => {
@@ -810,11 +812,11 @@ function MainApp() {
   })
   const activeEditorVaultPath = activeTab ? vaultPathForEntry(activeTab.entry, resolvedPath) : resolvedPath
   const undoCommand = useCallback(() => {
-    runNativeTextHistoryCommand('undo')
-  }, [])
+    runEditorHistoryCommand(editorHistoryRef.current, noteActiveTabPathRef.current, 'undo')
+  }, [noteActiveTabPathRef])
   const redoCommand = useCallback(() => {
-    runNativeTextHistoryCommand('redo')
-  }, [])
+    runEditorHistoryCommand(editorHistoryRef.current, noteActiveTabPathRef.current, 'redo')
+  }, [noteActiveTabPathRef])
 
   const commands = useAppCommands({
     activeTabPath: notes.activeTabPath, activeTabPathRef: notes.activeTabPathRef,
@@ -979,6 +981,7 @@ function MainApp() {
               onGoBack={handleGoBack}
               onGoForward={handleGoForward}
               leftPanelsCollapsed={!sidebarVisible && !noteListVisible}
+              historyRef={editorHistoryRef}
               flushPendingEditorContentRef={flushPendingEditorContentRef}
               flushPendingRawContentRef={flushPendingRawContentRef}
               searchHighlightRequest={searchHighlightRequest}

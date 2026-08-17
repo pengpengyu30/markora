@@ -9,6 +9,7 @@ import type { RawEditorFindRequest } from '../RawEditorFindBar'
 import type { ImageImportError } from '../../hooks/useImageDrop'
 import type { TagCount } from '../../utils/noteTags'
 import type { SearchHighlightRequest } from '../../utils/searchHighlight'
+import type { EditorHistoryCommands } from '../../utils/appOrchestration'
 
 export interface Tab {
   entry: VaultEntry
@@ -47,6 +48,9 @@ export interface EditorContentProps {
   noteWidth?: NoteWidthMode
   onToggleNoteWidth?: () => void
   onImageImportError?: (error: ImageImportError) => void
+  historyRef?: React.MutableRefObject<EditorHistoryCommands | null>
+  historyBoundaryPath?: string | null
+  historyBoundaryVersion?: number
   locale?: AppLocale
 }
 

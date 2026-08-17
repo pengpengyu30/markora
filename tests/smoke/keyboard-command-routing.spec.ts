@@ -308,6 +308,51 @@ test.describe('keyboard command routing', () => {
     await expect(page.getByTestId('breadcrumb-filename-trigger')).toContainText('note-b', { timeout: 5_000 })
   })
 
+  test('repeated undo and redo stop at the current document boundary @smoke', async ({ page }) => {
+    await openAlphaProjectInEditor(page)
+    const noteList = page.getByTestId('note-list-container')
+    const editor = page.locator('.bn-editor')
+    const alphaMarker = ' alpha-history-marker'
+    const noteBMarker = ' note-b-history-marker'
+
+    await page.keyboard.press('End')
+    await page.keyboard.type(alphaMarker)
+    await expect(editor).toContainText(alphaMarker.trim(), { timeout: 5_000 })
+
+    await noteList.getByText('Note B', { exact: true }).click()
+    await expect(page.getByTestId('breadcrumb-filename-trigger')).toContainText('note-b', { timeout: 5_000 })
+    await editor.click()
+    await page.keyboard.press('End')
+    await page.keyboard.type(noteBMarker)
+    await expect(editor).toContainText(noteBMarker.trim(), { timeout: 5_000 })
+
+    const dispatchHistoryShortcut = async (shiftKey: boolean) => {
+      await dispatchShortcutEvent(page, {
+        key: 'z',
+        code: 'KeyZ',
+        ctrlKey: false,
+        metaKey: true,
+        shiftKey,
+        altKey: false,
+        bubbles: true,
+        cancelable: true,
+      })
+    }
+
+    await dispatchHistoryShortcut(false)
+    await expect(editor).not.toContainText(noteBMarker.trim(), { timeout: 5_000 })
+    await dispatchHistoryShortcut(false)
+    await expect(page.getByTestId('breadcrumb-filename-trigger')).toContainText('note-b', { timeout: 5_000 })
+    await expect(editor).toContainText('This is Note B,', { timeout: 5_000 })
+    await expect(editor).not.toContainText(alphaMarker.trim())
+
+    await dispatchHistoryShortcut(true)
+    await expect(editor).toContainText(noteBMarker.trim(), { timeout: 5_000 })
+    await dispatchHistoryShortcut(true)
+    await expect(page.getByTestId('breadcrumb-filename-trigger')).toContainText('note-b', { timeout: 5_000 })
+    await expect(editor).not.toContainText(alphaMarker.trim())
+  })
+
   test('renderer shortcut bridge toggles the raw editor through the shared keyboard handler', async ({ page }) => {
     const runtimeStyleCspSignals = collectRuntimeStyleCspSignals(page)
 

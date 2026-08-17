@@ -2,6 +2,7 @@ import type { MutableRefObject } from 'react'
 import type { SidebarFilter } from '../types'
 import {
   APP_COMMAND_DEFINITIONS,
+  APP_COMMAND_IDS,
   type AppCommandId,
   type AppCommandDefinition,
 } from './appCommandCatalog'
@@ -254,6 +255,13 @@ export function executeAppCommand(
   handlers: AppCommandHandlers,
   source: AppCommandDispatchSource,
 ): boolean {
+  if (
+    (id === APP_COMMAND_IDS.editUndo || id === APP_COMMAND_IDS.editRedo)
+    && !handlers.activeTabPathRef.current
+  ) {
+    return false
+  }
+
   const timestamp = now()
   if (shouldSuppressShortcutEchoAfterKeyboardYield(id, source, timestamp)) {
     return false

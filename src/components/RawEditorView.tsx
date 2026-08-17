@@ -1,4 +1,5 @@
 import { useRef, useState, useCallback, useEffect, useMemo } from 'react'
+import { redo as redoCodeMirror, undo as undoCodeMirror } from '@codemirror/commands'
 import type { EditorView } from '@codemirror/view'
 import { MIN_QUERY_LENGTH } from '../utils/wikilinkSuggestions'
 import { NoteSearchList } from './NoteSearchList'
@@ -28,6 +29,7 @@ import {
   SEARCH_HIGHLIGHT_CLEANUP_DELAY_MS,
   type SearchHighlightRequest,
 } from '../utils/searchHighlight'
+import type { EditorHistoryCommands } from '../utils/appOrchestration'
 import {
   clipboardRemoteImages,
   importRemoteImages,
@@ -43,6 +45,7 @@ export interface RawEditorViewProps {
   onContentChange: (path: string, content: string) => void
   vaultPath?: string
   onSave: () => void
+  historyRef?: React.MutableRefObject<EditorHistoryCommands | null>
   /** Mutable ref updated on every keystroke with the latest doc string.
    *  Allows the parent to flush debounced content before unmount. */
   latestContentRef?: React.MutableRefObject<string | null>
@@ -595,7 +598,7 @@ function RawEditorSurface(options: RawEditorSurfaceProps) {
 }
 
 export function RawEditorView(options: RawEditorViewProps) {
-  const { content, entries, findRequest, latestContentRef, locale = 'en', onContentChange, onImageImportResult, onSave, path, searchHighlightRequest, vaultPath } = options
+  const { content, entries, findRequest, historyRef, latestContentRef, locale = 'en', onContentChange, onImageImportResult, onSave, path, searchHighlightRequest, vaultPath } = options
   const rootRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [rawDoc, setRawDoc] = useState(content)
@@ -643,6 +646,21 @@ export function RawEditorView(options: RawEditorViewProps) {
     },
     path,
   )
+  useEffect(() => {
+    const view = viewRef.current
+    if (!historyRef || !view) return
+
+    const registration: EditorHistoryCommands = {
+      path,
+      undo: () => undoCodeMirror(view),
+      redo: () => redoCodeMirror(view),
+    }
+    historyRef.current = registration
+
+    return () => {
+      if (historyRef.current === registration) historyRef.current = null
+    }
+  }, [historyRef, path, viewRef])
   useEffect(() => {
     const view = viewRef.current
     if (!view || searchHighlightRequest?.path !== path) return

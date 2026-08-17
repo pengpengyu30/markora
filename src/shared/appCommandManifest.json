@@ -327,8 +327,8 @@
     {
       "label": "Edit",
       "items": [
-        { "kind": "command", "command": "editUndo", "label": "Undo" },
-        { "kind": "command", "command": "editRedo", "label": "Redo" },
+        { "kind": "command", "command": "editUndo", "label": "Undo", "accelerator": null },
+        { "kind": "command", "command": "editRedo", "label": "Redo", "accelerator": null },
         { "kind": "separator" },
         { "kind": "command", "command": "editPastePlainText", "label": "Paste without Formatting" },
         { "kind": "separator" },
@@ -396,6 +396,8 @@
   "menuStateGroups": {
       "noteDependent": [
       { "command": "fileSave" },
+      { "command": "editUndo" },
+      { "command": "editRedo" },
       { "command": "noteDelete" },
       { "command": "editToggleRawEditor" },
       { "command": "viewToggleTableOfContents" },

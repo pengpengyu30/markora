@@ -47,6 +47,7 @@ import type { NotePdfExportSource } from '../utils/notePdfExport'
 import type { RichEditorBlockTypeDefinition } from '../utils/richEditorBlockTypes'
 import type { TagCount } from '../utils/noteTags'
 import type { SearchHighlightRequest } from '../utils/searchHighlight'
+import type { EditorHistoryCommands } from '../utils/appOrchestration'
 import { createRichEditorSearchHighlightExtension } from './searchHighlightExtension'
 import { createRichEditorFindExtension } from './richEditorFindExtension'
 import { installRichEditorMarkdownSerializer } from '../utils/richEditorMarkdown'
@@ -99,6 +100,8 @@ export interface EditorProps {
   onGoBack?: () => void
   onGoForward?: () => void
   leftPanelsCollapsed?: boolean
+  /** Mutable ref that the active editor registers its document-scoped history into. */
+  historyRef?: React.MutableRefObject<EditorHistoryCommands | null>
   /** Mutable ref that Editor registers its raw-mode toggle into, for command palette access. */
   rawToggleRef?: React.MutableRefObject<() => void>
   /** Mutable ref that Editor registers editor find commands into, for shortcuts and menus. */
@@ -310,7 +313,7 @@ function useEditorSetup(options: EditorSetupParams) {
         richEditorState?.isHtmlFile || richEditorState?.legacyUnsupportedKind,
       )
 
-      const { editorContentPath, handleEditorChange, flushPendingEditorChange, editorMountedRef } = useEditorTabSwap({
+      const { editorContentPath, editorContentVersion, handleEditorChange, flushPendingEditorChange, editorMountedRef } = useEditorTabSwap({
         tabs: tabsForEditorSwap,
         activeTabPath: richEditorTabUnavailable ? null : activeTabPath,
         editor,
@@ -360,6 +363,8 @@ function useEditorSetup(options: EditorSetupParams) {
         flushPendingEditorChange,
         isLoadingNewTab,
         richEditorContentReady,
+        editorContentPath,
+        editorContentVersion,
       }
     }
 
@@ -374,6 +379,8 @@ function useEditorSetup(options: EditorSetupParams) {
       onUpdateTags?: (path: string, tags: string[]) => void | Promise<void>
       editor: ReturnType<typeof useCreateBlockNote>
       richEditorContentReady: boolean
+      editorContentPath: string | null
+      editorContentVersion: number
       rawMode: boolean
       handleToggleRawExclusive: () => void
       onContentChange?: (path: string, content: string) => void
@@ -404,6 +411,7 @@ function useEditorSetup(options: EditorSetupParams) {
       onImageImportError?: ImageImportErrorHandler
       locale?: AppLocale
       onExportPdf?: (source?: NotePdfExportSource) => void
+      historyRef?: React.MutableRefObject<EditorHistoryCommands | null>
     }) {
       const {
       tabs,
@@ -416,6 +424,8 @@ function useEditorSetup(options: EditorSetupParams) {
       onUpdateTags,
       editor,
       richEditorContentReady,
+      editorContentPath,
+      editorContentVersion,
       rawMode,
       handleToggleRawExclusive,
       onContentChange,
@@ -446,6 +456,7 @@ function useEditorSetup(options: EditorSetupParams) {
       onToggleBacklinks,
       onImageImportError,
       locale,
+      historyRef,
   } = options
   const activeBinaryTab = activeTab?.entry.fileKind === 'binary' ? activeTab : null
   const showEmptyState = tabs.length === 0 && activeTabPath === null && !isVaultLoading
@@ -497,6 +508,9 @@ function useEditorSetup(options: EditorSetupParams) {
               noteWidth={noteWidth}
               onToggleNoteWidth={onToggleNoteWidth}
               onImageImportError={onImageImportError}
+              historyRef={historyRef}
+              historyBoundaryPath={editorContentPath}
+              historyBoundaryVersion={editorContentVersion}
               locale={locale}
             />
         )}

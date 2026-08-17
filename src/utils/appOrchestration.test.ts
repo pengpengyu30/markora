@@ -1,9 +1,9 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { ModifiedFile } from '../types'
 import {
   activeVaultModifiedFiles,
   mergeModifiedFiles,
-  runNativeTextHistoryCommand,
+  runEditorHistoryCommand,
   shouldPreferOnboardingVaultPath,
 } from './appOrchestration'
 
@@ -16,32 +16,7 @@ function modifiedFile(overrides: Partial<ModifiedFile>): ModifiedFile {
   }
 }
 
-const originalExecCommand = document.execCommand
-
-function stubExecCommand(result = true) {
-  const execCommand = vi.fn(() => result)
-  Object.defineProperty(document, 'execCommand', {
-    configurable: true,
-    value: execCommand,
-  })
-  return execCommand
-}
-
-function focusElement(element: HTMLElement): void {
-  if (!element.isConnected) document.body.appendChild(element)
-  element.focus()
-}
-
 describe('app orchestration helpers', () => {
-  afterEach(() => {
-    Object.defineProperty(document, 'execCommand', {
-      configurable: true,
-      value: originalExecCommand,
-    })
-    document.body.replaceChildren()
-    vi.restoreAllMocks()
-  })
-
   it('fills missing vault paths on active-vault modified files', () => {
     expect(activeVaultModifiedFiles([
       modifiedFile({ relativePath: 'a.md' }),
@@ -69,27 +44,23 @@ describe('app orchestration helpers', () => {
     expect(shouldPreferOnboardingVaultPath({ status: 'loading', vaultPath: '/new' }, [])).toBe(false)
   })
 
-  it('uses native history commands for focused text fields', () => {
-    const execCommand = stubExecCommand()
-    const input = document.createElement('input')
-    focusElement(input)
+  it('runs history only for the currently selected document', () => {
+    const undo = vi.fn(() => true)
+    const redo = vi.fn(() => true)
+    const history = { path: '/vault/note.md', undo, redo }
 
-    expect(runNativeTextHistoryCommand('undo')).toBe(true)
-    expect(execCommand).toHaveBeenCalledWith('undo')
+    expect(runEditorHistoryCommand(history, '/vault/note.md', 'undo')).toBe(true)
+    expect(runEditorHistoryCommand(history, '/vault/note.md', 'redo')).toBe(true)
+    expect(undo).toHaveBeenCalledOnce()
+    expect(redo).toHaveBeenCalledOnce()
   })
 
-  it('lets focused editor surfaces own history without native execCommand', () => {
-    const execCommand = stubExecCommand()
-    const container = document.createElement('div')
-    const editable = document.createElement('div')
-    container.className = 'editor__blocknote-container'
-    editable.tabIndex = 0
-    editable.setAttribute('contenteditable', 'true')
-    container.appendChild(editable)
-    focusElement(container)
-    focusElement(editable)
+  it('does not run stale or global history when no document is selected', () => {
+    const undo = vi.fn(() => true)
+    const history = { path: '/vault/note.md', undo, redo: vi.fn(() => true) }
 
-    expect(runNativeTextHistoryCommand('undo')).toBe(true)
-    expect(execCommand).not.toHaveBeenCalled()
+    expect(runEditorHistoryCommand(history, null, 'undo')).toBe(false)
+    expect(runEditorHistoryCommand(history, '/vault/other.md', 'undo')).toBe(false)
+    expect(undo).not.toHaveBeenCalled()
   })
 })

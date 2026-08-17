@@ -33,6 +33,7 @@ import { observeNativeTextAssistanceDisabled } from '../lib/nativeTextAssistance
 import { getRuntimeStyleNonce } from '../lib/runtimeStyleNonce'
 import { WikilinkSuggestionMenu, type WikilinkSuggestionItem } from './WikilinkSuggestionMenu'
 import type { VaultEntry } from '../types'
+import type { EditorHistoryCommands } from '../utils/appOrchestration'
 import { getEntryTags, normalizeNoteTags, type TagCount } from '../utils/noteTags'
 import { _wikilinkEntriesRef } from './editorSchema'
 import { handleEditorFileBlockClick, openEditorAttachmentOrUrl } from './editorAttachmentActions'
@@ -50,6 +51,7 @@ import { Button } from './ui/button'
 import { NoteTagsPropertyRow } from './NoteTagsRow'
 import { createNoteTagsPropertyPlugin, noteTagsPropertyPluginKey } from './noteTagsPropertyPlugin'
 import { subscribeRichEditorExternalChange } from './editorExternalChangeEvents'
+import { createRichEditorHistoryBoundary } from './richEditorHistoryBoundary'
 import {
   activatePlainTextPasteTarget,
   registerPlainTextPasteTarget,
@@ -1256,8 +1258,10 @@ export function SingleEditorView(options: {
   searchHighlightRequest?: SearchHighlightRequest | null
   availableTags?: TagCount[]
   onUpdateTags?: (path: string, tags: string[]) => void | Promise<void>
+  historyRef?: React.MutableRefObject<EditorHistoryCommands | null>
+  historyBoundaryVersion?: number | null
 }) {
-  const { editor, entries, onNavigateWikilink, onChange, onImageImportError, sourceEntry, vaultPath, editable = true, locale = 'en', searchHighlightRequest, availableTags = [], onUpdateTags } = options
+  const { editor, entries, historyBoundaryVersion, historyRef, onNavigateWikilink, onChange, onImageImportError, sourceEntry, vaultPath, editable = true, locale = 'en', searchHighlightRequest, availableTags = [], onUpdateTags } = options
   const { cssVars } = useEditorTheme()
   const themeMode = useDocumentThemeMode()
   const previousThemeModeRef = useRef(themeMode)
@@ -1326,6 +1330,18 @@ export function SingleEditorView(options: {
   useEffect(() => {
     _wikilinkEntriesRef.current = entries
   }, [entries])
+
+  useEffect(() => {
+    const path = sourceEntry?.path
+    if (!historyRef || !path || !editable || historyBoundaryVersion === null || historyBoundaryVersion === undefined) return
+
+    const registration = createRichEditorHistoryBoundary(editor, path)
+    historyRef.current = registration
+
+    return () => {
+      if (historyRef.current === registration) historyRef.current = null
+    }
+  }, [editable, editor, historyBoundaryVersion, historyRef, sourceEntry?.path])
 
   useEffect(() => {
     if (previousThemeModeRef.current === themeMode) return

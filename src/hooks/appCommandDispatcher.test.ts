@@ -246,6 +246,16 @@ describe('appCommandDispatcher', () => {
     expect(handlers.onDeleteNote).not.toHaveBeenCalled()
   })
 
+  it('no-ops undo and redo when there is no active note', () => {
+    const handlers = makeHandlers()
+    handlers.activeTabPathRef.current = null
+
+    expect(dispatchAppCommand(APP_COMMAND_IDS.editUndo, handlers)).toBe(false)
+    expect(dispatchAppCommand(APP_COMMAND_IDS.editRedo, handlers)).toBe(false)
+    expect(handlers.onUndo).not.toHaveBeenCalled()
+    expect(handlers.onRedo).not.toHaveBeenCalled()
+  })
+
   it('suppresses a native-menu echo after renderer keyboard dispatch', () => {
     const handlers = makeHandlers()
 

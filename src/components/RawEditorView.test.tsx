@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, act } from '@testing-library/react'
 import { language, syntaxTree } from '@codemirror/language'
 import type { EditorView } from '@codemirror/view'
+import type { EditorHistoryCommands } from '../utils/appOrchestration'
 import { RawEditorView } from './RawEditorView'
 
 function entry(title: string, path = `/vault/note/${title}.md`) {
@@ -144,5 +145,26 @@ describe('RawEditorView', () => {
     unmount()
     // After unmount, the CM editor is destroyed — no assertion needed,
     // just verify no errors are thrown during cleanup
+  })
+
+  it('registers document-scoped CodeMirror history and cleans it up', () => {
+    const historyRef = { current: null as EditorHistoryCommands | null }
+    const { unmount } = render(<RawEditorView {...defaultProps} historyRef={historyRef} />)
+    const container = screen.getByTestId('raw-editor-codemirror') as CodeMirrorHost
+    const view = container.__cmView
+
+    expect(historyRef.current?.path).toBe(defaultProps.path)
+    expect(view).toBeDefined()
+    if (!view) return
+
+    view.dispatch({
+      changes: { from: view.state.doc.length, insert: '\nChanged' },
+      userEvent: 'input',
+    })
+    expect(historyRef.current?.undo()).toBe(true)
+    expect(view.state.doc.toString()).toBe(defaultProps.content)
+
+    unmount()
+    expect(historyRef.current).toBeNull()
   })
 })

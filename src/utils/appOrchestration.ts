@@ -8,30 +8,19 @@ export function isActiveElementInsideEditorSurface(): boolean {
   return Boolean(activeElement.closest(ACTIVE_EDITOR_SURFACE_SELECTOR))
 }
 
-export function isTextEditingElementFocused(): boolean {
-  const activeElement = document.activeElement
-  if (!(activeElement instanceof HTMLElement)) return false
-  return activeElement.tagName === 'INPUT'
-    || activeElement.tagName === 'TEXTAREA'
-    || activeElement.isContentEditable
-    || activeElement.closest('[contenteditable="true"]') !== null
+export interface EditorHistoryCommands {
+  path: string
+  undo: () => boolean
+  redo: () => boolean
 }
 
-function isNativeTextFieldElement(element: HTMLElement): boolean {
-  return element.tagName === 'INPUT' || element.tagName === 'TEXTAREA'
-}
-
-export function runNativeTextHistoryCommand(command: 'undo' | 'redo'): boolean {
-  if (!isTextEditingElementFocused()) return false
-  const activeElement = document.activeElement
-  if (
-    activeElement instanceof HTMLElement
-    && !isNativeTextFieldElement(activeElement)
-    && isActiveElementInsideEditorSurface()
-  ) {
-    return true
-  }
-  return document.execCommand(command)
+export function runEditorHistoryCommand(
+  history: EditorHistoryCommands | null,
+  activePath: string | null,
+  command: 'undo' | 'redo',
+): boolean {
+  if (!history || !activePath || history.path !== activePath) return false
+  return history[command]()
 }
 
 function modifiedFileKey(file: ModifiedFile): string {

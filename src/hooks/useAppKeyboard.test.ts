@@ -156,6 +156,20 @@ describe('useAppKeyboard', () => {
     expect(actions.onRedo).toHaveBeenCalledTimes(1)
   })
 
+  it('does not run undo or redo when no document is selected', () => {
+    const actions = makeActions()
+    actions.activeTabPathRef.current = null
+    renderHook(() => useAppKeyboard(actions))
+
+    const undo = fireKey('z', { metaKey: true, code: 'KeyZ' })
+    const redo = fireKey('z', { metaKey: true, shiftKey: true, code: 'KeyZ' })
+
+    expect(undo.defaultPrevented).toBe(true)
+    expect(redo.defaultPrevented).toBe(true)
+    expect(actions.onUndo).not.toHaveBeenCalled()
+    expect(actions.onRedo).not.toHaveBeenCalled()
+  })
+
   it('Ctrl+Y triggers app action redo on non-mac platforms', () => {
     setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64)')
     const actions = makeActions()
@@ -176,7 +190,7 @@ describe('useAppKeyboard', () => {
     })
   })
 
-  it('lets focused editor surfaces own undo without an app history fallback', () => {
+  it('routes focused editor surfaces through the selected document history', () => {
     setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64)')
     const actions = makeActions()
     renderHook(() => useAppKeyboard(actions))
@@ -184,10 +198,10 @@ describe('useAppKeyboard', () => {
     withFocusedEditorSurface((editable) => {
       const undo = fireKeyOnTarget(editable, 'z', { ctrlKey: true, code: 'KeyZ' })
 
-      expect(undo.defaultPrevented).toBe(false)
-      expect(actions.onUndo).not.toHaveBeenCalled()
+      expect(undo.defaultPrevented).toBe(true)
+      expect(actions.onUndo).toHaveBeenCalledOnce()
       expect(executeAppCommand(APP_COMMAND_IDS.editUndo, actions, 'native-menu')).toBe(false)
-      expect(actions.onUndo).not.toHaveBeenCalled()
+      expect(actions.onUndo).toHaveBeenCalledOnce()
     })
   })
 

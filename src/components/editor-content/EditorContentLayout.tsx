@@ -79,6 +79,7 @@ function RawModeEditorSection(
     | 'rawModeContent'
     | 'searchHighlightRequest'
     | 'vaultPath'
+    | 'historyRef'
   > & {
     rawMode: boolean
     locale?: AppLocale
@@ -96,6 +97,7 @@ function RawModeEditorSection(
     rawLatestContentRef,
     searchHighlightRequest,
     vaultPath,
+    historyRef,
     locale,
   } = options
   if (!rawMode || !activeTab) return null
@@ -122,6 +124,7 @@ function RawModeEditorSection(
         latestContentRef={rawLatestContentRef}
         searchHighlightRequest={searchHighlightRequest}
         vaultPath={vaultPath}
+        historyRef={historyRef}
         locale={locale}
       />
     </EditorFindScope>
@@ -279,6 +282,9 @@ type EditorCanvasProps = Pick<
   | 'findRequest'
   | 'availableTags'
   | 'onUpdateTags'
+  | 'historyRef'
+  | 'historyBoundaryPath'
+  | 'historyBoundaryVersion'
 >
 
 function EditorCanvas(props: EditorCanvasProps) {
@@ -314,6 +320,9 @@ function StandardEditorCanvas(options: EditorCanvasProps) {
     findRequest,
     availableTags,
     onUpdateTags,
+    historyRef,
+    historyBoundaryPath,
+    historyBoundaryVersion,
   } = options
   const [closedFindRequestId, setClosedFindRequestId] = useState<number | null>(null)
   const path = activeTab?.entry.path ?? ''
@@ -345,6 +354,8 @@ function StandardEditorCanvas(options: EditorCanvasProps) {
           locale={locale}
           availableTags={availableTags}
           onUpdateTags={onUpdateTags}
+          historyRef={historyRef}
+          historyBoundaryVersion={historyBoundaryPath === activeTab?.entry.path ? historyBoundaryVersion : null}
         />
       </div>
     </EditorFindScope>
@@ -413,6 +424,7 @@ export function EditorContentLayout(model: EditorContentModel) {
     locale,
     onImageImportError,
     isVaultLoading,
+    historyRef,
   } = model
   const rootClassName = cn(
     'flex flex-1 flex-col min-w-0 min-h-0',
@@ -449,6 +461,7 @@ export function EditorContentLayout(model: EditorContentModel) {
             onSave={onSave}
             rawLatestContentRef={rawLatestContentRef}
             vaultPath={vaultPath}
+            historyRef={historyRef}
             locale={locale}
           />
           <EditorCanvas
@@ -473,6 +486,9 @@ export function EditorContentLayout(model: EditorContentModel) {
             findRequest={findRequest}
             availableTags={model.availableTags}
             onUpdateTags={model.onUpdateTags}
+            historyRef={historyRef}
+            historyBoundaryPath={model.historyBoundaryPath}
+            historyBoundaryVersion={model.historyBoundaryVersion}
           />
         </>
       )}
