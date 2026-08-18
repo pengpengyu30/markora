@@ -347,7 +347,10 @@ function resolveFolderTreeRowState(options: Pick<FolderTreeRowProps, 'activeProj
     nodeRootPath,
     isExpanded: (Reflect.get(expanded, nodeKey) as boolean | undefined) ?? false,
     isSelected: folderSelectionMatches(selection, { ...node, rootPath: nodeRootPath }, rootPath),
-    isActiveProject: node.path === '' && nodeRootPath != null && nodeRootPath === activeProjectPath,
+    isActiveProject: selection.kind !== 'folder'
+      && node.path === ''
+      && nodeRootPath != null
+      && nodeRootPath === activeProjectPath,
     canUseDefaultFolderActions,
     isRenaming: canMutateFolder
       && renamingFolderPath === node.path

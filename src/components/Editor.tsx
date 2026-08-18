@@ -86,6 +86,7 @@ export interface EditorProps {
   rightPanelContent: string | null
   vaultPath?: string
   onRevealFile?: (path: string) => void
+  onRevealNote?: (entry: VaultEntry) => void
   onCopyFilePath?: (path: string) => void
   onOpenExternalFile?: (path: string) => void
   onDeleteNote?: (path: string) => void
@@ -392,6 +393,7 @@ function useEditorSetup(options: EditorSetupParams) {
       onNavigateWikilink: (target: string) => void
       handleEditorChange: () => void
       onRevealFile?: (path: string) => void
+      onRevealNote?: (entry: VaultEntry) => void
       onCopyFilePath?: (path: string) => void
       onOpenExternalFile?: (path: string) => void
       onDeleteNote?: (path: string) => void
@@ -437,6 +439,7 @@ function useEditorSetup(options: EditorSetupParams) {
       onNavigateWikilink,
       handleEditorChange,
       onRevealFile,
+      onRevealNote,
       onCopyFilePath,
       onExportPdf,
       onOpenExternalFile,
@@ -495,6 +498,7 @@ function useEditorSetup(options: EditorSetupParams) {
               onNavigateWikilink={onNavigateWikilink}
               onEditorChange={handleEditorChange}
               onRevealFile={onRevealFile}
+              onRevealNote={onRevealNote}
               onCopyFilePath={onCopyFilePath}
               onOpenExternalFile={onOpenExternalFile}
               onExportPdf={() => onExportPdf?.('breadcrumb')}

@@ -35,6 +35,7 @@ export interface EditorContentProps {
   onNavigateWikilink: (target: string) => void
   onEditorChange?: () => void
   onRevealFile?: (path: string) => void
+  onRevealNote?: (entry: VaultEntry) => void
   onCopyFilePath?: (path: string) => void
   onOpenExternalFile?: (path: string) => void
   onExportPdf?: () => void

@@ -104,29 +104,31 @@ function RawModeEditorSection(
 
   return (
     <EditorFindScope className="editor-scroll-area">
-      <RawEditorView
-        key={activeTab.entry.path}
-        content={rawModeContent ?? activeTab.content}
-        path={activeTab.entry.path}
-        entries={entries}
-        findRequest={findRequest}
-        onContentChange={onRawContentChange ?? (() => {})}
-        onImageImportResult={({ failedCount, totalCount }) => {
-          if (failedCount > 0) {
-            onImageImportError?.({
-              failedCount,
-              kind: 'remote-download',
-              totalCount,
-            })
-          }
-        }}
-        onSave={onSave ?? (() => {})}
-        latestContentRef={rawLatestContentRef}
-        searchHighlightRequest={searchHighlightRequest}
-        vaultPath={vaultPath}
-        historyRef={historyRef}
-        locale={locale}
-      />
+      <div className="flex flex-1 min-h-0" data-note-document-body="true">
+        <RawEditorView
+          key={activeTab.entry.path}
+          content={rawModeContent ?? activeTab.content}
+          path={activeTab.entry.path}
+          entries={entries}
+          findRequest={findRequest}
+          onContentChange={onRawContentChange ?? (() => {})}
+          onImageImportResult={({ failedCount, totalCount }) => {
+            if (failedCount > 0) {
+              onImageImportError?.({
+                failedCount,
+                kind: 'remote-download',
+                totalCount,
+              })
+            }
+          }}
+          onSave={onSave ?? (() => {})}
+          latestContentRef={rawLatestContentRef}
+          searchHighlightRequest={searchHighlightRequest}
+          vaultPath={vaultPath}
+          historyRef={historyRef}
+          locale={locale}
+        />
+      </div>
     </EditorFindScope>
   )
 }
@@ -291,13 +293,15 @@ function EditorCanvas(props: EditorCanvasProps) {
   if (!props.showEditor) return null
   if ((props.isHtmlFile || props.legacyUnsupportedKind) && props.activeTab) {
     return (
-      <FilePreview
-        entry={props.activeTab.entry}
-        locale={props.locale}
-        onCopyFilePath={props.onCopyFilePath}
-        onOpenExternalFile={props.onOpenExternalFile}
-        onRevealFile={props.onRevealFile}
-      />
+      <div className="flex flex-1 min-h-0" data-note-document-body="true">
+        <FilePreview
+          entry={props.activeTab.entry}
+          locale={props.locale}
+          onCopyFilePath={props.onCopyFilePath}
+          onOpenExternalFile={props.onOpenExternalFile}
+          onRevealFile={props.onRevealFile}
+        />
+      </div>
     )
   }
   return <StandardEditorCanvas {...props} />
@@ -340,7 +344,7 @@ function StandardEditorCanvas(options: EditorCanvasProps) {
         path={path}
         request={currentFindRequest}
       />
-      <div className="editor-content-wrapper" data-note-pdf-export-root="true">
+      <div className="editor-content-wrapper" data-note-document-body="true" data-note-pdf-export-root="true">
         <SingleEditorView
           editor={editor}
           entries={entries}
@@ -413,6 +417,7 @@ export function EditorContentLayout(model: EditorContentModel) {
     onNavigateWikilink,
     onEditorChange,
     isDeletedPreview,
+    onRevealNote,
     rawLatestContentRef,
     rawModeContent,
     searchHighlightRequest,
@@ -435,9 +440,14 @@ export function EditorContentLayout(model: EditorContentModel) {
   const chromeWordCount = activeTab ? wordCount : 0
   const showActiveContent = activeTab && !isVaultLoading
   const breadcrumbActions = buildBreadcrumbActions(model)
+  const handleDocumentBodyClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    const target = event.target
+    if (!(target instanceof Element) || !target.closest('[data-note-document-body="true"]')) return
+    if (activeTab) onRevealNote?.(activeTab.entry)
+  }, [activeTab, onRevealNote])
 
   return (
-    <div className={rootClassName}>
+    <div className={rootClassName} onClick={handleDocumentBodyClick}>
       <EditorBreadcrumbArea
         actions={breadcrumbActions}
         barRef={breadcrumbBarRef}

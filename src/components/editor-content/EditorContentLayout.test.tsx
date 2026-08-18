@@ -1,5 +1,5 @@
 import { createRef } from 'react'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { EditorContentLayout } from './EditorContentLayout'
 
@@ -145,6 +145,46 @@ describe('EditorContentLayout', () => {
       'data-content',
       '---\ntitle: Reference Planning Notes\n---\n\nBody',
     )
+  })
+
+  it('reveals the active note location when the document body is clicked, not the breadcrumb', () => {
+    const entry = {
+      path: '/vault/project/demo.md',
+      filename: 'demo.md',
+      title: 'Demo Note',
+    }
+    const onRevealNote = vi.fn()
+
+    render(<EditorContentLayout {...createModel({
+      activeTab: { entry, content: 'Body' },
+      onRevealNote,
+    })} />)
+
+    fireEvent.click(screen.getByTestId('single-editor-view'))
+    expect(onRevealNote).toHaveBeenCalledWith(entry)
+
+    fireEvent.click(screen.getByTestId('breadcrumb-bar'))
+    expect(onRevealNote).toHaveBeenCalledTimes(1)
+  })
+
+  it('reveals the active note location when the raw document body is clicked', () => {
+    const entry = {
+      path: '/vault/project/config.json',
+      filename: 'config.json',
+      title: 'config.json',
+      fileKind: 'text',
+    }
+    const onRevealNote = vi.fn()
+
+    render(<EditorContentLayout {...createModel({
+      activeTab: { entry, content: '{"enabled":true}' },
+      effectiveRawMode: true,
+      showEditor: false,
+      onRevealNote,
+    })} />)
+
+    fireEvent.click(screen.getByTestId('raw-editor-view'))
+    expect(onRevealNote).toHaveBeenCalledWith(entry)
   })
 
   it('passes tag editing controls into the rich editor surface', () => {

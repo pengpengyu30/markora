@@ -21,6 +21,7 @@ import { translate, type AppLocale } from '../lib/i18n'
 import { APP_COMMAND_IDS, formatShortcutDisplay, getAppCommandShortcutDisplay } from '../hooks/appCommandCatalog'
 import { extractFrontmatterTitleFromContent, extractH1TitleFromContent } from '../utils/noteTitle'
 import { isHtmlFileEntry } from '../utils/filePreview'
+import { normalizeNotePathSeparators, notePathFilename } from '../utils/notePathIdentity'
 import type { TagCount } from '../utils/noteTags'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -610,11 +611,11 @@ function FilenameInput({
 }
 
 function FilenameTrigger({
-  filenameStem,
+  displayName,
   locale = 'en',
   onStartEditing,
 }: {
-  filenameStem: string
+  displayName: string
   locale?: AppLocale
   onStartEditing: () => void
 }) {
@@ -633,9 +634,9 @@ function FilenameTrigger({
       onDoubleClick={onStartEditing}
       onKeyDown={handleKeyDown}
       data-testid="breadcrumb-filename-trigger"
-      aria-label={translate(locale, 'editor.filename.trigger', { filename: filenameStem })}
+      aria-label={translate(locale, 'editor.filename.trigger', { filename: displayName })}
     >
-      <span className="breadcrumb-bar__filename-text truncate">{filenameStem}</span>
+      <span className="breadcrumb-bar__filename-text truncate">{displayName}</span>
     </Button>
   )
 }
@@ -699,6 +700,7 @@ function FilenameDisplay({
   onStartEditing: () => void
 }) {
   const displayTitle = deriveBreadcrumbDisplayTitle(entry, filenameStem, content)
+  const displayFilename = deriveBreadcrumbFilename(entry, filenameStem)
 
   return (
     <div className="flex min-w-0 items-center gap-1">
@@ -714,10 +716,37 @@ function FilenameDisplay({
           <span aria-hidden="true" className="shrink-0 text-border">·</span>
         </>
       )}
-      <FilenameTrigger filenameStem={filenameStem} locale={locale} onStartEditing={onStartEditing} />
+      <FilenameTrigger displayName={displayFilename} locale={locale} onStartEditing={onStartEditing} />
       <SyncFilenameButton entryPath={entry.path} syncStem={syncStem} locale={locale} onRenameFilename={onRenameFilename} />
     </div>
   )
+}
+
+function normalizeBreadcrumbPath(path: string): string {
+  const normalized = normalizeNotePathSeparators(path.trim())
+  if (normalized === '/') return normalized
+  return normalized.replace(/\/+$/u, '')
+}
+
+function deriveBreadcrumbFilename(entry: VaultEntry, filenameStem: string): string {
+  const workspacePath = entry.workspace?.path?.trim()
+  if (!workspacePath) return filenameStem
+
+  const normalizedEntryPath = normalizeBreadcrumbPath(entry.path)
+  const normalizedWorkspacePath = normalizeBreadcrumbPath(workspacePath)
+  const relativePath = normalizedWorkspacePath === '/'
+    ? normalizedEntryPath.replace(/^\/+/, '')
+    : normalizedEntryPath === normalizedWorkspacePath
+      ? ''
+      : normalizedEntryPath.startsWith(`${normalizedWorkspacePath}/`)
+        ? normalizedEntryPath.slice(normalizedWorkspacePath.length + 1)
+        : null
+  if (relativePath === null) return filenameStem
+
+  const relativeDisplay = relativePath.replace(/\.md$/iu, '')
+  const workspaceLabel = entry.workspace?.label?.trim() || notePathFilename(normalizedWorkspacePath)
+  if (!relativeDisplay) return workspaceLabel || filenameStem
+  return workspaceLabel ? `${workspaceLabel}/${relativeDisplay}` : relativeDisplay
 }
 
 function FilenameCrumb({ content, entry, locale = 'en', onRenameFilename }: Pick<BreadcrumbBarProps, 'content' | 'entry' | 'locale' | 'onRenameFilename'>) {

@@ -239,6 +239,10 @@ function MainApp() {
       return nextSelection
     })
   }, [projectPaths, resolvedPath])
+  const handleRevealNoteFromEditor = useCallback((entry: VaultEntry) => {
+    if (selection.kind !== 'folder') return
+    handleRevealNote(entry)
+  }, [handleRevealNote, selection.kind])
   const tagFilteredEntries = useMemo(
     () => filterEntriesByTags(visibleEntries, selectedTags),
     [selectedTags, visibleEntries],
@@ -962,6 +966,7 @@ function MainApp() {
               availableTags={availableTags}
               onUpdateTags={handleUpdateTags}
               onNavigateWikilink={notes.handleNavigateWikilink}
+              onRevealNote={handleRevealNoteFromEditor}
               onCreateNote={notes.handleCreateNoteImmediate}
               rightPanelCollapsed={layout.rightPanelCollapsed}
               onToggleRightPanel={handleToggleRightPanel}

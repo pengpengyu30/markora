@@ -104,6 +104,24 @@ describe('Sidebar', () => {
     expect(screen.getByRole('button', { name: 'Project A' })).not.toHaveAttribute('data-active-project')
   })
 
+  it('lets an explicit Project folder selection override the active note highlight', () => {
+    render(
+      <Sidebar
+        entries={[]}
+        folders={[
+          { name: 'Project A', path: '', rootPath: '/projects/a', children: [{ name: 'docs', path: 'docs', rootPath: '/projects/a', children: [] }] },
+          { name: 'Project B', path: '', rootPath: '/projects/b', children: [] },
+        ]}
+        selection={{ kind: 'folder', path: 'docs', rootPath: '/projects/a' }}
+        activeProjectPath="/projects/b"
+        onSelect={() => {}}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: 'Project B' })).not.toHaveAttribute('data-active-project')
+    expect(screen.getByRole('button', { name: 'docs' }).parentElement).toHaveClass('bg-[var(--accent-blue-light)]')
+  })
+
   it('places Tags above Projects and keeps the group collapsed by default', () => {
     render(
       <Sidebar

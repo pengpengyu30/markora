@@ -357,6 +357,33 @@ describe('BreadcrumbBar — title in breadcrumb (always rendered, CSS-toggled)',
 })
 
 describe('BreadcrumbBar — filename controls', () => {
+  it('shows the Project and directory prefix while keeping the filename rename value unchanged', () => {
+    const { entry, onRenameFilename } = renderEditableFilenameBreadcrumb({
+      path: '/vault/edgeclaw/agentbox-portal/IMPLEMENTATION.md',
+      filename: 'IMPLEMENTATION.md',
+      workspace: { label: 'edgeclaw', path: '/vault/edgeclaw' } as NonNullable<VaultEntry['workspace']>,
+    })
+
+    expect(screen.getByTestId('breadcrumb-filename-trigger')).toHaveTextContent('edgeclaw/agentbox-portal/IMPLEMENTATION')
+
+    const input = startFilenameRename()
+    expect(input).toHaveValue('IMPLEMENTATION')
+    fireEvent.change(input, { target: { value: 'IMPLEMENTATION-v2' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(onRenameFilename).toHaveBeenCalledWith(entry.path, 'IMPLEMENTATION-v2')
+  })
+
+  it('keeps non-Markdown extensions in the full Project path prefix', () => {
+    renderBreadcrumb({
+      path: '/vault/edgeclaw/config/settings.json',
+      filename: 'settings.json',
+      fileKind: 'text',
+      workspace: { label: 'edgeclaw', path: '/vault/edgeclaw' } as NonNullable<VaultEntry['workspace']>,
+    })
+
+    expect(screen.getByTestId('breadcrumb-filename-trigger')).toHaveTextContent('edgeclaw/config/settings.json')
+  })
+
   it('shows a legacy display title while keeping the filename visible', () => {
     expectDisplayTitleState(
       {
