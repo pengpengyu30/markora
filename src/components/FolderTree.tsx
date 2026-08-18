@@ -107,9 +107,14 @@ function folderCreationParent(path: string, rootPath?: string): FolderCreationPa
   return rootPath ? { path, rootPath } : { path }
 }
 
-function creationParentForSelection(selection: SidebarSelection, defaultRootPath?: string): FolderCreationParent | undefined {
-  if (selection.kind !== 'folder') return undefined
-  return folderCreationParent(selection.path, selection.rootPath ?? defaultRootPath)
+function creationParentForSelection(
+  selection: SidebarSelection,
+  defaultRootPath?: string,
+  activeProjectPath?: string | null,
+): FolderCreationParent | undefined {
+  if (selection.kind === 'folder') return folderCreationParent(selection.path, selection.rootPath ?? defaultRootPath)
+  const projectRootPath = activeProjectPath?.trim() ? activeProjectPath : defaultRootPath
+  return projectRootPath ? folderCreationParent('', projectRootPath) : undefined
 }
 
 function useCreateFolderSubmit({
@@ -119,6 +124,7 @@ function useCreateFolderSubmit({
   onCreateFolder,
   selection,
   defaultRootPath,
+  activeProjectPath,
 }: {
   closeCreateForm: () => void
   creationParent?: FolderCreationParent
@@ -126,6 +132,7 @@ function useCreateFolderSubmit({
   onCreateFolder?: (name: string, parent?: FolderCreationParent) => Promise<boolean> | boolean
   selection: SidebarSelection
   defaultRootPath?: string
+  activeProjectPath?: string | null
 }) {
   return useCallback(
     async (value: string) => {
@@ -135,7 +142,7 @@ function useCreateFolderSubmit({
       return true
     }
 
-    const parent = creationParent ?? creationParentForSelection(selection, defaultRootPath)
+    const parent = creationParent ?? creationParentForSelection(selection, defaultRootPath, activeProjectPath)
     const created = await onCreateFolder(nextName, parent)
     if (!created) return created
 
@@ -143,7 +150,7 @@ function useCreateFolderSubmit({
     if (parent?.path) expandFolder(folderNodeKey(parent))
     return created
     },
-    [closeCreateForm, creationParent, defaultRootPath, expandFolder, onCreateFolder, selection],
+    [activeProjectPath, closeCreateForm, creationParent, defaultRootPath, expandFolder, onCreateFolder, selection],
   )
 }
 
@@ -203,13 +210,14 @@ export const FolderTree = memo(function FolderTree(options: FolderTreeProps) {
         onCreateFolder,
         selection,
         defaultRootPath: vaultRootPath,
+        activeProjectPath,
       })
 
       const handleCreateFolderClick = useCallback(() => {
         closeContextMenu()
-        setCreationParent(undefined)
+        setCreationParent(creationParentForSelection(selection, vaultRootPath, activeProjectPath))
         openCreateForm()
-      }, [closeContextMenu, openCreateForm])
+      }, [activeProjectPath, closeContextMenu, openCreateForm, selection, vaultRootPath])
 
       const { displayedExpanded, displayedFolders } = useDisplayedFolders(folders, expanded, vaultRootPath, locale)
 

@@ -253,6 +253,36 @@ describe('FolderTree', () => {
     expect(screen.getByTestId('new-folder-input')).toBeInTheDocument()
   })
 
+  it('places the header create input under the active Project root', async () => {
+    const onCreateFolder = vi.fn().mockResolvedValue(true)
+    render(
+      <FolderTree
+        folders={multiProjectFolders}
+        selection={defaultSelection}
+        activeProjectPath="/projects/b"
+        onSelect={vi.fn()}
+        onCreateFolder={onCreateFolder}
+      />,
+    )
+
+    fireEvent.click(screen.getByTestId('create-folder-btn'))
+
+    const input = screen.getByTestId('new-folder-input')
+    const projectARow = screen.getByRole('button', { name: 'Project A' }).parentElement
+    const projectBRow = screen.getByRole('button', { name: 'Project B' }).parentElement
+    expect(projectARow?.nextElementSibling).not.toContainElement(input)
+    expect(projectBRow?.nextElementSibling).toContainElement(input)
+
+    fireEvent.change(input, { target: { value: 'inbox' } })
+    await act(async () => {
+      fireEvent.keyDown(input, { key: 'Enter' })
+    })
+
+    await vi.waitFor(() => {
+      expect(onCreateFolder).toHaveBeenCalledWith('inbox', { path: '', rootPath: '/projects/b' })
+    })
+  })
+
   it('passes the selected folder as the parent when creating a new folder', async () => {
     const onCreateFolder = vi.fn().mockResolvedValue(true)
     renderTree({
@@ -306,9 +336,20 @@ describe('FolderTree', () => {
     })
   })
 
-  it('omits parent context when nothing folder-like is selected', async () => {
+  it('uses the default vault root when no folder-like selection is active', async () => {
     const onCreateFolder = vi.fn().mockResolvedValue(true)
     renderTree({ onCreateFolder, vaultRootPath })
+
+    await submitNewFolder('inbox')
+
+    await vi.waitFor(() => {
+      expect(onCreateFolder).toHaveBeenCalledWith('inbox', { path: '', rootPath: vaultRootPath })
+    })
+  })
+
+  it('omits parent context when the folder tree has no Project root', async () => {
+    const onCreateFolder = vi.fn().mockResolvedValue(true)
+    renderTree({ onCreateFolder })
 
     await submitNewFolder('inbox')
 
