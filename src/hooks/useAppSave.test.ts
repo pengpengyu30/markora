@@ -275,7 +275,7 @@ describe('useAppSave', () => {
     })
 
     expect(saved).toBe(false)
-    expect(deps.setToastMessage).toHaveBeenCalledWith('Select or restore a vault before saving.')
+    expect(deps.setToastMessage).toHaveBeenCalledWith('Select or restore a project before saving.')
     expectNoSaveNoteContent()
   })
 
@@ -318,7 +318,7 @@ describe('useAppSave', () => {
       await result.current.flushBeforeAction(path)
     })
 
-    expect(deps.setToastMessage).toHaveBeenCalledWith('Select or restore a vault before saving.')
+    expect(deps.setToastMessage).toHaveBeenCalledWith('Select or restore a project before saving.')
     expectNoSaveNoteContent()
   })
 

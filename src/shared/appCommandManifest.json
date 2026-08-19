@@ -334,7 +334,7 @@
         { "kind": "separator" },
         { "kind": "command", "command": "editFindInNote", "label": "Find in Note", "enabled": false },
         { "kind": "command", "command": "editReplaceInNote", "label": "Replace in Note", "enabled": false },
-        { "kind": "command", "command": "editFindInVault", "label": "Find in Vault" },
+        { "kind": "command", "command": "editFindInVault", "label": "Find in Project" },
         {
           "kind": "menu-event",
           "id": "edit-toggle-note-list-search",
@@ -379,14 +379,14 @@
       ]
     },
     {
-      "label": "Vault",
+      "label": "Project",
       "items": [
-        { "kind": "command", "command": "vaultOpen", "label": "Open Vault…" },
-        { "kind": "command", "command": "vaultRemove", "label": "Remove Vault from List" },
+        { "kind": "command", "command": "vaultOpen", "label": "Open Project…" },
+        { "kind": "command", "command": "vaultRemove", "label": "Remove Project from List" },
         { "kind": "command", "command": "vaultRestoreGettingStarted", "label": "Restore Getting Started" },
         { "kind": "separator" },
-        { "kind": "command", "command": "vaultReload", "label": "Reload Vault" },
-        { "kind": "command", "command": "vaultRepair", "label": "Repair Vault" }
+        { "kind": "command", "command": "vaultReload", "label": "Reload Project" },
+        { "kind": "command", "command": "vaultRepair", "label": "Repair Project" }
       ]
     }
   ],

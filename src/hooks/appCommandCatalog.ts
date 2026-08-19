@@ -155,7 +155,7 @@ const MENU_LABEL_KEYS = {
   View: 'menu.view',
   Go: 'menu.go',
   Note: 'menu.note',
-  Vault: 'menu.vault',
+  Project: 'menu.vault',
   Window: 'menu.window',
   'New Note': 'command.note.newNote',
   'Quick Open': 'menu.file.quickOpen',
@@ -165,7 +165,7 @@ const MENU_LABEL_KEYS = {
   'Paste without Formatting': 'menu.edit.pasteWithoutFormatting',
   'Find in Note': 'command.note.findInNote',
   'Replace in Note': 'command.note.replaceInNote',
-  'Find in Vault': 'menu.edit.findInVault',
+  'Find in Project': 'menu.edit.findInVault',
   'Toggle Note List Search': 'menu.edit.toggleNoteListSearch',
   'Editor Only': 'command.view.editorOnly',
   'Editor + Notes': 'command.view.editorNoteList',
@@ -182,11 +182,11 @@ const MENU_LABEL_KEYS = {
   'Toggle Raw Editor': 'command.view.toggleRaw',
   'Toggle Table of Contents': 'menu.note.toggleTableOfContents',
   'Toggle Backlinks': 'command.view.toggleBacklinks',
-  'Open Vault…': 'command.settings.openVault',
-  'Remove Vault from List': 'command.settings.removeVault',
+  'Open Project…': 'command.settings.openVault',
+  'Remove Project from List': 'command.settings.removeVault',
   'Restore Getting Started': 'command.settings.restoreGettingStarted',
-  'Reload Vault': 'command.settings.reloadVault',
-  'Repair Vault': 'command.settings.repairVault',
+  'Reload Project': 'command.settings.reloadVault',
+  'Repair Project': 'command.settings.repairVault',
 } as const
 
 export type AppCommandMenuLabelKey = (typeof MENU_LABEL_KEYS)[keyof typeof MENU_LABEL_KEYS]

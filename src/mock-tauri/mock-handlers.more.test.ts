@@ -50,7 +50,7 @@ describe('mockHandlers additional coverage', () => {
     expect(mockHandlers.check_vault_exists({ path: '/tmp/demo-vault-v2-copy' })).toBe(true)
     expect(mockHandlers.check_vault_exists({ path: '/tmp/random-vault' })).toBe(false)
 
-    expect(mockHandlers.repair_vault()).toBe('Vault repaired')
+    expect(mockHandlers.repair_vault()).toBe('Project repaired')
   })
 
   it('persists theme mode through the mock settings backend', async () => {

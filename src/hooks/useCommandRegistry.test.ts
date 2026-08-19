@@ -445,7 +445,7 @@ describe('reload-vault command', () => {
     const cmd = findCommand(result.current, 'reload-vault')
     expect(cmd).toBeDefined()
     expect(cmd!.group).toBe('Settings')
-    expect(cmd!.label).toBe('Reload Vault')
+    expect(cmd!.label).toBe('Reload Project')
   })
 
   it('is enabled when onReloadVault is provided', () => {

@@ -141,7 +141,7 @@ interface VaultPathInput {
 }
 
 function labelFromPath({ path }: VaultPathInput): string {
-  return path.split('/').pop() || 'Local Vault'
+  return path.split('/').pop() || 'Local Project'
 }
 
 function tauriCall<T>(command: string, args: Record<string, unknown>): Promise<T> {
@@ -595,7 +595,7 @@ function useLoadPersistedVaultState(store: PersistedVaultStore, onSwitchRef: Mut
     function formatGettingStartedRestoreError(err: unknown): string {
       const message = typeof err === 'string' ? err : err instanceof Error ? err.message : `${err}`
 
-      return `Could not prepare Getting Started vault locally: ${message}`
+      return `Could not prepare Getting Started project locally: ${message}`
     }
 
     function formatCreateEmptyVaultError(err: unknown): string {
@@ -605,7 +605,7 @@ function useLoadPersistedVaultState(store: PersistedVaultStore, onSwitchRef: Mut
         return message
       }
 
-      return `Could not create empty vault: ${message}`
+      return `Could not create empty project: ${message}`
     }
 
     async function ensureGettingStartedVaultReady(path: string): Promise<void> {
@@ -866,7 +866,7 @@ function useVaultClonedAction(
   return useCallback(
     (path: string, label: string) => {
     addAndSwitch(path, label)
-    onToastRef.current(`Vault "${label}" cloned and opened`)
+    onToastRef.current(`Project "${label}" cloned and opened`)
     },
     [addAndSwitch, onToastRef],
   )
@@ -999,9 +999,9 @@ function useOpenLocalFolderAction(
   return useCallback(async () => {
     let path: string | null
     try {
-      path = await pickFolder('Open vault folder')
+      path = await pickFolder('Open project folder')
     } catch (err) {
-      onToastRef.current(formatFolderPickerActionError('Could not open vault folder', err))
+      onToastRef.current(formatFolderPickerActionError('Could not open project folder', err))
       return
     }
 
@@ -1009,7 +1009,7 @@ function useOpenLocalFolderAction(
 
     const label = labelFromPath({ path })
     addAndSwitch(path, label)
-    onToastRef.current(`Vault "${label}" opened`)
+    onToastRef.current(`Project "${label}" opened`)
   }, [addAndSwitch, onToastRef])
 }
 
@@ -1020,9 +1020,9 @@ function useCreateEmptyVaultAction(
   return useCallback(async () => {
     let targetPath: string | null
     try {
-      targetPath = await pickFolder('Choose where to create your vault')
+      targetPath = await pickFolder('Choose where to create your project')
     } catch (err) {
-      onToastRef.current(formatFolderPickerActionError('Could not choose where to create your vault', err))
+      onToastRef.current(formatFolderPickerActionError('Could not choose where to create your project', err))
       return
     }
 
@@ -1033,7 +1033,7 @@ function useCreateEmptyVaultAction(
       })
       const label = labelFromPath({ path: vaultPath })
       addAndSwitch(vaultPath, label)
-      onToastRef.current(`Vault "${label}" created and opened`)
+      onToastRef.current(`Project "${label}" created and opened`)
     } catch (err) {
       onToastRef.current(formatCreateEmptyVaultError(err))
     }
@@ -1062,7 +1062,7 @@ function useRemoveVaultAction(options: RemoveVaultActionOptions) {
       selectedVaultPath,
       vaultPath,
     })
-    onToastRef.current(`Vault "${getRemovedVaultLabel({ path, defaultVaults, extraVaults })}" removed from list`)
+    onToastRef.current(`Project "${getRemovedVaultLabel({ path, defaultVaults, extraVaults })}" removed from list`)
     },
     [
     defaultWorkspacePath,
@@ -1191,7 +1191,7 @@ async function restoreGettingStartedVault({
   switchVault,
 }: RestoreGettingStartedOptions) {
   if (!defaultPath) {
-    onToastRef.current('Could not resolve the Getting Started vault path')
+    onToastRef.current('Could not resolve the Getting Started project path')
     return
   }
 
@@ -1200,7 +1200,7 @@ async function restoreGettingStartedVault({
     setDefaultAvailable(true)
     setHiddenDefaults((previousHidden) => previousHidden.filter((path) => path !== defaultPath))
     switchVault(defaultPath)
-    onToastRef.current('Getting Started vault ready')
+    onToastRef.current('Getting Started project ready')
   } catch (err) {
     onToastRef.current(formatGettingStartedRestoreError(err))
   }

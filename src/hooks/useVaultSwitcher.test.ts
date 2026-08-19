@@ -378,7 +378,7 @@ describe('useVaultSwitcher', () => {
     })
 
     expect(result.current.allVaults.some(v => v.path === '/Users/luca/MyVault')).toBe(true)
-    expect(onToast).toHaveBeenCalledWith('Vault "MyVault" opened')
+    expect(onToast).toHaveBeenCalledWith('Project "MyVault" opened')
   })
 
   it('shows a clear toast when folder picking is blocked until restart', async () => {
@@ -412,14 +412,14 @@ describe('useVaultSwitcher', () => {
     expect(mockInvokeFn).toHaveBeenCalledWith('create_empty_vault', { targetPath: '/Users/luca/New Vault' })
     expect(result.current.vaultPath).toBe('/Users/luca/New Vault')
     expect(result.current.allVaults.some(v => v.path === '/Users/luca/New Vault')).toBe(true)
-    expect(onToast).toHaveBeenCalledWith('Vault "New Vault" created and opened')
+    expect(onToast).toHaveBeenCalledWith('Project "New Vault" created and opened')
   })
 
   it('shows a friendly toast when empty-vault creation targets a non-empty folder', async () => {
     const { pickFolder } = await import('../utils/vault-dialog')
     vi.mocked(pickFolder).mockResolvedValue('/Users/luca/Busy Folder')
     setMockInvokeBehavior({
-      createEmptyVault: () => Promise.reject('Choose an empty folder to create a new vault'),
+      createEmptyVault: () => Promise.reject('Choose an empty folder to create a new project'),
     })
 
     const { result } = await renderLoadedVaultSwitcher()
@@ -429,7 +429,7 @@ describe('useVaultSwitcher', () => {
     })
 
     expect(result.current.vaultPath).toBe(expectedDefaultVaultPath)
-    expect(onToast).toHaveBeenCalledWith('Choose an empty folder to create a new vault')
+    expect(onToast).toHaveBeenCalledWith('Choose an empty folder to create a new project')
   })
 
   describe('removeVault', () => {
@@ -450,7 +450,7 @@ describe('useVaultSwitcher', () => {
       })
 
       expect(result.current.allVaults.some(v => v.path === '/work/vault')).toBe(false)
-      expect(onToast).toHaveBeenCalledWith('Vault "Work" removed from list')
+      expect(onToast).toHaveBeenCalledWith('Project "Work" removed from list')
     })
 
     it('hides a default vault instead of deleting it', async () => {
@@ -502,7 +502,7 @@ describe('useVaultSwitcher', () => {
         result.current.removeVault('/docs/vault')
       })
 
-      expect(onToast).toHaveBeenCalledWith('Vault "Docs" removed from list')
+      expect(onToast).toHaveBeenCalledWith('Project "Docs" removed from list')
     })
 
     it('persists hidden_defaults when removing a default vault', async () => {
@@ -556,7 +556,7 @@ describe('useVaultSwitcher', () => {
       })
 
       expect(result.current.vaultPath).toBe(expectedDefaultVaultPath)
-      expect(onToast).toHaveBeenCalledWith('Getting Started vault ready')
+      expect(onToast).toHaveBeenCalledWith('Getting Started project ready')
     })
 
     it('attempts to create vault on disk if it does not exist', async () => {
@@ -591,7 +591,7 @@ describe('useVaultSwitcher', () => {
 
       expect(result.current.vaultPath).toBe('/work/vault')
       expect(result.current.isGettingStartedHidden).toBe(true)
-      expect(onToast).toHaveBeenCalledWith('Could not prepare Getting Started vault locally: git clone failed: fatal: unable to access')
+      expect(onToast).toHaveBeenCalledWith('Could not prepare Getting Started project locally: git clone failed: fatal: unable to access')
     })
   })
 

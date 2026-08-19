@@ -483,7 +483,7 @@ describe('App', () => {
       expect(screen.getByTestId('welcome-screen')).toBeInTheDocument()
     }, { timeout: SLOW_APP_READY_TIMEOUT_MS })
 
-    expect(screen.getByTestId('welcome-open-folder')).toHaveTextContent('Open existing vault')
+    expect(screen.getByTestId('welcome-open-folder')).toHaveTextContent('Open existing project')
   })
 
   it('ignores a remembered default vault when onboarding was never completed', async () => {
@@ -502,7 +502,7 @@ describe('App', () => {
     await waitFor(() => {
       expect(screen.getByTestId('welcome-screen')).toBeInTheDocument()
     }, { timeout: SLOW_APP_READY_TIMEOUT_MS })
-    expect(screen.getByTestId('welcome-open-folder')).toHaveTextContent('Open existing vault')
+    expect(screen.getByTestId('welcome-open-folder')).toHaveTextContent('Open existing project')
   })
 
   it('keeps one startup shell visible while the last vault is still resolving', async () => {
@@ -557,7 +557,7 @@ describe('App', () => {
     await waitFor(() => {
       expect(screen.getByText(/folder may have moved or been deleted/)).toBeInTheDocument()
     }, { timeout: SLOW_APP_READY_TIMEOUT_MS })
-    expect(screen.getByTestId('welcome-open-folder')).toHaveTextContent('Open existing vault')
+    expect(screen.getByTestId('welcome-open-folder')).toHaveTextContent('Open existing project')
   })
 
   it('shows welcome instead of vault-missing when the missing path was not a persisted active vault', async () => {
@@ -572,9 +572,9 @@ describe('App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByText('Welcome to Tolaria')).toBeInTheDocument()
+      expect(screen.getByText('Welcome to Markora')).toBeInTheDocument()
     })
-    expect(screen.getByTestId('welcome-open-folder')).toHaveTextContent('Open existing vault')
+    expect(screen.getByTestId('welcome-open-folder')).toHaveTextContent('Open existing project')
   })
 
   it('persists and opens the onboarding template vault after cloning', async () => {

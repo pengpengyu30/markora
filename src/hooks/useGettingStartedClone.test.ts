@@ -72,7 +72,7 @@ describe('useGettingStartedClone', () => {
     })
 
     expect(onSuccess).not.toHaveBeenCalled()
-    expect(onError).toHaveBeenCalledWith('Could not create Getting Started vault locally: git clone failed: fatal: unable to access')
+    expect(onError).toHaveBeenCalledWith('Could not create Getting Started project locally: git clone failed: fatal: unable to access')
   })
 
   it('surfaces the restart-required message when folder picking is blocked after update install', async () => {

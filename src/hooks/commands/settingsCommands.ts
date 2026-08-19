@@ -149,10 +149,10 @@ function buildVaultSettingsCommands({
   onRestoreGettingStarted,
 }: Pick<SettingsCommandsConfig, 'vaultCount' | 'isGettingStartedHidden' | 'onOpenVault' | 'onCreateEmptyVault' | 'onRemoveActiveVault' | 'onRestoreGettingStarted'>): CommandAction[] {
   return [
-    { id: 'create-empty-vault', label: 'Create Empty Vault…', group: 'Settings', keywords: ['vault', 'create', 'new', 'empty', 'folder'], enabled: !!onCreateEmptyVault, execute: () => onCreateEmptyVault?.() },
-    { id: 'open-vault', label: 'Open Vault…', group: 'Settings', keywords: ['vault', 'folder', 'switch', 'open', 'workspace'], enabled: true, execute: () => onOpenVault?.() },
-    { id: 'remove-vault', label: 'Remove Vault from List', group: 'Settings', keywords: ['vault', 'remove', 'disconnect', 'hide'], enabled: (vaultCount ?? 0) > 1 && !!onRemoveActiveVault, execute: () => onRemoveActiveVault?.() },
-    { id: 'restore-getting-started', label: 'Restore Getting Started Vault', group: 'Settings', keywords: ['vault', 'restore', 'demo', 'getting started', 'reset'], enabled: !!isGettingStartedHidden && !!onRestoreGettingStarted, execute: () => onRestoreGettingStarted?.() },
+    { id: 'create-empty-vault', label: 'Create Empty Project…', group: 'Settings', keywords: ['project', 'vault', 'create', 'new', 'empty', 'folder'], enabled: !!onCreateEmptyVault, execute: () => onCreateEmptyVault?.() },
+    { id: 'open-vault', label: 'Open Project…', group: 'Settings', keywords: ['project', 'vault', 'folder', 'switch', 'open', 'workspace'], enabled: true, execute: () => onOpenVault?.() },
+    { id: 'remove-vault', label: 'Remove Project from List', group: 'Settings', keywords: ['project', 'vault', 'remove', 'disconnect', 'hide'], enabled: (vaultCount ?? 0) > 1 && !!onRemoveActiveVault, execute: () => onRemoveActiveVault?.() },
+    { id: 'restore-getting-started', label: 'Restore Getting Started Project', group: 'Settings', keywords: ['project', 'vault', 'restore', 'demo', 'getting started', 'reset'], enabled: !!isGettingStartedHidden && !!onRestoreGettingStarted, execute: () => onRestoreGettingStarted?.() },
   ]
 }
 
@@ -171,8 +171,8 @@ function buildMaintenanceCommands({
       enabled: true,
       execute: onToggleGitignoredFilesVisibility ?? requestGitignoredVisibilityToggle,
     },
-    { id: 'reload-vault', label: 'Reload Vault', group: 'Settings', keywords: ['reload', 'refresh', 'rescan', 'sync', 'filesystem', 'cache'], enabled: !!onReloadVault, execute: () => onReloadVault?.() },
-    { id: 'repair-vault', label: 'Repair Vault', group: 'Settings', keywords: ['repair', 'fix', 'restore', 'config', 'missing', 'reset', 'flatten', 'structure'], enabled: !!onRepairVault, execute: () => onRepairVault?.() },
+    { id: 'reload-vault', label: 'Reload Project', group: 'Settings', keywords: ['project', 'reload', 'refresh', 'rescan', 'sync', 'filesystem', 'cache'], enabled: !!onReloadVault, execute: () => onReloadVault?.() },
+    { id: 'repair-vault', label: 'Repair Project', group: 'Settings', keywords: ['project', 'repair', 'fix', 'restore', 'config', 'missing', 'reset', 'flatten', 'structure'], enabled: !!onRepairVault, execute: () => onRepairVault?.() },
     { id: 'restore-deleted-note', label: 'Restore Deleted Note…', group: 'Settings', keywords: ['restore', 'deleted', 'note', 'recover', 'recovery', 'undo'], enabled: !!onRestoreDeletedNote, execute: () => onRestoreDeletedNote?.() },
   ]
 }

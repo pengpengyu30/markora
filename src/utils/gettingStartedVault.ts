@@ -43,7 +43,7 @@ export function buildGettingStartedVaultPath(parentPath: string): string {
 
 export function labelFromPath(path: string): string {
   const trimmed = path.trim().replace(/[\\/]+$/g, '')
-  return trimmed.split(/[\\/]/).pop() || 'Vault'
+  return trimmed.split(/[\\/]/).pop() || 'Project'
 }
 
 export function formatGettingStartedCloneError(err: unknown): string {
@@ -60,16 +60,16 @@ export function formatGettingStartedCloneError(err: unknown): string {
 
   const lower = message.toLowerCase()
   if (GIT_NOT_FOUND_ERRORS.some(fragment => lower.includes(fragment))) {
-    return 'Git is required to create the Getting Started vault. Install Git and try again.'
+    return 'Git is required to create the Getting Started project. Install Git and try again.'
   }
   if (AUTH_ERRORS.some(fragment => lower.includes(fragment))) {
-    return 'Could not create Getting Started vault locally. Check your Git installation and try again.'
+    return 'Could not create Getting Started project locally. Check your Git installation and try again.'
   }
   if (NETWORK_ERRORS.some(fragment => lower.includes(fragment))) {
-    return 'Could not create Getting Started vault locally. Try again.'
+    return 'Could not create Getting Started project locally. Try again.'
   }
 
-  return `Could not create Getting Started vault locally: ${firstCloneErrorLine(message)}`
+  return `Could not create Getting Started project locally: ${firstCloneErrorLine(message)}`
 }
 
 function firstCloneErrorLine(message: string): string {

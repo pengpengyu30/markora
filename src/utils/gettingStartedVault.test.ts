@@ -30,16 +30,16 @@ describe('gettingStartedVault', () => {
 
   it('maps git-not-found clone failures to an installation message', () => {
     expect(formatGettingStartedCloneError('Failed to run git clone: The system cannot find the file specified. (os error 2)'))
-      .toBe('Git is required to create the Getting Started vault. Install Git and try again.')
+      .toBe('Git is required to create the Getting Started project. Install Git and try again.')
   })
 
   it('maps concrete network clone failures to the connection message', () => {
     expect(formatGettingStartedCloneError('git clone failed: fatal: unable to access: Could not resolve host: github.com'))
-      .toBe('Could not create Getting Started vault locally. Try again.')
+      .toBe('Could not create Getting Started project locally. Try again.')
   })
 
   it('preserves unexpected clone failure details', () => {
     expect(formatGettingStartedCloneError('git clone failed: fatal: unable to access'))
-      .toBe('Could not create Getting Started vault locally: git clone failed: fatal: unable to access')
+      .toBe('Could not create Getting Started project locally: git clone failed: fatal: unable to access')
   })
 })

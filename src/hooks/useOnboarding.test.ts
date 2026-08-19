@@ -262,7 +262,7 @@ describe('useOnboarding', () => {
       await result.current.handleCreateVault()
     })
 
-    expect(result.current.error).toBe('Could not create Getting Started vault locally: git clone failed: fatal: unable to access')
+    expect(result.current.error).toBe('Could not create Getting Started project locally: git clone failed: fatal: unable to access')
     expect(result.current.state.status).toBe('welcome')
   })
 
@@ -350,7 +350,7 @@ describe('useOnboarding', () => {
     })
 
     expect(result.current.state).toEqual({ status: 'welcome', defaultPath: DEFAULT_GETTING_STARTED_PATH })
-    expect(result.current.error).toBe('Could not open vault: Failed to write vault list')
+    expect(result.current.error).toBe('Could not open project: Failed to write vault list')
   })
 
   it('does nothing when the open-folder picker is cancelled', async () => {

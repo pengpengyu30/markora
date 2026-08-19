@@ -379,7 +379,7 @@ fn build_note_menu(app: &App) -> MenuResult {
 }
 
 fn build_vault_menu(app: &App) -> MenuResult {
-    build_manifest_menu(app, "Vault")
+    build_manifest_menu(app, "Project")
 }
 
 fn build_window_menu(app: &App) -> MenuResult {

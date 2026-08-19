@@ -158,7 +158,7 @@ window.__laputaTest = {
     }
 
     if (!window.__laputaTest?.dispatchBrowserMenuCommand) {
-      throw new Error('Tolaria test bridge is missing dispatchBrowserMenuCommand')
+      throw new Error('Markora test bridge is missing dispatchBrowserMenuCommand')
     }
 
     window.__laputaTest.dispatchBrowserMenuCommand(id)
@@ -220,7 +220,7 @@ function showFatalRenderError(
 ): void {
   const overlay = fatalRenderOverlay()
   overlay.textContent = [
-    'Tolaria render error',
+    'Markora render error',
     '',
     errorText(error),
     '',
@@ -259,7 +259,7 @@ function captureRecoverableReactRootError(
 
 function getRequiredRootElement(): HTMLElement {
   const root = document.getElementById('root')
-  if (!root) throw new Error('Tolaria root element is missing')
+  if (!root) throw new Error('Markora root element is missing')
   return root
 }
 

@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import { OnboardingShell } from './OnboardingShell'
 import { Button } from '@/components/ui/button'
 import customizeLogo from '@/assets/customize-logo-cropped.svg'
-import { TOLARIA_FIRST_LAUNCH_DOCS_URL } from '@/constants/docs'
+import { MARKORA_FIRST_LAUNCH_DOCS_URL } from '@/constants/docs'
 import { translate, type AppLocale } from '@/lib/i18n'
 import { openExternalUrl } from '@/utils/url'
 
@@ -290,7 +290,7 @@ function getWelcomeScreenPresentation(
   if (mode === 'welcome') {
     return {
       heroBackground: 'transparent',
-      heroIcon: <img src={customizeLogo} alt="Tolaria icon" style={BRAND_ICON_STYLE} />,
+      heroIcon: <img src={customizeLogo} alt="Markora icon" style={BRAND_ICON_STYLE} />,
       openFolderLabel: translate(locale, 'onboarding.welcome.openExisting'),
       subtitle: translate(locale, 'onboarding.welcome.subtitle'),
       templateDescription: isOffline
@@ -304,7 +304,7 @@ function getWelcomeScreenPresentation(
 
   return {
     heroBackground: 'transparent',
-    heroIcon: <img src={customizeLogo} alt="Tolaria icon" style={BRAND_ICON_STYLE} />,
+    heroIcon: <img src={customizeLogo} alt="Markora icon" style={BRAND_ICON_STYLE} />,
     openFolderLabel: translate(locale, 'onboarding.welcome.openExisting'),
     subtitle: translate(locale, 'onboarding.welcome.missingSubtitle'),
     templateDescription: isOffline
@@ -530,7 +530,7 @@ function WelcomeDocsLink({ locale }: { locale: AppLocale }) {
         variant="link"
         size="sm"
         className="h-auto gap-1 px-0 py-0 text-xs"
-        onClick={() => void openExternalUrl(TOLARIA_FIRST_LAUNCH_DOCS_URL)}
+        onClick={() => void openExternalUrl(MARKORA_FIRST_LAUNCH_DOCS_URL)}
         data-testid="welcome-docs-link"
       >
         {translate(locale, 'onboarding.welcome.docsLink')}

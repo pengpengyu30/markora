@@ -13,7 +13,7 @@ pub fn create_empty_vault(target_path: String) -> Result<String, String> {
 fn initialize_empty_vault(vault_dir: &Path, _vault_path: &str) -> Result<(), String> {
     ensure_directory_is_missing_or_empty(vault_dir)?;
     std::fs::create_dir_all(vault_dir)
-        .map_err(|e| format!("Failed to create vault directory: {}", e))?;
+        .map_err(|e| format!("Failed to create project directory: {}", e))?;
 
     git::ensure_vault_repository(vault_dir)?;
     Ok(())
@@ -27,7 +27,7 @@ fn ensure_directory_is_missing_or_empty(vault_dir: &Path) -> Result<(), String> 
     let metadata = std::fs::metadata(vault_dir)
         .map_err(|e| format!("Failed to inspect target folder: {e}"))?;
     if !metadata.is_dir() {
-        return Err("Choose a folder path for the new vault".to_string());
+        return Err("Choose a folder path for the new project".to_string());
     }
 
     let has_entries = std::fs::read_dir(vault_dir)
@@ -35,7 +35,7 @@ fn ensure_directory_is_missing_or_empty(vault_dir: &Path) -> Result<(), String> 
         .next()
         .is_some();
     if has_entries {
-        return Err("Choose an empty folder to create a new vault".to_string());
+        return Err("Choose an empty folder to create a new project".to_string());
     }
 
     Ok(())
@@ -77,7 +77,7 @@ pub fn get_default_vault_path() -> Result<String, String> {
 
 #[tauri::command]
 pub fn repair_vault(_vault_path: String) -> Result<String, String> {
-    Ok("Vault repaired".to_string())
+    Ok("Project repaired".to_string())
 }
 
 #[cfg(test)]
@@ -107,11 +107,11 @@ mod tests {
 
         assert_eq!(
             ensure_directory_is_missing_or_empty(&file),
-            Err("Choose a folder path for the new vault".to_string())
+            Err("Choose a folder path for the new project".to_string())
         );
         assert_eq!(
             ensure_directory_is_missing_or_empty(&nonempty),
-            Err("Choose an empty folder to create a new vault".to_string())
+            Err("Choose an empty folder to create a new project".to_string())
         );
     }
 

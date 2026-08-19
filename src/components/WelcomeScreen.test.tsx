@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { beforeEach, describe, it, expect, vi } from 'vitest'
 import { WelcomeScreen } from './WelcomeScreen'
 import customizeLogo from '@/assets/customize-logo-cropped.svg'
-import { TOLARIA_FIRST_LAUNCH_DOCS_URL } from '@/constants/docs'
+import { MARKORA_FIRST_LAUNCH_DOCS_URL } from '@/constants/docs'
 
 const dragRegionMouseDown = vi.fn()
 const openExternalUrl = vi.fn()
@@ -35,14 +35,14 @@ describe('WelcomeScreen', () => {
   describe('welcome mode', () => {
     it('renders welcome title and subtitle', () => {
       render(<WelcomeScreen {...defaultProps} />)
-      expect(screen.getByText('Welcome to Tolaria')).toBeInTheDocument()
+      expect(screen.getByText('Welcome to Markora')).toBeInTheDocument()
       expect(screen.getByText('Markdown knowledge management for the age of AI')).toBeInTheDocument()
     })
 
-    it('renders the local Tolaria branding icon', () => {
+    it('renders the local Markora branding icon', () => {
       render(<WelcomeScreen {...defaultProps} />)
 
-      const brandIcon = screen.getByAltText('Tolaria icon')
+      const brandIcon = screen.getByAltText('Markora icon')
       expect(brandIcon).toHaveAttribute('src', customizeLogo)
     })
 
@@ -62,7 +62,7 @@ describe('WelcomeScreen', () => {
 
     it('shows the simplified template option description', () => {
       render(<WelcomeScreen {...defaultProps} />)
-      expect(screen.getByText('Download the Getting Started vault')).toBeInTheDocument()
+      expect(screen.getByText('Download the Getting Started project')).toBeInTheDocument()
       expect(screen.queryByText(/~\/Documents\/Laputa/)).not.toBeInTheDocument()
     })
 
@@ -138,9 +138,9 @@ describe('WelcomeScreen', () => {
       expect(screen.getByTestId('welcome-status')).toHaveAttribute('aria-live', 'polite')
     })
 
-    it('shows loading text on create-new button while creating an empty vault', () => {
+    it('shows loading text on create-new button while creating an empty project', () => {
       render(<WelcomeScreen {...defaultProps} creatingAction="empty" />)
-      expect(screen.getByTestId('welcome-create-new')).toHaveTextContent(/Creating vault/)
+      expect(screen.getByTestId('welcome-create-new')).toHaveTextContent(/Creating project/)
     })
 
     it('shows error message when error is set', () => {
@@ -159,7 +159,7 @@ describe('WelcomeScreen', () => {
       render(
         <WelcomeScreen
           {...defaultProps}
-          error="Could not create Getting Started vault locally. Try again."
+          error="Could not create Getting Started project locally. Try again."
           canRetryTemplate={true}
           onRetryCreateVault={onRetryCreateVault}
         />,
@@ -177,7 +177,7 @@ describe('WelcomeScreen', () => {
     it('opens the first-launch docs from the welcome card', () => {
       render(<WelcomeScreen {...defaultProps} />)
       fireEvent.click(screen.getByTestId('welcome-docs-link'))
-      expect(openExternalUrl).toHaveBeenCalledWith(TOLARIA_FIRST_LAUNCH_DOCS_URL)
+      expect(openExternalUrl).toHaveBeenCalledWith(MARKORA_FIRST_LAUNCH_DOCS_URL)
     })
   })
 
@@ -190,7 +190,7 @@ describe('WelcomeScreen', () => {
 
     it('keeps the missing-vault state framed as welcome', () => {
       render(<WelcomeScreen {...missingProps} />)
-      expect(screen.getByText('Welcome to Tolaria')).toBeInTheDocument()
+      expect(screen.getByText('Welcome to Markora')).toBeInTheDocument()
       expect(screen.getByText(/folder may have moved or been deleted/)).toBeInTheDocument()
     })
 
@@ -201,7 +201,7 @@ describe('WelcomeScreen', () => {
 
     it('keeps the existing-vault action label in the friendly recovery state', () => {
       render(<WelcomeScreen {...missingProps} />)
-      expect(screen.getByTestId('welcome-open-folder')).toHaveTextContent('Open existing vault')
+      expect(screen.getByTestId('welcome-open-folder')).toHaveTextContent('Open existing project')
     })
   })
 

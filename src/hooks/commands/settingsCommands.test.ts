@@ -159,7 +159,7 @@ describe('buildSettingsCommands', () => {
     const command = commands.find((item) => item.id === 'create-empty-vault')
 
     expect(command).toMatchObject({
-      label: 'Create Empty Vault…',
+      label: 'Create Empty Project…',
       enabled: true,
       group: 'Settings',
     })

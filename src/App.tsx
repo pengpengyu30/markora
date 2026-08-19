@@ -43,7 +43,7 @@ import type { SidebarSelection, VaultEntry } from './types'
 import { refreshPulledVaultState } from './utils/pulledVaultRefresh'
 import { RenameDetectedBanner } from './components/RenameDetectedBanner'
 import type { NoteListMultiSelectionCommands } from './components/note-list/multiSelectionCommands'
-import { TOLARIA_DOCS_URL } from './constants/docs'
+import { MARKORA_DOCS_URL } from './constants/docs'
 import { openExternalUrl } from './utils/url'
 import { requestPlainTextPaste } from './utils/plainTextPaste'
 import { SETTINGS_SECTION_IDS } from './components/settingsSectionIds'
@@ -119,7 +119,7 @@ function MainApp() {
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const dialogs = useDialogs()
   const openDocs = useCallback(() => {
-    void openExternalUrl(TOLARIA_DOCS_URL)
+    void openExternalUrl(MARKORA_DOCS_URL)
   }, [])
   const networkStatus = useNetworkStatus()
   const { settings, loaded: settingsLoaded, saveSettings } = useSettings()
@@ -159,19 +159,19 @@ function MainApp() {
       return
     }
 
-    const label = vaultPath.split('/').filter(Boolean).pop() || 'Local Vault'
+    const label = vaultPath.split('/').filter(Boolean).pop() || 'Local Project'
     syncVaultSelection(vaultPath, label)
   }, [allVaults, switchVault, syncVaultSelection])
 
   const handleGettingStartedVaultReady = useCallback((vaultPath: string) => {
     rememberVaultChoice(vaultPath)
-    setToastMessage(`Getting Started vault created locally and opened at ${vaultPath}`)
+    setToastMessage(`Getting Started project created locally and opened at ${vaultPath}`)
   }, [rememberVaultChoice])
 
   const handleOnboardingVaultReady = useCallback((vaultPath: string, source: 'template' | 'empty' | 'existing') => {
     rememberVaultChoice(vaultPath)
     if (source === 'template') {
-      setToastMessage(`Getting Started vault created locally and opened at ${vaultPath}`)
+      setToastMessage(`Getting Started project created locally and opened at ${vaultPath}`)
     }
   }, [rememberVaultChoice])
   const cloneGettingStartedVault = useGettingStartedClone({
@@ -701,7 +701,7 @@ function MainApp() {
       await vault.reloadVault()
       setToastMessage(msg)
     } catch (err) {
-      setToastMessage(`Failed to repair vault: ${err}`)
+      setToastMessage(`Failed to repair project: ${err}`)
     }
   }, [resolvedPath, vault])
 
@@ -760,7 +760,7 @@ function MainApp() {
   const reloadVaultForCommand = vault.reloadVault
   const handleManualVaultReload = useCallback(async () => {
     const entries = await reloadVaultForCommand()
-    setToastMessage(`Vault reloaded (${entries.length} ${entries.length === 1 ? 'entry' : 'entries'})`)
+    setToastMessage(`Project reloaded (${entries.length} ${entries.length === 1 ? 'entry' : 'entries'})`)
     return entries
   }, [reloadVaultForCommand])
 

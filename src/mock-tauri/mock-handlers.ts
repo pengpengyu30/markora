@@ -450,7 +450,7 @@ export const mockHandlers = {
   copy_text_to_clipboard: () => null,
   read_text_from_clipboard: () => '',
   repair_vault: (): string => {
-    return 'Vault repaired'
+    return 'Project repaired'
   },
 } satisfies Record<string, (...args: never[]) => unknown>
 

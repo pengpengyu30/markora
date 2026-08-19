@@ -282,7 +282,7 @@ mod tests {
         let result = create_empty_vault(vault_path.to_string_lossy().to_string());
         let err = result.expect_err("expected non-empty folder to be rejected");
 
-        assert_eq!(err, "Choose an empty folder to create a new vault");
+        assert_eq!(err, "Choose an empty folder to create a new project");
         assert_paths_exist(&vault_path, &["keep.txt"]);
         assert_paths_absent(
             &vault_path,

@@ -173,7 +173,7 @@ function useTemplateVaultCreation(
         await registerVaultSelection(options.registerVault, vaultPath, { verifyAvailability: false })
       } catch (err) {
         options.setError(formatOnboardingRegistrationError({
-          action: 'Could not register the Getting Started vault',
+          action: 'Could not register the Getting Started project',
           err,
         }))
         return
@@ -196,7 +196,7 @@ function useCreateVaultHandler(
     const parentPath = await pickFolderWithOnboardingError({
       action: 'Could not choose a parent folder',
       setError,
-      title: 'Choose a parent folder for the Getting Started vault',
+      title: 'Choose a parent folder for the Getting Started project',
     })
     if (!parentPath) return
 
@@ -209,9 +209,9 @@ function useCreateEmptyVaultHandler(
 ) {
   return useCallback(async () => {
     const path = await pickFolderWithOnboardingError({
-      action: 'Could not choose where to create your vault',
+      action: 'Could not choose where to create your project',
       setError: options.setError,
-      title: 'Choose where to create your vault',
+      title: 'Choose where to create your project',
     })
     if (!path) return
 
@@ -222,7 +222,7 @@ function useCreateEmptyVaultHandler(
         await registerVaultSelection(options.registerVault, vaultPath, { verifyAvailability: false })
       } catch (err) {
         options.setError(formatOnboardingRegistrationError({
-          action: 'Could not register the new vault',
+          action: 'Could not register the new project',
           err,
         }))
         return
@@ -230,7 +230,7 @@ function useCreateEmptyVaultHandler(
       markVaultReady(options.setState, vaultPath)
       options.onVaultReady?.(vaultPath, 'empty')
     } catch (err) {
-      options.setError(typeof err === 'string' ? err : `Failed to create vault: ${err}`)
+      options.setError(typeof err === 'string' ? err : `Failed to create project: ${err}`)
     } finally {
       options.setCreatingAction(null)
     }
@@ -244,7 +244,7 @@ function useOpenFolderHandler(
     const path = await pickFolderWithOnboardingError({
       action: 'Failed to open folder',
       setError: options.setError,
-      title: 'Open vault folder',
+      title: 'Open project folder',
     })
     if (!path) return
 
@@ -252,7 +252,7 @@ function useOpenFolderHandler(
       await registerVaultSelection(options.registerVault, path)
     } catch (err) {
       options.setError(formatOnboardingRegistrationError({
-        action: 'Could not open vault',
+        action: 'Could not open project',
         err,
       }))
       return
