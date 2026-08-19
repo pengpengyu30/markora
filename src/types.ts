@@ -272,7 +272,7 @@ export type SidebarFilter = 'all'
 
 export type SidebarSelection =
   | { kind: 'filter'; filter: SidebarFilter }
-  | { kind: 'folder'; path: string; rootPath?: string }
+  | { kind: 'folder'; path: string; rootPath?: string; includeDescendants?: boolean }
 
 /** A node in the vault's folder tree (directories only, no files). */
 export interface FolderNode {

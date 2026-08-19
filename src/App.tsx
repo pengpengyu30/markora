@@ -76,6 +76,7 @@ import {
 } from './utils/appOrchestration'
 import { buildTagCounts, filterEntriesByTags } from './utils/noteTags'
 import type { SearchHighlightRequest } from './utils/searchHighlight'
+import { resolveStartupSelection } from './utils/startupSelection'
 import './App.css'
 
 // Type declarations for mock content storage and test overrides
@@ -94,13 +95,13 @@ function App() {
 }
 
 function MainApp() {
-  const [selection, setSelection] = useState<SidebarSelection>(DEFAULT_SELECTION)
+  const [selectionOverride, setSelectionOverride] = useState<SidebarSelection | null>(null)
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [pendingNoteListPdfExportPath, setPendingNoteListPdfExportPath] = useState<string | null>(null)
   const [searchHighlightRequest, setSearchHighlightRequest] = useState<SearchHighlightRequest | null>(null)
   const searchHighlightRequestIdRef = useRef(0)
   const handleSetSelection = useCallback((sel: SidebarSelection) => {
-    setSelection(sel)
+    setSelectionOverride(sel)
   }, [])
   const handleSelectSearchResult = useCallback((entry: VaultEntry, query: string) => {
     const trimmedQuery = query.trim()
@@ -135,7 +136,7 @@ function MainApp() {
   const vaultSwitcher = useVaultSwitcher({
     onBeforeSwitch: handleBeforeVaultSwitch,
     onSwitch: () => {
-      handleSetSelection(DEFAULT_SELECTION)
+      setSelectionOverride(null)
       setSelectedTags([])
       notes.closeAllTabs()
     },
@@ -150,6 +151,11 @@ function MainApp() {
     syncVaultSelection,
     switchVault,
   } = vaultSwitcher
+
+  const switchVaultFromUi = useCallback(async (vaultPath: string) => {
+    await switchVault(vaultPath)
+    setSelectionOverride(DEFAULT_SELECTION)
+  }, [switchVault])
 
   const rememberVaultChoice = useCallback((vaultPath: string) => {
     if (!vaultPath) return
@@ -188,6 +194,14 @@ function MainApp() {
   const resolvedPath = shouldPreferOnboardingVaultPath(onboarding.state, vaultSwitcher.allVaults)
     ? onboarding.state.vaultPath
     : vaultSwitcher.vaultPath
+  const startupSelection = useMemo(
+    () => resolveStartupSelection(defaultWorkspacePath, resolvedPath),
+    [defaultWorkspacePath, resolvedPath],
+  )
+  const effectiveSelection = useMemo(
+    () => selectionOverride ?? (vaultSwitcher.loaded ? startupSelection : DEFAULT_SELECTION),
+    [selectionOverride, startupSelection, vaultSwitcher.loaded],
+  )
   const [settingsInitialSectionId, setSettingsInitialSectionId] = useState<string | null>(null)
   const {
     folderVaults,
@@ -222,8 +236,8 @@ function MainApp() {
     visibleWorkspacePathList,
   })
   const activeProject = useMemo(
-    () => resolveActiveProject(selection, resolvedPath),
-    [resolvedPath, selection],
+    () => resolveActiveProject(effectiveSelection, resolvedPath),
+    [effectiveSelection, resolvedPath],
   )
   const projectPaths = useMemo(
     () => uniqueNonBlankWorkspacePaths([
@@ -234,15 +248,16 @@ function MainApp() {
   )
   const handleRevealNote = useCallback((entry: VaultEntry) => {
     const nextSelection = selectionForProjectLocation(resolveProjectLocation(entry.path, projectPaths, resolvedPath))
-    setSelection((current) => {
-      if (sidebarSelectionsEqual(current, nextSelection)) return current
+    setSelectionOverride((current) => {
+      const currentSelection = current ?? effectiveSelection
+      if (sidebarSelectionsEqual(currentSelection, nextSelection)) return current
       return nextSelection
     })
-  }, [projectPaths, resolvedPath])
+  }, [effectiveSelection, projectPaths, resolvedPath])
   const handleRevealNoteFromEditor = useCallback((entry: VaultEntry) => {
-    if (selection.kind !== 'folder') return
+    if (effectiveSelection.kind !== 'folder' || effectiveSelection.includeDescendants) return
     handleRevealNote(entry)
-  }, [handleRevealNote, selection.kind])
+  }, [effectiveSelection, handleRevealNote])
   const tagFilteredEntries = useMemo(
     () => filterEntriesByTags(visibleEntries, selectedTags),
     [selectedTags, visibleEntries],
@@ -264,8 +279,6 @@ function MainApp() {
     vaultPath: resolvedPath,
     vaultPaths: visibleWorkspaceRoots,
   })
-  const effectiveSelection = selection
-
   const {
     allNotesFileVisibility,
     appLocale,
@@ -420,7 +433,7 @@ function MainApp() {
   }, [flushEditorStateBeforeAction]) // eslint-disable-line react-hooks/exhaustive-deps -- noteActiveTabPathRef is stable
   useLastActiveNote({
     activeTabPath: noteActiveTabPath,
-    enabled: true,
+    enabled: false,
     entries: visibleEntries,
     isVaultLoading: vault.isLoading || !vaultSwitcher.loaded || !resolvedPath,
     openNote: handleSelectNote,
@@ -1006,7 +1019,7 @@ function MainApp() {
           </div>
         </div>
         <RenameDetectedBanner renames={detectedRenames} onUpdate={handleUpdateWikilinks} onDismiss={handleDismissRenames} />
-              <StatusBar noteCount={visibleEntries.length} vaultPath={resolvedPath} defaultWorkspacePath={defaultWorkspacePath} vaults={vaultSwitcher.allVaults} multiWorkspaceEnabled={multiWorkspaceEnabled} onSwitchVault={vaultSwitcher.switchVault} onSetDefaultWorkspace={handleSetDefaultWorkspace} onOpenSettings={handleOpenSettings} onOpenVaultSettings={handleOpenProjectSettings} onOpenDocs={openDocs} onOpenLocalFolder={vaultSwitcher.handleOpenLocalFolder} onCreateEmptyVault={vaultSwitcher.handleCreateEmptyVault} onCloneGettingStarted={cloneGettingStartedVault} isOffline={networkStatus.isOffline} isVaultReloading={vault.isReloading || isVaultContentLoading} zoomLevel={zoom.zoomLevel} themeMode={documentThemeMode} onZoomReset={zoom.zoomReset} onToggleThemeMode={settingsLoaded ? handleToggleThemeMode : undefined} onRemoveVault={vaultSwitcher.removeVault} onReorderVaults={vaultSwitcher.reorderVaults} onUpdateWorkspaceIdentity={vaultSwitcher.updateWorkspaceIdentity} locale={appLocale} />
+              <StatusBar noteCount={visibleEntries.length} vaultPath={resolvedPath} defaultWorkspacePath={defaultWorkspacePath} vaults={vaultSwitcher.allVaults} multiWorkspaceEnabled={multiWorkspaceEnabled} onSwitchVault={switchVaultFromUi} onSetDefaultWorkspace={handleSetDefaultWorkspace} onOpenSettings={handleOpenSettings} onOpenVaultSettings={handleOpenProjectSettings} onOpenDocs={openDocs} onOpenLocalFolder={vaultSwitcher.handleOpenLocalFolder} onCreateEmptyVault={vaultSwitcher.handleCreateEmptyVault} onCloneGettingStarted={cloneGettingStartedVault} isOffline={networkStatus.isOffline} isVaultReloading={vault.isReloading || isVaultContentLoading} zoomLevel={zoom.zoomLevel} themeMode={documentThemeMode} onZoomReset={zoom.zoomReset} onToggleThemeMode={settingsLoaded ? handleToggleThemeMode : undefined} onRemoveVault={vaultSwitcher.removeVault} onReorderVaults={vaultSwitcher.reorderVaults} onUpdateWorkspaceIdentity={vaultSwitcher.updateWorkspaceIdentity} locale={appLocale} />
         <DeleteProgressNotice count={deleteActions.pendingDeleteCount} />
         <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />
         <QuickOpenPalette open={dialogs.showQuickOpen} entries={visibleEntries} isLoading={vault.isLoading} onSelect={notes.handleSelectNote} onCreateNote={(title) => notes.handleCreateNote(title, 'quick_open')} onClose={dialogs.closeQuickOpen} locale={appLocale} />

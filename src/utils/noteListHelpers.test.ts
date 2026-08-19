@@ -107,6 +107,23 @@ describe('filterEntries', () => {
     expect(result.map((entry) => entry.title)).toEqual(['Root Note'])
   })
 
+  it('can show all files within a Project when its root is selected at startup', () => {
+    const entries = [
+      makeEntry({ path: '/Users/luca/Laputa/root-note.md', title: 'Root Note' }),
+      makeEntry({ path: '/Users/luca/Laputa/projects/nested.md', title: 'Nested Note' }),
+      makeEntry({ path: '/Users/luca/Team/other.md', title: 'Other' }),
+    ]
+
+    const result = filterEntries(entries, {
+      kind: 'folder',
+      path: '',
+      rootPath: '/Users/luca/Laputa',
+      includeDescendants: true,
+    })
+
+    expect(result.map((entry) => entry.title)).toEqual(['Root Note', 'Nested Note'])
+  })
+
   it('shows non-Markdown files in the vault root when the folder setting is enabled', () => {
     const entries = [
       makeEntry({ path: '/Users/luca/Laputa/root-note.md', title: 'Root Note', fileKind: 'markdown' }),

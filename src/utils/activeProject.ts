@@ -98,5 +98,7 @@ export function sidebarSelectionsEqual(
     return left.filter === right.filter
   }
   if (left.kind !== 'folder' || right.kind !== 'folder') return false
-  return left.path === right.path && left.rootPath === right.rootPath
+  return left.path === right.path
+    && left.rootPath === right.rootPath
+    && left.includeDescendants === right.includeDescendants
 }

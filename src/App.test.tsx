@@ -5,6 +5,7 @@ import { DEFAULT_VAULTS } from './hooks/useVaultSwitcher'
 import { formatShortcutDisplay } from './hooks/appCommandCatalog'
 import { invoke } from '@tauri-apps/api/core'
 import type { Settings } from './types'
+import { APP_STORAGE_KEYS } from './constants/appStorage'
 
 // Provide a localStorage mock that supports all methods (jsdom's may be incomplete)
 const localStorageMock = (() => {
@@ -361,6 +362,33 @@ describe('App', () => {
     }, { timeout: SLOW_APP_READY_TIMEOUT_MS })
   })
 
+  it('starts with only the default Project entries in the note list', async () => {
+    const otherProjectEntry = {
+      ...mockEntries[0],
+      path: '/other-project/other.md',
+      filename: 'other.md',
+      title: 'Other Project Note',
+    }
+    mockCommandResults.load_vault_list = {
+      vaults: [
+        { label: 'Default Project', path: '/vault' },
+        { label: 'Other Project', path: '/other-project' },
+      ],
+      active_vault: '/vault',
+      default_workspace_path: '/vault',
+      hidden_defaults: [],
+    }
+    mockCommandResults.list_vault = ({ path }: { path?: string } = {}) =>
+      path === '/other-project' ? [otherProjectEntry] : mockEntries
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Test Project').length).toBeGreaterThan(0)
+      expect(screen.queryByText('Other Project Note')).not.toBeInTheDocument()
+    }, { timeout: SLOW_APP_READY_TIMEOUT_MS })
+  })
+
   it('passes every visible Project root to global search', async () => {
     mockCommandResults.load_vault_list = {
       vaults: [
@@ -409,6 +437,17 @@ describe('App', () => {
     render(<App />)
     await waitFor(() => {
       expect(screen.getByText('Select a note to start editing')).toBeInTheDocument()
+    })
+  })
+
+  it('does not restore the last active note during startup', async () => {
+    localStorage.setItem(APP_STORAGE_KEYS.lastActiveNotePath, '/vault/project/test.md')
+
+    render(<App />)
+
+    await screen.findByText('Select a note to start editing')
+    await waitFor(() => {
+      expect(window.__laputaTest?.activeTabPath).toBeNull()
     })
   })
 

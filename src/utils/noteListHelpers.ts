@@ -228,6 +228,13 @@ function isDirectRootEntry(entryPath: string, rootPath?: string): boolean {
   return relativePath.length > 0 && !relativePath.includes('/')
 }
 
+function isEntryInsideRoot(entryPath: string, rootPath?: string): boolean {
+  const normalizedEntryPath = normalizeFolderPath(entryPath)
+  const normalizedRootPath = rootPath ? normalizeFolderPath(rootPath) : ''
+  if (!normalizedRootPath) return normalizedEntryPath.length > 0
+  return normalizedEntryPath.startsWith(`${normalizedRootPath}/`)
+}
+
 function pathRelativeToRoot(entryPath: string, rootPath?: string): string | null {
   const normalizedRootPath = rootPath ? normalizeFolderPath(rootPath) : ''
   if (!normalizedRootPath) return normalizeFolderPath(entryPath)
@@ -253,7 +260,9 @@ function filterFolderEntries(
   showNonMarkdown: boolean,
 ): VaultEntry[] {
   const folderEntries = !selection.path
-    ? filterRootEntries(entries, selection.rootPath)
+    ? selection.includeDescendants
+      ? entries.filter((entry) => isEntryInsideRoot(entry.path, selection.rootPath))
+      : filterRootEntries(entries, selection.rootPath)
     : entries.filter((entry) => isEntryInSelectedFolder(entry.path, selection.path, selection.rootPath))
   return showNonMarkdown ? folderEntries : folderEntries.filter(isMarkdown)
 }
