@@ -86,7 +86,7 @@ describe('NoteItem', () => {
     fireEvent.dragStart(item, { dataTransfer })
 
     expect(dataTransfer.effectAllowed).toBe('move')
-    expect(dataTransfer.setData).toHaveBeenCalledWith('application/x-tolaria-note-path', entry.path)
+    expect(dataTransfer.setData).toHaveBeenCalledWith('application/x-markora-note-path', entry.path)
     expect(dataTransfer.setData).toHaveBeenCalledWith('text/plain', entry.path)
   })
 

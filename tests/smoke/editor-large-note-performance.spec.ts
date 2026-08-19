@@ -44,7 +44,7 @@ const largeEntry = {
   snippet: 'Synthetic large note for editor performance instrumentation.',
   wordCount: 4600,
   relationships: {},
-  outgoingLinks: ['build-laputa-app'],
+  outgoingLinks: ['build-markora-app'],
   icon: null,
   color: null,
   order: null,

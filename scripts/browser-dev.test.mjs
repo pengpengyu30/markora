@@ -120,13 +120,13 @@ test('Tauri browser mode puts the project pnpm shim first in PATH', () => {
   const env = browserProcessEnv(
     { mode: 'tauri', host: '127.0.0.1', port: 5202 },
     ROOT_DIR,
-    { PATH: '/usr/bin', TOLARIA_VITE_CACHE_DIR: '/tmp/browser-cache' },
+    { PATH: '/usr/bin', MARKORA_VITE_CACHE_DIR: '/tmp/browser-cache' },
   )
   assert.equal(
     env.PATH,
     `${path.join(ROOT_DIR, '.tools', 'pnpm', 'node_modules', '.bin')}${path.delimiter}/usr/bin`,
   )
-  assert.equal(env.TOLARIA_VITE_CACHE_DIR, '/tmp/browser-cache')
+  assert.equal(env.MARKORA_VITE_CACHE_DIR, '/tmp/browser-cache')
 })
 
 test('browser startup reports the explicit Chromium installation command', () => {

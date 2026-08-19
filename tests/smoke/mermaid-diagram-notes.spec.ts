@@ -301,10 +301,10 @@ function mermaidSvg(page: Page, diagramIndex: number): Locator {
 
 function mermaidBodyArtifacts(page: Page): Locator {
   return page.locator([
-    'body > [data-tolaria-mermaid-render-host]',
-    'body > [id^="tolaria-mermaid-"]',
-    'body > [id^="dtolaria-mermaid-"]',
-    'body > [id^="itolaria-mermaid-"]',
+    'body > [data-markora-mermaid-render-host]',
+    'body > [id^="markora-mermaid-"]',
+    'body > [id^="dmarkora-mermaid-"]',
+    'body > [id^="imarkora-mermaid-"]',
   ].join(', '))
 }
 
@@ -330,9 +330,9 @@ async function setDocumentZoom(page: Page, percent: number): Promise<void> {
   await page.evaluate((zoomPercent) => {
     const factor = zoomPercent / 100
     document.documentElement.style.setProperty('zoom', `${zoomPercent}%`)
-    document.documentElement.style.setProperty('--tolaria-overlay-zoom-factor', String(factor))
-    document.documentElement.style.setProperty('--tolaria-overlay-zoom-inverse', String(1 / factor))
-    window.dispatchEvent(new Event('laputa-zoom-change'))
+    document.documentElement.style.setProperty('--markora-overlay-zoom-factor', String(factor))
+    document.documentElement.style.setProperty('--markora-overlay-zoom-inverse', String(1 / factor))
+    window.dispatchEvent(new Event('markora-zoom-change'))
   }, percent)
 }
 
@@ -611,7 +611,7 @@ test('Mermaid diagram clicks stay stable while a vault reload settles', async ({
   await mermaidSvg(page, 0).click()
 
   await expectRenderedDiagramCount(page, 1)
-  await expect(page.locator('#tolaria-fatal-render-error')).toHaveCount(0)
+  await expect(page.locator('#markora-fatal-render-error')).toHaveCount(0)
   await expect(mermaidSvg(page, 0)).toContainText('Linked to a planned shift?')
   expect(pageErrors).toEqual([])
 })
@@ -700,11 +700,11 @@ ${REPORTED_INVALID_DIAGRAM}
   await toggleRawMode(page, '.bn-editor')
   await expect(page.locator('[data-testid="mermaid-diagram-error"]')).toContainText('## ABC')
   await expect(mermaidBodyArtifacts(page)).toHaveCount(0)
-  await expect(page.locator('#tolaria-fatal-render-error')).toHaveCount(0)
+  await expect(page.locator('#markora-fatal-render-error')).toHaveCount(0)
 
   await toggleRawMode(page, '.cm-content')
   await toggleRawMode(page, '.bn-editor')
   await expect(page.locator('[data-testid="mermaid-diagram-error"]')).toContainText('## ABC')
   await expect(mermaidBodyArtifacts(page)).toHaveCount(0)
-  await expect(page.locator('#tolaria-fatal-render-error')).toHaveCount(0)
+  await expect(page.locator('#markora-fatal-render-error')).toHaveCount(0)
 })

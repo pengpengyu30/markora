@@ -391,10 +391,10 @@ export function useCodeMirror(
     // ResizeObserver doesn't fire for ancestor zoom changes. Force a re-measure
     // so cursor placement stays accurate at any zoom level.
     const handleZoomChange = () => { view.requestMeasure() }
-    window.addEventListener('laputa-zoom-change', handleZoomChange)
+    window.addEventListener('markora-zoom-change', handleZoomChange)
 
     return () => {
-      window.removeEventListener('laputa-zoom-change', handleZoomChange)
+      window.removeEventListener('markora-zoom-change', handleZoomChange)
       Reflect.deleteProperty(parent, '__cmView')
       view.destroy()
       viewRef.current = null

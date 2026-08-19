@@ -25,9 +25,9 @@ function seedDateProperty(notePath: string, value: string): void {
 async function setAppZoom(page: Page, percent: number): Promise<void> {
   await page.evaluate((level) => {
     document.documentElement.style.setProperty('zoom', `${level}%`)
-    document.documentElement.style.setProperty('--tolaria-overlay-zoom-factor', String(level / 100))
-    document.documentElement.style.setProperty('--tolaria-overlay-zoom-inverse', String(100 / level))
-    window.dispatchEvent(new Event('laputa-zoom-change'))
+    document.documentElement.style.setProperty('--markora-overlay-zoom-factor', String(level / 100))
+    document.documentElement.style.setProperty('--markora-overlay-zoom-inverse', String(100 / level))
+    window.dispatchEvent(new Event('markora-zoom-change'))
   }, percent)
 }
 

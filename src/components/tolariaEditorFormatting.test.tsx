@@ -128,10 +128,10 @@ describe('tolariaEditorFormatting', () => {
     const iconChildren = Children.toArray(icon.props.children) as Array<
       ReactElement<{ className?: string; weight?: string }>
     >
-    expect(icon.props.className).toBe('tolaria-slash-menu-icon')
+    expect(icon.props.className).toBe('markora-slash-menu-icon')
     expect(iconChildren.map((child) => child.props.className)).toEqual([
-      'tolaria-slash-menu-icon__regular',
-      'tolaria-slash-menu-icon__fill',
+      'markora-slash-menu-icon__regular',
+      'markora-slash-menu-icon__fill',
     ])
     expect(iconChildren.map((child) => child.props.weight)).toEqual([
       'regular',

@@ -1,11 +1,11 @@
-.tolaria-search-highlight {
+.markora-search-highlight {
   border-radius: 2px;
   background-color: rgba(250, 204, 21, 0.58);
   box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.18);
-  animation: tolaria-search-highlight-fade 2s ease-out forwards;
+  animation: markora-search-highlight-fade 2s ease-out forwards;
 }
 
-@keyframes tolaria-search-highlight-fade {
+@keyframes markora-search-highlight-fade {
   0%, 22% {
     background-color: rgba(250, 204, 21, 0.58);
     box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.18);
@@ -17,13 +17,13 @@
   }
 }
 
-.tolaria-rich-editor-find-match {
+.markora-rich-editor-find-match {
   border-radius: 2px;
   background-color: rgba(250, 204, 21, 0.42);
   box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.16);
 }
 
-.tolaria-rich-editor-find-match-active {
+.markora-rich-editor-find-match-active {
   border-radius: 2px;
   background-color: rgba(249, 115, 22, 0.62);
   box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.22);
@@ -62,7 +62,7 @@
 }
 
 body.mac-chrome .app:not(:has(.app__sidebar), :has(.app__note-list)) .breadcrumb-bar {
-  --breadcrumb-bar-left-padding: var(--tolaria-macos-traffic-light-padding, 90px);
+  --breadcrumb-bar-left-padding: var(--markora-macos-traffic-light-padding, 90px);
 }
 
 .breadcrumb-bar[data-title-hidden] {
@@ -225,7 +225,7 @@ body.mac-chrome .app:not(:has(.app__sidebar), :has(.app__note-list)) .breadcrumb
   display: none !important;
 }
 
-.editor__blocknote-container .tolaria-slash-menu-icon {
+.editor__blocknote-container .markora-slash-menu-icon {
   position: relative;
   display: inline-flex;
   width: 20px;
@@ -234,32 +234,32 @@ body.mac-chrome .app:not(:has(.app__sidebar), :has(.app__note-list)) .breadcrumb
   justify-content: center;
 }
 
-.editor__blocknote-container .tolaria-turn-into-menu-dropdown {
+.editor__blocknote-container .markora-turn-into-menu-dropdown {
   min-width: 0 !important;
   width: auto !important;
 }
 
-.editor__blocknote-container .tolaria-turn-into-menu-dropdown .bn-menu-item {
+.editor__blocknote-container .markora-turn-into-menu-dropdown .bn-menu-item {
   min-width: max-content;
   white-space: nowrap;
   width: auto !important;
 }
 
-.editor__blocknote-container .tolaria-slash-menu-icon__fill {
+.editor__blocknote-container .markora-slash-menu-icon__fill {
   position: absolute;
   inset: 0;
   opacity: 0;
 }
 
-.editor__blocknote-container .bn-suggestion-menu-item:is(:hover, [aria-selected="true"]) .tolaria-slash-menu-icon__regular {
+.editor__blocknote-container .bn-suggestion-menu-item:is(:hover, [aria-selected="true"]) .markora-slash-menu-icon__regular {
   opacity: 0;
 }
 
-.editor__blocknote-container .bn-suggestion-menu-item:is(:hover, [aria-selected="true"]) .tolaria-slash-menu-icon__fill {
+.editor__blocknote-container .bn-suggestion-menu-item:is(:hover, [aria-selected="true"]) .markora-slash-menu-icon__fill {
   opacity: 1;
 }
 
-.tolaria-slash-menu__submenu {
+.markora-slash-menu__submenu {
   position: fixed;
   z-index: 90;
   display: flex;
@@ -276,14 +276,14 @@ body.mac-chrome .app:not(:has(.app__sidebar), :has(.app__note-list)) .breadcrumb
   color: var(--popover-foreground);
 }
 
-.tolaria-slash-menu__submenu-item {
+.markora-slash-menu__submenu-item {
   width: 100%;
   justify-content: flex-start;
   gap: 0.5rem;
   font-weight: 400;
 }
 
-.tolaria-slash-menu__submenu-item:is(:hover, [aria-selected='true']) {
+.markora-slash-menu__submenu-item:is(:hover, [aria-selected='true']) {
   background: var(--accent);
   color: var(--accent-foreground);
 }
@@ -381,8 +381,8 @@ body.mac-chrome .app:not(:has(.app__sidebar), :has(.app__note-list)) .breadcrumb
 }
 
 @media print {
-  html:has(body.tolaria-note-pdf-exporting),
-  body.tolaria-note-pdf-exporting {
+  html:has(body.markora-note-pdf-exporting),
+  body.markora-note-pdf-exporting {
     background: #fff !important;
     color: #111 !important;
     height: auto !important;
@@ -390,21 +390,21 @@ body.mac-chrome .app:not(:has(.app__sidebar), :has(.app__note-list)) .breadcrumb
     overflow: visible !important;
   }
 
-  body.tolaria-note-pdf-exporting * {
+  body.markora-note-pdf-exporting * {
     box-shadow: none !important;
     text-shadow: none !important;
     visibility: hidden !important;
   }
 
-  body.tolaria-note-pdf-exporting :is(.app__sidebar, .app__note-list, .breadcrumb-bar, .editor-memory-probe) {
+  body.markora-note-pdf-exporting :is(.app__sidebar, .app__note-list, .breadcrumb-bar, .editor-memory-probe) {
     display: none !important;
   }
 
-  body.tolaria-note-pdf-exporting .editor > .relative > :not(:has([data-note-pdf-export-root="true"])) {
+  body.markora-note-pdf-exporting .editor > .relative > :not(:has([data-note-pdf-export-root="true"])) {
     display: none !important;
   }
 
-  body.tolaria-note-pdf-exporting :is(#root, .app-shell, .app, .app__editor, .editor, .editor > .relative, .editor-content-width--normal, .editor-content-width--wide, .editor-scroll-area) {
+  body.markora-note-pdf-exporting :is(#root, .app-shell, .app, .app__editor, .editor, .editor > .relative, .editor-content-width--normal, .editor-content-width--wide, .editor-scroll-area) {
     display: block !important;
     height: auto !important;
     min-height: 0 !important;
@@ -412,12 +412,12 @@ body.mac-chrome .app:not(:has(.app__sidebar), :has(.app__note-list)) .breadcrumb
     width: auto !important;
   }
 
-  body.tolaria-note-pdf-exporting [data-note-pdf-export-root="true"],
-  body.tolaria-note-pdf-exporting [data-note-pdf-export-root="true"] * {
+  body.markora-note-pdf-exporting [data-note-pdf-export-root="true"],
+  body.markora-note-pdf-exporting [data-note-pdf-export-root="true"] * {
     visibility: visible !important;
   }
 
-  body.tolaria-note-pdf-exporting [data-note-pdf-export-root="true"] {
+  body.markora-note-pdf-exporting [data-note-pdf-export-root="true"] {
     display: block !important;
     width: 100% !important;
     max-width: none !important;
@@ -428,9 +428,9 @@ body.mac-chrome .app:not(:has(.app__sidebar), :has(.app__note-list)) .breadcrumb
     color: #111 !important;
   }
 
-  body.tolaria-note-pdf-exporting .editor__blocknote-container,
-  body.tolaria-note-pdf-exporting .bn-container,
-  body.tolaria-note-pdf-exporting .bn-editor {
+  body.markora-note-pdf-exporting .editor__blocknote-container,
+  body.markora-note-pdf-exporting .bn-container,
+  body.markora-note-pdf-exporting .bn-editor {
     height: auto !important;
     min-height: auto !important;
     overflow: visible !important;
@@ -438,31 +438,31 @@ body.mac-chrome .app:not(:has(.app__sidebar), :has(.app__note-list)) .breadcrumb
     color: #111 !important;
   }
 
-  body.tolaria-note-pdf-exporting .bn-editor {
+  body.markora-note-pdf-exporting .bn-editor {
     padding: 0 !important;
   }
 
-  body.tolaria-note-pdf-exporting :is(.bn-block-outer, figure, table, pre, .math-block-shell, .mermaid-diagram, .tldraw-whiteboard) {
+  body.markora-note-pdf-exporting :is(.bn-block-outer, figure, table, pre, .math-block-shell, .mermaid-diagram, .tldraw-whiteboard) {
     break-inside: avoid;
     page-break-inside: avoid;
   }
 
-  body.tolaria-note-pdf-exporting :is(img, svg, canvas) {
+  body.markora-note-pdf-exporting :is(img, svg, canvas) {
     max-width: 100% !important;
   }
 
-  body.tolaria-note-pdf-exporting :is(a, .wikilink) {
+  body.markora-note-pdf-exporting :is(a, .wikilink) {
     color: #111 !important;
     text-decoration: underline !important;
   }
 
-  body.tolaria-note-pdf-exporting .bn-block-content[data-content-type="codeBlock"] {
+  body.markora-note-pdf-exporting .bn-block-content[data-content-type="codeBlock"] {
     border-color: #d0d7de !important;
     background: #f6f8fa !important;
     color: #111 !important;
   }
 
-  body.tolaria-note-pdf-exporting :is(.editor__code-block-copy, .mermaid-diagram__expand-button, .tldraw-whiteboard__resize-handle, .tlui-layout, .tlui-popover, [data-radix-popper-content-wrapper]) {
+  body.markora-note-pdf-exporting :is(.editor__code-block-copy, .mermaid-diagram__expand-button, .tldraw-whiteboard__resize-handle, .tlui-layout, .tlui-popover, [data-radix-popper-content-wrapper]) {
     display: none !important;
   }
 }
@@ -581,8 +581,8 @@ body.mac-chrome .app:not(:has(.app__sidebar), :has(.app__note-list)) .breadcrumb
   animation: none !important;
 }
 
-.editor__blocknote-container .tolaria-search-highlight {
-  animation: tolaria-search-highlight-fade 2s ease-out forwards !important;
+.editor__blocknote-container .markora-search-highlight {
+  animation: markora-search-highlight-fade 2s ease-out forwards !important;
 }
 
 /* Reduce padding at narrow editor widths so content isn't cramped */
@@ -595,7 +595,7 @@ body.mac-chrome .app:not(:has(.app__sidebar), :has(.app__note-list)) .breadcrumb
   }
 }
 
-.tolaria-callout {
+.markora-callout {
   --callout-accent: var(--feedback-info-text);
   --callout-background: var(--feedback-info-bg);
   margin: 0.5rem 0;
@@ -604,32 +604,32 @@ body.mac-chrome .app:not(:has(.app__sidebar), :has(.app__note-list)) .breadcrumb
   background: var(--callout-background);
 }
 
-.tolaria-callout--success {
+.markora-callout--success {
   --callout-accent: var(--feedback-success-text);
   --callout-background: var(--feedback-success-bg);
 }
 
-.tolaria-callout--warning {
+.markora-callout--warning {
   --callout-accent: var(--feedback-warning-text);
   --callout-background: var(--feedback-warning-bg);
 }
 
-.tolaria-callout--error {
+.markora-callout--error {
   --callout-accent: var(--feedback-error-text);
   --callout-background: var(--feedback-error-bg);
 }
 
-.tolaria-callout--example {
+.markora-callout--example {
   --callout-accent: var(--accent-purple);
   --callout-background: var(--accent-purple-light);
 }
 
-.tolaria-callout--quote {
+.markora-callout--quote {
   --callout-accent: var(--text-secondary);
   --callout-background: var(--surface-secondary);
 }
 
-.tolaria-callout__header {
+.markora-callout__header {
   display: flex;
   min-height: 2rem;
   align-items: center;
@@ -640,16 +640,16 @@ body.mac-chrome .app:not(:has(.app__sidebar), :has(.app__note-list)) .breadcrumb
   font-weight: 650;
 }
 
-.tolaria-callout__header > svg {
+.markora-callout__header > svg {
   width: 1.25rem;
   height: 1.25rem;
 }
 
-.tolaria-callout__body {
+.markora-callout__body {
   padding: 0.15rem 0.75rem 0.65rem;
   color: var(--color-foreground);
 }
 
-.tolaria-callout__body[hidden] {
+.markora-callout__body[hidden] {
   display: none;
 }

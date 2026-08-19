@@ -47,7 +47,7 @@ describe('RichEditorFindBar', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('rich-editor-find-count')).toHaveTextContent('1 / 2')
-      expect(view.dom.querySelector('.tolaria-rich-editor-find-match-active')).toHaveTextContent('Alpha')
+      expect(view.dom.querySelector('.markora-rich-editor-find-match-active')).toHaveTextContent('Alpha')
     })
 
     fireEvent.keyDown(input, { key: 'Enter' })
@@ -76,23 +76,23 @@ describe('RichEditorFindBar', () => {
     const onClose = vi.fn()
     const { view } = renderFindBar('Alpha', { onClose })
     fireEvent.change(screen.getByTestId('rich-editor-find-input'), { target: { value: 'Alpha' } })
-    await waitFor(() => expect(view.dom.querySelector('.tolaria-rich-editor-find-match-active')).toBeTruthy())
+    await waitFor(() => expect(view.dom.querySelector('.markora-rich-editor-find-match-active')).toBeTruthy())
 
     fireEvent.keyDown(screen.getByTestId('rich-editor-find-input'), { key: 'Escape' })
 
     expect(onClose).toHaveBeenCalledOnce()
-    expect(view.dom.querySelectorAll('[class*="tolaria-rich-editor-find-match"]')).toHaveLength(0)
+    expect(view.dom.querySelectorAll('[class*="markora-rich-editor-find-match"]')).toHaveLength(0)
     view.destroy()
   })
 
   it('clears decorations when the rendered find surface unmounts', async () => {
     const { unmount, view } = renderFindBar('Alpha')
     fireEvent.change(screen.getByTestId('rich-editor-find-input'), { target: { value: 'Alpha' } })
-    await waitFor(() => expect(view.dom.querySelector('.tolaria-rich-editor-find-match-active')).toBeTruthy())
+    await waitFor(() => expect(view.dom.querySelector('.markora-rich-editor-find-match-active')).toBeTruthy())
 
     unmount()
 
-    expect(view.dom.querySelectorAll('[class*="tolaria-rich-editor-find-match"]')).toHaveLength(0)
+    expect(view.dom.querySelectorAll('[class*="markora-rich-editor-find-match"]')).toHaveLength(0)
     view.destroy()
   })
 })

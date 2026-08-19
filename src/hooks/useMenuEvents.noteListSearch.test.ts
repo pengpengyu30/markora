@@ -56,12 +56,12 @@ describe('useMenuEvents note-list search bridge', () => {
 
   it('dispatches the note-list search toggle event for the native Cmd+F menu item', () => {
     const listener = vi.fn()
-    window.addEventListener('laputa:toggle-note-list-search', listener)
+    window.addEventListener('markora:toggle-note-list-search', listener)
 
     dispatchMenuEvent('edit-toggle-note-list-search', makeHandlers())
 
     expect(listener).toHaveBeenCalledTimes(1)
-    window.removeEventListener('laputa:toggle-note-list-search', listener)
+    window.removeEventListener('markora:toggle-note-list-search', listener)
   })
 
   it('syncs note-list search availability into the native menu state', async () => {
@@ -76,7 +76,7 @@ describe('useMenuEvents note-list search bridge', () => {
     }))
 
     act(() => {
-      window.dispatchEvent(new CustomEvent('laputa:note-list-search-availability', {
+      window.dispatchEvent(new CustomEvent('markora:note-list-search-availability', {
         detail: { enabled: true },
       }))
     })

@@ -59,7 +59,7 @@ describe('useMenuEvents editor find state', () => {
     }))
 
     act(() => {
-      window.dispatchEvent(new CustomEvent('laputa:editor-find-availability', {
+      window.dispatchEvent(new CustomEvent('markora:editor-find-availability', {
         detail: { enabled: true },
       }))
     })

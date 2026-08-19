@@ -447,7 +447,7 @@ describe('App', () => {
 
     await screen.findByText('Select a note to start editing')
     await waitFor(() => {
-      expect(window.__laputaTest?.activeTabPath).toBeNull()
+      expect(window.__markoraTest?.activeTabPath).toBeNull()
     })
   })
 
@@ -496,7 +496,7 @@ describe('App', () => {
           vaultPath: '/vault',
         })
       })
-      expect(window.__laputaTest?.activeTabPath).not.toBe('/vault/untitled-note-1700000000.md')
+      expect(window.__markoraTest?.activeTabPath).not.toBe('/vault/untitled-note-1700000000.md')
 
       await act(async () => {
         resolveSave()
@@ -504,7 +504,7 @@ describe('App', () => {
       })
 
       await waitFor(() => {
-        expect(window.__laputaTest?.activeTabPath).toBe('/vault/untitled-note-1700000000.md')
+        expect(window.__markoraTest?.activeTabPath).toBe('/vault/untitled-note-1700000000.md')
       })
       expect(screen.getAllByText('Untitled Note 1700000000').length).toBeGreaterThan(0)
     } finally {

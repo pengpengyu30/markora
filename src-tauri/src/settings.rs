@@ -645,18 +645,22 @@ mod tests {
         assert!(result.is_ok());
         let path = result.unwrap();
         let path = path.to_str().unwrap();
-        assert!(path.contains("com.tolaria.app") || path.contains("com.laputa.app"));
+        assert!(
+            path.contains("com.markora.app")
+                || path.contains("com.tolaria.app")
+                || path.contains("com.laputa.app")
+        );
     }
 
     #[test]
-    fn test_preferred_settings_path_uses_tolaria_namespace() {
+    fn test_preferred_settings_path_uses_markora_namespace() {
         let result = preferred_app_config_path("settings.json");
         assert!(result.is_ok());
         assert!(result
             .unwrap()
             .to_str()
             .unwrap()
-            .contains("com.tolaria.app"));
+            .contains("com.markora.app"));
     }
 
     #[test]

@@ -10,7 +10,7 @@ const readProjectFile = (relativePath) =>
   readFile(path.join(projectRoot, relativePath), 'utf8')
 
 test('local manifests expose the Markora product identity', async () => {
-  const [tauriConfig, devConfig, packageJson, cargoToml, mainRs, indexHtml, menuRs, commitRs, buildScript, runScript] =
+  const [tauriConfig, devConfig, packageJson, cargoToml, mainRs, indexHtml, mainTsx, menuRs, commitRs, buildScript, runScript] =
     await Promise.all([
       readProjectFile('src-tauri/tauri.conf.json').then(JSON.parse),
       readProjectFile('src-tauri/tauri.dev.conf.json').then(JSON.parse),
@@ -18,6 +18,7 @@ test('local manifests expose the Markora product identity', async () => {
       readProjectFile('src-tauri/Cargo.toml'),
       readProjectFile('src-tauri/src/main.rs'),
       readProjectFile('index.html'),
+      readProjectFile('src/main.tsx'),
       readProjectFile('src-tauri/src/menu.rs'),
       readProjectFile('src-tauri/src/git/commit.rs'),
       readProjectFile('scripts/build-macos-arm64.local'),
@@ -39,12 +40,16 @@ test('local manifests expose the Markora product identity', async () => {
 
   assert.match(mainRs, /markora_lib::run\(\)/)
   assert.match(indexHtml, /<title>Markora<\/title>/)
+  assert.doesNotMatch(indexHtml, /fonts\.googleapis\.com|fonts\.gstatic\.com/)
+  assert.match(mainTsx, /@blocknote\/core\/fonts\/inter\.css/)
+  assert.doesNotMatch(JSON.stringify(tauriConfig.app.security.csp), /fonts\.googleapis\.com|fonts\.gstatic\.com/)
+  assert.doesNotMatch(tauriConfig.app.security.devCsp, /fonts\.googleapis\.com|fonts\.gstatic\.com/)
   assert.match(menuRs, /SubmenuBuilder::new\(app, "Markora"\)/)
   assert.match(commitRs, /user\.name=Markora/)
 
   assert.match(buildScript, /release\/bundle\/macos\/Markora Dev\.app/)
   assert.match(buildScript, /Contents\/MacOS\/markora/)
   assert.match(runScript, /release\/bundle\/macos\/Markora Dev\.app/)
-  assert.match(buildScript, /\.tolaria-build\.local/)
-  assert.match(runScript, /\.tolaria-build\.local/)
+  assert.match(buildScript, /\.markora-build\.local/)
+  assert.match(runScript, /\.markora-build\.local/)
 })

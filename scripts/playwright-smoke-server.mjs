@@ -5,7 +5,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 const port = process.argv[2] ?? process.env.PORT ?? '41741'
-const viteCacheDir = process.env.TOLARIA_VITE_CACHE_DIR ?? join(tmpdir(), `tolaria-vite-smoke-${port}`)
+const viteCacheDir = process.env.MARKORA_VITE_CACHE_DIR
+  ?? process.env.TOLARIA_VITE_CACHE_DIR
+  ?? join(tmpdir(), `markora-vite-smoke-${port}`)
 
 const child = spawn(
   'pnpm',
@@ -14,7 +16,7 @@ const child = spawn(
     cwd: process.cwd(),
     env: {
       ...process.env,
-      TOLARIA_VITE_CACHE_DIR: viteCacheDir,
+      MARKORA_VITE_CACHE_DIR: viteCacheDir,
     },
     stdio: ['pipe', 'inherit', 'inherit'],
   },

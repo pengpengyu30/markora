@@ -16,14 +16,14 @@ function expectZoomChangeEvent(runZoom, initialZoom) {
     bindVaultConfigStore({ ...DEFAULT_VC, zoom: initialZoom }, vi.fn())
   }
   const handler = vi.fn()
-  globalThis.addEventListener('laputa-zoom-change', handler)
+  globalThis.addEventListener('markora-zoom-change', handler)
   try {
     const { result } = renderHook(() => useZoom())
     handler.mockClear()
     act(() => runZoom(result.current))
     expect(handler).toHaveBeenCalled()
   } finally {
-    globalThis.removeEventListener('laputa-zoom-change', handler)
+    globalThis.removeEventListener('markora-zoom-change', handler)
   }
 }
 
@@ -132,7 +132,7 @@ describe('useZoom', () => {
     expect(result.current.zoomLevel).toBe(100)
   })
 
-  it.each(ZOOM_CHANGE_CASES)('dispatches laputa-zoom-change event on %s', (_name, runZoom, initialZoom) => {
+  it.each(ZOOM_CHANGE_CASES)('dispatches markora-zoom-change event on %s', (_name, runZoom, initialZoom) => {
     expectZoomChangeEvent(runZoom, initialZoom)
   })
 

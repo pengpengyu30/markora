@@ -13,7 +13,7 @@ function dispatchAltKey(page: import('@playwright/test').Page, key: string) {
 async function loadApp(page: import('@playwright/test').Page) {
   await page.goto('/')
   // Clear stored view mode so we start fresh
-  await page.evaluate(() => localStorage.removeItem('laputa-view-mode'))
+  await page.evaluate(() => localStorage.removeItem('markora-view-mode'))
   await page.reload()
   await page.waitForTimeout(500)
 }

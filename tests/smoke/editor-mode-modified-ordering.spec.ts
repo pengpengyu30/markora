@@ -87,8 +87,8 @@ async function installSaveTracker(page: Page) {
       throw new Error('Tauri invoke bridge is missing')
     }
 
-    if (window.__laputaTest?.getTrackedSaveCount) {
-      window.__laputaTest.resetTrackedSaveCount?.()
+    if (window.__markoraTest?.getTrackedSaveCount) {
+      window.__markoraTest.resetTrackedSaveCount?.()
       return
     }
 
@@ -102,8 +102,8 @@ async function installSaveTracker(page: Page) {
       return originalInvoke(command, args)
     }
 
-    window.__laputaTest = {
-      ...window.__laputaTest,
+    window.__markoraTest = {
+      ...window.__markoraTest,
       getTrackedSaveCount: () => trackedSaveCount,
       resetTrackedSaveCount: () => {
         trackedSaveCount = 0
@@ -113,12 +113,12 @@ async function installSaveTracker(page: Page) {
 }
 
 async function trackedSaveCount(page: Page): Promise<number> {
-  return page.evaluate(() => window.__laputaTest?.getTrackedSaveCount?.() ?? 0)
+  return page.evaluate(() => window.__markoraTest?.getTrackedSaveCount?.() ?? 0)
 }
 
 async function resetTrackedSaveCount(page: Page) {
   await page.evaluate(() => {
-    window.__laputaTest?.resetTrackedSaveCount?.()
+    window.__markoraTest?.resetTrackedSaveCount?.()
   })
 }
 

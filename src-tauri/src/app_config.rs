@@ -1,11 +1,13 @@
 use std::path::{Path, PathBuf};
 
-const APP_CONFIG_NAMESPACE_ENV: &str = "TOLARIA_APP_CONFIG_NAMESPACE";
+const APP_CONFIG_NAMESPACE_ENV: &str = "MARKORA_APP_CONFIG_NAMESPACE";
+const PREVIOUS_APP_CONFIG_NAMESPACE_ENV: &str = "TOLARIA_APP_CONFIG_NAMESPACE";
 
 #[derive(Debug)]
 struct AppConfigPolicy {
     current_namespace: &'static str,
     development_namespace: &'static str,
+    previous_namespace: &'static str,
     legacy_namespace: &'static str,
     namespace_read_order: &'static [AppConfigNamespace],
 }
@@ -13,23 +15,36 @@ struct AppConfigPolicy {
 #[derive(Debug, Clone, Copy)]
 enum AppConfigNamespace {
     Current,
+    Previous,
     Legacy,
 }
 
 const APP_CONFIG_POLICY: AppConfigPolicy = AppConfigPolicy {
-    current_namespace: "com.tolaria.app",
-    development_namespace: "com.tolaria.app.dev",
+    current_namespace: "com.markora.app",
+    development_namespace: "com.markora.app.dev",
+    previous_namespace: "com.tolaria.app",
     legacy_namespace: "com.laputa.app",
-    namespace_read_order: &[AppConfigNamespace::Current, AppConfigNamespace::Legacy],
+    namespace_read_order: &[
+        AppConfigNamespace::Current,
+        AppConfigNamespace::Previous,
+        AppConfigNamespace::Legacy,
+    ],
 };
 
 impl AppConfigPolicy {
     fn current_namespace(&self) -> &str {
-        self.current_namespace_for(std::env::var(APP_CONFIG_NAMESPACE_ENV).ok().as_deref())
+        let requested_namespace = std::env::var(APP_CONFIG_NAMESPACE_ENV)
+            .or_else(|_| std::env::var(PREVIOUS_APP_CONFIG_NAMESPACE_ENV))
+            .ok();
+        self.current_namespace_for(requested_namespace.as_deref())
     }
 
     fn current_namespace_for(&self, requested_namespace: Option<&str>) -> &str {
-        if requested_namespace.map(str::trim) == Some(self.development_namespace) {
+        if matches!(
+            requested_namespace.map(str::trim),
+            Some(namespace)
+                if namespace == self.development_namespace || namespace == "com.tolaria.app.dev"
+        ) {
             &self.development_namespace
         } else {
             &self.current_namespace
@@ -43,6 +58,7 @@ impl AppConfigPolicy {
     fn namespace_dir(&self, namespace: &AppConfigNamespace) -> &str {
         match namespace {
             AppConfigNamespace::Current => self.current_namespace(),
+            AppConfigNamespace::Previous => &self.previous_namespace,
             AppConfigNamespace::Legacy => &self.legacy_namespace,
         }
     }
@@ -202,20 +218,20 @@ mod tests {
     }
 
     #[test]
-    fn preferred_path_uses_tolaria_namespace() {
+    fn preferred_path_uses_markora_namespace() {
         let config_dir = absolute_temp_dir("tolaria-config-root");
         let path = preferred_path_in(&config_dir, "settings.json");
         assert_eq!(
             path,
-            config_dir.join("com.tolaria.app").join("settings.json")
+            config_dir.join("com.markora.app").join("settings.json")
         );
     }
 
     #[test]
     fn declared_development_namespace_can_replace_current_namespace() {
         assert_eq!(
-            app_config_policy().current_namespace_for(Some("com.tolaria.app.dev")),
-            "com.tolaria.app.dev"
+            app_config_policy().current_namespace_for(Some("com.markora.app.dev")),
+            "com.markora.app.dev"
         );
     }
 
@@ -223,7 +239,7 @@ mod tests {
     fn unknown_requested_namespace_keeps_production_namespace() {
         assert_eq!(
             app_config_policy().current_namespace_for(Some("com.example.other")),
-            "com.tolaria.app"
+            "com.markora.app"
         );
     }
 

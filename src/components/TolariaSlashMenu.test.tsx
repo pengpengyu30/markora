@@ -69,7 +69,7 @@ describe('TolariaSlashMenu', () => {
     fireEvent.mouseEnter(screen.getByRole('button', { name: 'Callout' }))
 
     const submenu = screen.getByRole('menu', { name: 'Callout' })
-    expect(submenu).toHaveClass('tolaria-slash-menu__submenu')
+    expect(submenu).toHaveClass('markora-slash-menu__submenu')
     fireEvent.click(screen.getByRole('menuitem', { name: 'Tip' }))
     expect(onItemClick).toHaveBeenCalledWith(item.submenuItems?.[1])
   })

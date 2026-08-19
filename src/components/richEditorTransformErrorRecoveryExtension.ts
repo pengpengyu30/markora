@@ -7,7 +7,7 @@ import {
 } from './richEditorRecoveryClassifier'
 export { isStaleBlockReferenceError } from './richEditorRecoveryClassifier'
 
-const DISPATCH_RECOVERY_STATE_KEY = '__tolariaRichEditorTransformErrorRecovery'
+const DISPATCH_RECOVERY_STATE_KEY = '__markoraRichEditorTransformErrorRecovery'
 const RECOVERABLE_EDITOR_HANDLER_PROPS = new Set([
   'handleDOMEvents',
   'handleDrop',

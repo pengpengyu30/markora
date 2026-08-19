@@ -36,12 +36,12 @@ describe('Rich editor find decorations', () => {
       ],
     })
 
-    expect(host.querySelectorAll('.tolaria-rich-editor-find-match')).toHaveLength(2)
-    expect(host.querySelectorAll('.tolaria-rich-editor-find-match-active')).toHaveLength(1)
-    expect(host.querySelector('.tolaria-rich-editor-find-match-active')).toHaveTextContent('two')
+    expect(host.querySelectorAll('.markora-rich-editor-find-match')).toHaveLength(2)
+    expect(host.querySelectorAll('.markora-rich-editor-find-match-active')).toHaveLength(1)
+    expect(host.querySelector('.markora-rich-editor-find-match-active')).toHaveTextContent('two')
 
     clearRichEditorFind(view)
-    expect(host.querySelectorAll('[class*="tolaria-rich-editor-find-match"]')).toHaveLength(0)
+    expect(host.querySelectorAll('[class*="markora-rich-editor-find-match"]')).toHaveLength(0)
     view.destroy()
   })
 })

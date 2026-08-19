@@ -55,7 +55,7 @@ describe('NoteList context menu', () => {
 
     clickBuildLaputaAction('Rename filename')
     expect(screen.getByTestId('note-list-rename-dialog')).toBeInTheDocument()
-    expect(screen.getByTestId('note-list-rename-input')).toHaveValue('26q1-laputa-app')
+    expect(screen.getByTestId('note-list-rename-input')).toHaveValue('26q1-markora-app')
     fireEvent.change(screen.getByTestId('note-list-rename-input'), { target: { value: 'renamed-from-menu.md ' } })
     fireEvent.click(screen.getByText('Rename'))
     expect(onRenameFilename).toHaveBeenCalledWith(mockEntries[0].path, 'renamed-from-menu')

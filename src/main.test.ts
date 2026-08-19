@@ -53,7 +53,7 @@ vi.mock('@/components/ui/tooltip', () => ({
   TooltipProvider: ({ children }: { children: ReactNode }) => createElement('div', null, children),
 }))
 vi.mock('./hooks/appCommandDispatcher', () => ({
-  APP_COMMAND_EVENT_NAME: 'laputa:command',
+  APP_COMMAND_EVENT_NAME: 'markora:command',
   isAppCommandId: (id: string) => id === 'known-command',
   isNativeMenuCommandId: (id: string) => id === 'native-command',
 }))
@@ -121,11 +121,11 @@ async function expectCaughtRenderRecoverySuppressed(
   componentStack = '\n    in BlockNoteView\n    in BlockNoteRenderRecoveryBoundary',
 ) {
   await importEntrypoint()
-  window.__tolariaFrontendReady = true
+  window.__markoraFrontendReady = true
 
   rootOptions().onCaughtError?.(error, { componentStack })
 
-  expect(document.getElementById('tolaria-fatal-render-error')).toBeNull()
+  expect(document.getElementById('markora-fatal-render-error')).toBeNull()
 }
 
 function renderedTree(): ReactNode {
@@ -154,7 +154,7 @@ describe('main entrypoint', () => {
     vi.clearAllMocks()
     document.body.innerHTML = '<div id="root"></div>'
     document.body.className = ''
-    window.__tolariaFrontendReady = false
+    window.__markoraFrontendReady = false
     delete (window as typeof window & { __TAURI__?: unknown }).__TAURI__
     delete (window as typeof window & { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__
     mocks.isFullscreen.mockReset()
@@ -177,10 +177,10 @@ describe('main entrypoint', () => {
     )
 
     const error = new Error('Maximum update depth exceeded')
-    window.__tolariaFrontendReady = true
+    window.__markoraFrontendReady = true
     rootOptions().onCaughtError?.(error, { componentStack: '\n    in App' })
 
-    expect(document.getElementById('tolaria-fatal-render-error')).toHaveTextContent('Maximum update depth exceeded')
+    expect(document.getElementById('markora-fatal-render-error')).toHaveTextContent('Maximum update depth exceeded')
   }, MAIN_ENTRYPOINT_IMPORT_TIMEOUT_MS)
 
   it('reloads and suppresses startup default-export chunk errors before frontend readiness', async () => {
@@ -189,8 +189,8 @@ describe('main entrypoint', () => {
     const error = new TypeError("Cannot read properties of undefined (reading 'default')")
     rootOptions().onUncaughtError?.(error, { componentStack: '' })
 
-    expect(sessionStorage.getItem('tolaria:startup-reload-attempted')).toBe('1')
-    expect(document.getElementById('tolaria-fatal-render-error')).toBeNull()
+    expect(sessionStorage.getItem('markora:startup-reload-attempted')).toBe('1')
+    expect(document.getElementById('markora-fatal-render-error')).toBeNull()
   }, MAIN_ENTRYPOINT_IMPORT_TIMEOUT_MS)
 
   it('suppresses recovered BlockNote maximum update depth errors', async () => {
@@ -198,43 +198,43 @@ describe('main entrypoint', () => {
 
     const error = new Error('Maximum update depth exceeded. This can happen when a component repeatedly calls setState.')
     const componentStack = '\n    in BlockNoteView\n    in BlockNoteRenderRecoveryBoundary'
-    window.__tolariaFrontendReady = true
+    window.__markoraFrontendReady = true
 
     rootOptions().onCaughtError?.(error, { componentStack })
 
-    expect(document.getElementById('tolaria-fatal-render-error')).toBeNull()
+    expect(document.getElementById('markora-fatal-render-error')).toBeNull()
   }, MAIN_ENTRYPOINT_IMPORT_TIMEOUT_MS)
 
   it('suppresses recovered BlockNote update-depth errors when React omits the recovery-boundary frame', async () => {
     await importEntrypoint()
 
     const error = new Error('Maximum update depth exceeded. This can happen when a component repeatedly calls setState.')
-    window.__tolariaFrontendReady = true
+    window.__markoraFrontendReady = true
 
     rootOptions().onCaughtError?.(error, { componentStack: '\n    in BlockNoteView' })
 
-    expect(document.getElementById('tolaria-fatal-render-error')).toBeNull()
+    expect(document.getElementById('markora-fatal-render-error')).toBeNull()
   }, MAIN_ENTRYPOINT_IMPORT_TIMEOUT_MS)
 
   it('suppresses recoverable BlockNote update-depth errors from the React root callback', async () => {
     await importEntrypoint()
 
     const error = new Error('Maximum update depth exceeded. This can happen when a component repeatedly calls setState.')
-    window.__tolariaFrontendReady = true
+    window.__markoraFrontendReady = true
 
     rootOptions().onRecoverableError?.(error, { componentStack: '\n    in BlockNoteView' })
 
-    expect(document.getElementById('tolaria-fatal-render-error')).toBeNull()
+    expect(document.getElementById('markora-fatal-render-error')).toBeNull()
   }, MAIN_ENTRYPOINT_IMPORT_TIMEOUT_MS)
 
   it('normalizes missing React component stacks in the fatal overlay', async () => {
     await importEntrypoint()
 
     const error = new Error('recoverable render error')
-    window.__tolariaFrontendReady = true
+    window.__markoraFrontendReady = true
     rootOptions().onRecoverableError?.(error, {})
 
-    expect(document.getElementById('tolaria-fatal-render-error')).toHaveTextContent('recoverable render error')
+    expect(document.getElementById('markora-fatal-render-error')).toHaveTextContent('recoverable render error')
   }, MAIN_ENTRYPOINT_IMPORT_TIMEOUT_MS)
 
   it('marks macOS chrome for traffic-light layout offsets', async () => {
@@ -301,12 +301,12 @@ describe('main entrypoint', () => {
     await importEntrypoint()
 
     const error = new Error('ResizeObserver loop completed with undelivered notifications.')
-    window.__tolariaFrontendReady = true
+    window.__markoraFrontendReady = true
 
     rootOptions().onRecoverableError?.(error, {})
     rootOptions().onCaughtError?.(error, { componentStack: '\n    in App' })
 
-    expect(document.getElementById('tolaria-fatal-render-error')).toBeNull()
+    expect(document.getElementById('markora-fatal-render-error')).toBeNull()
   })
 
   it('suppresses recovered BlockNote missing-id render errors', async () => {
@@ -316,7 +316,7 @@ describe('main entrypoint', () => {
     await expectCaughtRenderRecoverySuppressed(error, componentStack)
     rootOptions().onUncaughtError?.(error, { componentStack })
 
-    expect(document.getElementById('tolaria-fatal-render-error')).toHaveTextContent("Block doesn't have id")
+    expect(document.getElementById('markora-fatal-render-error')).toHaveTextContent("Block doesn't have id")
   })
 
   it('suppresses recovered BlockNote stale block-reference render errors', async () => {
@@ -326,7 +326,7 @@ describe('main entrypoint', () => {
     await expectCaughtRenderRecoverySuppressed(error, componentStack)
     rootOptions().onUncaughtError?.(error, { componentStack })
 
-    expect(document.getElementById('tolaria-fatal-render-error')).toHaveTextContent('Block with ID')
+    expect(document.getElementById('markora-fatal-render-error')).toHaveTextContent('Block with ID')
   })
 
   it('suppresses caught BlockNote block-type mismatch render errors without component stacks', async () => {
@@ -335,7 +335,7 @@ describe('main entrypoint', () => {
     await expectCaughtRenderRecoverySuppressed(error, '')
     rootOptions().onUncaughtError?.(error, {})
 
-    expect(document.getElementById('tolaria-fatal-render-error')).toHaveTextContent('Block type does not match')
+    expect(document.getElementById('markora-fatal-render-error')).toHaveTextContent('Block type does not match')
   })
 
   it('suppresses caught WebKit DOM NotFoundError render recoveries', async () => {
@@ -357,12 +357,12 @@ describe('main entrypoint', () => {
     const { markRecoveredActionTooltipError } = await import('./components/ui/actionTooltipRecovery')
     const error = new Error('tooltip content render failed')
     const componentStack = '\n    in TooltipContent\n    in ActionTooltipBoundary'
-    window.__tolariaFrontendReady = true
+    window.__markoraFrontendReady = true
     markRecoveredActionTooltipError(error)
 
     rootOptions().onCaughtError?.(error, { componentStack })
 
-    expect(document.getElementById('tolaria-fatal-render-error')).toBeNull()
+    expect(document.getElementById('markora-fatal-render-error')).toBeNull()
   })
 
   it('mounts a frontend readiness marker after the app shell', async () => {

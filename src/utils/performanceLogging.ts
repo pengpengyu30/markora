@@ -3,7 +3,8 @@ function isVitestRuntime(): boolean {
 }
 
 function isPerformanceHarnessRuntime(): boolean {
-  return Reflect.get(globalThis, '__TOLARIA_PERFORMANCE_HARNESS__') === true
+  return Reflect.get(globalThis, '__MARKORA_PERFORMANCE_HARNESS__') === true
+    || Reflect.get(globalThis, '__TOLARIA_PERFORMANCE_HARNESS__') === true
 }
 
 export function canMeasurePerformance(): boolean {

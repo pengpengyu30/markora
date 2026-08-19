@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { APP_STORAGE_KEYS, LEGACY_APP_STORAGE_KEYS, copyLegacyAppStorageKeys, getAppStorageItem } from './appStorage'
+import { APP_STORAGE_KEYS, LEGACY_APP_STORAGE_KEYS, PREVIOUS_APP_STORAGE_KEYS, copyLegacyAppStorageKeys, getAppStorageItem } from './appStorage'
 
 describe('appStorage legacy migration', () => {
   let store: Record<string, string>
@@ -12,7 +12,7 @@ describe('appStorage legacy migration', () => {
     })
   })
 
-  it('copies legacy values to Tolaria keys without overwriting existing values', () => {
+  it('copies legacy values to Markora keys without overwriting existing values', () => {
     store[LEGACY_APP_STORAGE_KEYS.theme] = 'dark'
     store[LEGACY_APP_STORAGE_KEYS.zoom] = '125'
     store[APP_STORAGE_KEYS.zoom] = '100'
@@ -24,10 +24,20 @@ describe('appStorage legacy migration', () => {
     expect(store[APP_STORAGE_KEYS.legacyMigrationFlag]).toBe('1')
   })
 
-  it('falls back to legacy values when the Tolaria key is absent', () => {
+  it('falls back to legacy values when the Markora key is absent', () => {
     store[LEGACY_APP_STORAGE_KEYS.viewMode] = 'editor-list'
 
     expect(getAppStorageItem('viewMode')).toBe('editor-list')
+  })
+
+  it('migrates the previous Tolaria storage namespace before the older Laputa namespace', () => {
+    store[PREVIOUS_APP_STORAGE_KEYS.theme] = 'dark'
+    store[LEGACY_APP_STORAGE_KEYS.theme] = 'light'
+
+    copyLegacyAppStorageKeys()
+
+    expect(store[APP_STORAGE_KEYS.theme]).toBe('dark')
+    expect(getAppStorageItem('theme')).toBe('dark')
   })
 
   it('returns safely when localStorage is restricted', () => {

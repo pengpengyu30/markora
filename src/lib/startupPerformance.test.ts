@@ -24,8 +24,8 @@ describe('startup performance traces', () => {
     startup.recordBackgroundReconciled(44)
 
     expect(startup.STARTUP_TARGETS_MS.activeVaultUsable).toBe(800)
-    expect(performance.getEntriesByName('tolaria:active_usable', 'mark')).toHaveLength(1)
-    expect(performance.getEntriesByName('tolaria:background_reconciled', 'mark')).toHaveLength(1)
+    expect(performance.getEntriesByName('markora:active_usable', 'mark')).toHaveLength(1)
+    expect(performance.getEntriesByName('markora:background_reconciled', 'mark')).toHaveLength(1)
   })
 
   it('records native-relative milestones for machine-readable startup traces', async () => {
@@ -59,7 +59,7 @@ describe('startup performance traces', () => {
     startup.markStartupPhase('app_interactive')
     startup.markStartupPhase('app_interactive')
 
-    expect(performance.getEntriesByName('tolaria:app_interactive', 'mark')).toHaveLength(1)
+    expect(performance.getEntriesByName('markora:app_interactive', 'mark')).toHaveLength(1)
   })
 
   it('releases deferred startup work when its prerequisite phase arrives', async () => {

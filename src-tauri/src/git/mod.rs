@@ -33,10 +33,15 @@ pub(crate) use workspace::GitWorkspace;
 pub use workspace::{git_workspace_info, GitWorkspaceInfo};
 
 static MANAGED_VAULTS: OnceLock<Mutex<HashSet<PathBuf>>> = OnceLock::new();
-const MANAGED_MARKER_FILE: &str = "tolaria-managed";
+const MANAGED_MARKER_FILE: &str = "markora-managed";
+const PREVIOUS_MANAGED_MARKER_FILE: &str = "tolaria-managed";
 
 fn managed_marker_path(path: &Path) -> PathBuf {
     path.join(".git").join(MANAGED_MARKER_FILE)
+}
+
+fn previous_managed_marker_path(path: &Path) -> PathBuf {
+    path.join(".git").join(PREVIOUS_MANAGED_MARKER_FILE)
 }
 
 pub(crate) fn remember_managed_vault(path: &Path) -> Result<(), String> {
@@ -62,13 +67,15 @@ pub(crate) fn is_managed_vault(path: &Path) -> bool {
         .lock()
         .map(|vaults| vaults.contains(&path))
         .unwrap_or(false);
-    remembered_in_process || managed_marker_path(&path).is_file()
+    remembered_in_process
+        || managed_marker_path(&path).is_file()
+        || previous_managed_marker_path(&path).is_file()
 }
 
 /// Detect repositories created by the pre-marker managed-vault workflow.
 ///
 /// The identity and message are both fixed by `git_snapshot`, so this narrow
-/// check can migrate Tolaria-created repositories without adopting an
+/// check can migrate historical Markora-created repositories without adopting an
 /// unrelated existing user repository.
 pub(crate) fn has_legacy_tolaria_snapshot(path: &Path) -> bool {
     let Ok(mut command) = git_command_at(path) else {

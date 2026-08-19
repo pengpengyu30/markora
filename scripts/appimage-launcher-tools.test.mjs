@@ -47,7 +47,7 @@ test('patches linuxdeploy AppRun wrapper to resolve the invoked path before dirn
 })
 
 test('fixed resolver follows absolute and relative symlinks before choosing AppDir', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'tolaria-apprun-resolver-'))
+  const root = await mkdtemp(join(tmpdir(), 'markora-apprun-resolver-'))
   const appDir = join(root, 'Tolaria.AppDir')
   const binDir = join(root, 'bin')
   const relativeDir = join(root, 'relative-bin')
@@ -71,7 +71,7 @@ test('fixed resolver follows absolute and relative symlinks before choosing AppD
 })
 
 test('plugin wrapper patches AppRun before delegating to the real output plugin', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'tolaria-appimage-plugin-'))
+  const root = await mkdtemp(join(tmpdir(), 'markora-appimage-plugin-'))
   const appDir = join(root, 'Tolaria.AppDir')
   const appRun = join(appDir, 'AppRun')
   const wrapper = join(root, 'linuxdeploy-plugin-appimage.AppImage')
@@ -116,7 +116,7 @@ test('plugin wrapper patches AppRun before delegating to the real output plugin'
 })
 
 test('plugin wrapper keeps the delegated appimage plugin basename canonical', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'tolaria-appimage-tools-'))
+  const root = await mkdtemp(join(tmpdir(), 'markora-appimage-tools-'))
   const { realPluginPath, wrapperPath } = await preparePluginWrapper({
     toolsDir: root,
   })
@@ -124,7 +124,7 @@ test('plugin wrapper keeps the delegated appimage plugin basename canonical', as
   assert.equal(basename(wrapperPath), 'linuxdeploy-plugin-appimage.AppImage')
   assert.equal(
     realPluginPath,
-    join(root, 'tolaria-real-linuxdeploy-plugin-appimage', 'linuxdeploy-plugin-appimage.AppImage'),
+    join(root, 'markora-real-linuxdeploy-plugin-appimage', 'linuxdeploy-plugin-appimage.AppImage'),
   )
   assert.equal(REAL_APPIMAGE_PLUGIN_NAME.endsWith('/linuxdeploy-plugin-appimage.AppImage'), true)
 
@@ -133,7 +133,7 @@ test('plugin wrapper keeps the delegated appimage plugin basename canonical', as
 })
 
 test('plugin wrapper bundles fcitx GTK3 input module before sealing AppImage', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'tolaria-appimage-fcitx-'))
+  const root = await mkdtemp(join(tmpdir(), 'markora-appimage-fcitx-'))
   const appDir = join(root, 'Tolaria.AppDir')
   const wrapper = join(root, 'linuxdeploy-plugin-appimage.AppImage')
   const realPlugin = join(root, 'linuxdeploy-plugin-appimage.real.AppImage')

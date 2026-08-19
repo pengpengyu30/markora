@@ -367,7 +367,7 @@ mod tests {
             .unwrap();
         assert_eq!(
             String::from_utf8_lossy(&latest_message.stdout).trim(),
-            "tolaria: snapshot"
+            "markora: snapshot"
         );
         assert!(list_deleted_notes(vault.path()).unwrap().is_empty());
     }

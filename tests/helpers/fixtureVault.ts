@@ -51,7 +51,7 @@ function copyDirSync({ src, dest }: CopyDirArgs): void {
 }
 
 export function createFixtureVaultCopy(): string {
-  const tempVaultDir = fs.mkdtempSync(path.join(os.tmpdir(), 'laputa-test-vault-'))
+  const tempVaultDir = fs.mkdtempSync(path.join(os.tmpdir(), 'markora-test-vault-'))
   copyDirSync({ src: FIXTURE_VAULT, dest: tempVaultDir })
   return tempVaultDir
 }

@@ -16,11 +16,11 @@ interface PersistedState {
 }
 
 const GETTING_STARTED_PATH = '/Users/mock/Documents/Getting Started'
-const STATE_KEY = 'tolaria:test-vault-state'
+const STATE_KEY = 'markora:test-vault-state'
 
 async function installOnboardingVaultMocks(page: Page, config: MockConfig) {
   await page.addInitScript((mockConfig) => {
-    const stateKey = 'tolaria:test-vault-state'
+    const stateKey = 'markora:test-vault-state'
     const defaultSettings = {
       auto_pull_interval_minutes: null,
       release_channel: null,

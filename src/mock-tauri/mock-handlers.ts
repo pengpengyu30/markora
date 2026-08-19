@@ -36,7 +36,7 @@ function mockSearchContent(content: string, excludeFrontmatter?: boolean): strin
 
 function mockModifiedFiles(): ModifiedFile[] {
   return [
-    { path: '/Users/luca/Laputa/26q1-laputa-app.md', relativePath: '26q1-laputa-app.md', status: 'modified' },
+    { path: '/Users/luca/Laputa/26q1-markora-app.md', relativePath: '26q1-markora-app.md', status: 'modified' },
     { path: '/Users/luca/Laputa/facebook-ads-strategy.md', relativePath: 'facebook-ads-strategy.md', status: 'modified' },
     { path: '/Users/luca/Laputa/ai-agents-primer.md', relativePath: 'ai-agents-primer.md', status: 'added' },
     { path: '/Users/luca/Laputa/old-draft.md', relativePath: 'old-draft.md', status: 'deleted' },
@@ -323,7 +323,7 @@ export const mockHandlers = {
     const count = (mockHasChanges ? mockModifiedFiles().length : 0) + mockSavedSinceCommit.size
     mockHasChanges = false
     mockSavedSinceCommit.clear()
-    return `[main abc1234] tolaria: snapshot\n ${count} files changed`
+    return `[main abc1234] markora: snapshot\n ${count} files changed`
   },
   git_workspace_info: ({ vaultPath }: { vaultPath?: string } = {}) => ({
     vaultRoot: vaultPath ?? '/mock-vault',

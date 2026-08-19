@@ -8,7 +8,7 @@ function makeItem(title: string, aliases: string[] = [], path?: string): Wikilin
 
 describe('preFilterWikilinks', () => {
   const items: WikilinkBaseItem[] = [
-    makeItem('Build Laputa App', ['laputa-app']),
+    makeItem('Build Laputa App', ['markora-app']),
     makeItem('Quarterly Review', ['q1-review']),
     makeItem('TypeScript Tips', ['ts-tips']),
     makeItem('Café Notes', ['café']),

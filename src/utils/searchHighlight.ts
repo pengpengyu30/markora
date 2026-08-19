@@ -1,4 +1,4 @@
-export const SEARCH_HIGHLIGHT_CLASS = 'tolaria-search-highlight'
+export const SEARCH_HIGHLIGHT_CLASS = 'markora-search-highlight'
 export const SEARCH_HIGHLIGHT_DURATION_MS = 2000
 export const SEARCH_HIGHLIGHT_CLEANUP_DELAY_MS = SEARCH_HIGHLIGHT_DURATION_MS + 250
 

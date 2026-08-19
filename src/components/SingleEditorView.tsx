@@ -350,14 +350,14 @@ function useSeedBlockNoteTableBridge(editor: ReturnType<typeof useCreateBlockNot
   useEffect(() => {
     const seedBlockNoteTable = (columnWidths?: Array<number | null>) => seedEditorWithTestTable(editor, columnWidths)
 
-    window.__laputaTest = {
-      ...window.__laputaTest,
+    window.__markoraTest = {
+      ...window.__markoraTest,
       seedBlockNoteTable,
     }
 
     return () => {
-      if (window.__laputaTest?.seedBlockNoteTable === seedBlockNoteTable) {
-        delete window.__laputaTest.seedBlockNoteTable
+      if (window.__markoraTest?.seedBlockNoteTable === seedBlockNoteTable) {
+        delete window.__markoraTest.seedBlockNoteTable
       }
     }
   }, [editor])

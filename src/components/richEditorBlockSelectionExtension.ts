@@ -33,7 +33,7 @@ import {
   type RichEditorBlockSelectionEditor,
 } from './richEditorBlockSelectionTypes'
 
-export const RICH_EDITOR_BLOCK_SELECTION_CLASS = 'tolaria-rich-editor-block-selected'
+export const RICH_EDITOR_BLOCK_SELECTION_CLASS = 'markora-rich-editor-block-selected'
 const RICH_EDITOR_BLOCK_SELECTION_META = 'tolariaRichEditorBlockSelection'
 
 export const richEditorBlockSelectionPluginKey = new PluginKey<BlockSelectionState | null>(
@@ -556,7 +556,7 @@ function blockSelectionDecorations(state: EditorState): DecorationSet {
 
     decorations.push(Decoration.node(pos, pos + node.nodeSize, {
       class: RICH_EDITOR_BLOCK_SELECTION_CLASS,
-      'data-tolaria-block-selection': mode,
+      'data-markora-block-selection': mode,
     }))
     return true
   })

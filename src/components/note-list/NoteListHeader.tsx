@@ -238,7 +238,7 @@ export function NoteListHeader(options: NoteListHeaderProps) {
   const { onSortChange, onCreateNote, onToggleSearch, onSearchChange, onSearchKeyDown } = options
   const { dragRegionRef } = useDragRegion<HTMLDivElement>()
   const collapsedSidebarPadding = sidebarCollapsed && isMac()
-    ? `var(--tolaria-macos-traffic-light-padding, ${MACOS_TRAFFIC_LIGHT_SAFE_PADDING}px)`
+    ? `var(--markora-macos-traffic-light-padding, ${MACOS_TRAFFIC_LIGHT_SAFE_PADDING}px)`
     : undefined
 
   return (

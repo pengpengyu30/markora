@@ -126,7 +126,7 @@ async function expectLoadedVaultSearch(page: Page): Promise<void> {
 test('slow vault open keeps one startup shell visible while notes load', async ({ page }) => {
   await installSlowVaultMock(page)
   await page.goto('/', { waitUntil: 'domcontentloaded' })
-  await expect(page.locator('#tolaria-boot-diagnostics')).toHaveCount(0)
+  await expect(page.locator('#markora-boot-diagnostics')).toHaveCount(0)
   await expectUnifiedShellWhileVaultLoads(page)
   await resolveVaultScan(page)
   await expectLoadedVaultSearch(page)

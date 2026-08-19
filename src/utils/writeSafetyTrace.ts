@@ -8,7 +8,8 @@ interface WriteSafetyTraceDetails {
 let traceSeq = 0
 
 function traceEnabled(): boolean {
-  return Reflect.get(globalThis, '__TOLARIA_WRITE_SAFETY_DEBUG__') === true
+  return Reflect.get(globalThis, '__MARKORA_WRITE_SAFETY_DEBUG__') === true
+    || Reflect.get(globalThis, '__TOLARIA_WRITE_SAFETY_DEBUG__') === true
 }
 
 function formatTraceValue(value: unknown): string {

@@ -313,7 +313,7 @@ mod tests {
             .expect("the legacy managed repository should be detected");
 
         assert_eq!(workspace.mode(), GitRepositoryMode::Managed);
-        assert!(dir.path().join(".git").join("tolaria-managed").is_file());
+        assert!(dir.path().join(".git").join("markora-managed").is_file());
     }
 
     #[test]
@@ -360,7 +360,7 @@ mod tests {
         assert_eq!(workspace.mode(), GitRepositoryMode::Managed);
         assert_eq!(workspace.git_root(), dir.path().canonicalize().unwrap());
         assert!(dir.path().join(".git").is_dir());
-        assert!(dir.path().join(".git").join("tolaria-managed").is_file());
+        assert!(dir.path().join(".git").join("markora-managed").is_file());
         assert!(!dir.path().join(".gitignore").exists());
         assert!(!git_command()
             .args(["rev-parse", "--verify", "HEAD"])

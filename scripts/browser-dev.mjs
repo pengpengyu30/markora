@@ -142,7 +142,7 @@ export function resolveLocalPnpmCli(rootDir = repoRoot) {
     path.join(rootDir, '.tools', 'pnpm', 'node_modules', 'pnpm', 'bin', 'pnpm.cjs'),
     path.join(
       rootDir,
-      '.tolaria-build.local',
+      '.markora-build.local',
       'toolchains',
       `pnpm-${REQUIRED_PNPM_VERSION}`,
       'node_modules',
@@ -190,8 +190,9 @@ export function resolveLocalPnpmBinDir(rootDir = repoRoot) {
 export function browserProcessEnv(options, rootDir = repoRoot, env = process.env) {
   const browserEnv = {
     ...env,
-    TOLARIA_VITE_CACHE_DIR: env.TOLARIA_VITE_CACHE_DIR
-      ?? path.join(tmpdir(), `tolaria-vite-browser-${options.port}`),
+    MARKORA_VITE_CACHE_DIR: env.MARKORA_VITE_CACHE_DIR
+      ?? env.TOLARIA_VITE_CACHE_DIR
+      ?? path.join(tmpdir(), `markora-vite-browser-${options.port}`),
   }
   if (options.mode !== 'tauri') return browserEnv
 

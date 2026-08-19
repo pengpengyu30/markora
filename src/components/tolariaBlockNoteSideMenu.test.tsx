@@ -329,7 +329,7 @@ function placeEditorInScrollArea(scrollTop: number) {
 }
 
 function collapsedSectionStyleText() {
-  return Array.from(document.head.querySelectorAll('style[data-tolaria-collapsed-sections]'))
+  return Array.from(document.head.querySelectorAll('style[data-markora-collapsed-sections]'))
     .map((styleElement) => styleElement.textContent ?? '')
     .join('\n')
 }
@@ -457,7 +457,7 @@ describe('TolariaSideMenu', () => {
     cleanup()
     document.elementsFromPoint = originalElementsFromPoint
     document.body.innerHTML = ''
-    document.head.querySelectorAll('style[data-tolaria-collapsed-sections]')
+    document.head.querySelectorAll('style[data-markora-collapsed-sections]')
       .forEach((styleElement) => styleElement.remove())
   })
 
@@ -475,7 +475,7 @@ describe('TolariaSideMenu', () => {
 
     expect(screen.getByText('Delete')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Turn into...' })).toHaveAttribute('aria-haspopup', 'menu')
-    expect(screen.getByTestId('menu-sub-dropdown')).toHaveClass('tolaria-turn-into-menu-dropdown')
+    expect(screen.getByTestId('menu-sub-dropdown')).toHaveClass('markora-turn-into-menu-dropdown')
     for (const label of turnIntoButtonLabels) {
       expect(screen.getByTestId(`menu-item-icon-${label}`)).toBeInTheDocument()
     }

@@ -32,14 +32,14 @@ describe('Rich editor search highlight', () => {
     applyRichEditorSearchHighlight(view, 'tom jerry')
 
     expect(view.state.doc.textContent).toBe(source)
-    expect(Array.from(host.querySelectorAll('.tolaria-search-highlight'), (node) => node.textContent)).toEqual([
+    expect(Array.from(host.querySelectorAll('.markora-search-highlight'), (node) => node.textContent)).toEqual([
       'Tom',
       'Jerry',
       'Tom',
     ])
 
     applyRichEditorSearchHighlight(view, null)
-    expect(host.querySelectorAll('.tolaria-search-highlight')).toHaveLength(0)
+    expect(host.querySelectorAll('.markora-search-highlight')).toHaveLength(0)
     view.destroy()
   })
 })

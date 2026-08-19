@@ -443,7 +443,7 @@ function MainApp() {
     noteTabsRef.current = notes.tabs
   }, [notes.tabs])
   const refocusActiveEditor = useCallback((path: string) => {
-    window.dispatchEvent(new CustomEvent('laputa:focus-editor', { detail: { path } }))
+    window.dispatchEvent(new CustomEvent('markora:focus-editor', { detail: { path } }))
   }, [])
   const isActiveTabContentCurrent = useCallback(async (path: string) => {
     const activeTab = noteTabsRef.current.find((tab) => notePathsMatch(tab.entry.path, path))
@@ -661,15 +661,15 @@ function MainApp() {
   }, [loadModifiedFiles, notes.activeTabPath, notes.tabs, recordAutoGitActivity, resolvedPath])
 
   useEffect(() => {
-    window.__laputaTest = {
-      ...window.__laputaTest,
+    window.__markoraTest = {
+      ...window.__markoraTest,
       activeTabPath: notes.activeTabPath,
       seedAutoGitSavedChange,
     }
 
     return () => {
-      if (window.__laputaTest?.seedAutoGitSavedChange === seedAutoGitSavedChange) {
-        delete window.__laputaTest.seedAutoGitSavedChange
+      if (window.__markoraTest?.seedAutoGitSavedChange === seedAutoGitSavedChange) {
+        delete window.__markoraTest.seedAutoGitSavedChange
       }
     }
   }, [notes.activeTabPath, seedAutoGitSavedChange])

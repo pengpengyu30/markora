@@ -196,7 +196,7 @@ export function TolariaSlashMenu({
 
   return (
     <>
-      <Components.SuggestionMenu.Root id="bn-suggestion-menu" className="bn-suggestion-menu tolaria-slash-menu">
+      <Components.SuggestionMenu.Root id="bn-suggestion-menu" className="bn-suggestion-menu markora-slash-menu">
         {renderedItems}
         {renderedItems.length === 0 && loadingState !== 'loading-initial' && (
           <Components.SuggestionMenu.EmptyItem className="bn-suggestion-menu-item">
@@ -210,14 +210,14 @@ export function TolariaSlashMenu({
         createPortal(
           <div
             aria-label={items.find((item) => item.key === openSubmenu.key)?.title}
-            className="tolaria-slash-menu__submenu"
+            className="markora-slash-menu__submenu"
             role="menu"
             style={{ left: openSubmenu.left, top: openSubmenu.top }}
           >
             {submenuItems.map((item, index) => (
               <Button
                 aria-selected={index === submenuIndex}
-                className="tolaria-slash-menu__submenu-item"
+                className="markora-slash-menu__submenu-item"
                 key={item.key}
                 onClick={() => onItemClick?.(item)}
                 onMouseDown={(event) => {

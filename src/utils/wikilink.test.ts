@@ -173,8 +173,8 @@ describe('relativePathStem', () => {
   it('normalizes Windows extended-length paths before extracting the vault-relative stem', () => {
     expect(
       relativePathStem(
-        '\\\\?\\C:\\Users\\lrfno\\Documents\\tolaria-vault\\application-design-and-build.md',
-        'C:\\Users\\lrfno\\Documents\\tolaria-vault',
+        '\\\\?\\C:\\Users\\lrfno\\Documents\\markora-vault\\application-design-and-build.md',
+        'C:\\Users\\lrfno\\Documents\\markora-vault',
       ),
     ).toBe('application-design-and-build')
   })

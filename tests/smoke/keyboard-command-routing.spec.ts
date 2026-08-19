@@ -69,7 +69,7 @@ async function expectPropertiesPanelToggle(page: Page, toggle: () => Promise<voi
 
 async function dispatchAppCommand(page: Page, id: string): Promise<void> {
   await page.evaluate((commandId) => {
-    const bridge = window.__laputaTest?.dispatchAppCommand
+    const bridge = window.__markoraTest?.dispatchAppCommand
     if (typeof bridge !== 'function') {
       throw new Error('Tolaria test bridge is missing dispatchAppCommand')
     }
@@ -270,7 +270,7 @@ test.describe('keyboard command routing', () => {
     await expect(searchResultRow(page, 'Alpha Project')).toBeVisible({ timeout: 5_000 })
     await input.press('Enter')
 
-    const highlights = page.locator('.bn-editor .tolaria-search-highlight')
+    const highlights = page.locator('.bn-editor .markora-search-highlight')
     await expect(highlights).toHaveCount(2, { timeout: 5_000 })
     await expect.poll(async () => highlights.first().evaluate((element) => getComputedStyle(element).animationDuration)).toBe('2s')
     await expect(page.getByRole('heading', { name: 'Alpha Project', level: 1 })).toBeVisible({ timeout: 5_000 })

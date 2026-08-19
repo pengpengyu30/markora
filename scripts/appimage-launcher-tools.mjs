@@ -21,7 +21,7 @@ export const FIXED_LINUXDEPLOY_APPRUN_DIR_LINE =
   'this_dir="$(dirname "$(readlink -f "$0")")"'
 export const APPIMAGE_PLUGIN_WRAPPER_NAME = 'linuxdeploy-plugin-appimage.AppImage'
 export const REAL_APPIMAGE_PLUGIN_NAME =
-  'tolaria-real-linuxdeploy-plugin-appimage/linuxdeploy-plugin-appimage.AppImage'
+  'markora-real-linuxdeploy-plugin-appimage/linuxdeploy-plugin-appimage.AppImage'
 export const APPIMAGE_FCITX_GTK3_IM_MODULE_PATH =
   'usr/lib/x86_64-linux-gnu/gtk-3.0/3.0.0/immodules/im-fcitx5.so'
 export const APPIMAGE_FCITX_GCLIENT_LIBRARY_PATH =
@@ -271,7 +271,7 @@ export async function validateAppImages(paths) {
   }
 
   for (const appImage of paths.map((path) => resolve(path))) {
-    const tempDir = await mkdtemp(join(tmpdir(), 'tolaria-appimage-'))
+    const tempDir = await mkdtemp(join(tmpdir(), 'markora-appimage-'))
     try {
       await validateExtractedAppImage(appImage, tempDir)
     } finally {

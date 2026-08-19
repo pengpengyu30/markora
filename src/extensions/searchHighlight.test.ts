@@ -18,14 +18,14 @@ describe('CodeMirror search highlight', () => {
     applySearchHighlight(view, 'tom jerry')
 
     expect(view.state.doc.toString()).toBe(source)
-    expect(Array.from(host.querySelectorAll('.tolaria-search-highlight'), (node) => node.textContent)).toEqual([
+    expect(Array.from(host.querySelectorAll('.markora-search-highlight'), (node) => node.textContent)).toEqual([
       'Tom',
       'Jerry',
       'Tom',
     ])
 
     applySearchHighlight(view, null)
-    expect(host.querySelectorAll('.tolaria-search-highlight')).toHaveLength(0)
+    expect(host.querySelectorAll('.markora-search-highlight')).toHaveLength(0)
     view.destroy()
   })
 })

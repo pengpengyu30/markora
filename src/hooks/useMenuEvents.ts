@@ -105,14 +105,14 @@ function useTestMenuCommandBridge(handlersRef: { current: MenuEventHandlers }) {
       dispatchMenuEvent(id, handlersRef.current)
     }
 
-    window.__laputaTest = {
-      ...window.__laputaTest,
+    window.__markoraTest = {
+      ...window.__markoraTest,
       dispatchBrowserMenuCommand: bridge,
     }
 
     return () => {
-      if (window.__laputaTest?.dispatchBrowserMenuCommand === bridge) {
-        delete window.__laputaTest.dispatchBrowserMenuCommand
+      if (window.__markoraTest?.dispatchBrowserMenuCommand === bridge) {
+        delete window.__markoraTest.dispatchBrowserMenuCommand
       }
     }
   }, [handlersRef])

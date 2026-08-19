@@ -1,5 +1,5 @@
-export const RICH_EDITOR_EXTERNAL_CHANGE_EVENT = 'tolaria:rich-editor-external-change'
-export const RICH_EDITOR_EXTERNAL_FLUSH_EVENT = 'tolaria:rich-editor-external-flush'
+export const RICH_EDITOR_EXTERNAL_CHANGE_EVENT = 'markora:rich-editor-external-change'
+export const RICH_EDITOR_EXTERNAL_FLUSH_EVENT = 'markora:rich-editor-external-flush'
 
 export type RichEditorExternalChangeSource = object
 

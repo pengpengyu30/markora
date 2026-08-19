@@ -182,7 +182,7 @@ test('inspector shows git history', async ({ page }) => {
 
   // Should show commits
   await expect(page.locator('.inspector__commit-hash').first()).toBeVisible()
-  await expect(page.locator('.inspector__commit-msg').first()).toContainText('26q1-laputa-app')
+  await expect(page.locator('.inspector__commit-msg').first()).toContainText('26q1-markora-app')
 })
 
 test('inspector updates when switching tabs', async ({ page }) => {

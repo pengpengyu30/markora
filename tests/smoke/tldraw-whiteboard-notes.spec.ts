@@ -143,7 +143,7 @@ async function expectPaintedTldrawIcon(icon: Locator): Promise<void> {
 async function applyZoom(page: Page, percent: number): Promise<void> {
   await page.evaluate((pct) => {
     document.documentElement.style.setProperty('zoom', `${pct}%`)
-    window.dispatchEvent(new Event('laputa-zoom-change'))
+    window.dispatchEvent(new Event('markora-zoom-change'))
   }, percent)
   await page.waitForTimeout(250)
 }

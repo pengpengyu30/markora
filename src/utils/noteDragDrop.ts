@@ -1,4 +1,4 @@
-export const NOTE_DRAG_MIME_TYPE = 'application/x-tolaria-note-path'
+export const NOTE_DRAG_MIME_TYPE = 'application/x-markora-note-path'
 
 export function writeNoteDragData(dataTransfer: DataTransfer, notePath: string) {
   dataTransfer.effectAllowed = 'move'

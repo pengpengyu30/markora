@@ -3,8 +3,8 @@ import type { Node as ProsemirrorNode } from '@tiptap/pm/model'
 import { Plugin, PluginKey, TextSelection, type EditorState, type Transaction } from '@tiptap/pm/state'
 import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view'
 
-export const RICH_EDITOR_FIND_MATCH_CLASS = 'tolaria-rich-editor-find-match'
-export const RICH_EDITOR_FIND_ACTIVE_MATCH_CLASS = 'tolaria-rich-editor-find-match-active'
+export const RICH_EDITOR_FIND_MATCH_CLASS = 'markora-rich-editor-find-match'
+export const RICH_EDITOR_FIND_ACTIVE_MATCH_CLASS = 'markora-rich-editor-find-match-active'
 
 export interface RichEditorFindDecorationMatch {
   from: number

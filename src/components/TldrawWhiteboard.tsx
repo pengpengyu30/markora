@@ -32,7 +32,7 @@ import { ActionTooltip } from './ui/action-tooltip'
 import { installTldrawTextMeasurementGuard } from './tldrawTextMeasurementGuard'
 
 const EMPTY_TLDRAW_TRANSLATION_URL = 'data:application/json;base64,e30K'
-const TOLARIA_TLDRAW_USER_ID = 'tolaria-whiteboard'
+const TOLARIA_TLDRAW_USER_ID = 'markora-whiteboard'
 const WHITEBOARD_FULLSCREEN_BODY_CLASS = 'tldraw-whiteboard-fullscreen-open'
 
 function resolveTldrawAssetUrl(assetUrl: string | undefined): string {
@@ -275,10 +275,10 @@ function installZoomAwareViewport(editor: Editor): () => void {
   }
 
   scheduleViewportUpdate()
-  window.addEventListener('laputa-zoom-change', scheduleViewportUpdate)
+  window.addEventListener('markora-zoom-change', scheduleViewportUpdate)
 
   return () => {
-    window.removeEventListener('laputa-zoom-change', scheduleViewportUpdate)
+    window.removeEventListener('markora-zoom-change', scheduleViewportUpdate)
     animationFrameIds.forEach((id) => {
       window.cancelAnimationFrame(id)
     })

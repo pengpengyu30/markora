@@ -1,7 +1,7 @@
 use super::{git_command_at, GitWorkspace};
 use std::path::Path;
 
-pub const SNAPSHOT_COMMIT_MESSAGE: &str = "tolaria: snapshot";
+pub const SNAPSHOT_COMMIT_MESSAGE: &str = "markora: snapshot";
 
 struct CommitFailure {
     stdout: String,
@@ -94,7 +94,7 @@ fn run_commit(workspace: &GitWorkspace, message: &str) -> Result<String, CommitF
         "-c",
         "user.name=Markora",
         "-c",
-        "user.email=tolaria@local",
+        "user.email=markora@local",
         "-c",
         "commit.gpgsign=false",
     ]);
@@ -176,7 +176,7 @@ mod tests {
             .unwrap();
         assert_eq!(
             String::from_utf8_lossy(&author.stdout).trim(),
-            "Markora <tolaria@local> tolaria: snapshot"
+            "Markora <markora@local> markora: snapshot"
         );
     }
 

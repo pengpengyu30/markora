@@ -4,7 +4,7 @@
  */
 
 export const MOCK_CONTENT: Record<string, string> = {
-  '/Users/luca/Laputa/26q1-laputa-app.md': `---
+  '/Users/luca/Laputa/26q1-markora-app.md': `---
 title: Build Laputa App
 type: Project
 status: Active
@@ -14,7 +14,7 @@ published: true
 archived: false
 tags: [Tauri, React, TypeScript, CodeMirror]
 tools: [Vite, Vitest, Playwright]
-url: https://github.com/lucaong/laputa-app
+url: https://github.com/lucaong/markora-app
 belongs_to:
   - "[[q1-2026]]"
 related_to:
@@ -276,7 +276,7 @@ Stocks that wick below the 200-day EMA and close above it show a **statistically
 title: Facebook Ads Strategy
 type: Note
 belongs_to:
-  - "[[26q1-laputa-app]]"
+  - "[[26q1-markora-app]]"
 related_to:
   - "[[growth]]"
   - "[[ads]]"
@@ -301,7 +301,7 @@ related_to:
 title: Budget Allocation
 type: Note
 belongs_to:
-  - "[[26q1-laputa-app]]"
+  - "[[26q1-markora-app]]"
 ---
 
 # Budget Allocation
@@ -337,11 +337,11 @@ Sponsorship manager — handles all sponsor relationships, proposals, and report
 - [[Manage Sponsorships]]
 - [[Run Sponsorships]]
 `,
-  '/Users/luca/Laputa/2026-02-14-laputa-app-kickoff.md': `---
+  '/Users/luca/Laputa/2026-02-14-markora-app-kickoff.md': `---
 title: Laputa App Design Session
 type: Event
 related_to:
-  - "[[26q1-laputa-app]]"
+  - "[[26q1-markora-app]]"
   - "[[matteo-cellini]]"
 ---
 

@@ -5,6 +5,9 @@ use std::path::{Path, PathBuf};
 use tempfile::NamedTempFile;
 use uuid::Uuid;
 
+const RENAME_TRANSACTION_DIR: &str = ".markora-rename-txn";
+const PREVIOUS_RENAME_TRANSACTION_DIR: &str = ".tolaria-rename-txn";
+
 #[derive(Debug, Serialize, Deserialize)]
 struct RenameTransaction {
     old_path: String,
@@ -18,7 +21,7 @@ pub(super) struct RenameWorkspace {
 
 impl RenameWorkspace {
     pub(super) fn new(vault: &Path) -> Result<Self, String> {
-        let dir = vault.join(".tolaria-rename-txn");
+        let dir = vault.join(RENAME_TRANSACTION_DIR);
         fs::create_dir_all(&dir).map_err(|e| {
             format!(
                 "Failed to create rename transaction dir {}: {}",
@@ -213,11 +216,15 @@ fn candidate_filename(filename: &str, attempt: usize) -> String {
 }
 
 fn transaction_dir(vault: &Path) -> PathBuf {
-    vault.join(".tolaria-rename-txn")
+    vault.join(RENAME_TRANSACTION_DIR)
 }
 
 pub(super) fn recover_pending_rename_transactions(vault: &Path) -> Result<(), String> {
-    let txn_dir = transaction_dir(vault);
+    recover_pending_rename_transactions_in_dir(&transaction_dir(vault))?;
+    recover_pending_rename_transactions_in_dir(&vault.join(PREVIOUS_RENAME_TRANSACTION_DIR))
+}
+
+fn recover_pending_rename_transactions_in_dir(txn_dir: &Path) -> Result<(), String> {
     if !txn_dir.exists() {
         return Ok(());
     }

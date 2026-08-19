@@ -33,7 +33,7 @@ export function findNoteTagsPropertyPosition(doc: ProsemirrorNode): number {
 function buildDecorations(doc: ProsemirrorNode, host: HTMLElement): DecorationSet {
   const widget = Decoration.widget(findNoteTagsPropertyPosition(doc), host, {
     ignoreSelection: true,
-    key: 'tolaria-note-tags-property',
+    key: 'markora-note-tags-property',
     side: 1,
   })
   return DecorationSet.create(doc, [widget])

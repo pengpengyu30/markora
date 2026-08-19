@@ -957,7 +957,7 @@ function mcpBridgeInfoPlugin(): Plugin {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss(), vaultApiPlugin(), mcpBridgeInfoPlugin()],
-  cacheDir: process.env.TOLARIA_VITE_CACHE_DIR,
+  cacheDir: process.env.MARKORA_VITE_CACHE_DIR ?? process.env.TOLARIA_VITE_CACHE_DIR,
 
   resolve: {
     alias: {
@@ -969,7 +969,7 @@ export default defineConfig({
   // persisted vault list or the runtime Getting Started path instead of opening
   // demo-vault-v2 on every startup.
   define: {
-    ...(process.env.TOLARIA_USE_DEMO_VAULT !== '1'
+    ...((process.env.MARKORA_USE_DEMO_VAULT ?? process.env.TOLARIA_USE_DEMO_VAULT) !== '1'
       || process.env.CI
       || (process.env.TAURI_PLATFORM && !process.env.TAURI_DEBUG)
       ? {}

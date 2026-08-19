@@ -74,7 +74,7 @@ describe('useCodeMirror', () => {
     expect([...container.querySelectorAll('.cm-line')].map(line => line.getAttribute('dir'))).toEqual(['auto', 'auto'])
   })
 
-  it('calls requestMeasure when laputa-zoom-change event fires', () => {
+  it('calls requestMeasure when markora-zoom-change event fires', () => {
     const ref = { current: container }
     const { result } = renderHook(() =>
       useCodeMirror(ref, 'hello', noopCallbacks),
@@ -83,7 +83,7 @@ describe('useCodeMirror', () => {
     const spy = vi.spyOn(view, 'requestMeasure')
 
     act(() => {
-      window.dispatchEvent(new Event('laputa-zoom-change'))
+      window.dispatchEvent(new Event('markora-zoom-change'))
     })
 
     expect(spy).toHaveBeenCalled()
@@ -101,7 +101,7 @@ describe('useCodeMirror', () => {
     unmount()
 
     act(() => {
-      window.dispatchEvent(new Event('laputa-zoom-change'))
+      window.dispatchEvent(new Event('markora-zoom-change'))
     })
 
     // After unmount, the listener should be removed — requestMeasure should NOT be called.

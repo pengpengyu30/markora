@@ -6,7 +6,8 @@ import {
   type TranslationValues,
 } from './i18n'
 
-const LOCALIZED_ERROR_PREFIX = 'tolaria:i18n-error:'
+const LOCALIZED_ERROR_PREFIX = 'markora:i18n-error:'
+const PREVIOUS_LOCALIZED_ERROR_PREFIX = 'tolaria:i18n-error:'
 
 interface LocalizedStreamErrorRequest {
   message: string
@@ -39,11 +40,16 @@ function isTranslationKey(value: unknown): value is TranslationKey {
 }
 
 function parseLocalizedErrorPayload(message: string): LocalizedErrorPayload | null {
-  if (!message.startsWith(LOCALIZED_ERROR_PREFIX)) return null
+  const prefix = message.startsWith(LOCALIZED_ERROR_PREFIX)
+    ? LOCALIZED_ERROR_PREFIX
+    : message.startsWith(PREVIOUS_LOCALIZED_ERROR_PREFIX)
+      ? PREVIOUS_LOCALIZED_ERROR_PREFIX
+      : null
+  if (!prefix) return null
 
   let parsed: unknown
   try {
-    parsed = JSON.parse(message.slice(LOCALIZED_ERROR_PREFIX.length))
+    parsed = JSON.parse(message.slice(prefix.length))
   } catch {
     return null
   }

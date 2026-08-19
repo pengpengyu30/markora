@@ -3,6 +3,6 @@
 <plist version="1.0">
 <dict>
   <key>NSLocalNetworkUsageDescription</key>
-  <string>Tolaria connects to local model servers you configure for AI chat.</string>
+  <string>Markora can access files and media from local Projects you open.</string>
 </dict>
 </plist>

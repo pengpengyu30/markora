@@ -82,10 +82,14 @@ pub fn record_startup_milestone(
     }
 
     let milestone = state.record_milestone(&name, renderer_elapsed_ms, detail);
-    if std::env::var("TOLARIA_STARTUP_TRACE").as_deref() == Ok("1") {
+    let startup_trace_enabled = std::env::var("MARKORA_STARTUP_TRACE")
+        .or_else(|_| std::env::var("TOLARIA_STARTUP_TRACE"))
+        .as_deref()
+        == Ok("1");
+    if startup_trace_enabled {
         let json = serde_json::to_string(&milestone)
             .map_err(|error| format!("Failed to serialize startup milestone: {error}"))?;
-        eprintln!("TOLARIA_STARTUP_TRACE {json}");
+        eprintln!("MARKORA_STARTUP_TRACE {json}");
     }
     Ok(milestone)
 }

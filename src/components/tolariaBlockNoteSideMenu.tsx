@@ -305,7 +305,7 @@ function TolariaDragHandleButton({
     >
       <Components.Generic.Menu.Trigger>
         <span
-          className="tolaria-block-drag-handle"
+          className="markora-block-drag-handle"
           onPointerDown={onPointerDown}
           onClickCapture={onClickCapture}
         >
@@ -403,7 +403,7 @@ function TolariaTurnBlockIntoSubmenu({ locale }: { locale: AppLocale }) {
           {translate(locale, 'editor.sideMenu.turnIntoMenu')}
         </Components.Generic.Menu.Item>
       </Components.Generic.Menu.Trigger>
-      <Components.Generic.Menu.Dropdown className="tolaria-turn-into-menu-dropdown" sub>
+      <Components.Generic.Menu.Dropdown className="markora-turn-into-menu-dropdown" sub>
         {getTolariaBlockTypeSelectItems().map((item) => (
           <Components.Generic.Menu.Item
             key={item.key}

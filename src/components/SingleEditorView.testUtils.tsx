@@ -189,16 +189,16 @@ vi.mock('./tolariaEditorFormattingConfig', () => ({
 }))
 
 vi.mock('./tolariaEditorFormatting', () => ({
-  TolariaFormattingToolbar: () => <div data-testid="tolaria-formatting-toolbar" />,
+  TolariaFormattingToolbar: () => <div data-testid="markora-formatting-toolbar" />,
   TolariaFormattingToolbarController: (props: Record<string, unknown>) => {
     state.capturedToolbarProps = props
-    return <div data-testid="tolaria-formatting-toolbar-controller" />
+    return <div data-testid="markora-formatting-toolbar-controller" />
   },
 }))
 
 vi.mock('./tolariaBlockNoteSideMenu', () => ({
-  TolariaCollapsedHeadingsController: () => <div data-testid="tolaria-collapsed-headings-controller" />,
-  TolariaSideMenu: () => <div data-testid="tolaria-side-menu" />,
+  TolariaCollapsedHeadingsController: () => <div data-testid="markora-collapsed-headings-controller" />,
+  TolariaSideMenu: () => <div data-testid="markora-side-menu" />,
 }))
 
 vi.mock('./useEditorLinkActivation', () => ({

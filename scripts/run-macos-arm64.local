@@ -4,10 +4,10 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-LOCAL_DIR="$ROOT_DIR/.tolaria-build.local"
+LOCAL_DIR="$ROOT_DIR/.markora-build.local"
 APP_PATH="$ROOT_DIR/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/Markora Dev.app"
 CONFIG_ROOT="$LOCAL_DIR/runtime/config"
-CONFIG_DIR="$CONFIG_ROOT/com.tolaria.app.dev"
+CONFIG_DIR="$CONFIG_ROOT/com.markora.app.dev"
 
 SETTINGS_FILE="$CONFIG_DIR/settings.json"
 VAULTS_FILE="$CONFIG_DIR/vaults.json"
@@ -48,6 +48,6 @@ if test ! -f "$AI_SESSIONS_FILE"; then
 fi
 
 open --new \
-  --env "TOLARIA_APP_CONFIG_NAMESPACE=com.tolaria.app.dev" \
+  --env "MARKORA_APP_CONFIG_NAMESPACE=com.markora.app.dev" \
   --env "XDG_CONFIG_HOME=$CONFIG_ROOT" \
   "$APP_PATH"

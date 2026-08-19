@@ -107,10 +107,10 @@ function useBlockNoteRestoreEffect({
       })
     }
 
-    window.addEventListener('laputa:editor-tab-swapped', handleEditorTabSwapped)
+    window.addEventListener('markora:editor-tab-swapped', handleEditorTabSwapped)
     return () => {
       cancelPendingRestore()
-      window.removeEventListener('laputa:editor-tab-swapped', handleEditorTabSwapped)
+      window.removeEventListener('markora:editor-tab-swapped', handleEditorTabSwapped)
     }
   }, [activeTabPath, editor, restoreTransitionRef, rawMode])
 }

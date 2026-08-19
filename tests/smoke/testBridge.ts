@@ -7,14 +7,14 @@ import type {
 
 async function waitForDispatchBrowserMenuCommand(page: Page): Promise<void> {
   await page.waitForFunction(
-    () => typeof window.__laputaTest?.dispatchBrowserMenuCommand === 'function',
+    () => typeof window.__markoraTest?.dispatchBrowserMenuCommand === 'function',
     undefined,
     { timeout: 5_000 },
   )
 }
 
 async function attemptTriggerMenuCommandInPage(commandId: string): Promise<boolean> {
-  const triggerMenuCommand = window.__laputaTest?.triggerMenuCommand
+  const triggerMenuCommand = window.__markoraTest?.triggerMenuCommand
   if (typeof triggerMenuCommand !== 'function') {
     return false
   }
@@ -32,7 +32,7 @@ async function attemptTriggerMenuCommandInPage(commandId: string): Promise<boole
 }
 
 function dispatchMenuCommandFallbackInPage(commandId: string): void {
-  const dispatchBrowserMenuCommand = window.__laputaTest?.dispatchBrowserMenuCommand
+  const dispatchBrowserMenuCommand = window.__markoraTest?.dispatchBrowserMenuCommand
   if (typeof dispatchBrowserMenuCommand !== 'function') {
     throw new Error('Tolaria test bridge is missing dispatchBrowserMenuCommand')
   }
@@ -53,7 +53,7 @@ export async function seedBlockNoteTable(
   columnWidths?: Array<number | null>,
 ): Promise<void> {
   await page.evaluate((widths) => {
-    const bridge = window.__laputaTest?.seedBlockNoteTable
+    const bridge = window.__markoraTest?.seedBlockNoteTable
     if (typeof bridge !== 'function') {
       throw new Error('Tolaria test bridge is missing seedBlockNoteTable')
     }
@@ -63,7 +63,7 @@ export async function seedBlockNoteTable(
 
 export async function seedAutoGitSavedChange(page: Page): Promise<void> {
   await page.evaluate(async () => {
-    const bridge = window.__laputaTest?.seedAutoGitSavedChange
+    const bridge = window.__markoraTest?.seedAutoGitSavedChange
     if (typeof bridge !== 'function') {
       throw new Error('Tolaria test bridge is missing seedAutoGitSavedChange')
     }
@@ -76,7 +76,7 @@ export async function dispatchShortcutEvent(
   init: AppCommandShortcutEventInit,
 ): Promise<void> {
   await page.evaluate((eventInit) => {
-    const bridge = window.__laputaTest?.dispatchShortcutEvent
+    const bridge = window.__markoraTest?.dispatchShortcutEvent
     if (typeof bridge !== 'function') {
       throw new Error('Tolaria test bridge is missing dispatchShortcutEvent')
     }
@@ -90,7 +90,7 @@ export async function triggerShortcutCommand(
   options?: AppCommandShortcutEventOptions,
 ): Promise<void> {
   await page.evaluate((payload) => {
-    const bridge = window.__laputaTest?.triggerShortcutCommand
+    const bridge = window.__markoraTest?.triggerShortcutCommand
     if (typeof bridge !== 'function') {
       throw new Error('Tolaria test bridge is missing triggerShortcutCommand')
     }

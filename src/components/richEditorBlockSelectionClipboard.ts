@@ -6,7 +6,7 @@ import {
   type RichEditorBlockSelectionEditor,
 } from './richEditorBlockSelectionTypes'
 
-export const TOLARIA_BLOCK_CLIPBOARD_MIME = 'application/x-tolaria-blocknote-blocks+json'
+export const TOLARIA_BLOCK_CLIPBOARD_MIME = 'application/x-markora-blocknote-blocks+json'
 
 function sanitizeMarkup(markup: string): string {
   return DOMPurify.sanitize(markup)

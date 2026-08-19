@@ -861,8 +861,8 @@ describe('@ wikilink autocomplete', () => {
   const nonPersonEntry: VaultEntry = {
     ...mockEntry,
     title: 'Build Laputa App',
-    filename: 'laputa-app.md',
-    path: '/vault/project/laputa-app.md',
+    filename: 'markora-app.md',
+    path: '/vault/project/markora-app.md',
     isA: 'Project',
     aliases: [],
   }
@@ -917,7 +917,7 @@ describe('@ wikilink autocomplete', () => {
     expect(items.length).toBeGreaterThan(0)
     items[0].onItemClick()
     expect(mockEditor.insertInlineContent).toHaveBeenCalledWith([
-      { type: 'wikilink', props: { target: 'vault/project/laputa-app' } },
+      { type: 'wikilink', props: { target: 'vault/project/markora-app' } },
       ' ',
     ], { updateSelection: true })
   })

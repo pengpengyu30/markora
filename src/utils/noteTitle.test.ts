@@ -90,7 +90,7 @@ describe('deriveDisplayTitleState', () => {
 
   it('keeps plain square brackets when deriving the display title from H1', () => {
     const content = '# [26Q2] Tolaria MVP\n\nBody'
-    expect(deriveDisplayTitleState({ content, filename: 'tolaria-mvp.md' })).toEqual({
+    expect(deriveDisplayTitleState({ content, filename: 'markora-mvp.md' })).toEqual({
       title: '[26Q2] Tolaria MVP',
       hasH1: true,
     })

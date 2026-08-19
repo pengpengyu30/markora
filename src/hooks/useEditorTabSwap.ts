@@ -137,7 +137,7 @@ function now(): number {
 }
 
 function signalEditorTabSwapped(path: string): void {
-  window.dispatchEvent(new CustomEvent('laputa:editor-tab-swapped', {
+  window.dispatchEvent(new CustomEvent('markora:editor-tab-swapped', {
     detail: { path },
   }))
   finishNoteOpenTrace(path)

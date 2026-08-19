@@ -344,16 +344,16 @@ export function addItemsToMediaGroup(
 export function createTolariaSlashMenuIcon(Icon: PhosphorIcon) {
   return createElement(
     'span',
-    { className: 'tolaria-slash-menu-icon' },
+    { className: 'markora-slash-menu-icon' },
     createElement(Icon, {
       'aria-hidden': true,
-      className: 'tolaria-slash-menu-icon__regular',
+      className: 'markora-slash-menu-icon__regular',
       size: 18,
       weight: 'regular',
     }),
     createElement(Icon, {
       'aria-hidden': true,
-      className: 'tolaria-slash-menu-icon__fill',
+      className: 'markora-slash-menu-icon__fill',
       size: 18,
       weight: 'fill',
     }),

@@ -57,8 +57,8 @@ export interface BlockNoteDirectMarkdownResult {
 export interface DirectMarkdownCapableSerializer {
   blocksToMarkdownLossy: (blocks: unknown[]) => string
   blocksToMarkdownDirect?: (blocks: unknown[]) => BlockNoteDirectMarkdownResult
-  __tolariaDirectMarkdownCache?: WeakMap<object, Map<string, string>>
-  __tolariaLastDirectMarkdownMetrics?: BlockNoteDirectMarkdownMetrics
+  __markoraDirectMarkdownCache?: WeakMap<object, Map<string, string>>
+  __markoraLastDirectMarkdownMetrics?: BlockNoteDirectMarkdownMetrics
 }
 
 type MarkdownLinePrefix = {
@@ -465,10 +465,10 @@ export function installBlockNoteDirectMarkdown(editor: DirectMarkdownCapableSeri
   if (typeof editor.blocksToMarkdownDirect === 'function') return
 
   const cache = new WeakMap<object, Map<string, string>>()
-  editor.__tolariaDirectMarkdownCache = cache
+  editor.__markoraDirectMarkdownCache = cache
   editor.blocksToMarkdownDirect = (blocks: unknown[]) => {
     const result = blocksToMarkdownDirect(blocks, cache)
-    editor.__tolariaLastDirectMarkdownMetrics = result.metrics
+    editor.__markoraLastDirectMarkdownMetrics = result.metrics
     return result
   }
 }

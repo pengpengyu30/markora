@@ -249,7 +249,7 @@ function syntheticEntry({ index = 0, markdown = '', title }) {
     modifiedAt: 1_710_000_000 + index,
     order: null,
     organized: false,
-    outgoingLinks: ['build-laputa-app'],
+    outgoingLinks: ['build-markora-app'],
     path: `/performance-fixture/${slug}.md`,
     properties: {},
     relationships: {},
@@ -328,7 +328,7 @@ function stopDevServer() {
 
 async function installSyntheticVault(page, entries, contentByPath) {
   await page.addInitScript(({ syntheticContent, syntheticEntries }) => {
-    globalThis.__TOLARIA_PERFORMANCE_HARNESS__ = true
+      globalThis.__MARKORA_PERFORMANCE_HARNESS__ = true
     const jsonResponse = value => new Response(JSON.stringify(value), {
       headers: { 'Content-Type': 'application/json' },
       status: 200,
@@ -440,7 +440,7 @@ async function openFixturePage({ baseUrl, browser, contentByPath, entries }) {
 }
 
 async function startupMarkMs(page, phase) {
-  const markName = `tolaria:${phase}`
+  const markName = `markora:${phase}`
   await page.waitForFunction(
     name => performance.getEntriesByName(name, 'mark').length > 0,
     markName,

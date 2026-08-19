@@ -1,6 +1,7 @@
 import { lazy, StrictMode, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import '@blocknote/core/fonts/inter.css'
 import './index.css'
 import { FrontendReadyMarker } from './components/FrontendReadyMarker'
 import { LinuxTitlebar } from './components/LinuxTitlebar'
@@ -137,7 +138,7 @@ function dispatchDeterministicShortcutEvent(init: AppCommandShortcutEventInit) {
   target.dispatchEvent(new KeyboardEvent('keydown', init))
 }
 
-window.__laputaTest = {
+window.__markoraTest = {
   dispatchAppCommand(id: string) {
     if (!isAppCommandId(id)) {
       throw new Error(`Unknown app command: ${id}`)
@@ -157,11 +158,11 @@ window.__laputaTest = {
       return invoke('trigger_menu_command', { id })
     }
 
-    if (!window.__laputaTest?.dispatchBrowserMenuCommand) {
+    if (!window.__markoraTest?.dispatchBrowserMenuCommand) {
       throw new Error('Markora test bridge is missing dispatchBrowserMenuCommand')
     }
 
-    window.__laputaTest.dispatchBrowserMenuCommand(id)
+    window.__markoraTest.dispatchBrowserMenuCommand(id)
     return undefined
   },
   triggerShortcutCommand(id: string, options?: AppCommandShortcutEventOptions) {
@@ -195,9 +196,9 @@ function isStartupDefaultExportImportError(error: unknown): boolean {
 }
 
 function fatalRenderOverlay(): HTMLElement {
-  const existing = document.getElementById('tolaria-fatal-render-error')
+  const existing = document.getElementById('markora-fatal-render-error')
   const overlay = existing ?? document.createElement('pre')
-  overlay.id = 'tolaria-fatal-render-error'
+  overlay.id = 'markora-fatal-render-error'
   overlay.style.cssText = [
     'position:fixed',
     'inset:24px',

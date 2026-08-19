@@ -32,9 +32,9 @@ function configToPercent(zoom: number | null): number | null {
 
 function applyZoomToDocument(level: number): void {
   document.documentElement.style.setProperty('zoom', `${level}%`)
-  document.documentElement.style.setProperty('--tolaria-overlay-zoom-factor', String(level / DEFAULT_ZOOM))
-  document.documentElement.style.setProperty('--tolaria-overlay-zoom-inverse', String(DEFAULT_ZOOM / level))
-  window.dispatchEvent(new Event('laputa-zoom-change'))
+  document.documentElement.style.setProperty('--markora-overlay-zoom-factor', String(level / DEFAULT_ZOOM))
+  document.documentElement.style.setProperty('--markora-overlay-zoom-inverse', String(DEFAULT_ZOOM / level))
+  window.dispatchEvent(new Event('markora-zoom-change'))
 }
 
 function persistZoom(level: number): void {

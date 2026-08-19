@@ -190,7 +190,7 @@ function collapsedSectionStyleScope(editorElement: HTMLElement) {
   if (!container) return ''
 
   container.dataset.tolariaCollapseScope ??= String(++collapsedSectionScopeSequence)
-  return `[data-tolaria-collapse-scope=${cssString(container.dataset.tolariaCollapseScope)}]`
+  return `[data-markora-collapse-scope=${cssString(container.dataset.tolariaCollapseScope)}]`
 }
 
 function collapsedSectionStyleElement(editorElement: HTMLElement) {
@@ -198,7 +198,7 @@ function collapsedSectionStyleElement(editorElement: HTMLElement) {
   if (existingStyle) return existingStyle
 
   const styleElement = editorElement.ownerDocument.createElement('style')
-  styleElement.setAttribute('data-tolaria-collapsed-sections', 'true')
+  styleElement.setAttribute('data-markora-collapsed-sections', 'true')
   editorElement.ownerDocument.head.appendChild(styleElement)
   collapsedSectionStyleElements.set(editorElement, styleElement)
   return styleElement
@@ -293,7 +293,7 @@ function collapsedHeadingHoverRuleSelectors(
     .flatMap((blockId) => headingDotsSelectorsForStyle(
       editorElement,
       blockId,
-      `${scope}[data-tolaria-collapse-hover-id=${cssString(blockId)}]`,
+      `${scope}[data-markora-collapse-hover-id=${cssString(blockId)}]`,
     ))
 }
 

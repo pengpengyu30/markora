@@ -1377,7 +1377,7 @@ mod tests {
 
         create_test_file(vault, "note/original.md", "# Original\n");
 
-        let txn_dir = vault.join(".tolaria-rename-txn");
+        let txn_dir = vault.join(".markora-rename-txn");
         fs::create_dir_all(&txn_dir).unwrap();
 
         let backup_path = txn_dir.join("rename-backup.bak");

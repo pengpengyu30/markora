@@ -27,7 +27,7 @@ fn is_temp_file_name(name: &OsStr) -> bool {
 }
 
 fn is_exact_temp_file_name(name: &str) -> bool {
-    [".DS_Store", ".tolaria-rename-txn"].contains(&name)
+    [".DS_Store", ".markora-rename-txn", ".tolaria-rename-txn"].contains(&name)
 }
 
 fn has_temp_file_prefix(name: &str) -> bool {
@@ -284,6 +284,7 @@ mod desktop {
                     EventKind::Create(CreateKind::File),
                     &[
                         ".DS_Store",
+                        ".markora-rename-txn",
                         ".tolaria-rename-txn",
                         ".#draft.md",
                         "draft.md~",
@@ -381,7 +382,7 @@ mod tests {
         assert!(!is_watchable_path(Path::new("note.md.swp"), None));
         assert!(!is_watchable_path(Path::new("draft.md~"), None));
         assert!(!is_watchable_path(Path::new(".DS_Store"), None));
-        assert!(!is_watchable_path(Path::new(".tolaria-rename-txn"), None));
+        assert!(!is_watchable_path(Path::new(".markora-rename-txn"), None));
         assert!(!is_watchable_path(Path::new(".gitstatus.KASSUJ"), None));
         assert!(!is_watchable_path(Path::new("notes/draft.md.icloud"), None));
     }

@@ -1,6 +1,6 @@
 import { isTauri } from '../mock-tauri'
 
-export const NOTE_PDF_EXPORT_CLASS = 'tolaria-note-pdf-exporting'
+export const NOTE_PDF_EXPORT_CLASS = 'markora-note-pdf-exporting'
 
 const DEFAULT_CLEANUP_DELAY_MS = 30_000
 const PDF_EXTENSION = '.pdf'

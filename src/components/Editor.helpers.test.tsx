@@ -56,8 +56,8 @@ const blockNoteViewState = vi.hoisted(() => ({
   onChange: null as (() => void) | null,
 }))
 type MockEditorWithDirectMarkdownState = typeof mockEditor & {
-  __tolariaDirectMarkdownCache?: unknown
-  __tolariaLastDirectMarkdownMetrics?: unknown
+  __markoraDirectMarkdownCache?: unknown
+  __markoraLastDirectMarkdownMetrics?: unknown
   blocksToMarkdownDirect?: unknown
 }
 
@@ -321,8 +321,8 @@ export function resetEditorTestState() {
   blockNoteViewState.onChange = null
   mockEditor.document = [{ id: '1', type: 'paragraph', content: [], props: {}, children: [] }]
   const editorWithDirectMarkdownState = mockEditor as MockEditorWithDirectMarkdownState
-  delete editorWithDirectMarkdownState.__tolariaDirectMarkdownCache
-  delete editorWithDirectMarkdownState.__tolariaLastDirectMarkdownMetrics
+  delete editorWithDirectMarkdownState.__markoraDirectMarkdownCache
+  delete editorWithDirectMarkdownState.__markoraLastDirectMarkdownMetrics
   delete editorWithDirectMarkdownState.blocksToMarkdownDirect
   capturedSuggestionState.getItems = null
   capturedSuggestionState.getItemsByTrigger = {}

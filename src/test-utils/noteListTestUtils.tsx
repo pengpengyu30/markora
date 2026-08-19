@@ -44,8 +44,8 @@ export const makeEntry = (overrides: Partial<VaultEntry> = {}): VaultEntry => ({
 
 export const mockEntries: VaultEntry[] = [
   makeEntry({
-    path: '/Users/luca/Laputa/project/26q1-laputa-app.md',
-    filename: '26q1-laputa-app.md',
+    path: '/Users/luca/Laputa/project/26q1-markora-app.md',
+    filename: '26q1-markora-app.md',
     title: 'Build Laputa App',
     isA: 'Project',
     relatedTo: ['[[topic/software-development]]'],
@@ -63,14 +63,14 @@ export const mockEntries: VaultEntry[] = [
     filename: 'facebook-ads-strategy.md',
     title: 'Facebook Ads Strategy',
     isA: 'Note',
-    belongsTo: ['[[project/26q1-laputa-app]]'],
+    belongsTo: ['[[project/26q1-markora-app]]'],
     relatedTo: ['[[topic/growth]]'],
     modifiedAt: 1700000000,
     createdAt: null,
     fileSize: 847,
     snippet: 'Lookalike audiences convert 3x better.',
     relationships: {
-      'Belongs to': ['[[project/26q1-laputa-app]]'],
+      'Belongs to': ['[[project/26q1-markora-app]]'],
       'Related to': ['[[topic/growth]]'],
     },
   }),
