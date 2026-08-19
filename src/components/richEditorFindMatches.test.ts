@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   extractRichEditorVisibleText,
   findRichEditorMatches,
+  findRichEditorMatchesInVisibleText,
 } from './richEditorFindMatches'
 
 const schema = new Schema({
@@ -55,5 +56,20 @@ describe('rich editor find matches', () => {
     expect(findRichEditorMatches(doc, 'hidden-frontmatter', { caseSensitive: false, regex: false }).matches).toEqual([])
     expect(findRichEditorMatches(doc, 'hidden-url', { caseSensitive: false, regex: false }).matches).toEqual([])
     expect(findRichEditorMatches(doc, '**', { caseSensitive: false, regex: false }).matches).toEqual([])
+  })
+
+  it('reuses a precomputed visible-text mapping for repeated queries', () => {
+    const doc = schema.node('doc', null, [schema.node('paragraph', null, schema.text('Alpha beta Alpha'))])
+    const visible = extractRichEditorVisibleText(doc)
+
+    expect(findRichEditorMatchesInVisibleText(visible, 'Alpha', { caseSensitive: false, regex: false })).toEqual(
+      expect.objectContaining({
+        visibleText: 'Alpha beta Alpha',
+        matches: [
+          expect.objectContaining({ from: 1, to: 6 }),
+          expect.objectContaining({ from: 12, to: 17 }),
+        ],
+      }),
+    )
   })
 })

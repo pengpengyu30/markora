@@ -94,4 +94,13 @@ describe('RawEditorFindBar', () => {
 
     expect(onClose).toHaveBeenCalled()
   })
+
+  it('stays open when the user clicks outside the find bar', () => {
+    const onClose = vi.fn()
+    renderFindBar({ onClose })
+
+    fireEvent.pointerDown(document.body)
+
+    expect(onClose).not.toHaveBeenCalled()
+  })
 })

@@ -276,6 +276,7 @@
   "noteList.title.notes": "Natatki",
   "noteList.searchPlaceholder": "Šukać natatki...",
   "noteList.searchAction": "Pošuk natatak",
+  "noteList.revealCurrentNote": "Find the current note",
   "search.truncated": "{total} supadzyennyau, pakazany pershyya {current}",
   "noteList.clearSearch": "Ačyscić pošuk",
   "noteList.quickOpenCreate": "Stvaryć natatku \"{title}\"",
@@ -519,17 +520,17 @@
   "status.project.removeConfirmTitle": "Vydalić prajekt?",
   "status.project.removeConfirmMessage": "Heta vydalić {label} sa spisu prajektaŭ Markora. Fajly na dysku nie buduć vydalieny.",
   "status.project.removeConfirmAction": "Vydalić prajekt",
-"sidebar.group.projects": "Projects"
-  ,"sidebar.group.tags": "TAGS"
-  ,"noteList.tags.filteredBy": "Filtered by"
-  ,"noteList.tags.clear": "Clear tag filter"
-  ,"editor.tags.add": "Add tag"
-  ,"editor.tags.addLabel": "Add tag"
-  ,"editor.tags.inputPlaceholder": "Type a tag..."
-  ,"editor.tags.create": "Create \"{tag}\""
-  ,"editor.tags.remove": "Remove tag {tag}"
-  ,"editor.tags.usage": "Used in {count} notes"
-  ,"editor.tags.noMatches": "No matching tags"
-  ,"editor.tags.validation.invalid": "Use only letters, numbers, and hyphens."
-  ,"editor.tags.validation.tooLong": "Tags can be up to 15 characters."
+  "sidebar.group.projects": "Projects",
+  "sidebar.group.tags": "TAGS",
+  "noteList.tags.filteredBy": "Filtered by",
+  "noteList.tags.clear": "Clear tag filter",
+  "editor.tags.add": "Add tag",
+  "editor.tags.addLabel": "Add tag",
+  "editor.tags.inputPlaceholder": "Type a tag...",
+  "editor.tags.create": "Create \"{tag}\"",
+  "editor.tags.remove": "Remove tag {tag}",
+  "editor.tags.usage": "Used in {count} notes",
+  "editor.tags.noMatches": "No matching tags",
+  "editor.tags.validation.invalid": "Use only letters, numbers, and hyphens.",
+  "editor.tags.validation.tooLong": "Tags can be up to 15 characters."
 }

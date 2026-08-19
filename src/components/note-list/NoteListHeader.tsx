@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { CircleNotch as Loader2, MagnifyingGlass, Plus, SidebarSimple, X } from '@phosphor-icons/react'
+import { CircleNotch as Loader2, Crosshair, MagnifyingGlass, Plus, SidebarSimple, X } from '@phosphor-icons/react'
 import type { SortOption, SortDirection } from '../../utils/noteListHelpers'
 import { translate, type AppLocale } from '../../lib/i18n'
 import { Button } from '@/components/ui/button'
@@ -26,6 +26,7 @@ interface NoteListHeaderProps {
   onSortChange: (groupLabel: string, option: SortOption, direction: SortDirection) => void
   onCreateNote: () => void
   onToggleSearch: () => void
+  onRevealCurrentNote?: () => void
   onSearchChange: (value: string) => void
   onSearchKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void
   selectedTags?: string[]
@@ -91,6 +92,7 @@ function HeaderActions(options: Pick<
   | 'onSortChange'
   | 'onCreateNote'
   | 'onToggleSearch'
+  | 'onRevealCurrentNote'
 > & {
   locale: AppLocale
 }) {
@@ -101,12 +103,26 @@ function HeaderActions(options: Pick<
     onSortChange,
     onCreateNote,
     onToggleSearch,
-} = options
+    onRevealCurrentNote,
+  } = options
   return (
     <div className="ml-3 flex shrink-0 items-center justify-end gap-2" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
       <SortDropdown groupLabel="__list__" current={listSort} direction={listDirection} locale={locale} onChange={onSortChange} />
       <Button type="button" variant="ghost" size="icon-xs" className={NOTE_LIST_ACTION_BUTTON_CLASSNAME} onClick={onToggleSearch} title={translate(locale, 'noteList.searchAction')} aria-label={translate(locale, 'noteList.searchAction')}>
         <MagnifyingGlass size={16} />
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-xs"
+        className={NOTE_LIST_ACTION_BUTTON_CLASSNAME}
+        onClick={onRevealCurrentNote}
+        disabled={!onRevealCurrentNote}
+        title={translate(locale, 'noteList.revealCurrentNote')}
+        aria-label={translate(locale, 'noteList.revealCurrentNote')}
+        data-testid="note-list-reveal-current"
+      >
+        <Crosshair size={16} />
       </Button>
       <Button type="button" variant="ghost" size="icon-xs" className={NOTE_LIST_ACTION_BUTTON_CLASSNAME} onClick={onCreateNote} title={translate(locale, 'noteList.createNote')} aria-label={translate(locale, 'noteList.createNote')}>
         <Plus size={16} />
@@ -167,7 +183,8 @@ function SearchRow({ search, isSearching, searchInputRef, locale, onSearchChange
 
   return (
     <div className="border-b border-border px-3 py-2">
-      <div className="relative flex-1" aria-live="polite">
+      <div className="flex items-center gap-2" aria-live="polite">
+        <div className="relative min-w-0 flex-1">
         <Input
           ref={searchInputRef}
           placeholder={translate(locale, 'noteList.searchPlaceholder')}
@@ -198,6 +215,7 @@ function SearchRow({ search, isSearching, searchInputRef, locale, onSearchChange
             <Loader2 size={12} className="animate-spin" />
           </span>
         )}
+        </div>
       </div>
     </div>
   )
@@ -235,7 +253,7 @@ export function NoteListHeader(options: NoteListHeaderProps) {
   const { title, listSort, listDirection } = options
   const { sidebarCollapsed, searchVisible, search, isSearching, searchInputRef } = options
   const { locale = 'en' } = options
-  const { onSortChange, onCreateNote, onToggleSearch, onSearchChange, onSearchKeyDown } = options
+  const { onSortChange, onCreateNote, onToggleSearch, onRevealCurrentNote, onSearchChange, onSearchKeyDown } = options
   const { dragRegionRef } = useDragRegion<HTMLDivElement>()
   const collapsedSidebarPadding = sidebarCollapsed && isMac()
     ? `var(--markora-macos-traffic-light-padding, ${MACOS_TRAFFIC_LIGHT_SAFE_PADDING}px)`
@@ -256,6 +274,7 @@ export function NoteListHeader(options: NoteListHeaderProps) {
           onSortChange={onSortChange}
           onCreateNote={onCreateNote}
           onToggleSearch={onToggleSearch}
+          onRevealCurrentNote={onRevealCurrentNote}
         />
       </div>
       {searchVisible && (

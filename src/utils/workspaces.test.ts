@@ -4,6 +4,7 @@ import {
   filterEntriesToVisibleWorkspaces,
   visibleWorkspacePaths,
   workspaceIdentityFromVault,
+  workspaceLocationLabel,
 } from './workspaces'
 
 function entry(path: string, workspacePath: string): VaultEntry {
@@ -45,5 +46,19 @@ describe('project workspace graph helpers', () => {
       entry('/projects/edge/a.md', '/projects/edge'),
       entry('/projects/tolaria/b.md', '/projects/tolaria'),
     ], ['/projects/tolaria']).map((item) => item.path)).toEqual(['/projects/tolaria/b.md'])
+  })
+
+  it('formats a Project and nested folder for search result context', () => {
+    const note = entry('/projects/edge/docs/design/overview.md', '/projects/edge')
+    note.workspace = workspaceIdentityFromVault({ label: 'Edgeclaw', path: '/projects/edge' })
+
+    expect(workspaceLocationLabel(note)).toBe('Edgeclaw / docs / design')
+  })
+
+  it('formats a Project root note without a trailing folder', () => {
+    const note = entry('/projects/edge/README.md', '/projects/edge')
+    note.workspace = workspaceIdentityFromVault({ label: 'Edgeclaw', path: '/projects/edge' })
+
+    expect(workspaceLocationLabel(note)).toBe('Edgeclaw')
   })
 })

@@ -268,10 +268,12 @@ test.describe('keyboard command routing', () => {
     await input.fill('tom jerry')
 
     await expect(searchResultRow(page, 'Alpha Project')).toBeVisible({ timeout: 5_000 })
+    await expect(searchResultRow(page, 'Alpha Project')).toContainText('(Test Vault / project)')
     await input.press('Enter')
 
     const highlights = page.locator('.bn-editor .markora-search-highlight')
     await expect(highlights).toHaveCount(2, { timeout: 5_000 })
+    await expect(page.locator(`[data-note-path="${notePath}"]`)).toHaveAttribute('aria-selected', 'true')
     await expect.poll(async () => highlights.first().evaluate((element) => getComputedStyle(element).animationDuration)).toBe('2s')
     await expect(page.getByRole('heading', { name: 'Alpha Project', level: 1 })).toBeVisible({ timeout: 5_000 })
     await expect(highlights).toHaveCount(0, { timeout: 5_000 })

@@ -149,6 +149,63 @@ describe('useNoteListKeyboard', () => {
     expect(scrollIntoView).toHaveBeenCalledWith({ index: 0, behavior: 'auto' })
   })
 
+  it('scrolls a newly selected note into view after an external open', () => {
+    const open = vi.fn()
+    const { result, rerender } = renderHook(
+      ({ selectedNotePath, revealRequestId = 0 }) => useNoteListKeyboard({
+        items,
+        selectedNotePath,
+        onOpen: open,
+        enabled: true,
+        revealRequestId,
+      }),
+      { initialProps: { selectedNotePath: null as string | null, revealRequestId: 0 } },
+    )
+    const scrollIntoView = vi.fn()
+    result.current.virtuosoRef.current = { scrollIntoView }
+
+    rerender({ selectedNotePath: '/b.md' })
+    act(() => flushAnimationFrame())
+
+    expect(scrollIntoView).toHaveBeenCalledWith({ align: 'start', index: 1, behavior: 'auto' })
+  })
+
+  it('repositions the selected note when the document requests a fresh reveal', () => {
+    const open = vi.fn()
+    const { result, rerender } = renderHook(
+      ({ revealRequestId }) => useNoteListKeyboard({
+        items,
+        selectedNotePath: '/b.md',
+        onOpen: open,
+        enabled: true,
+        revealRequestId,
+      }),
+      { initialProps: { revealRequestId: 0 } },
+    )
+    const scrollIntoView = vi.fn()
+    result.current.virtuosoRef.current = { scrollIntoView }
+    const selectedItemScrollIntoView = vi.fn()
+    const container = document.createElement('div')
+    const selectedItem = document.createElement('div')
+    selectedItem.dataset.notePath = '/b.md'
+    selectedItem.scrollIntoView = selectedItemScrollIntoView
+    container.appendChild(selectedItem)
+    result.current.containerRef.current = container
+
+    act(() => flushAnimationFrame())
+    scrollIntoView.mockClear()
+
+    rerender({ revealRequestId: 1 })
+    act(() => flushAnimationFrame())
+
+    expect(scrollIntoView).toHaveBeenCalledWith({ align: 'start', index: 1, behavior: 'auto' })
+    expect(selectedItemScrollIntoView).toHaveBeenCalledWith({
+      block: 'start',
+      behavior: 'auto',
+      inline: 'nearest',
+    })
+  })
+
   it('ArrowUp clamps at start of list', () => {
     const { result } = renderHook(() =>
       useNoteListKeyboard({ items, selectedNotePath: null, onOpen, enabled: true }),

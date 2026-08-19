@@ -99,6 +99,7 @@ function MainApp() {
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [pendingNoteListPdfExportPath, setPendingNoteListPdfExportPath] = useState<string | null>(null)
   const [searchHighlightRequest, setSearchHighlightRequest] = useState<SearchHighlightRequest | null>(null)
+  const [noteRevealRequestId, setNoteRevealRequestId] = useState(0)
   const searchHighlightRequestIdRef = useRef(0)
   const handleSetSelection = useCallback((sel: SidebarSelection) => {
     setSelectionOverride(sel)
@@ -247,6 +248,7 @@ function MainApp() {
     [visibleEntries, visibleWorkspaceRoots],
   )
   const handleRevealNote = useCallback((entry: VaultEntry) => {
+    setNoteRevealRequestId((current) => current + 1)
     const nextSelection = selectionForProjectLocation(resolveProjectLocation(entry.path, projectPaths, resolvedPath))
     setSelectionOverride((current) => {
       const currentSelection = current ?? effectiveSelection
@@ -254,10 +256,6 @@ function MainApp() {
       return nextSelection
     })
   }, [effectiveSelection, projectPaths, resolvedPath])
-  const handleRevealNoteFromEditor = useCallback((entry: VaultEntry) => {
-    if (effectiveSelection.kind !== 'folder' || effectiveSelection.includeDescendants) return
-    handleRevealNote(entry)
-  }, [effectiveSelection, handleRevealNote])
   const tagFilteredEntries = useMemo(
     () => filterEntriesByTags(visibleEntries, selectedTags),
     [selectedTags, visibleEntries],
@@ -794,6 +792,9 @@ function MainApp() {
   })
   const activeTabEntry = activeTab?.entry ?? null
   const activeTabPath = activeTabEntry?.path
+  const handleRevealCurrentNote = useCallback(() => {
+    if (activeTabEntry) handleRevealNote(activeTabEntry)
+  }, [activeTabEntry, handleRevealNote])
   const handleSelectNoteForPdfExport = notes.handleSelectNote
   const handleExportNotePdfFromList = useCallback((entry: VaultEntry) => {
     if (!isMarkdownEntry(entry)) return
@@ -965,7 +966,7 @@ function MainApp() {
           {noteListVisible && (
             <>
               <div className="app__note-list" style={{ width: layout.noteListWidth }}>
-                <NoteList vaultPath={activeProject.projectPath} entries={tagFilteredEntries} selection={effectiveSelection} selectedNote={activeTab?.entry ?? null} selectedTags={selectedTags} onToggleTag={handleToggleTag} onClearTagFilter={handleClearTagFilter} loading={isVaultContentLoading} getNoteStatus={vault.getNoteStatus} sidebarCollapsed={!sidebarVisible} onSelectNote={notes.handleSelectNote} onReplaceActiveTab={notes.handleReplaceActiveTab} onCreateNote={notes.handleCreateNoteImmediate} onBulkDeletePermanently={deleteActions.handleBulkDeletePermanently} onRenameFilename={appSave.handleFilenameRename} onExportPdf={handleExportNotePdfFromList} onRevealFile={fileActions.revealFile} onCopyFilePath={fileActions.copyFilePath} visibleNotesRef={visibleNotesRef} allNotesFileVisibility={allNotesFileVisibility} folderViewShowNonMarkdown={folderViewShowNonMarkdown} showFilename={noteListShowFilename} multiSelectionCommandRef={multiSelectionCommandRef} locale={appLocale} />
+                <NoteList vaultPath={activeProject.projectPath} entries={tagFilteredEntries} selection={effectiveSelection} selectedNote={activeTab?.entry ?? null} revealRequestId={noteRevealRequestId} onRevealCurrentNote={handleRevealCurrentNote} selectedTags={selectedTags} onToggleTag={handleToggleTag} onClearTagFilter={handleClearTagFilter} loading={isVaultContentLoading} getNoteStatus={vault.getNoteStatus} sidebarCollapsed={!sidebarVisible} onSelectNote={notes.handleSelectNote} onReplaceActiveTab={notes.handleReplaceActiveTab} onCreateNote={notes.handleCreateNoteImmediate} onBulkDeletePermanently={deleteActions.handleBulkDeletePermanently} onRenameFilename={appSave.handleFilenameRename} onExportPdf={handleExportNotePdfFromList} onRevealFile={fileActions.revealFile} onCopyFilePath={fileActions.copyFilePath} visibleNotesRef={visibleNotesRef} allNotesFileVisibility={allNotesFileVisibility} folderViewShowNonMarkdown={folderViewShowNonMarkdown} showFilename={noteListShowFilename} multiSelectionCommandRef={multiSelectionCommandRef} locale={appLocale} />
               </div>
               <ResizeHandle onResize={layout.handleNoteListResize} />
             </>
@@ -979,7 +980,6 @@ function MainApp() {
               availableTags={availableTags}
               onUpdateTags={handleUpdateTags}
               onNavigateWikilink={notes.handleNavigateWikilink}
-              onRevealNote={handleRevealNoteFromEditor}
               onCreateNote={notes.handleCreateNoteImmediate}
               rightPanelCollapsed={layout.rightPanelCollapsed}
               onToggleRightPanel={handleToggleRightPanel}

@@ -276,6 +276,7 @@
   "noteList.title.notes": "Poznámky",
   "noteList.searchPlaceholder": "Hľadať v poznámkach...",
   "noteList.searchAction": "Hľadať v poznámkach",
+  "noteList.revealCurrentNote": "Nájsť aktuálnu poznámku",
   "search.truncated": "{total} zhôd, zobrazených prvých {current}",
   "noteList.clearSearch": "Vymazať vyhľadávanie",
   "noteList.quickOpenCreate": "Vytvoriť poznámku „{title}“",
@@ -519,17 +520,17 @@
   "status.project.removeConfirmTitle": "Odstrániť projekt?",
   "status.project.removeConfirmMessage": "Týmto sa {label} odstráni zo zoznamu projektov v aplikácii Markora. Súbory na disku sa neodstránia.",
   "status.project.removeConfirmAction": "Odstrániť projekt",
-"sidebar.group.projects": "PROJEKTY"
-  ,"sidebar.group.tags": "TAGS"
-  ,"noteList.tags.filteredBy": "Filtered by"
-  ,"noteList.tags.clear": "Clear tag filter"
-  ,"editor.tags.add": "Add tag"
-  ,"editor.tags.addLabel": "Add tag"
-  ,"editor.tags.inputPlaceholder": "Type a tag..."
-  ,"editor.tags.create": "Create \"{tag}\""
-  ,"editor.tags.remove": "Remove tag {tag}"
-  ,"editor.tags.usage": "Used in {count} notes"
-  ,"editor.tags.noMatches": "No matching tags"
-  ,"editor.tags.validation.invalid": "Use only letters, numbers, and hyphens."
-  ,"editor.tags.validation.tooLong": "Tags can be up to 15 characters."
+  "sidebar.group.projects": "PROJEKTY",
+  "sidebar.group.tags": "TAGS",
+  "noteList.tags.filteredBy": "Filtered by",
+  "noteList.tags.clear": "Clear tag filter",
+  "editor.tags.add": "Add tag",
+  "editor.tags.addLabel": "Add tag",
+  "editor.tags.inputPlaceholder": "Type a tag...",
+  "editor.tags.create": "Create \"{tag}\"",
+  "editor.tags.remove": "Remove tag {tag}",
+  "editor.tags.usage": "Used in {count} notes",
+  "editor.tags.noMatches": "No matching tags",
+  "editor.tags.validation.invalid": "Use only letters, numbers, and hyphens.",
+  "editor.tags.validation.tooLong": "Tags can be up to 15 characters."
 }

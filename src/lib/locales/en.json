@@ -299,6 +299,7 @@
   "noteList.title.notes": "Notes",
   "noteList.searchPlaceholder": "Search notes...",
   "noteList.searchAction": "Search notes",
+  "noteList.revealCurrentNote": "Locate current note",
   "search.truncated": "{total} matches, showing the first {current}",
   "noteList.clearSearch": "Clear search",
   "noteList.tags.filteredBy": "Filtered by",

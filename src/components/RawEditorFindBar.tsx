@@ -74,12 +74,14 @@ function handleRawEditorFindKeyDown(
 ): void {
   if (event.key === 'Escape') {
     event.preventDefault()
+    event.stopPropagation()
     close()
     return
   }
   if (event.key !== 'Enter') return
 
   event.preventDefault()
+  event.stopPropagation()
   moveMatch(event.shiftKey ? -1 : 1)
 }
 
@@ -414,7 +416,8 @@ export function RawEditorFindBar(props: RawEditorFindBarProps) {
   return (
     <div
       ref={barRef}
-      className="flex shrink-0 flex-col gap-1.5 border-b px-3 py-2"
+      className="sticky top-0 z-20 flex shrink-0 flex-col gap-1.5 border-b px-3 py-2"
+      data-editor-find-bar="true"
       data-testid="raw-editor-find-bar"
       style={{
         background: 'var(--surface-editor)',

@@ -7,6 +7,7 @@ import type { DateDisplayFormat } from '../utils/dateDisplay'
 import { scrollSelectedHTMLChildIntoView } from '../utils/domScroll'
 import { useAppLocale, useDateDisplayFormat } from '../hooks/useAppPreferences'
 import { translate } from '../lib/i18n'
+import { workspaceLocationLabel } from '../utils/workspaces'
 
 interface SearchPanelProps {
   open: boolean
@@ -453,6 +454,7 @@ export function SearchPanel({ open, vaultPath, entries, onSelectNote, onSelectSe
     }
 
     interface SearchResultPresentation {
+      location: string | null
       subtitle: string | null
       title: string
     }
@@ -466,6 +468,7 @@ export function SearchPanel({ open, vaultPath, entries, onSelectNote, onSelectSe
       'result' | 'entry' | 'dateDisplayFormat'
     >): SearchResultPresentation {
       return {
+        location: entry ? workspaceLocationLabel(entry) : null,
         subtitle: entry ? formatSearchSubtitle(entry, dateDisplayFormat) : null,
         title: entry?.title ?? result.title,
       }
@@ -495,18 +498,29 @@ export function SearchPanel({ open, vaultPath, entries, onSelectNote, onSelectSe
           onMouseMove={(event) => onHover(index, event)}
         >
           <div className="flex items-center gap-2">
-            <SearchResultTitle title={presentation.title} />
+            <SearchResultTitle location={presentation.location} title={presentation.title} />
           </div>
           <SearchResultSubtitle subtitle={presentation.subtitle} />
         </div>
       )
     }
 
-    function SearchResultTitle({ title }: { title: string }) {
+    function SearchResultTitle({ location, title }: { location: string | null; title: string }) {
       return (
-        <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground">
-          {title}
-        </span>
+        <>
+          <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground">
+            {title}
+          </span>
+          {location && (
+            <span
+              className="max-w-[48%] shrink-0 truncate text-[11px] font-normal text-muted-foreground"
+              data-testid="search-result-location"
+              title={location}
+            >
+              ({location})
+            </span>
+          )}
+        </>
       )
     }
 

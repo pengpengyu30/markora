@@ -276,6 +276,7 @@
   "noteList.title.notes": "Заметки",
   "noteList.searchPlaceholder": "Поиск заметок...",
   "noteList.searchAction": "Поиск по заметкам",
+  "noteList.revealCurrentNote": "Найти текущую заметку",
   "search.truncated": "{total} совпадений, показаны первые {current}",
   "noteList.clearSearch": "Очистить поиск",
   "noteList.quickOpenCreate": "Создать заметку «{title}»",
@@ -519,17 +520,17 @@
   "status.project.removeConfirmTitle": "Удалить проект?",
   "status.project.removeConfirmMessage": "Это приведет к удалению {label} из списка проектов Markora. Файлы на диске не удаляются.",
   "status.project.removeConfirmAction": "Удалить проект",
-"sidebar.group.projects": "ПРОЕКТЫ"
-  ,"sidebar.group.tags": "TAGS"
-  ,"noteList.tags.filteredBy": "Filtered by"
-  ,"noteList.tags.clear": "Clear tag filter"
-  ,"editor.tags.add": "Add tag"
-  ,"editor.tags.addLabel": "Add tag"
-  ,"editor.tags.inputPlaceholder": "Type a tag..."
-  ,"editor.tags.create": "Create \"{tag}\""
-  ,"editor.tags.remove": "Remove tag {tag}"
-  ,"editor.tags.usage": "Used in {count} notes"
-  ,"editor.tags.noMatches": "No matching tags"
-  ,"editor.tags.validation.invalid": "Use only letters, numbers, and hyphens."
-  ,"editor.tags.validation.tooLong": "Tags can be up to 15 characters."
+  "sidebar.group.projects": "ПРОЕКТЫ",
+  "sidebar.group.tags": "TAGS",
+  "noteList.tags.filteredBy": "Filtered by",
+  "noteList.tags.clear": "Clear tag filter",
+  "editor.tags.add": "Add tag",
+  "editor.tags.addLabel": "Add tag",
+  "editor.tags.inputPlaceholder": "Type a tag...",
+  "editor.tags.create": "Create \"{tag}\"",
+  "editor.tags.remove": "Remove tag {tag}",
+  "editor.tags.usage": "Used in {count} notes",
+  "editor.tags.noMatches": "No matching tags",
+  "editor.tags.validation.invalid": "Use only letters, numbers, and hyphens.",
+  "editor.tags.validation.tooLong": "Tags can be up to 15 characters."
 }

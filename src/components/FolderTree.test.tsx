@@ -283,6 +283,22 @@ describe('FolderTree', () => {
     })
   })
 
+  it('keeps the active Project highlighted while a nested folder is selected', () => {
+    render(
+      <FolderTree
+        folders={multiProjectFolders}
+        selection={{ kind: 'folder', path: 'docs-b', rootPath: '/projects/b' }}
+        activeProjectPath="/projects/b"
+        onSelect={vi.fn()}
+      />,
+    )
+
+    const projectRows = screen.getAllByTestId('folder-row:')
+    expect(projectRows[0]).not.toHaveAttribute('data-active-project', 'true')
+    expect(projectRows[1]).toHaveAttribute('data-active-project', 'true')
+    expect(screen.getByTestId('folder-row:docs-b').parentElement).toHaveClass('bg-[var(--accent-blue-light)]')
+  })
+
   it('passes the selected folder as the parent when creating a new folder', async () => {
     const onCreateFolder = vi.fn().mockResolvedValue(true)
     renderTree({

@@ -276,6 +276,7 @@
   "noteList.title.notes": "Ghi chú",
   "noteList.searchPlaceholder": "Tìm ghi chú...",
   "noteList.searchAction": "Tìm ghi chú",
+  "noteList.revealCurrentNote": "Định vị ghi chú hiện tại",
   "search.truncated": "{total} kết quả, hiển thị {current} kết quả đầu tiên",
   "noteList.clearSearch": "Xóa tìm kiếm",
   "noteList.quickOpenCreate": "Tạo ghi chú \"{title}\"",
@@ -519,17 +520,17 @@
   "status.project.removeConfirmTitle": "Xóa dự án?",
   "status.project.removeConfirmMessage": "Thao tác này sẽ xóa {label} khỏi danh sách dự án của Markora. Các tệp trên ổ đĩa sẽ không bị xóa.",
   "status.project.removeConfirmAction": "Xóa dự án",
-"sidebar.group.projects": "DỰ ÁN"
-  ,"sidebar.group.tags": "TAGS"
-  ,"noteList.tags.filteredBy": "Filtered by"
-  ,"noteList.tags.clear": "Clear tag filter"
-  ,"editor.tags.add": "Add tag"
-  ,"editor.tags.addLabel": "Add tag"
-  ,"editor.tags.inputPlaceholder": "Type a tag..."
-  ,"editor.tags.create": "Create \"{tag}\""
-  ,"editor.tags.remove": "Remove tag {tag}"
-  ,"editor.tags.usage": "Used in {count} notes"
-  ,"editor.tags.noMatches": "No matching tags"
-  ,"editor.tags.validation.invalid": "Use only letters, numbers, and hyphens."
-  ,"editor.tags.validation.tooLong": "Tags can be up to 15 characters."
+  "sidebar.group.projects": "DỰ ÁN",
+  "sidebar.group.tags": "TAGS",
+  "noteList.tags.filteredBy": "Filtered by",
+  "noteList.tags.clear": "Clear tag filter",
+  "editor.tags.add": "Add tag",
+  "editor.tags.addLabel": "Add tag",
+  "editor.tags.inputPlaceholder": "Type a tag...",
+  "editor.tags.create": "Create \"{tag}\"",
+  "editor.tags.remove": "Remove tag {tag}",
+  "editor.tags.usage": "Used in {count} notes",
+  "editor.tags.noMatches": "No matching tags",
+  "editor.tags.validation.invalid": "Use only letters, numbers, and hyphens.",
+  "editor.tags.validation.tooLong": "Tags can be up to 15 characters."
 }

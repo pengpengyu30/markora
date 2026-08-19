@@ -147,7 +147,7 @@ describe('EditorContentLayout', () => {
     )
   })
 
-  it('reveals the active note location when the document body is clicked, not the breadcrumb', () => {
+  it('does not move sidebar location when the document body is clicked', () => {
     const entry = {
       path: '/vault/project/demo.md',
       filename: 'demo.md',
@@ -160,14 +160,14 @@ describe('EditorContentLayout', () => {
       onRevealNote,
     })} />)
 
-    fireEvent.click(screen.getByTestId('single-editor-view'))
-    expect(onRevealNote).toHaveBeenCalledWith(entry)
+    fireEvent.pointerDown(screen.getByTestId('single-editor-view'))
+    expect(onRevealNote).not.toHaveBeenCalled()
 
-    fireEvent.click(screen.getByTestId('breadcrumb-bar'))
-    expect(onRevealNote).toHaveBeenCalledTimes(1)
+    fireEvent.pointerDown(screen.getByTestId('breadcrumb-bar'))
+    expect(onRevealNote).not.toHaveBeenCalled()
   })
 
-  it('reveals the active note location when the raw document body is clicked', () => {
+  it('does not move sidebar location when the raw document body is clicked', () => {
     const entry = {
       path: '/vault/project/config.json',
       filename: 'config.json',
@@ -183,8 +183,8 @@ describe('EditorContentLayout', () => {
       onRevealNote,
     })} />)
 
-    fireEvent.click(screen.getByTestId('raw-editor-view'))
-    expect(onRevealNote).toHaveBeenCalledWith(entry)
+    fireEvent.pointerDown(screen.getByTestId('raw-editor-view'))
+    expect(onRevealNote).not.toHaveBeenCalled()
   })
 
   it('passes tag editing controls into the rich editor surface', () => {

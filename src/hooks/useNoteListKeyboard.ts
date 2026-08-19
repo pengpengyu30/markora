@@ -7,6 +7,7 @@ import { isMac } from '../utils/platform'
 interface NoteListKeyboardOptions {
   items: VaultEntry[]
   selectedNotePath: string | null
+  revealRequestId?: number
   onOpen: (entry: VaultEntry) => void
   onPrefetch?: (entry: VaultEntry) => void
   searchVisible?: boolean
@@ -517,8 +518,34 @@ function useCancelScheduledOpenOnSelectionChange(selectedNotePath: string | null
   }, [cancelOpen, selectedNotePath])
 }
 
+function scrollSelectedNoteToListBoundary({
+  containerRef,
+  selectedNotePath,
+  selectedIndex,
+  virtuosoRef,
+}: {
+  containerRef: React.RefObject<HTMLDivElement | null>
+  selectedNotePath: string
+  selectedIndex: number
+  virtuosoRef: React.RefObject<VirtuosoHandle | null>
+}): boolean {
+  virtuosoRef.current?.scrollIntoView({
+    align: 'start',
+    index: selectedIndex,
+    behavior: 'auto',
+  })
+
+  const selectedItem = Array.from(
+    containerRef.current?.querySelectorAll<HTMLElement>('[data-note-path]') ?? [],
+  ).find((item) => item.dataset.notePath === selectedNotePath)
+  if (!selectedItem || typeof selectedItem.scrollIntoView !== 'function') return false
+
+  selectedItem.scrollIntoView({ block: 'start', behavior: 'auto', inline: 'nearest' })
+  return true
+}
+
 export function useNoteListKeyboard(options: NoteListKeyboardOptions) {
-  const { items, selectedNotePath, onOpen, onPrefetch, searchVisible = false, toggleSearch, enabled } = options
+  const { items, selectedNotePath, revealRequestId = 0, onOpen, onPrefetch, searchVisible = false, toggleSearch, enabled } = options
   const virtuosoRef = useRef<VirtuosoHandle>(null)
   const panelRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -566,6 +593,31 @@ export function useNoteListKeyboard(options: NoteListKeyboardOptions) {
     processKeyDown,
   })
   useCancelScheduledOpenOnSelectionChange(selectedNotePath, cancelOpen)
+
+  useEffect(() => {
+    if (!enabled || !selectedNotePath) return
+    const selectedIndex = getItemIndex(items).indexByPath.get(selectedNotePath)
+    if (selectedIndex === undefined) return
+
+    let retryFrameId: number | null = null
+    let attempt = 0
+    const scroll = () => {
+      attempt += 1
+      const didScroll = scrollSelectedNoteToListBoundary({
+        containerRef,
+        selectedIndex,
+        selectedNotePath,
+        virtuosoRef,
+      })
+      if (!didScroll && attempt < 3) retryFrameId = requestAnimationFrame(scroll)
+    }
+    const frameId = requestAnimationFrame(scroll)
+
+    return () => {
+      cancelAnimationFrame(frameId)
+      if (retryFrameId !== null) cancelAnimationFrame(retryFrameId)
+    }
+  }, [containerRef, enabled, items, revealRequestId, selectedNotePath, virtuosoRef])
 
   const highlightedPath = resolveStableHighlightedPath(items, highlightedPathState)
 

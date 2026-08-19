@@ -417,7 +417,6 @@ export function EditorContentLayout(model: EditorContentModel) {
     onNavigateWikilink,
     onEditorChange,
     isDeletedPreview,
-    onRevealNote,
     rawLatestContentRef,
     rawModeContent,
     searchHighlightRequest,
@@ -440,14 +439,8 @@ export function EditorContentLayout(model: EditorContentModel) {
   const chromeWordCount = activeTab ? wordCount : 0
   const showActiveContent = activeTab && !isVaultLoading
   const breadcrumbActions = buildBreadcrumbActions(model)
-  const handleDocumentBodyClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
-    const target = event.target
-    if (!(target instanceof Element) || !target.closest('[data-note-document-body="true"]')) return
-    if (activeTab) onRevealNote?.(activeTab.entry)
-  }, [activeTab, onRevealNote])
-
   return (
-    <div className={rootClassName} onClick={handleDocumentBodyClick}>
+    <div className={rootClassName}>
       <EditorBreadcrumbArea
         actions={breadcrumbActions}
         barRef={breadcrumbBarRef}

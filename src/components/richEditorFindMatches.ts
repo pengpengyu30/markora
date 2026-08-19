@@ -28,6 +28,11 @@ export interface RichEditorFindResult {
   visibleText: string
 }
 
+const EMPTY_RICH_EDITOR_VISIBLE_TEXT: RichEditorVisibleText = {
+  text: '',
+  positions: [],
+}
+
 function appendText(
   text: string,
   position: number,
@@ -93,12 +98,11 @@ function mapVisibleTextRange(
   return { from: start, to: end + 1 }
 }
 
-export function findRichEditorMatches(
-  doc: ProsemirrorNode,
+export function findRichEditorMatchesInVisibleText(
+  visible: RichEditorVisibleText,
   query: string,
   options: EditorFindOptions,
 ): RichEditorFindResult {
-  const visible = extractRichEditorVisibleText(doc)
   const result = findEditorMatches(visible.text, query, options)
   const matches: RichEditorFindMatch[] = []
 
@@ -120,4 +124,16 @@ export function findRichEditorMatches(
     matches,
     visibleText: visible.text,
   }
+}
+
+export function findRichEditorMatches(
+  doc: ProsemirrorNode,
+  query: string,
+  options: EditorFindOptions,
+): RichEditorFindResult {
+  return findRichEditorMatchesInVisibleText(extractRichEditorVisibleText(doc), query, options)
+}
+
+export function emptyRichEditorVisibleText(): RichEditorVisibleText {
+  return EMPTY_RICH_EDITOR_VISIBLE_TEXT
 }

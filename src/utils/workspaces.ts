@@ -107,6 +107,29 @@ export function workspaceLabelForEntry(entry: Pick<VaultEntry, 'workspace'>): st
   return entry.workspace?.label ?? null
 }
 
+function normalizeWorkspaceLocationPath(path: string): string {
+  const normalized = path.trim().replace(/\\/g, '/')
+  if (normalized === '/') return normalized
+  return normalized.replace(/\/+$/g, '')
+}
+
+export function workspaceLocationLabel(entry: Pick<VaultEntry, 'path' | 'workspace'>): string | null {
+  const workspace = entry.workspace
+  if (!workspace) return null
+
+  const workspacePath = normalizeWorkspaceLocationPath(workspace.path)
+  const entryPath = normalizeWorkspaceLocationPath(entry.path)
+  const projectLabel = workspace.label?.trim() || workspacePath.split('/').filter(Boolean).at(-1) || null
+  if (!projectLabel || !workspacePath) return projectLabel
+
+  const rootPrefix = workspacePath === '/' ? '/' : `${workspacePath}/`
+  if (!entryPath.startsWith(rootPrefix)) return projectLabel
+
+  const relativePath = entryPath.slice(rootPrefix.length)
+  const folderPath = relativePath.split('/').slice(0, -1).join(' / ')
+  return folderPath ? `${projectLabel} / ${folderPath}` : projectLabel
+}
+
 export function mountedWorkspacePaths(vaults: VaultOption[]): string[] {
   return vaults
     .filter((vault) => vault.available !== false && vault.mounted !== false)

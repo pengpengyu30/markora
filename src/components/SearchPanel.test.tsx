@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { SearchPanel } from './SearchPanel'
 import type { VaultEntry } from '../types'
+import { workspaceIdentityFromVault } from '../utils/workspaces'
 
 // Mock the mock-tauri module (component uses mockInvoke when isTauri() is false)
 vi.mock('../mock-tauri', () => ({
@@ -48,6 +49,7 @@ const MOCK_ENTRIES: VaultEntry[] = [
     template: null, sort: null,
     outgoingLinks: ['topic/ai', 'topic/api-design', 'person/luca'],
     properties: {},
+    workspace: workspaceIdentityFromVault({ label: 'Edgeclaw', path: '/vault' }),
   },
   {
     path: '/vault/event/retreat.md',
@@ -356,6 +358,12 @@ describe('SearchPanel', () => {
       expect(screen.getByText('How to Design AI-first APIs')).toBeInTheDocument()
       expect(screen.queryByText('ai-apis')).not.toBeInTheDocument()
     })
+  })
+
+  it('shows the owning Project and nested folder after the result title', async () => {
+    await renderSingleResultSearch()
+
+    expect(screen.getByTestId('search-result-location')).toHaveTextContent('(Edgeclaw / essay)')
   })
 
   it('shows no results message when search returns empty', async () => {

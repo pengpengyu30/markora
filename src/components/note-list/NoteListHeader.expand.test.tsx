@@ -26,6 +26,15 @@ function renderHeader(overrides: Partial<Parameters<typeof NoteListHeader>[0]> =
 }
 
 describe('NoteListHeader expand sidebar button', () => {
+  it('locates the current note from the visible search row', () => {
+    const onRevealCurrentNote = vi.fn()
+    renderHeader({ searchVisible: true, onRevealCurrentNote })
+
+    fireEvent.click(screen.getByTestId('note-list-reveal-current'))
+
+    expect(onRevealCurrentNote).toHaveBeenCalledOnce()
+  })
+
   it('keeps the expand-sidebar button hidden when the sidebar is open', () => {
     renderHeader({ sidebarCollapsed: false })
 

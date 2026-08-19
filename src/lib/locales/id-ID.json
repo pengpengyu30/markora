@@ -276,6 +276,7 @@
   "noteList.title.notes": "Catatan",
   "noteList.searchPlaceholder": "Cari catatan...",
   "noteList.searchAction": "Cari catatan",
+  "noteList.revealCurrentNote": "Temukan catatan saat ini",
   "search.truncated": "{total} hasil, menampilkan {current} yang pertama",
   "noteList.clearSearch": "Hapus pencarian",
   "noteList.quickOpenCreate": "Buat catatan \"{title}\"",
@@ -519,17 +520,17 @@
   "status.project.removeConfirmTitle": "Hapus proyek?",
   "status.project.removeConfirmMessage": "Ini menghapus {label} dari daftar proyek Markora. File di disk tidak dihapus.",
   "status.project.removeConfirmAction": "Hapus proyek",
-"sidebar.group.projects": "PROYEK"
-  ,"sidebar.group.tags": "TAGS"
-  ,"noteList.tags.filteredBy": "Filtered by"
-  ,"noteList.tags.clear": "Clear tag filter"
-  ,"editor.tags.add": "Add tag"
-  ,"editor.tags.addLabel": "Add tag"
-  ,"editor.tags.inputPlaceholder": "Type a tag..."
-  ,"editor.tags.create": "Create \"{tag}\""
-  ,"editor.tags.remove": "Remove tag {tag}"
-  ,"editor.tags.usage": "Used in {count} notes"
-  ,"editor.tags.noMatches": "No matching tags"
-  ,"editor.tags.validation.invalid": "Use only letters, numbers, and hyphens."
-  ,"editor.tags.validation.tooLong": "Tags can be up to 15 characters."
+  "sidebar.group.projects": "PROYEK",
+  "sidebar.group.tags": "TAGS",
+  "noteList.tags.filteredBy": "Filtered by",
+  "noteList.tags.clear": "Clear tag filter",
+  "editor.tags.add": "Add tag",
+  "editor.tags.addLabel": "Add tag",
+  "editor.tags.inputPlaceholder": "Type a tag...",
+  "editor.tags.create": "Create \"{tag}\"",
+  "editor.tags.remove": "Remove tag {tag}",
+  "editor.tags.usage": "Used in {count} notes",
+  "editor.tags.noMatches": "No matching tags",
+  "editor.tags.validation.invalid": "Use only letters, numbers, and hyphens.",
+  "editor.tags.validation.tooLong": "Tags can be up to 15 characters."
 }

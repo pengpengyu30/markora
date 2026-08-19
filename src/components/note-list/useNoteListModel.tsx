@@ -189,6 +189,7 @@ function useNoteListContent(options: UseNoteListContentParams) {
 interface UseNoteListInteractionStateParams {
   searched: VaultEntry[]
   selectedNotePath: string | null
+  revealRequestId?: number
   selection: SidebarSelection
   searchVisible: boolean
   toggleSearch: () => void
@@ -296,6 +297,8 @@ export interface NoteListProps {
   vaultPath?: string
   selection: SidebarSelection
   selectedNote: VaultEntry | null
+  revealRequestId?: number
+  onRevealCurrentNote?: () => void
   loading?: boolean
   getNoteStatus?: (path: string) => NoteStatus
   sidebarCollapsed?: boolean
@@ -328,6 +331,7 @@ function buildNoteListLayoutModel(params: {
   interaction: ReturnType<typeof useNoteListInteractionState> & {
     renderItem: (entry: VaultEntry, options?: { forceSelected?: boolean }) => React.ReactNode
   }
+  onRevealCurrentNote?: () => void
   selectedTags?: string[]
   onToggleTag?: (tag: string) => void
   onClearTagFilter?: () => void
@@ -348,6 +352,7 @@ function buildNoteListLayoutModel(params: {
     toggleSearch: params.content.toggleSearch,
     setSearch: params.content.setSearch,
     handleSearchKeyDown: params.content.handleSearchKeyDown,
+    onRevealCurrentNote: params.onRevealCurrentNote,
     handleListKeyDown: params.interaction.handleListKeyDown,
     noteListPanelRef: params.interaction.noteListKeyboard.panelRef,
     handleNoteListPanelBlurCapture: params.interaction.noteListKeyboard.handlePanelBlurCapture,
@@ -373,7 +378,7 @@ function buildNoteListLayoutModel(params: {
 }
 
 export function useNoteListModel(options: NoteListProps) {
-  const { entries, vaultPath, selection, selectedNote, loading = false, getNoteStatus, sidebarCollapsed, onReplaceActiveTab, onCreateNote, onBulkDeletePermanently, onRenameFilename, onExportPdf, onRevealFile, onCopyFilePath, visibleNotesRef, allNotesFileVisibility, folderViewShowNonMarkdown, showFilename, locale = 'en', selectedTags, onToggleTag, onClearTagFilter } = options
+  const { entries, vaultPath, selection, selectedNote, revealRequestId, onRevealCurrentNote, loading = false, getNoteStatus, sidebarCollapsed, onReplaceActiveTab, onCreateNote, onBulkDeletePermanently, onRenameFilename, onExportPdf, onRevealFile, onCopyFilePath, visibleNotesRef, allNotesFileVisibility, folderViewShowNonMarkdown, showFilename, locale = 'en', selectedTags, onToggleTag, onClearTagFilter } = options
   const selectedNotePath = selectedNote?.path ?? null
   const { resolvedGetNoteStatus } = useNoteStatusState(
     getNoteStatus,
@@ -390,6 +395,7 @@ export function useNoteListModel(options: NoteListProps) {
   const interaction = useNoteListInteractionState({
     searched: content.searched,
     selectedNotePath,
+    revealRequestId,
     selection,
     searchVisible: content.searchVisible,
     toggleSearch: content.toggleSearch,
@@ -447,6 +453,7 @@ export function useNoteListModel(options: NoteListProps) {
       ...interaction,
       renderItem,
     },
+    onRevealCurrentNote,
     selectedTags,
     onToggleTag,
     onClearTagFilter,

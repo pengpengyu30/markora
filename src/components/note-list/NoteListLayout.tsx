@@ -242,6 +242,7 @@ function NoteListLayoutHeader(
   | 'toggleSearch'
   | 'setSearch'
   | 'handleSearchKeyDown'
+  | 'onRevealCurrentNote'
   | 'selectedTags'
   | 'onToggleTag'
   | 'onClearTagFilter'
@@ -262,6 +263,7 @@ function NoteListLayoutHeader(
     toggleSearch,
     setSearch,
     handleSearchKeyDown,
+    onRevealCurrentNote,
     selectedTags,
     onToggleTag,
     onClearTagFilter,
@@ -282,6 +284,7 @@ function NoteListLayoutHeader(
       onToggleSearch={toggleSearch}
       onSearchChange={setSearch}
       onSearchKeyDown={handleSearchKeyDown}
+      onRevealCurrentNote={onRevealCurrentNote}
       selectedTags={selectedTags}
       onToggleTag={onToggleTag}
       onClearTagFilter={onClearTagFilter}

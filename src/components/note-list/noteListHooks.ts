@@ -224,6 +224,7 @@ function canPrefetchEntryContent(entry: VaultEntry): boolean {
 interface UseNoteListInteractionsParams {
   searched: VaultEntry[]
   selectedNotePath: string | null
+  revealRequestId?: number
   selection: SidebarSelection
   searchVisible: boolean
   toggleSearch: () => void
@@ -251,15 +252,16 @@ function createNoteForSelection(
 
 function useKeyboardInteractionState(
   options: Pick<
-  UseNoteListInteractionsParams,
-  | 'searched'
-  | 'selectedNotePath'
-  | 'searchVisible'
-  | 'toggleSearch'
-  | 'onReplaceActiveTab'
+    UseNoteListInteractionsParams,
+    | 'searched'
+    | 'selectedNotePath'
+    | 'revealRequestId'
+    | 'searchVisible'
+    | 'toggleSearch'
+    | 'onReplaceActiveTab'
   >,
 ) {
-  const { searched, selectedNotePath, searchVisible, toggleSearch, onReplaceActiveTab } = options
+  const { searched, selectedNotePath, revealRequestId, searchVisible, toggleSearch, onReplaceActiveTab } = options
   const keyboardEntries = searched
 
   const handleKeyboardOpen = useCallback(
@@ -276,6 +278,7 @@ function useKeyboardInteractionState(
   const noteListKeyboard = useNoteListKeyboard({
     items: keyboardEntries,
     selectedNotePath,
+    revealRequestId,
     onOpen: handleKeyboardOpen,
     onPrefetch: handleKeyboardPrefetch,
     searchVisible,
@@ -318,10 +321,11 @@ function useListKeyDownHandler({
 }
 
 export function useNoteListInteractions(options: UseNoteListInteractionsParams) {
-  const { searched, selectedNotePath, selection, searchVisible, toggleSearch, onReplaceActiveTab, onCreateNote } = options
+  const { searched, selectedNotePath, revealRequestId, selection, searchVisible, toggleSearch, onReplaceActiveTab, onCreateNote } = options
   const { multiSelect, noteListKeyboard } = useKeyboardInteractionState({
     searched,
     selectedNotePath,
+    revealRequestId,
     searchVisible,
     toggleSearch,
     onReplaceActiveTab,

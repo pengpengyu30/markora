@@ -75,6 +75,17 @@ function mapMatches(transaction: Transaction, state: RichEditorFindPluginState):
   })
 }
 
+function scrollActiveMatchIntoView(view: RichEditorFindView | EditorView): void {
+  const activeMatch = view.dom.querySelector(`.${RICH_EDITOR_FIND_ACTIVE_MATCH_CLASS}`)
+  if (!activeMatch || typeof activeMatch.scrollIntoView !== 'function') return
+
+  activeMatch.scrollIntoView({
+    behavior: 'auto',
+    block: 'center',
+    inline: 'nearest',
+  })
+}
+
 export function createRichEditorFindPlugin() {
   return new Plugin<RichEditorFindPluginState>({
     key: richEditorFindPluginKey,
@@ -126,6 +137,7 @@ export function applyRichEditorFindState(
       .scrollIntoView()
   }
   view.dispatch(transaction)
+  if (activeMatch) scrollActiveMatchIntoView(view)
 }
 
 export function clearRichEditorFind(view: RichEditorFindView | EditorView): void {

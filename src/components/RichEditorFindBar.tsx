@@ -9,7 +9,12 @@ import {
   richEditorFindView,
   type RichEditorFindEditor,
 } from './richEditorFindExtension'
-import { findRichEditorMatches } from './richEditorFindMatches'
+import {
+  emptyRichEditorVisibleText,
+  extractRichEditorVisibleText,
+  findRichEditorMatchesInVisibleText,
+  type RichEditorVisibleText,
+} from './richEditorFindMatches'
 import {
   clampEditorFindIndex,
   nextEditorFindIndex,
@@ -77,6 +82,7 @@ export function RichEditorFindBar({
   path,
   request,
 }: RichEditorFindBarProps) {
+  const barRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const [query, setQuery] = useState('')
   const [regex, setRegex] = useState(false)
@@ -84,11 +90,15 @@ export function RichEditorFindBar({
   const [activeIndex, setActiveIndex] = useState(0)
   const options = useMemo<EditorFindOptions>(() => ({ caseSensitive, regex }), [caseSensitive, regex])
   const view = richEditorFindView(editor)
+  const doc = view?.state.doc ?? null
+  const hasQuery = query.length > 0
+  const visibleText = useMemo<RichEditorVisibleText>(
+    () => hasQuery && doc ? extractRichEditorVisibleText(doc) : emptyRichEditorVisibleText(),
+    [doc, hasQuery],
+  )
   const result = useMemo(
-    () => view
-      ? findRichEditorMatches(view.state.doc, query, options)
-      : { error: null, matches: [], visibleText: '' },
-    [options, query, view],
+    () => findRichEditorMatchesInVisibleText(visibleText, query, options),
+    [options, query, visibleText],
   )
   const clampedActiveIndex = clampEditorFindIndex(activeIndex, result.matches.length)
   const status = matchStatusText(locale, query, result.error, clampedActiveIndex, result.matches.length)
@@ -135,12 +145,14 @@ export function RichEditorFindBar({
     (event: React.KeyboardEvent<HTMLInputElement>) => {
       if (event.key === 'Escape') {
         event.preventDefault()
+        event.stopPropagation()
         close()
         return
       }
       if (event.key !== 'Enter') return
 
       event.preventDefault()
+      event.stopPropagation()
       moveMatch(event.shiftKey ? -1 : 1)
     },
     [close, moveMatch],
@@ -150,7 +162,9 @@ export function RichEditorFindBar({
 
   return (
     <div
-      className="flex shrink-0 items-center gap-1.5 border-b px-3 py-2"
+      ref={barRef}
+      className="sticky top-0 z-20 flex shrink-0 items-center gap-1.5 border-b px-3 py-2"
+      data-editor-find-bar="true"
       data-testid="rich-editor-find-bar"
       style={{
         background: 'var(--surface-editor)',
