@@ -551,6 +551,7 @@ export function useNoteListKeyboard(options: NoteListKeyboardOptions) {
   const containerRef = useRef<HTMLDivElement>(null)
   const { itemsRef, selectedNotePathRef } = useKeyboardItemRefs(items, selectedNotePath)
   const { highlightedPathRef, highlightedPathState, syncHighlightedPath } = useHighlightedPath()
+  const handledRevealRequestIdRef = useRef(revealRequestId)
   const syncToCurrentSelection = useSelectionSync(itemsRef, selectedNotePathRef, syncHighlightedPath)
   const { cancelOpen, flushOpen, scheduleOpen } = useScheduledOpen(onOpen, enabled)
   const { focusList, handleBlur, handleFocus } = useFocusHandlers({
@@ -595,9 +596,10 @@ export function useNoteListKeyboard(options: NoteListKeyboardOptions) {
   useCancelScheduledOpenOnSelectionChange(selectedNotePath, cancelOpen)
 
   useEffect(() => {
-    if (!enabled || !selectedNotePath) return
+    if (!enabled || !selectedNotePath || revealRequestId === handledRevealRequestIdRef.current) return
     const selectedIndex = getItemIndex(items).indexByPath.get(selectedNotePath)
     if (selectedIndex === undefined) return
+    handledRevealRequestIdRef.current = revealRequestId
 
     let retryFrameId: number | null = null
     let attempt = 0

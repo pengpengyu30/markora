@@ -144,6 +144,7 @@ function SearchRow({ search, isSearching, searchInputRef, locale, onSearchChange
 }) {
   const [draft, setDraft] = useState(search)
   const debounceRef = useRef<ReturnType<typeof window.setTimeout> | null>(null)
+  const previousSearchRef = useRef(search)
 
   const cancelDebounce = useCallback(() => {
     if (debounceRef.current === null) return
@@ -152,6 +153,20 @@ function SearchRow({ search, isSearching, searchInputRef, locale, onSearchChange
   }, [])
 
   useEffect(() => cancelDebounce, [cancelDebounce])
+
+  useEffect(() => {
+    if (previousSearchRef.current === search) return
+    previousSearchRef.current = search
+    cancelDebounce()
+    let active = true
+    queueMicrotask(() => {
+      if (active) setDraft(search)
+    })
+
+    return () => {
+      active = false
+    }
+  }, [cancelDebounce, search])
 
   const hasSearch = draft.length > 0
   const isDebouncing = draft.trim().toLowerCase() !== search.trim().toLowerCase()

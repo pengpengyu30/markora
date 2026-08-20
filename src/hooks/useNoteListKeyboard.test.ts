@@ -149,7 +149,7 @@ describe('useNoteListKeyboard', () => {
     expect(scrollIntoView).toHaveBeenCalledWith({ index: 0, behavior: 'auto' })
   })
 
-  it('scrolls a newly selected note into view after an external open', () => {
+  it('preserves list scroll position when a note is selected normally', () => {
     const open = vi.fn()
     const { result, rerender } = renderHook(
       ({ selectedNotePath, revealRequestId = 0 }) => useNoteListKeyboard({
@@ -167,7 +167,7 @@ describe('useNoteListKeyboard', () => {
     rerender({ selectedNotePath: '/b.md' })
     act(() => flushAnimationFrame())
 
-    expect(scrollIntoView).toHaveBeenCalledWith({ align: 'start', index: 1, behavior: 'auto' })
+    expect(scrollIntoView).not.toHaveBeenCalled()
   })
 
   it('repositions the selected note when the document requests a fresh reveal', () => {
@@ -204,6 +204,33 @@ describe('useNoteListKeyboard', () => {
       behavior: 'auto',
       inline: 'nearest',
     })
+  })
+
+  it('does not reposition later selections after an explicit reveal', () => {
+    const open = vi.fn()
+    const { result, rerender } = renderHook(
+      ({ selectedNotePath, revealRequestId }) => useNoteListKeyboard({
+        items,
+        selectedNotePath,
+        onOpen: open,
+        enabled: true,
+        revealRequestId,
+      }),
+      { initialProps: { selectedNotePath: '/b.md', revealRequestId: 0 } },
+    )
+    const scrollIntoView = vi.fn()
+    result.current.virtuosoRef.current = { scrollIntoView }
+
+    act(() => flushAnimationFrame())
+
+    rerender({ selectedNotePath: '/b.md', revealRequestId: 1 })
+    act(() => flushAnimationFrame())
+    scrollIntoView.mockClear()
+
+    rerender({ selectedNotePath: '/c.md', revealRequestId: 1 })
+    act(() => flushAnimationFrame())
+
+    expect(scrollIntoView).not.toHaveBeenCalled()
   })
 
   it('ArrowUp clamps at start of list', () => {

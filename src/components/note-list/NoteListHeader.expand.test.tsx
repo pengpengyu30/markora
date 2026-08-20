@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { APP_COMMAND_EVENT_NAME, APP_COMMAND_IDS } from '../../hooks/appCommandDispatcher'
 import { NoteListHeader } from './NoteListHeader'
@@ -33,6 +33,43 @@ describe('NoteListHeader expand sidebar button', () => {
     fireEvent.click(screen.getByTestId('note-list-reveal-current'))
 
     expect(onRevealCurrentNote).toHaveBeenCalledOnce()
+  })
+
+  it('syncs the search input when its query is cleared externally', async () => {
+    vi.useFakeTimers()
+    try {
+      const onSearchChange = vi.fn()
+      const { rerender } = renderHeader({
+        searchVisible: true,
+        search: 'initial query',
+        onSearchChange,
+      })
+      const searchInput = screen.getByPlaceholderText('Search notes...')
+
+      fireEvent.change(searchInput, { target: { value: 'stale query' } })
+      expect(searchInput).toHaveValue('stale query')
+
+      await act(async () => {
+        rerender(
+          <NoteListHeader
+            {...baseProps}
+            searchVisible
+            search=""
+            onSearchChange={onSearchChange}
+          />,
+        )
+        await Promise.resolve()
+      })
+
+      expect(searchInput).toHaveValue('')
+
+      act(() => {
+        vi.advanceTimersByTime(180)
+      })
+      expect(onSearchChange).not.toHaveBeenCalledWith('stale query')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('keeps the expand-sidebar button hidden when the sidebar is open', () => {
