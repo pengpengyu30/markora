@@ -52,8 +52,7 @@ import { uniqueNonBlankWorkspacePaths } from './utils/workspacePaths'
 import {
   resolveActiveProject,
   resolveActiveProjectForNote,
-  resolveProjectLocation,
-  selectionForProjectLocation,
+  selectionForNoteLocation,
   sidebarSelectionsEqual,
 } from './utils/activeProject'
 import { notePathsMatch } from './utils/notePathIdentity'
@@ -249,7 +248,7 @@ function MainApp() {
   )
   const handleRevealNote = useCallback((entry: VaultEntry) => {
     setNoteRevealRequestId((current) => current + 1)
-    const nextSelection = selectionForProjectLocation(resolveProjectLocation(entry.path, projectPaths, resolvedPath))
+    const nextSelection = selectionForNoteLocation(entry, projectPaths, resolvedPath)
     setSelectionOverride((current) => {
       const currentSelection = current ?? effectiveSelection
       if (sidebarSelectionsEqual(currentSelection, nextSelection)) return current

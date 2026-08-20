@@ -143,6 +143,27 @@ describe('NoteList virtualized datasets', () => {
     expect(screen.getByText('Note 5')).toBeInTheDocument()
   })
 
+  it('highlights the current note after an explicit locate request', async () => {
+    const entries = Array.from({ length: 100 }, (_, index) => makeIndexedEntry(index))
+    const { props, rerender } = renderNoteList({
+      entries,
+      selectedNote: entries[5],
+      revealRequestId: 0,
+    })
+
+    rerender(
+      <NoteList
+        {...props}
+        selectedNote={entries[5]}
+        revealRequestId={1}
+      />,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Note 5').closest('[role="option"]')).toHaveAttribute('data-highlighted', 'true')
+    })
+  })
+
   it('keeps click behavior working on virtualized items', () => {
     const entries = Array.from({ length: 100 }, (_, index) => makeIndexedEntry(index))
     const { onReplaceActiveTab } = renderNoteList({ entries })

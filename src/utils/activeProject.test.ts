@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { SidebarSelection, VaultEntry } from '../types'
-import { resolveActiveProject, resolveActiveProjectForNote, resolveProjectLocation, sidebarSelectionsEqual } from './activeProject'
+import { resolveActiveProject, resolveActiveProjectForNote, resolveProjectLocation, selectionForNoteLocation, sidebarSelectionsEqual } from './activeProject'
 
 describe('resolveActiveProject', () => {
   it('uses a selected folder root as the active Project', () => {
@@ -63,9 +63,40 @@ describe('resolveActiveProjectForNote', () => {
     })
   })
 
+  it('does not let a stale nested candidate override the note workspace root', () => {
+    expect(resolveActiveProjectForNote(
+      {
+        path: '/projects/edgeclaw/en/latest/plugins/prometheus.md',
+        workspace: { path: '/projects/edgeclaw' } as NonNullable<VaultEntry['workspace']>,
+      },
+      ['/projects/edgeclaw/en/latest/plugins'],
+      { projectPath: '/projects/other', folderPath: '' },
+    )).toEqual({
+      projectPath: '/projects/edgeclaw',
+      folderPath: 'en/latest/plugins',
+    })
+  })
+
   it('keeps the fallback Project when there is no active note', () => {
     const fallbackProject = { projectPath: '/projects/lbc-apisix', folderPath: 'kb' }
     expect(resolveActiveProjectForNote(null, ['/projects/edgeclaw'], fallbackProject)).toEqual(fallbackProject)
+  })
+})
+
+describe('selectionForNoteLocation', () => {
+  it('uses the note workspace root when the visible Project list is stale', () => {
+    expect(selectionForNoteLocation(
+      {
+        path: '/projects/edgeclaw/en/latest/plugins/prometheus.md',
+        workspace: { path: '/projects/edgeclaw' } as NonNullable<VaultEntry['workspace']>,
+      },
+      ['/projects/other'],
+      '/projects/other',
+    )).toEqual({
+      kind: 'folder',
+      path: 'en/latest/plugins',
+      rootPath: '/projects/edgeclaw',
+    })
   })
 })
 

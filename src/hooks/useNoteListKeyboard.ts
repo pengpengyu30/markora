@@ -600,6 +600,7 @@ export function useNoteListKeyboard(options: NoteListKeyboardOptions) {
     const selectedIndex = getItemIndex(items).indexByPath.get(selectedNotePath)
     if (selectedIndex === undefined) return
     handledRevealRequestIdRef.current = revealRequestId
+    syncHighlightedPath(selectedNotePath)
 
     let retryFrameId: number | null = null
     let attempt = 0
@@ -619,7 +620,7 @@ export function useNoteListKeyboard(options: NoteListKeyboardOptions) {
       cancelAnimationFrame(frameId)
       if (retryFrameId !== null) cancelAnimationFrame(retryFrameId)
     }
-  }, [containerRef, enabled, items, revealRequestId, selectedNotePath, virtuosoRef])
+  }, [containerRef, enabled, items, revealRequestId, selectedNotePath, syncHighlightedPath, virtuosoRef])
 
   const highlightedPath = resolveStableHighlightedPath(items, highlightedPathState)
 

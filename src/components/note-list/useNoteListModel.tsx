@@ -204,7 +204,7 @@ interface UseNoteListInteractionStateParams {
 }
 
 function useNoteListInteractionState(options: UseNoteListInteractionStateParams) {
-  const { searched, selectedNotePath, selection, searchVisible, toggleSearch, onReplaceActiveTab, onRenameFilename, onExportPdf, onRevealFile, onCopyFilePath, onCreateNote, onBulkDeletePermanently, locale } = options
+  const { searched, selectedNotePath, revealRequestId, selection, searchVisible, toggleSearch, onReplaceActiveTab, onRenameFilename, onExportPdf, onRevealFile, onCopyFilePath, onCreateNote, onBulkDeletePermanently, locale } = options
   const noteListContextMenu = useNoteListContextMenu({
     locale,
     onRenameFilename,
@@ -222,6 +222,7 @@ function useNoteListInteractionState(options: UseNoteListInteractionStateParams)
       } = useNoteListInteractions({
         searched,
         selectedNotePath,
+        revealRequestId,
         selection,
         searchVisible,
         toggleSearch,

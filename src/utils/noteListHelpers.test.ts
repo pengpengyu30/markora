@@ -3,6 +3,7 @@ import {
   filterEntries,
   SORT_OPTIONS,
 } from './noteListHelpers'
+import { selectionForNoteLocation } from './activeProject'
 import { allSelection, makeEntry } from '../test-utils/noteListTestUtils'
 
 describe('filterEntries', () => {
@@ -154,6 +155,27 @@ describe('filterEntries', () => {
     })
 
     expect(result.map((entry) => entry.title)).toEqual(['Team Project'])
+  })
+
+  it('keeps all sibling notes visible after locating a nested note', () => {
+    const projectPath = '/projects/edgeclaw'
+    const entries = [
+      makeEntry({
+        path: `${projectPath}/en/latest/plugins/prometheus.md`,
+        title: 'Prometheus',
+      }),
+      makeEntry({
+        path: `${projectPath}/en/latest/plugins/traffic-split.md`,
+        title: 'Traffic Split',
+      }),
+    ]
+    const selection = selectionForNoteLocation(
+      { path: entries[0].path, workspace: { path: projectPath } as NonNullable<typeof entries[number]['workspace']> },
+      [],
+      '/projects/other',
+    )
+
+    expect(filterEntries(entries, selection).map((entry) => entry.title)).toEqual(['Prometheus', 'Traffic Split'])
   })
 
   it('hides non-Markdown files in folder views by default', () => {

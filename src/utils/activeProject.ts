@@ -56,13 +56,32 @@ export function resolveActiveProjectForNote(
   fallbackProject: ActiveProject,
 ): ActiveProject {
   const noteProjectPath = entry?.workspace?.path?.trim()
+  if (entry && noteProjectPath) {
+    return {
+      projectPath: noteProjectPath,
+      folderPath: folderPathForNote(entry.path, noteProjectPath),
+    }
+  }
+
   return entry
     ? resolveProjectLocation(
       entry.path,
-      noteProjectPath ? [...projectPaths, noteProjectPath] : projectPaths,
+      projectPaths,
       fallbackProject.projectPath,
     )
     : fallbackProject
+}
+
+export function selectionForNoteLocation(
+  entry: Pick<VaultEntry, 'path' | 'workspace'>,
+  projectPaths: readonly string[],
+  fallbackProjectPath: string,
+): SidebarSelection {
+  return selectionForProjectLocation(resolveActiveProjectForNote(
+    entry,
+    projectPaths,
+    { projectPath: fallbackProjectPath, folderPath: '' },
+  ))
 }
 
 export function resolveProjectLocation(
