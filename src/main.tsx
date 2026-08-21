@@ -1,6 +1,11 @@
 import { lazy, StrictMode, Suspense } from 'react'
 import * as Sentry from '@sentry/react'
 import { createRoot } from 'react-dom/client'
+import '@fontsource-variable/inter/wght.css'
+import '@fontsource-variable/jetbrains-mono/wght.css'
+import '@fontsource/ibm-plex-mono/400.css'
+import '@fontsource/ibm-plex-mono/500.css'
+import '@fontsource/ibm-plex-mono/600.css'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import './index.css'
 import { FrontendReadyMarker } from './components/FrontendReadyMarker'
@@ -30,28 +35,10 @@ import { markStartupPhase } from './lib/startupPerformance'
 markStartupPhase('renderer_module_loaded')
 
 const TLDRAW_CONTEXT_MENU_SELECTOR = '.tldraw-whiteboard'
-const DISMISSABLE_ESCAPE_SURFACE_SELECTOR = [
-  '[data-slot="dialog-content"]',
-  '[data-slot="popover-content"]',
-  '[role="dialog"]',
-].join(',')
 const MACOS_FULLSCREEN_CHROME_CLASS = 'mac-chrome-fullscreen'
 
 function isTauriRuntime(): boolean {
   return '__TAURI__' in window || '__TAURI_INTERNALS__' in window
-}
-
-function hasDismissableEscapeSurface(): boolean {
-  return typeof document !== 'undefined'
-    && document.querySelector(DISMISSABLE_ESCAPE_SURFACE_SELECTOR) !== null
-}
-
-function installDismissableEscapeDefaultGuard(): void {
-  window.addEventListener('keydown', (event) => {
-    if (event.key !== 'Escape' || !hasDismissableEscapeSurface()) return
-
-    event.preventDefault()
-  }, true)
 }
 
 async function installMacosFullscreenChromeTracking(): Promise<void> {
@@ -108,7 +95,6 @@ function preventNativeContextMenu(event: MouseEvent): void {
 
 document.addEventListener('dragover', preventFileDropNavigation, true)
 document.addEventListener('drop', preventFileDropNavigation, true)
-installDismissableEscapeDefaultGuard()
 
 // Disable native WebKit context menu in Tauri (WKWebView intercepts right-click
 // at native level before React's synthetic events can call preventDefault).
