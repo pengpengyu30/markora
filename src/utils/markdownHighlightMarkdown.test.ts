@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
+  DEFAULT_MARKDOWN_HIGHLIGHT_COLOR,
   injectMarkdownHighlightsInBlocks,
+  MARKDOWN_HIGHLIGHT_COLOR_OPTIONS,
   MARKDOWN_HIGHLIGHT_STYLE,
+  markdownHighlightColorFromStyles,
+  markdownHighlightPrefix,
+  readMarkdownHighlightPrefix,
   restoreMarkdownHighlightsInBlocks,
   serializeMarkdownHighlightAwareBlocks,
 } from './markdownHighlightMarkdown'
@@ -45,6 +50,68 @@ describe('markdown highlight round-trip', () => {
       ],
       children: [],
     }])
+  })
+
+  it('parses colored highlight prefixes into durable inline styles', () => {
+    const blocks = injectMarkdownHighlightsInBlocks([{
+      type: 'paragraph',
+      content: [{
+        type: 'text',
+        text: '==🔴red== ==🔵blue== ==🟣purple== ==🟢green== ==yellow==',
+        styles: {},
+      }],
+      children: [],
+    }])
+
+    expect(blocks).toEqual([{
+      type: 'paragraph',
+      content: [
+        { type: 'text', text: 'red', styles: { highlight: true, backgroundColor: 'red' } },
+        { type: 'text', text: ' ', styles: {} },
+        { type: 'text', text: 'blue', styles: { highlight: true, backgroundColor: 'blue' } },
+        { type: 'text', text: ' ', styles: {} },
+        { type: 'text', text: 'purple', styles: { highlight: true, backgroundColor: 'purple' } },
+        { type: 'text', text: ' ', styles: {} },
+        { type: 'text', text: 'green', styles: { highlight: true, backgroundColor: 'green' } },
+        { type: 'text', text: ' ', styles: {} },
+        { type: 'text', text: 'yellow', styles: { highlight: true } },
+      ],
+      children: [],
+    }])
+  })
+
+  it('round-trips colored highlights and keeps the default color unprefixed', () => {
+    const editor = {
+      blocksToMarkdownLossy: vi.fn((blocks: unknown[]) => (
+        (blocks as Array<{ content?: Array<{ text?: string }> }>)
+          .map((block) => block.content?.map((item) => item.text ?? '').join('') ?? '')
+          .join('\n\n')
+      )),
+    }
+    const blocks = [{
+      type: 'paragraph',
+      content: [
+        { type: 'text', text: 'red', styles: { highlight: true, backgroundColor: 'red' } },
+        { type: 'text', text: ' and ', styles: {} },
+        { type: 'text', text: 'yellow', styles: { highlight: true } },
+      ],
+      children: [],
+    }]
+
+    expect(serializeMarkdownHighlightAwareBlocks(editor, blocks)).toBe('==🔴red== and ==yellow==')
+  })
+
+  it('exposes one source of truth for highlight colors and prefixes', () => {
+    expect(DEFAULT_MARKDOWN_HIGHLIGHT_COLOR).toBe('yellow')
+    expect(MARKDOWN_HIGHLIGHT_COLOR_OPTIONS.map(option => option.color)).toEqual([
+      'yellow', 'green', 'red', 'blue', 'purple',
+    ])
+    expect(markdownHighlightPrefix('red')).toBe('🔴')
+    expect(readMarkdownHighlightPrefix('🔵text')).toEqual({ color: 'blue', text: 'text' })
+    expect(readMarkdownHighlightPrefix('text')).toEqual({ color: 'yellow', text: 'text' })
+    expect(markdownHighlightColorFromStyles({ highlight: true })).toBe('yellow')
+    expect(markdownHighlightColorFromStyles({ highlight: true, backgroundColor: 'purple' })).toBe('purple')
+    expect(markdownHighlightColorFromStyles({ highlight: false, backgroundColor: 'purple' })).toBeNull()
   })
 
   it('leaves code-styled ==text== literal', () => {

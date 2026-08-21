@@ -350,6 +350,59 @@
   padding: 0 0.12em;
 }
 
+.editor__blocknote-container .bn-editor mark.markdown-highlight:has([data-style-type="backgroundColor"][data-value="green"]),
+.editor__blocknote-container .bn-editor [data-style-type="backgroundColor"][data-value="green"]:has(mark.markdown-highlight),
+.editor__blocknote-container .bn-editor [data-style-type="backgroundColor"][data-value="green"] mark.markdown-highlight,
+.editor__blocknote-container .bn-editor mark.markdown-highlight [data-style-type="backgroundColor"][data-value="green"] {
+  background-color: var(--accent-green-light);
+}
+
+.editor__blocknote-container .bn-editor mark.markdown-highlight:has([data-style-type="backgroundColor"][data-value="red"]),
+.editor__blocknote-container .bn-editor [data-style-type="backgroundColor"][data-value="red"]:has(mark.markdown-highlight),
+.editor__blocknote-container .bn-editor [data-style-type="backgroundColor"][data-value="red"] mark.markdown-highlight,
+.editor__blocknote-container .bn-editor mark.markdown-highlight [data-style-type="backgroundColor"][data-value="red"] {
+  background-color: var(--accent-red-light);
+}
+
+.editor__blocknote-container .bn-editor mark.markdown-highlight:has([data-style-type="backgroundColor"][data-value="blue"]),
+.editor__blocknote-container .bn-editor [data-style-type="backgroundColor"][data-value="blue"]:has(mark.markdown-highlight),
+.editor__blocknote-container .bn-editor [data-style-type="backgroundColor"][data-value="blue"] mark.markdown-highlight,
+.editor__blocknote-container .bn-editor mark.markdown-highlight [data-style-type="backgroundColor"][data-value="blue"] {
+  background-color: var(--accent-blue-light);
+}
+
+.editor__blocknote-container .bn-editor mark.markdown-highlight:has([data-style-type="backgroundColor"][data-value="purple"]),
+.editor__blocknote-container .bn-editor [data-style-type="backgroundColor"][data-value="purple"]:has(mark.markdown-highlight),
+.editor__blocknote-container .bn-editor [data-style-type="backgroundColor"][data-value="purple"] mark.markdown-highlight,
+.editor__blocknote-container .bn-editor mark.markdown-highlight [data-style-type="backgroundColor"][data-value="purple"] {
+  background-color: var(--accent-purple-light);
+}
+
+.markora-highlight-toolbar-group {
+  display: inline-flex;
+  align-items: center;
+}
+
+.markora-highlight-toolbar-group .markora-highlight-color-trigger {
+  min-width: 18px;
+  height: 28px;
+  padding: 0 3px;
+  color: var(--text-primary);
+}
+
+.markora-highlight-color-dropdown {
+  min-width: 156px;
+}
+
+.markora-highlight-color-swatch {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  flex: 0 0 13px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+}
+
 /* --- Inline: links --- */
 .editor__blocknote-container .bn-editor a {
   color: var(--inline-styles-link-color);

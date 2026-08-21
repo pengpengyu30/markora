@@ -54,7 +54,12 @@ import {
   TextStrikethrough as Strikethrough,
   type Icon as PhosphorIcon,
 } from '@phosphor-icons/react'
-import { MARKDOWN_HIGHLIGHT_STYLE } from '../utils/markdownHighlightMarkdown'
+import {
+  DEFAULT_MARKDOWN_HIGHLIGHT_COLOR,
+  MARKDOWN_HIGHLIGHT_STYLE,
+  markdownHighlightColorFromStyles,
+  type MarkdownHighlightColor,
+} from '../utils/markdownHighlightMarkdown'
 import {
   filterTolariaFormattingToolbarItems,
   getTolariaBlockTypeSelectItems,
@@ -62,6 +67,12 @@ import {
 import { translate, type AppLocale } from '../lib/i18n'
 import { useBlockNoteFormattingToolbarHoverGuard } from './blockNoteFormattingToolbarHoverGuard'
 import { openEditorAttachmentOrUrl } from './editorAttachmentActions'
+import { MarkdownHighlightColorMenu } from './markdownHighlightColorMenu'
+import {
+  applyMarkdownHighlightColor,
+  toggleDefaultMarkdownHighlight,
+} from './markdownHighlightModel'
+import { selectionOrHighlightRange } from './markdownHighlightRange'
 import {
   isStaleBlockReferenceError,
   reportRecoveredEditorTransformError,
@@ -532,6 +543,10 @@ function TolariaBasicTextStyleButton({
 
   const toggleStyle = useCallback(() => {
     editor.focus()
+    if (basicTextStyle === MARKDOWN_HIGHLIGHT_STYLE) {
+      toggleDefaultMarkdownHighlight(editor)
+      return
+    }
     editor.toggleStyles({ [basicTextStyle]: true } as never)
   }, [basicTextStyle, editor])
 
@@ -551,6 +566,43 @@ function TolariaBasicTextStyleButton({
       secondaryTooltip={copy.secondaryTooltip}
       icon={<Icon />}
     />
+  )
+}
+
+function TolariaHighlightColorControl({ locale }: { locale: AppLocale }) {
+  const editor = useBlockNoteEditor<
+    BlockSchema,
+    InlineContentSchema,
+    StyleSchema
+  >()
+  const state = useEditorState({
+    editor,
+    selector: ({ editor }) => ({
+      button: getBasicTextStyleButtonState(MARKDOWN_HIGHLIGHT_STYLE, editor),
+      currentColor: markdownHighlightColorFromStyles(editor.getActiveStyles())
+        ?? DEFAULT_MARKDOWN_HIGHLIGHT_COLOR,
+      range: selectionOrHighlightRange(editor),
+    }),
+  })
+
+  const handleSelect = useCallback((color: MarkdownHighlightColor) => {
+    applyMarkdownHighlightColor(editor, color, state.range)
+  }, [editor, state.range])
+
+  if (state.button === undefined) return null
+
+  return (
+    <div className="markora-highlight-toolbar-group">
+      <TolariaBasicTextStyleButton
+        basicTextStyle={MARKDOWN_HIGHLIGHT_STYLE}
+        locale={locale}
+      />
+      <MarkdownHighlightColorMenu
+        currentColor={state.currentColor}
+        locale={locale}
+        onSelect={handleSelect}
+      />
+    </div>
   )
 }
 
@@ -705,11 +757,7 @@ function insertExtraTextStyleButtons(items: ReactElement[], locale: AppLocale) {
   return [
     ...items.slice(0, strikeButtonIndex + 1),
     <TolariaBasicTextStyleButton basicTextStyle="code" key="codeStyleButton" />,
-    <TolariaBasicTextStyleButton
-      basicTextStyle={MARKDOWN_HIGHLIGHT_STYLE}
-      key="highlightStyleButton"
-      locale={locale}
-    />,
+    <TolariaHighlightColorControl key="highlightStyleButton" locale={locale} />,
     ...items.slice(strikeButtonIndex + 1),
   ]
 }

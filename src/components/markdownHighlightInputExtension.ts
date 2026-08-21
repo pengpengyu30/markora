@@ -1,4 +1,9 @@
-import { MARKDOWN_HIGHLIGHT_STYLE } from '../utils/markdownHighlightMarkdown'
+import {
+  DEFAULT_MARKDOWN_HIGHLIGHT_COLOR,
+  MARKDOWN_HIGHLIGHT_STYLE,
+  readMarkdownHighlightPrefix,
+  type MarkdownHighlightColor,
+} from '../utils/markdownHighlightMarkdown'
 import {
   createRichEditorInputTransformExtension,
   type RichEditorInputView,
@@ -15,7 +20,7 @@ type EditorViewLike = RichEditorInputView
 type TextblockParent = EditorViewLike['state']['selection']['$from']['parent']
 type MarkLike = { type: { name: string } }
 type EditorMark = Parameters<EditorViewLike['state']['tr']['addMark']>[2]
-type MarkTypeLike = { create: () => EditorMark }
+type MarkTypeLike = { create: (attrs?: Record<string, string>) => EditorMark }
 
 interface MarkdownHighlightCursorText {
   beforeText: string
@@ -26,6 +31,7 @@ interface MarkdownHighlightCursorText {
 export interface MarkdownHighlightInputReplacement {
   closingFrom: number
   closingTo: number
+  color: MarkdownHighlightColor
   contentFrom: number
   contentTo: number
   openingFrom: number
@@ -107,9 +113,11 @@ export function readMarkdownHighlightInputReplacement({
   )
   if (openingStart === -1) return null
 
-  const contentStart = openingStart + MARKDOWN_HIGHLIGHT_DELIMITER_LENGTH
-  const content = candidateText.slice(contentStart, closingStart)
-  if (!hasValidHighlightContent(content)) return null
+  const unprefixedContentStart = openingStart + MARKDOWN_HIGHLIGHT_DELIMITER_LENGTH
+  const candidateContent = candidateText.slice(unprefixedContentStart, closingStart)
+  const prefixed = readMarkdownHighlightPrefix(candidateContent)
+  const contentStart = unprefixedContentStart + candidateContent.length - prefixed.text.length
+  if (!hasValidHighlightContent(prefixed.text)) return null
 
   const closingFrom = parentStart + closingStart
   if (cursor !== closingFrom + 1) return null
@@ -117,6 +125,7 @@ export function readMarkdownHighlightInputReplacement({
   return {
     closingFrom,
     closingTo: cursor,
+    color: prefixed.color,
     contentFrom: parentStart + contentStart,
     contentTo: parentStart + closingStart,
     openingFrom: parentStart + openingStart,
@@ -124,8 +133,8 @@ export function readMarkdownHighlightInputReplacement({
   }
 }
 
-function readHighlightMarkType(view: EditorViewLike): MarkTypeLike | null {
-  const markType = Reflect.get(view.state.schema.marks, MARKDOWN_HIGHLIGHT_STYLE) as MarkTypeLike | undefined
+function readMarkType(view: EditorViewLike, name: string): MarkTypeLike | null {
+  const markType = Reflect.get(view.state.schema.marks, name) as MarkTypeLike | undefined
   return markType ?? null
 }
 
@@ -138,18 +147,30 @@ function replaceCompletedMarkdownHighlight(
   if (!cursorText) return null
 
   const replacement = readMarkdownHighlightInputReplacement(cursorText)
-  const highlightMarkType = readHighlightMarkType(view)
+  const highlightMarkType = readMarkType(view, MARKDOWN_HIGHLIGHT_STYLE)
   if (!replacement || !highlightMarkType) return null
   if (rangeHasCodeMark(view, replacement.contentFrom, replacement.contentTo)) return null
 
-  const highlightedFrom = replacement.contentFrom - MARKDOWN_HIGHLIGHT_DELIMITER_LENGTH
-  const highlightedTo = replacement.contentTo - MARKDOWN_HIGHLIGHT_DELIMITER_LENGTH
+  const openingLength = replacement.openingTo - replacement.openingFrom
+  const highlightedFrom = replacement.contentFrom - openingLength
+  const highlightedTo = replacement.contentTo - openingLength
 
-  return view.state.tr
+  const transaction = view.state.tr
     .delete(replacement.closingFrom, replacement.closingTo)
     .delete(replacement.openingFrom, replacement.openingTo)
     .addMark(highlightedFrom, highlightedTo, highlightMarkType.create())
-    .scrollIntoView()
+
+  if (replacement.color !== DEFAULT_MARKDOWN_HIGHLIGHT_COLOR) {
+    const backgroundColorMarkType = readMarkType(view, 'backgroundColor')
+    if (!backgroundColorMarkType) return null
+    transaction.addMark(
+      highlightedFrom,
+      highlightedTo,
+      backgroundColorMarkType.create({ stringValue: replacement.color }),
+    )
+  }
+
+  return transaction.scrollIntoView()
 }
 
 export function createMarkdownHighlightInputTransform(): RichEditorInputTransform {

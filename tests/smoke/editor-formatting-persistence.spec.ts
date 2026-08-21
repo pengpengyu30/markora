@@ -289,6 +289,41 @@ test('Obsidian-style highlight markdown typed in rich mode renders and persists'
   expect(await getRawEditorContent(page)).toContain('Plain ==rich-marked==')
 })
 
+test('@smoke colored highlight markdown renders, can be recolored, and persists through Raw mode', async ({ page }) => {
+  await openNote(page, 'Note B')
+  await openRawMode(page)
+  const raw = await getRawEditorContent(page)
+  const coloredLine = 'Colors: ==🔴red== ==🔵blue== ==🟣purple== ==🟢green== ==yellow=='
+  await setRawEditorContent(page, `${raw.trimEnd()}\n\n${coloredLine}\n`)
+
+  await openBlockNoteMode(page)
+  await expect(page.locator('.bn-editor mark.markdown-highlight', { hasText: 'red' })).toBeVisible()
+  await expect(page.locator('.bn-editor [data-style-type="backgroundColor"][data-value="red"]', { hasText: 'red' })).toBeVisible()
+  await expect(page.locator('.bn-editor mark.markdown-highlight', { hasText: 'yellow' })).toBeVisible()
+
+  const redHighlight = page.locator('.bn-editor mark.markdown-highlight', { hasText: 'red' }).first()
+  await redHighlight.evaluate((element) => {
+    const textNode = element.firstChild
+    if (!textNode) return
+    const selection = window.getSelection()
+    if (!selection) return
+    const range = document.createRange()
+    range.selectNodeContents(textNode)
+    selection.removeAllRanges()
+    selection.addRange(range)
+    document.dispatchEvent(new Event('selectionchange'))
+  })
+  await page.locator('.bn-formatting-toolbar [data-test="highlightColorMenu"]').click()
+  await page.getByRole('menuitem', { name: 'Blue' }).click()
+  await expect(page.locator('.bn-editor [data-style-type="backgroundColor"][data-value="blue"]', { hasText: 'red' })).toBeVisible()
+
+  await roundTripThroughAnotherNote(page)
+  await openRawMode(page)
+  expect(await getRawEditorContent(page)).toContain(
+    'Colors: ==🔵red== ==🔵blue== ==🟣purple== ==🟢green== ==yellow==',
+  )
+})
+
 test('plain prose parentheses typed in rich mode persist without escapes', async ({ page }) => {
   await openNote(page, 'Note B')
 

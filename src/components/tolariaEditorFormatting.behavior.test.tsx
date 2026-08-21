@@ -44,19 +44,21 @@ vi.mock('@blocknote/react', () => ({
   },
   useBlockNoteEditor: useBlockNoteEditorMock,
   useComponentsContext: () => ({
-    FormattingToolbar: {
+      FormattingToolbar: {
       Button: ({
         children,
         icon,
         label,
         onClick,
+        ['data-test']: dataTest,
       }: {
         children?: ReactNode
         icon?: ReactNode
         label: string
         onClick: () => void
+        'data-test'?: string
       }) => (
-        <button onClick={onClick} type="button">
+        <button data-test={dataTest} onClick={onClick} type="button">
           {icon}
           {label}
           {children}
@@ -106,6 +108,7 @@ vi.mock('@mantine/core', () => ({
 vi.mock('@phosphor-icons/react', () => ({
   ArrowSquareOut: MockIcon,
   CaretDown: MockIcon,
+  Check: MockIcon,
   Code: MockIcon,
   Highlighter: MockIcon,
   TextB: MockIcon,
@@ -147,6 +150,13 @@ function createMockEditor(blockType = 'image', props: Record<string, unknown> = 
     content: [{ type: 'text', text: 'Selected block' }],
   }
   const domElement = document.createElement('div')
+  const transaction = {
+    addMark: vi.fn(),
+    removeMark: vi.fn(),
+    scrollIntoView: vi.fn(),
+  }
+  transaction.addMark.mockReturnValue(transaction)
+  transaction.removeMark.mockReturnValue(transaction)
   domElement.appendChild(document.createElement('div'))
   document.body.appendChild(domElement)
 
@@ -160,14 +170,30 @@ function createMockEditor(blockType = 'image', props: Record<string, unknown> = 
         code: { type: 'code', propSchema: 'boolean' },
         highlight: { type: 'highlight', propSchema: 'boolean' },
       },
+      marks: {
+        highlight: { create: vi.fn(() => ({ type: { name: 'highlight' } })) },
+        backgroundColor: { create: vi.fn((attrs: Record<string, string>) => ({ type: { name: 'backgroundColor' }, attrs })) },
+      },
     },
-    prosemirrorState: { selection: { from: 1, to: 5 } },
+    prosemirrorState: {
+      doc: { content: { size: 20 } },
+      schema: {
+        marks: {
+          highlight: { create: vi.fn(() => ({ type: { name: 'highlight' } })) },
+          backgroundColor: { create: vi.fn((attrs: Record<string, string>) => ({ type: { name: 'backgroundColor' }, attrs })) },
+        },
+      },
+      selection: { from: 1, to: 5 },
+      tr: transaction,
+    },
+    prosemirrorView: { dispatch: vi.fn() },
     domElement,
     focus: vi.fn(),
     getActiveStyles: () => ({ bold: true }),
     getBlock: vi.fn((id: string) => (id === selectedBlock.id ? selectedBlock : undefined)),
     getSelection: () => ({ blocks: [selectedBlock] }),
     getTextCursorPosition: () => ({ block: selectedBlock }),
+    removeStyles: vi.fn(),
     toggleStyles: vi.fn(),
     transact: vi.fn((callback: () => void) => callback()),
     updateBlock: vi.fn(),
@@ -191,18 +217,38 @@ describe('tolariaEditorFormatting behavior', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /bold/i }))
     fireEvent.click(screen.getByRole('button', { name: /inline code/i }))
-    fireEvent.click(screen.getByRole('button', { name: /highlight/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Highlight', exact: true }))
     fireEvent.click(screen.getByRole('button', { name: 'Heading 1' }))
 
     expect(editor.focus).toHaveBeenCalled()
     expect(editor.toggleStyles).toHaveBeenCalledWith({ bold: true })
     expect(editor.toggleStyles).toHaveBeenCalledWith({ code: true })
-    expect(editor.toggleStyles).toHaveBeenCalledWith({ highlight: true })
+    expect(editor.prosemirrorView.dispatch).toHaveBeenCalledTimes(1)
     expect(editor.transact).toHaveBeenCalledTimes(1)
     expect(editor.updateBlock).toHaveBeenCalledWith(
       'file-block',
       { type: 'heading', props: { level: 1 } },
     )
+  })
+
+  it('offers localized highlight colors and applies the selected color to the current range', () => {
+    const editor = createMockEditor('paragraph')
+    useBlockNoteEditorMock.mockReturnValue(editor)
+
+    render(<TolariaFormattingToolbar locale="en" />)
+
+    expect(screen.getByRole('button', { name: 'Choose highlight color' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Red' }))
+
+    expect(editor.prosemirrorState.tr.addMark).toHaveBeenCalledWith(
+      1,
+      5,
+      expect.objectContaining({
+        type: { name: 'backgroundColor' },
+        attrs: { stringValue: 'red' },
+      }),
+    )
+    expect(editor.prosemirrorView.dispatch).toHaveBeenCalledTimes(1)
   })
 
   it('ignores stale block-type clicks when the selected block disappeared before the action', () => {
