@@ -137,6 +137,18 @@ describe('resolveNewNote', () => {
     expect(entry.workspace?.path).toBe('/project-b')
   })
 
+  it('lets an explicit wikilink destination override the active folder', () => {
+    const { entry } = resolveNewNote({
+      activeProject: { projectPath: '/project-a', folderPath: 'current' },
+      destination: { relativePath: 'docs/new-topic.md', vaultPath: '/project-b' },
+      title: 'New Topic',
+      vaultPath: '/project-a',
+    })
+
+    expect(entry.path).toBe('/project-b/docs/new-topic.md')
+    expect(entry.workspace?.path).toBe('/project-b')
+  })
+
 })
 
 describe('planNewNoteCreation', () => {
@@ -192,6 +204,28 @@ describe('useNoteCreation hook', () => {
       title: 'Test Note',
       isA: null,
       status: null,
+    }), '')
+  })
+
+  it('creates an unresolved wikilink target beside its source note', async () => {
+    const sourceEntry = makeEntry({
+      path: '/test/vault/docs/source.md',
+      filename: 'source.md',
+      title: 'Source',
+      workspace: { path: '/test/vault' } as NonNullable<VaultEntry['workspace']>,
+    })
+    const { result } = renderHook(() => useNoteCreation(makeConfig(), tabDeps))
+
+    await act(async () => {
+      await result.current.handleCreateNoteFromWikilink('new-note-topic', sourceEntry)
+    })
+
+    expect(addEntry).toHaveBeenCalledWith(expect.objectContaining({
+      path: '/test/vault/docs/new-note-topic.md',
+      title: 'New Note Topic',
+    }))
+    expect(openTabWithContent).toHaveBeenCalledWith(expect.objectContaining({
+      path: '/test/vault/docs/new-note-topic.md',
     }), '')
   })
 

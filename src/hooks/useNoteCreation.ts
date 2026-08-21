@@ -16,6 +16,10 @@ import type { VaultOption } from '../components/status-bar/types'
 import { useCreateNoteInFolderRequests } from './noteCreationRequests'
 import { requestEditorFocus } from './useEditorFocus'
 import type { ActiveProject } from '../utils/activeProject'
+import {
+  resolveWikilinkCreationRequest,
+  type WikilinkCreationDestination,
+} from '../utils/wikilinkCreation'
 
 export interface NewEntryParams {
   path: string
@@ -122,6 +126,7 @@ export function buildNoteContent({
 }
 
 export interface NewNoteParams {
+  destination?: WikilinkCreationDestination
   title: string
   vaultPath: string
   defaultWorkspacePath?: string | null
@@ -133,15 +138,17 @@ export function resolveNewNote(options: NewNoteParams): {
   entry: VaultEntry
   content: string
 } {
-  const { activeProject, title, vaultPath, defaultWorkspacePath, vaults = [] } = options
-  const creationVaultPath = activeProject?.projectPath?.trim()
-    ? activeProject.projectPath
-    : resolveCreationVaultPath(vaultPath, defaultWorkspacePath, vaults)
-  const folderPath = activeProject?.folderPath ?? ''
+  const { activeProject, destination, title, vaultPath, defaultWorkspacePath, vaults = [] } = options
+  const creationVaultPath = destination?.vaultPath
+    ?? (activeProject?.projectPath?.trim()
+      ? activeProject.projectPath
+      : resolveCreationVaultPath(vaultPath, defaultWorkspacePath, vaults))
   const slug = slugify(title)
+  const relativePath = destination?.relativePath
+    ?? (activeProject?.folderPath ? `${activeProject.folderPath}/${slug}.md` : `${slug}.md`)
   const entry = {
     ...buildNewEntry({
-      path: joinVaultPath(creationVaultPath, folderPath ? `${folderPath}/${slug}.md` : `${slug}.md`),
+      path: joinVaultPath(creationVaultPath, relativePath),
       slug,
       title,
     }),
@@ -182,9 +189,10 @@ function buildCreationCollisionMessage({
 }
 
 export function planNewNoteCreation(options: NewNoteParams & { entries: VaultEntry[] }): NoteCreationPlan {
-  const { activeProject, defaultWorkspacePath, entries, title, vaultPath, vaults } = options
+  const { activeProject, defaultWorkspacePath, destination, entries, title, vaultPath, vaults } = options
   const resolved = resolveNewNote({
     activeProject,
+    destination,
     title,
     vaultPath,
     defaultWorkspacePath,
@@ -288,14 +296,17 @@ interface CreationDeps {
 }
 
 interface NoteCreationRequest extends CreationDeps {
+  destination?: WikilinkCreationDestination
+  focusEditor?: boolean
   title: string
   creationPath?: 'plus_button' | 'quick_open'
 }
 
 async function createNamedNote(options: NoteCreationRequest): Promise<boolean> {
-  const { activeProject, entries, defaultWorkspacePath, title, vaultPath, vaults, setToastMessage, persistResolvedEntry } = options
+  const { activeProject, destination, entries, defaultWorkspacePath, focusEditor, title, vaultPath, vaults, setToastMessage, persistResolvedEntry } = options
   const plan = planNewNoteCreation({
     activeProject,
+    destination,
     entries,
     title,
     vaultPath,
@@ -309,6 +320,7 @@ async function createNamedNote(options: NoteCreationRequest): Promise<boolean> {
 
   try {
     await persistResolvedEntry(plan.resolved)
+    if (focusEditor) signalFocusEditor({ path: plan.resolved.entry.path })
     return true
   } catch (error) {
     setToastMessage(createPersistFailureMessage(plan.resolved.entry, error))
@@ -641,14 +653,40 @@ function useNamedCreationActions(options: Pick<NoteCreationConfig, 'activeProjec
     [activeProject, entries, vaultPath, defaultWorkspacePath, vaults, setToastMessage, persistResolvedEntry],
   )
 
-  return { handleCreateNote }
+  const handleCreateNoteFromWikilink = useCallback(
+    (target: string, sourceEntry?: VaultEntry): Promise<boolean> => {
+      const request = resolveWikilinkCreationRequest({
+        fallbackVaultPath: vaultPath,
+        sourceEntry,
+        target,
+        vaults,
+      })
+      if (!request) return Promise.resolve(false)
+
+      return createNamedNote({
+        activeProject,
+        defaultWorkspacePath,
+        destination: request.destination,
+        entries,
+        focusEditor: true,
+        persistResolvedEntry,
+        setToastMessage,
+        title: request.title,
+        vaultPath,
+        vaults,
+      })
+    },
+    [activeProject, defaultWorkspacePath, entries, persistResolvedEntry, setToastMessage, vaultPath, vaults],
+  )
+
+  return { handleCreateNote, handleCreateNoteFromWikilink }
 }
 
 export function useNoteCreation(config: NoteCreationConfig, tabDeps: CreationTabDeps) {
   const { activeProject, addEntry, defaultWorkspacePath, entries, setToastMessage, addPendingSave, removePendingSave, vaultPath, vaults, onNewNotePersisted } = config
   const { openTabWithContent } = tabDeps
   const persistResolvedEntry = usePersistResolvedEntry(config, openTabWithContent)
-  const { handleCreateNote } = useNamedCreationActions({
+  const { handleCreateNote, handleCreateNoteFromWikilink } = useNamedCreationActions({
     activeProject,
     defaultWorkspacePath,
     entries,
@@ -675,6 +713,7 @@ export function useNoteCreation(config: NoteCreationConfig, tabDeps: CreationTab
 
   return {
     handleCreateNote,
+    handleCreateNoteFromWikilink,
     handleCreateNoteImmediate,
   }
 }

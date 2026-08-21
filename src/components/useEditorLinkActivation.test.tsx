@@ -124,6 +124,20 @@ describe('useEditorLinkActivation', () => {
     expect(onNavigateWikilink).toHaveBeenCalledWith('Alpha Project')
   })
 
+  it('exposes wikilinks as keyboard links and navigates on Enter', async () => {
+    const { container, onNavigateWikilink } = renderHarness()
+    const wikilink = appendWikilink(container, 'New Topic')
+
+    await Promise.resolve()
+    expect(wikilink).toHaveAttribute('role', 'link')
+    expect(wikilink).toHaveAttribute('tabindex', '0')
+
+    fireEvent.keyDown(wikilink, { key: 'Enter' })
+    await Promise.resolve()
+
+    expect(onNavigateWikilink).toHaveBeenCalledWith('New Topic')
+  })
+
   it('opens URLs only on Cmd+click', () => {
     const { container } = renderHarness()
     const link = appendUrl(container, 'https://example.com')

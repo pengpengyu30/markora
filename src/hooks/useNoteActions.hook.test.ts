@@ -141,6 +141,26 @@ describe('useNoteActions hook', () => {
     expect(result.current.activeTabPath).toBe('/vault/target.md')
   })
 
+  it('creates an unresolved wikilink beside the active source note', async () => {
+    const source = makeEntry({
+      path: '/test/vault/docs/source.md',
+      filename: 'source.md',
+      title: 'Source',
+      workspace: { path: '/test/vault' } as NonNullable<VaultEntry['workspace']>,
+    })
+    const { result } = renderHook(() => useNoteActions(makeConfig([source])))
+
+    await act(async () => {
+      await result.current.handleSelectNote(source)
+    })
+    await act(async () => {
+      await result.current.handleNavigateWikilink('new-topic')
+    })
+
+    expect(result.current.activeTabPath).toBe('/test/vault/docs/new-topic.md')
+    expect(result.current.tabs[0]?.entry.title).toBe('New Topic')
+  })
+
   it('reveals the owning Project after opening a note', async () => {
     const entry = makeEntry({
       path: '/project-b/notes/topic.md',
@@ -182,16 +202,16 @@ describe('useNoteActions hook', () => {
     }))
   })
 
-  it('handleNavigateWikilink warns when target not found', () => {
+  it('handleNavigateWikilink warns when the target cannot be converted into a note', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
     const { result } = renderHook(() => useNoteActions(makeConfig()))
 
-    act(() => {
-      result.current.handleNavigateWikilink('Nonexistent')
+    await act(async () => {
+      await result.current.handleNavigateWikilink('')
     })
 
-    expect(warnSpy).toHaveBeenCalledWith('Navigation target not found: Nonexistent')
+    expect(warnSpy).toHaveBeenCalledWith('Navigation target not found: ')
     warnSpy.mockRestore()
   })
 

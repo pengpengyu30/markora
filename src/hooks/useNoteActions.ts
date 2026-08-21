@@ -185,16 +185,22 @@ async function notifyFrontmatterPersisted(config: NoteActionsConfig): Promise<vo
 }
 
 interface NavigateWikilinkParams {
+  createNote: (target: string, sourceEntry?: VaultEntry) => Promise<boolean>
   entries: VaultEntry[]
   sourceEntry?: VaultEntry
   target: string
-  selectNote: (entry: VaultEntry) => void
+  selectNote: (entry: VaultEntry) => Promise<void>
 }
 
-function navigateWikilink({ entries, target, selectNote }: NavigateWikilinkParams): void {
+async function navigateWikilink({ createNote, entries, sourceEntry, target, selectNote }: NavigateWikilinkParams): Promise<void> {
   const found = resolveEntry(entries, target)
-  if (found) selectNote(found)
-  else console.warn(`Navigation target not found: ${target}`)
+  if (found) {
+    await selectNote(found)
+    return
+  }
+
+  const created = await createNote(target, sourceEntry)
+  if (!created) console.warn(`Navigation target not found: ${target}`)
 }
 
 interface MaybeRenameAfterFrontmatterUpdateParams {
@@ -484,7 +490,7 @@ function useFrontmatterRunner({
 interface NoteActionsResultParts {
   creation: ReturnType<typeof useNoteCreation>
   frontmatterActions: ReturnType<typeof useFrontmatterActionHandlers>
-  handleNavigateWikilink: (target: string) => void
+  handleNavigateWikilink: (target: string) => Promise<void>
   handleSelectNote: (entry: VaultEntry) => Promise<void>
   rename: ReturnType<typeof useNoteRename>
   tabMgmt: ReturnType<typeof useTabManagement>
@@ -563,14 +569,14 @@ export function useNoteActions(config: NoteActionsConfig) {
   )
 
   const handleNavigateWikilink = useCallback(
-    (target: string) =>
-      navigateWikilink({
+    (target: string) => navigateWikilink({
+      createNote: creation.handleCreateNoteFromWikilink,
       entries,
       sourceEntry: tabMgmt.tabs.find((tab) => notePathsMatch(tab.entry.path, tabMgmt.activeTabPath))?.entry,
       target,
       selectNote: handleSelectNote,
     }),
-    [entries, handleSelectNote, tabMgmt.activeTabPath, tabMgmt.tabs],
+    [creation.handleCreateNoteFromWikilink, entries, handleSelectNote, tabMgmt.activeTabPath, tabMgmt.tabs],
   )
 
   const runFrontmatterOp = useFrontmatterRunner({

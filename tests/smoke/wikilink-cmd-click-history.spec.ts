@@ -216,3 +216,53 @@ test('Cmd-clicking an inline URL after a vault reload does not dispatch through 
   await expectOpenedUrlCount(page, { url: 'https://example.com', count: 2 })
   expect(staleClickErrors).toEqual([])
 })
+
+test('@smoke Enter on an unresolved wikilink creates a note beside the source', async ({ page }) => {
+  const sourcePath = path.join(tempVaultDir, 'project', 'unresolved-source.md')
+  const createdPath = path.join(tempVaultDir, 'project', 'new-note-topic.md')
+  fs.writeFileSync(sourcePath, `# Unresolved Source
+
+Follow [[new-note-topic]] from here.
+`, 'utf8')
+
+  await page.reload()
+  await page.waitForLoadState('networkidle')
+  await openNote(page, 'Unresolved Source')
+  await expectActiveHeading(page, 'Unresolved Source')
+
+  const wikilink = page.locator('.bn-editor .wikilink').filter({ hasText: 'New Note Topic' }).first()
+  await expect(wikilink).toHaveClass(/wikilink--broken/u)
+  await expect(wikilink).toHaveAttribute('role', 'link')
+  await expect(wikilink).toHaveAttribute('tabindex', '0')
+  await wikilink.focus()
+  await page.keyboard.press('Enter')
+
+  await expect(page.getByTestId('breadcrumb-filename-trigger')).toContainText('new-note-topic', {
+    timeout: 5_000,
+  })
+  await expect.poll(() => fs.readFileSync(createdPath, 'utf8'), { timeout: 10_000 }).toBe('')
+  await expect(page.locator('.bn-editor')).toBeVisible()
+})
+
+test('@smoke Cmd-click on an unresolved wikilink creates and opens the target note', async ({ page }) => {
+  const sourcePath = path.join(tempVaultDir, 'project', 'cmd-source.md')
+  const createdPath = path.join(tempVaultDir, 'project', 'cmd-created.md')
+  fs.writeFileSync(sourcePath, `# Cmd Source
+
+Follow [[cmd-created]] from here.
+`, 'utf8')
+
+  await page.reload()
+  await page.waitForLoadState('networkidle')
+  await openNote(page, 'Cmd Source')
+  await expectActiveHeading(page, 'Cmd Source')
+
+  const wikilink = page.locator('.bn-editor .wikilink').filter({ hasText: 'Cmd Created' }).first()
+  await expect(wikilink).toHaveClass(/wikilink--broken/u)
+  await wikilink.click({ modifiers: ['Meta'] })
+
+  await expect(page.getByTestId('breadcrumb-filename-trigger')).toContainText('cmd-created', {
+    timeout: 5_000,
+  })
+  await expect.poll(() => fs.readFileSync(createdPath, 'utf8'), { timeout: 10_000 }).toBe('')
+})
