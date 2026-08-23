@@ -165,7 +165,9 @@ Unsupported constructs should remain readable as raw text or a safe fallback. Th
 
 ### Retained content features
 
-The Markdown conversion path retains tables, math, Mermaid, callouts, code blocks, wikilinks, and images. `TldrawWhiteboard.tsx` is a retained compatibility surface for durable whiteboards; it is not part of the Project registry or Git model.
+The Markdown conversion path retains tables, math, Mermaid, callouts, code blocks, wikilinks, and images. Linked inline-code labels use a protected Markdown token bridge so links and code styling survive BlockNote parsing and paste. `TldrawWhiteboard.tsx` is a retained compatibility surface for durable whiteboards; it is not part of the Project registry or Git model.
+
+`useSidebarNoteDropTargets` owns document-level note retargeting drag feedback and drop dispatch. It uses the active note path fallback when a browser hides the custom MIME payload, scopes listeners to the mounted app, and clears the fallback on drop, drag end, and unmount.
 
 ## Invisible Git abstractions
 

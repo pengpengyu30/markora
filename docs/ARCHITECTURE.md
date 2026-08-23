@@ -184,6 +184,7 @@ The editor supports a rich BlockNote path and a raw CodeMirror/text path. Markdo
 - headings, lists, links, wikilinks, code blocks, tables, math, Mermaid, callouts, and images;
 - raw Markdown/text editing for unsupported or explicitly raw content;
 - local attachment import and safe remote-image import;
+- protected linked inline-code Markdown paste with canonical link/code mark ordering;
 - tabs with content identity checks before reusing a warm cache;
 - PDF and common media previews when the platform supports them;
 - unsupported-file messaging and external-open fallback.

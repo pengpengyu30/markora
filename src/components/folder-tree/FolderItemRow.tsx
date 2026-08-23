@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { FolderNode } from '../../types'
 import { useFolderRowInteractions } from './useFolderRowInteractions'
-import { readDraggedNotePath } from '../../utils/noteDragDrop'
+import { clearDraggedNotePath, readDraggedNotePath } from '../../utils/noteDragDrop'
 import { folderNodeKey } from './folderTreeUtils'
 
 interface FolderItemRowProps {
@@ -50,6 +50,7 @@ function useFolderNoteDropHandlers({
       if (!notePath) return
       event.preventDefault()
       event.dataTransfer.dropEffect = 'move'
+      clearDraggedNotePath()
       void onMoveNoteToFolder?.(notePath, node.path)
     },
     [canMoveDraggedNote, node.path, onMoveNoteToFolder],
@@ -157,7 +158,7 @@ function FolderSelectButton(options: {
     <Button
       type="button"
       variant="ghost"
-      className="h-auto flex-1 justify-start gap-2 rounded text-left text-[13px] font-medium text-foreground hover:bg-transparent hover:text-foreground"
+      className="h-auto flex-1 justify-start gap-2 rounded text-left text-[13px] font-medium text-foreground hover:bg-transparent hover:text-foreground data-[note-drop-state=valid]:!bg-[var(--accent-blue-light)] data-[note-drop-state=valid]:ring-1 data-[note-drop-state=valid]:ring-[var(--accent-blue)]"
       style={{
         paddingTop: 6,
         paddingBottom: 6,
@@ -171,6 +172,7 @@ function FolderSelectButton(options: {
       onDragOver={onDragOver}
       onDrop={onDrop}
       data-testid={`folder-row:${node.path}`}
+      data-note-drop-folder={node.path}
       data-project-root={isProjectRoot ? node.rootPath : undefined}
       data-active-project={isActiveProject ? 'true' : undefined}
     >

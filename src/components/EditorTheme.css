@@ -238,23 +238,54 @@
 }
 
 /* --- Bullet lists --- */
-/* BlockNote renders bullet as ::before on [data-content-type="bulletListItem"] 
-   with content: "•", display: flex, width: 24px */
+/* BlockNote renders the bullet as a font glyph in a 24px-wide ::before box. */
 .editor__blocknote-container [data-content-type="bulletListItem"] {
+  --lists-marker-inner-radius: calc(var(--editor-font-size) * 0.133333);
+  --lists-marker-radius: calc(var(--editor-font-size) * 0.2);
+  --lists-marker-fade-radius: calc(var(--editor-font-size) * 0.233333);
+  --lists-marker-size: calc(var(--editor-font-size) * 0.4);
+
   padding-inline-start: var(--lists-padding-left);
   margin-bottom: var(--lists-item-spacing);
   gap: var(--lists-bullet-gap) !important;
 }
 
 .editor__blocknote-container [data-content-type="bulletListItem"]::before {
-  font-size: var(--lists-bullet-size) !important;
-  color: var(--lists-bullet-color) !important;
+  /* Draw a 6px dot at the default 15px editor size, scaling with editor zoom. */
+  background: radial-gradient(
+    circle,
+    var(--lists-bullet-color) 0 var(--lists-marker-radius),
+    transparent var(--lists-marker-fade-radius)
+  );
+  color: transparent;
+  font-size: 0;
   min-width: var(--lists-indent-size) !important;
   width: var(--lists-indent-size) !important;
   /* Align bullet with first line of text */
   height: calc(var(--editor-font-size) * var(--editor-line-height)) !important;
   align-items: center !important;
   flex-shrink: 0 !important;
+}
+
+/* Match the theme's nested marker sequence: filled circle, hollow circle, square. */
+.editor__blocknote-container
+  .bn-block-group .bn-block-group
+  [data-content-type="bulletListItem"]::before {
+  background:
+    radial-gradient(
+      circle,
+      transparent 0 var(--lists-marker-inner-radius),
+      var(--lists-bullet-color) var(--lists-marker-inner-radius) var(--lists-marker-radius),
+      transparent var(--lists-marker-fade-radius)
+    );
+}
+
+.editor__blocknote-container
+  .bn-block-group .bn-block-group .bn-block-group
+  [data-content-type="bulletListItem"]::before {
+  background:
+    linear-gradient(var(--lists-bullet-color), var(--lists-bullet-color))
+    center / var(--lists-marker-size) var(--lists-marker-size) no-repeat;
 }
 
 /* Nested list indentation */
@@ -818,10 +849,48 @@ body.tldraw-whiteboard-fullscreen-open {
   font-style: var(--blockquote-font-style);
 }
 
+/* BlockNote models Markdown blockquote paragraphs as sibling blocks. Join
+   consecutive siblings so their rails read as one quote with paragraph gaps. */
+.editor__blocknote-container
+  .bn-block-outer:has(> .bn-block > [data-content-type="quote"]):has(
+    + .bn-block-outer > .bn-block > [data-content-type="quote"]
+  )
+  > .bn-block
+  > [data-content-type="quote"] {
+  padding-bottom: 0;
+}
+
+.editor__blocknote-container
+  .bn-block-outer:has(> .bn-block > [data-content-type="quote"]):has(
+    + .bn-block-outer > .bn-block > [data-content-type="quote"]
+  )
+  blockquote {
+  margin-bottom: 0;
+}
+
+.editor__blocknote-container
+  .bn-block-outer:has(> .bn-block > [data-content-type="quote"])
+  + .bn-block-outer:has(> .bn-block > [data-content-type="quote"])
+  > .bn-block
+  > [data-content-type="quote"] {
+  padding-top: 0;
+}
+
+.editor__blocknote-container
+  .bn-block-outer:has(> .bn-block > [data-content-type="quote"])
+  + .bn-block-outer:has(> .bn-block > [data-content-type="quote"])
+  blockquote {
+  margin-top: 0;
+}
+
 /* --- Table --- */
 .editor__blocknote-container [data-content-type="table"] table {
   border-color: var(--table-border-color);
   font-size: var(--table-font-size);
+}
+
+.editor__blocknote-container [data-content-type="table"] :is(th, td) {
+  border-color: var(--table-border-color);
 }
 
 .editor__blocknote-container [data-content-type="table"] th {
@@ -831,8 +900,12 @@ body.tldraw-whiteboard-fullscreen-open {
 
 .editor__blocknote-container [data-content-type="table"] td {
   padding: var(--table-cell-padding-vertical) var(--table-cell-padding-horizontal);
-  border-color: var(--table-border-color);
   text-align: start;
+}
+
+/* Keep the one-pixel grid exposed beneath ProseMirror's selected-cell overlay. */
+.editor__blocknote-container [data-content-type="table"] .selectedCell::after {
+  inset: 1px;
 }
 
 /* --- Horizontal rule --- */

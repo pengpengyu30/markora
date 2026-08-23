@@ -11,7 +11,7 @@ import { getDisplayDate } from '../utils/noteListHelpers'
 import { formatTimestampForDateDisplay } from '../utils/dateDisplay'
 import { filePreviewKind, type FilePreviewKind } from '../utils/filePreview'
 import { useDateDisplayFormat } from '../hooks/useAppPreferences'
-import { writeNoteDragData } from '../utils/noteDragDrop'
+import { clearDraggedNotePath, writeNoteDragData } from '../utils/noteDragDrop'
 
 type VisibleNoteStatus = Exclude<NoteStatus, 'clean'>
 
@@ -69,6 +69,7 @@ type NoteItemSurfaceProps = {
   style: CSSProperties
   onClick: MouseEventHandler<HTMLDivElement>
   onContextMenu?: MouseEventHandler<HTMLDivElement>
+  onDragEnd?: DragEventHandler<HTMLDivElement>
   onDragStart?: DragEventHandler<HTMLDivElement>
   onMouseEnter?: () => void
   title?: string
@@ -348,6 +349,7 @@ function resolveNoteItemSurfaceProps(
     }),
     onClick: createNoteItemClickHandler(entry, isUnavailableBinary, onClickNote),
     onContextMenu: onContextMenu ? (event) => onContextMenu(entry, event) : undefined,
+    onDragEnd: draggable ? clearDraggedNotePath : undefined,
     onDragStart: draggable ? (event) => writeNoteDragData(event.dataTransfer, entry.path) : undefined,
     onMouseEnter: entry.fileKind !== 'binary' && onPrefetch ? () => onPrefetch(entry) : undefined,
     testId: resolveNoteItemTestId({
@@ -387,6 +389,7 @@ function NoteItemRow({
         if (event.key === 'Enter' || event.key === ' ') event.currentTarget.click()
       }}
       onContextMenu={surfaceProps.onContextMenu}
+      onDragEnd={surfaceProps.onDragEnd}
       onDragStart={surfaceProps.onDragStart}
       onMouseEnter={surfaceProps.onMouseEnter}
       data-testid={surfaceProps.testId}

@@ -2,9 +2,13 @@ import { useCallback, useMemo, useState } from 'react'
 import type { RetargetOption } from '../components/note-retargeting/RetargetNoteDialog'
 import type { FolderNode, VaultEntry } from '../types'
 import { useNoteRetargeting, type RetargetFolderOption } from './useNoteRetargeting'
+import { useSidebarNoteDropTargets } from './useSidebarNoteDropTargets'
 import { folderPathForRetargetEntry, prependVaultRootFolderDestination } from '../utils/noteRetargetingPaths'
 
 type DialogState = { kind: 'folder'; notePath: string } | null
+
+const cannotDropNoteOnType = () => false
+const ignoreNoteTypeChange = () => undefined
 
 interface NoteRetargetingUiInput {
   activeEntry: VaultEntry | null
@@ -71,6 +75,12 @@ export function useNoteRetargetingUi(options: NoteRetargetingUiInput) {
     setToastMessage,
     vaultPath,
     moveNoteToFolder,
+  })
+  useSidebarNoteDropTargets({
+    canDropNoteOnType: cannotDropNoteOnType,
+    canDropNoteOnFolder,
+    changeNoteType: ignoreNoteTypeChange,
+    moveNoteToFolder: moveIntoFolder,
   })
   const folderDestinations = useMemo(
     () => prependVaultRootFolderDestination(availableFolders, vaultPath),

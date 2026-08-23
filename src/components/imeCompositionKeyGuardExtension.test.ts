@@ -74,6 +74,13 @@ function createFixture() {
       dispatchRegisteredEvent(listeners, 'keydown', keyboardEvent)
       return keyboardEvent
     },
+    fireCompositionStart(event: Partial<CompositionEvent> = {}) {
+      dispatchRegisteredEvent(
+        listeners,
+        'compositionstart',
+        { timeStamp: 90, ...event } as CompositionEvent,
+      )
+    },
     fireCompositionEnd(event: Partial<CompositionEvent> = {}) {
       dispatchRegisteredEvent(
         listeners,
@@ -110,6 +117,12 @@ describe('shouldStopComposingEditorShortcutKey', () => {
     const event = createKeyboardEvent({ isComposing: false })
 
     expect(shouldStopComposingEditorShortcutKey(event, { composing: true })).toBe(true)
+  })
+
+  it('keeps blocking shortcuts while native composition is active even if the view flag is stale', () => {
+    const event = createKeyboardEvent({ isComposing: false })
+
+    expect(shouldStopComposingEditorShortcutKey(event, { composing: false }, true)).toBe(true)
   })
 
   it.each(COMPOSING_SHORTCUT_KEYS)('leaves normal %s available for editor input', (_name, keyEvent) => {
@@ -188,6 +201,33 @@ describe('createImeCompositionKeyGuardExtension', () => {
     })
 
     expect(event.stopImmediatePropagation).toHaveBeenCalledTimes(1)
+    expect(event.preventDefault).not.toHaveBeenCalled()
+  })
+
+  it('guards Space when the IME clears native and editor composition flags before confirmation', () => {
+    const fixture = createFixture()
+    fixture.mount()
+
+    fixture.fireCompositionStart()
+    const event = fixture.fireKeydown({
+      isComposing: false,
+      key: ' ',
+      keyCode: 32,
+    })
+
+    expect(event.stopImmediatePropagation).toHaveBeenCalledTimes(1)
+    expect(event.preventDefault).not.toHaveBeenCalled()
+  })
+
+  it('releases the explicit composition guard when the IME finishes', () => {
+    const fixture = createFixture()
+    fixture.mount()
+
+    fixture.fireCompositionStart()
+    fixture.fireCompositionEnd()
+    const event = fixture.fireKeydown({ key: ' ', keyCode: 32 })
+
+    expect(event.stopImmediatePropagation).not.toHaveBeenCalled()
     expect(event.preventDefault).not.toHaveBeenCalled()
   })
 

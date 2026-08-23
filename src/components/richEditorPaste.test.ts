@@ -1,9 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
+import { BlockNoteEditor } from '@blocknote/core'
+import { schema } from './editorSchema'
 import {
   createRichEditorPasteHandler,
   handleRichEditorPaste,
   type RichEditorPasteContext,
 } from './richEditorPaste'
+import { preProcessLinkedCodeMarkdown } from '../utils/linkedCodeMarkdown'
 
 vi.mock('@tauri-apps/api/core', () => ({
   convertFileSrc: (path: string) => `asset://localhost/${encodeURIComponent(path)}`,
@@ -75,6 +78,54 @@ describe('handleRichEditorPaste', () => {
 
     expect(context.defaultPasteHandler).toHaveBeenCalledWith()
     expect(context.editor.pasteText).not.toHaveBeenCalled()
+  })
+
+  it('keeps inline code styling when pasting a linked code label', () => {
+    const markdown = '[`some-symbol`](https://example.com)'
+    const processed = preProcessLinkedCodeMarkdown(markdown)
+    const token = /^\[([^\]]+)\]\(/u.exec(processed)?.at(1) ?? ''
+    const insertInlineContent = vi.fn()
+    const context = pasteContext({
+      'text/markdown': markdown,
+      'text/plain': markdown,
+    })
+    context.editor = {
+      insertInlineContent,
+      pasteText: vi.fn(() => false),
+      tryParseMarkdownToBlocks: vi.fn(() => [{
+        type: 'paragraph',
+        content: [{
+          type: 'link',
+          href: 'https://example.com',
+          content: [{ type: 'text', text: token, styles: {} }],
+        }],
+        children: [],
+      }]),
+    } as never
+
+    expect(handleRichEditorPaste(context)).toBe(true)
+    expect(insertInlineContent).toHaveBeenCalledWith([{
+      type: 'link',
+      href: 'https://example.com',
+      content: [{ type: 'text', text: 'some-symbol', styles: { code: true } }],
+    }], { updateSelection: true })
+  })
+
+  it('preserves linked inline-code Markdown through the real BlockNote parser', () => {
+    const context = pasteContext({
+      'text/plain': '[`some-symbol`](https://example.com)',
+    })
+    const editor = BlockNoteEditor.create({ schema })
+    context.editor = editor as unknown as RichEditorPasteContext['editor']
+
+    expect(handleRichEditorPaste(context)).toBe(true)
+
+    expect(editor.document[0]?.content).toEqual([{
+      content: [{ styles: { code: true }, text: 'some-symbol', type: 'text' }],
+      href: 'https://example.com',
+      type: 'link',
+    }])
+    expect(context.defaultPasteHandler).not.toHaveBeenCalled()
   })
 
   it.each([

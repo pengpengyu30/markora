@@ -1,3 +1,4 @@
+import { injectLinkedCodeInBlocks, preProcessLinkedCodeMarkdown } from '../utils/linkedCodeMarkdown'
 import { vaultAttachmentAssetUrl } from '../utils/vaultAttachments'
 import {
   clipboardRemoteImages,
@@ -57,6 +58,7 @@ type MarkupTagBoundary = {
 type RichPasteEditor = {
   document?: PasteBlock[]
   getTextCursorPosition?: () => { block?: PasteBlock | null }
+  insertInlineContent?: (content: never, options?: { updateSelection?: boolean }) => void
   insertBlocks?: (
     blocksToInsert: PasteCodeBlockInsert[],
     referenceBlock: string,
@@ -65,6 +67,7 @@ type RichPasteEditor = {
   pasteMarkdown?: (markdown: string) => void
   pasteText: (text: string) => boolean | undefined
   replaceBlocks?: (blocksToRemove: PasteBlockWithId[], blocksToInsert: PasteCodeBlockInsert[]) => unknown
+  tryParseMarkdownToBlocks?: (markdown: string) => PasteBlock[]
   updateBlock?: (blockId: string, update: { props: { url: string } }) => void
 }
 
@@ -313,6 +316,50 @@ function codeBlocksAsMarkdown(blocks: PasteCodeBlock[]): string {
   return blocks.map(markdownCodeBlockFromPasteBlock).join('\n\n')
 }
 
+function linkedCodeMarkdownSource(clipboardData: DataTransfer | null): string | null {
+  if (!clipboardData || hasBlockNoteClipboardPayload(clipboardData)) return null
+  if (!hasExplicitMarkdownPayload(clipboardData) && clipboardWebMarkup(clipboardData).value) return null
+
+  const markdown = clipboardMarkdownSource(clipboardData)
+  const protectedMarkdown = preProcessLinkedCodeMarkdown(markdown)
+  if (!markdown || protectedMarkdown === markdown) return null
+  return protectedMarkdown
+}
+
+function singleParagraphInlineContent(blocks: PasteBlock[]): unknown[] | null {
+  if (blocks.length !== 1) return null
+
+  const [block] = blocks
+  if (block.type !== 'paragraph' || block.children?.length) return null
+  return Array.isArray(block.content) ? block.content : null
+}
+
+function linkedCodeInlineContent(
+  clipboardData: DataTransfer | null,
+  editor: RichPasteEditor,
+): unknown[] | null {
+  if (!editor.tryParseMarkdownToBlocks) return null
+  const markdown = linkedCodeMarkdownSource(clipboardData)
+  if (!markdown) return null
+
+  const parsedBlocks = editor.tryParseMarkdownToBlocks(markdown)
+  const injectedBlocks = injectLinkedCodeInBlocks(parsedBlocks) as PasteBlock[]
+  return injectedBlocks === parsedBlocks ? null : singleParagraphInlineContent(injectedBlocks)
+}
+
+function insertLinkedCodeMarkdown(editor: RichPasteEditor, clipboardData: DataTransfer | null): boolean {
+  if (!editor.insertInlineContent) return false
+  const content = linkedCodeInlineContent(clipboardData, editor)
+  if (!content) return false
+
+  const insertInlineContent = editor.insertInlineContent as unknown as (
+    content: unknown[],
+    options?: { updateSelection?: boolean },
+  ) => void
+  insertInlineContent.call(editor, content, { updateSelection: true })
+  return true
+}
+
 export function handleRichEditorPaste({
   defaultPasteHandler,
   editor,
@@ -326,6 +373,8 @@ export function handleRichEditorPaste({
     editor.pasteMarkdown(codeBlockMarkdown)
     return true
   }
+
+  if (insertLinkedCodeMarkdown(editor, event.clipboardData)) return true
 
   if (shouldPasteHTMLImagesFromHTML(event.clipboardData)) {
     return defaultPasteHandler({ prioritizeMarkdownOverHTML: false })

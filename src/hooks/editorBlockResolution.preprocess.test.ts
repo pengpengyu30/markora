@@ -235,4 +235,52 @@ describe('preProcessRichEditorMarkdown', () => {
       tabContent: content,
     })).toBe(`${content}\n`)
   })
+
+  it('preserves blank quoted paragraphs through rich/raw round-trips', async () => {
+    const editor = BlockNoteEditor.create({ schema })
+    installRichEditorMarkdownSerializer(editor)
+    const content = ['> First quoted paragraph.', '>', '> Second quoted paragraph.'].join('\n')
+
+    const resolved = await resolveBlocksForTarget({
+      cache: new Map(),
+      content,
+      editor,
+      targetPath: 'blockquote-paragraph-spacing.md',
+    })
+
+    expect(resolved.blocks).toEqual([
+      expect.objectContaining({ type: 'quote', content: expect.any(Array) }),
+      expect.objectContaining({ type: 'quote', content: [] }),
+      expect.objectContaining({ type: 'quote', content: expect.any(Array) }),
+    ])
+    expect(serializeRichEditorDocumentToMarkdown({
+      blocks: resolved.blocks,
+      editor,
+      tabContent: content,
+    })).toBe(`${content}\n`)
+  })
+
+  it('keeps nested ordered-list hierarchy when resolving Markdown into editor blocks', async () => {
+    const editor = BlockNoteEditor.create({ schema })
+    const resolved = await resolveBlocksForTarget({
+      cache: new Map(),
+      content: [
+        '- Prepare release',
+        '  1. Validate nested numbered content',
+        '  2. Notify the owner',
+        '- Record outcome',
+      ].join('\n'),
+      editor,
+      targetPath: 'nested-list-hierarchy.md',
+    })
+
+    const parent = resolved.blocks.find(block => block.type === 'bulletListItem')
+    expect(parent).toMatchObject({
+      content: expect.any(Array),
+      children: [
+        expect.objectContaining({ type: 'numberedListItem' }),
+        expect.objectContaining({ type: 'numberedListItem' }),
+      ],
+    })
+  })
 })

@@ -1,11 +1,20 @@
 import { describe, expect, it, vi } from 'vitest'
-import { NOTE_DRAG_MIME_TYPE, readDraggedNotePath, writeNoteDragData } from './noteDragDrop'
+import {
+  clearDraggedNotePath,
+  NOTE_DRAG_MIME_TYPE,
+  readDraggedNotePath,
+  writeNoteDragData,
+} from './noteDragDrop'
 
 function dataTransferWithGetData(getData: (type: string) => unknown): DataTransfer {
   return { getData } as DataTransfer
 }
 
 describe('note drag/drop data', () => {
+  afterEach(() => {
+    clearDraggedNotePath()
+  })
+
   it('writes the Tolaria note path and plain text drag payloads', () => {
     const setData = vi.fn()
     const dataTransfer = { setData } as unknown as DataTransfer
@@ -27,5 +36,20 @@ describe('note drag/drop data', () => {
     const dataTransfer = dataTransferWithGetData(() => null)
 
     expect(readDraggedNotePath(dataTransfer)).toBeNull()
+  })
+
+  it('falls back to the active drag path when a browser hides the custom payload', () => {
+    const setData = vi.fn()
+    writeNoteDragData({ setData } as unknown as DataTransfer, '/vault/notes/alpha.md')
+
+    expect(readDraggedNotePath(null)).toBe('/vault/notes/alpha.md')
+  })
+
+  it('normalizes whitespace before storing the active drag fallback', () => {
+    const setData = vi.fn()
+    writeNoteDragData({ setData } as unknown as DataTransfer, '  /vault/notes/alpha.md  ')
+
+    expect(setData).toHaveBeenCalledWith(NOTE_DRAG_MIME_TYPE, '/vault/notes/alpha.md')
+    expect(readDraggedNotePath(null)).toBe('/vault/notes/alpha.md')
   })
 })
