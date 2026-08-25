@@ -297,6 +297,7 @@ export interface NoteListProps {
   entries: VaultEntry[]
   vaultPath?: string
   selection: SidebarSelection
+  projectLabel?: string | null
   selectedNote: VaultEntry | null
   revealRequestId?: number
   onRevealCurrentNote?: () => void
@@ -323,6 +324,7 @@ export interface NoteListProps {
 
 function buildNoteListLayoutModel(params: {
   selection: SidebarSelection
+  projectLabel?: string | null
   sidebarCollapsed?: boolean
   loading: boolean
   locale: AppLocale
@@ -338,7 +340,7 @@ function buildNoteListLayoutModel(params: {
   onClearTagFilter?: () => void
 }) {
   return {
-    title: resolveHeaderTitle(params.selection, params.locale),
+    title: resolveHeaderTitle(params.selection, params.locale, params.projectLabel),
     loading: params.loading,
     locale: params.locale,
     listSort: params.content.listSort,
@@ -379,7 +381,7 @@ function buildNoteListLayoutModel(params: {
 }
 
 export function useNoteListModel(options: NoteListProps) {
-  const { entries, vaultPath, selection, selectedNote, revealRequestId, onRevealCurrentNote, loading = false, getNoteStatus, sidebarCollapsed, onReplaceActiveTab, onCreateNote, onBulkDeletePermanently, onRenameFilename, onExportPdf, onRevealFile, onCopyFilePath, visibleNotesRef, allNotesFileVisibility, folderViewShowNonMarkdown, showFilename, locale = 'en', selectedTags, onToggleTag, onClearTagFilter } = options
+  const { entries, vaultPath, selection, projectLabel, selectedNote, revealRequestId, onRevealCurrentNote, loading = false, getNoteStatus, sidebarCollapsed, onReplaceActiveTab, onCreateNote, onBulkDeletePermanently, onRenameFilename, onExportPdf, onRevealFile, onCopyFilePath, visibleNotesRef, allNotesFileVisibility, folderViewShowNonMarkdown, showFilename, locale = 'en', selectedTags, onToggleTag, onClearTagFilter } = options
   const selectedNotePath = selectedNote?.path ?? null
   const { resolvedGetNoteStatus } = useNoteStatusState(
     getNoteStatus,
@@ -443,6 +445,7 @@ export function useNoteListModel(options: NoteListProps) {
 
   return buildNoteListLayoutModel({
     selection,
+    projectLabel,
     sidebarCollapsed,
     loading,
     locale,

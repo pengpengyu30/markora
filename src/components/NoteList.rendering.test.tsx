@@ -115,6 +115,20 @@ describe('NoteList rendering', () => {
     })
   })
 
+  it('shows the Project name instead of the root directory name at the Project root', () => {
+    renderNoteList({
+      projectLabel: 'Knowledge Base',
+      selection: {
+        kind: 'folder',
+        path: '',
+        rootPath: '/Users/luca/Laputa/docs',
+      },
+    })
+
+    expect(screen.getByRole('heading', { name: 'Knowledge Base' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'docs' })).not.toBeInTheDocument()
+  })
+
   it('toggles the search input from the header action', () => {
     renderNoteList()
     expect(screen.queryByPlaceholderText('Search notes...')).not.toBeInTheDocument()

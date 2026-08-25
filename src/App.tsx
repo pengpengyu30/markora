@@ -47,7 +47,7 @@ import { MARKORA_DOCS_URL } from './constants/docs'
 import { openExternalUrl } from './utils/url'
 import { requestPlainTextPaste } from './utils/plainTextPaste'
 import { SETTINGS_SECTION_IDS } from './components/settingsSectionIds'
-import { vaultPathForEntry } from './utils/workspaces'
+import { vaultPathForEntry, workspaceLabelFromVault } from './utils/workspaces'
 import { uniqueNonBlankWorkspacePaths } from './utils/workspacePaths'
 import {
   resolveActiveProject,
@@ -238,6 +238,13 @@ function MainApp() {
   const activeProject = useMemo(
     () => resolveActiveProject(effectiveSelection, resolvedPath),
     [effectiveSelection, resolvedPath],
+  )
+  const activeProjectLabel = useMemo(
+    () => {
+      const project = vaultSwitcher.allVaults.find((vault) => vault.path === activeProject.projectPath)
+      return project ? workspaceLabelFromVault(project) : null
+    },
+    [activeProject.projectPath, vaultSwitcher.allVaults],
   )
   const projectPaths = useMemo(
     () => uniqueNonBlankWorkspacePaths([
@@ -965,7 +972,7 @@ function MainApp() {
           {noteListVisible && (
             <>
               <div className="app__note-list" style={{ width: layout.noteListWidth }}>
-                <NoteList vaultPath={activeProject.projectPath} entries={tagFilteredEntries} selection={effectiveSelection} selectedNote={activeTab?.entry ?? null} revealRequestId={noteRevealRequestId} onRevealCurrentNote={handleRevealCurrentNote} selectedTags={selectedTags} onToggleTag={handleToggleTag} onClearTagFilter={handleClearTagFilter} loading={isVaultContentLoading} getNoteStatus={vault.getNoteStatus} sidebarCollapsed={!sidebarVisible} onSelectNote={notes.handleSelectNote} onReplaceActiveTab={notes.handleReplaceActiveTab} onCreateNote={notes.handleCreateNoteImmediate} onBulkDeletePermanently={deleteActions.handleBulkDeletePermanently} onRenameFilename={appSave.handleFilenameRename} onExportPdf={handleExportNotePdfFromList} onRevealFile={fileActions.revealFile} onCopyFilePath={fileActions.copyFilePath} visibleNotesRef={visibleNotesRef} allNotesFileVisibility={allNotesFileVisibility} folderViewShowNonMarkdown={folderViewShowNonMarkdown} showFilename={noteListShowFilename} multiSelectionCommandRef={multiSelectionCommandRef} locale={appLocale} />
+                <NoteList vaultPath={activeProject.projectPath} projectLabel={activeProjectLabel} entries={tagFilteredEntries} selection={effectiveSelection} selectedNote={activeTab?.entry ?? null} revealRequestId={noteRevealRequestId} onRevealCurrentNote={handleRevealCurrentNote} selectedTags={selectedTags} onToggleTag={handleToggleTag} onClearTagFilter={handleClearTagFilter} loading={isVaultContentLoading} getNoteStatus={vault.getNoteStatus} sidebarCollapsed={!sidebarVisible} onSelectNote={notes.handleSelectNote} onReplaceActiveTab={notes.handleReplaceActiveTab} onCreateNote={notes.handleCreateNoteImmediate} onBulkDeletePermanently={deleteActions.handleBulkDeletePermanently} onRenameFilename={appSave.handleFilenameRename} onExportPdf={handleExportNotePdfFromList} onRevealFile={fileActions.revealFile} onCopyFilePath={fileActions.copyFilePath} visibleNotesRef={visibleNotesRef} allNotesFileVisibility={allNotesFileVisibility} folderViewShowNonMarkdown={folderViewShowNonMarkdown} showFilename={noteListShowFilename} multiSelectionCommandRef={multiSelectionCommandRef} locale={appLocale} />
               </div>
               <ResizeHandle onResize={layout.handleNoteListResize} />
             </>

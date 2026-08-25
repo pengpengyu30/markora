@@ -6,8 +6,12 @@ export interface DeletedNoteEntry extends VaultEntry {
   __deletedNotePreview: true
 }
 
-export function resolveHeaderTitle(selection: SidebarSelection, locale: AppLocale = 'en'): string {
-  return resolveNonEntityHeaderTitle(selection, locale)
+export function resolveHeaderTitle(
+  selection: SidebarSelection,
+  locale: AppLocale = 'en',
+  projectLabel?: string | null,
+): string {
+  return resolveNonEntityHeaderTitle(selection, locale, projectLabel)
 }
 
 export function isDeletedNoteEntry(entry: VaultEntry): entry is DeletedNoteEntry {
@@ -17,8 +21,9 @@ export function isDeletedNoteEntry(entry: VaultEntry): entry is DeletedNoteEntry
 function resolveNonEntityHeaderTitle(
   selection: SidebarSelection,
   locale: AppLocale,
+  projectLabel?: string | null,
 ): string {
-  return resolveFolderTitle(selection)
+  return resolveFolderTitle(selection, projectLabel)
     ?? translate(locale, 'noteList.title.notes')
 }
 
@@ -64,8 +69,8 @@ export function toggleSetMember<T>(set: Set<T>, member: T): Set<T> {
   return next
 }
 
-function resolveFolderTitle(selection: SidebarSelection): string | null {
+function resolveFolderTitle(selection: SidebarSelection, projectLabel?: string | null): string | null {
   if (selection.kind !== 'folder') return null
   if (selection.path.trim()) return vaultRelativePathLabel(selection.path)
-  return selection.rootPath ? vaultRelativePathLabel(selection.rootPath) : null
+  return projectLabel?.trim() || (selection.rootPath ? vaultRelativePathLabel(selection.rootPath) : null)
 }
