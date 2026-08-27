@@ -331,6 +331,8 @@ mod tests {
                 "user.name=User",
                 "-c",
                 "user.email=user@example.com",
+                "-c",
+                "commit.gpgsign=false",
                 "commit",
                 "--no-verify",
                 "-m",
@@ -406,7 +408,7 @@ mod tests {
             .output()
             .unwrap();
         git_command()
-            .args(["commit", "-m", "initial"])
+            .args(["-c", "commit.gpgsign=false", "commit", "-m", "initial"])
             .current_dir(repository)
             .output()
             .unwrap();

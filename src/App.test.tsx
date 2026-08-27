@@ -653,6 +653,7 @@ describe('App', () => {
         list: {
           vaults: [],
           active_vault: expectedDefaultVaultPath,
+          default_workspace_path: expectedDefaultVaultPath,
           hidden_defaults: [],
         },
       })

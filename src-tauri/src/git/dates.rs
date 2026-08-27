@@ -207,7 +207,7 @@ notes/daily.md
             .output()
             .unwrap();
         std::process::Command::new("git")
-            .args(["commit", "-m", "first"])
+            .args(["-c", "commit.gpgsign=false", "commit", "-m", "first"])
             .current_dir(vault)
             .output()
             .unwrap();
@@ -221,7 +221,7 @@ notes/daily.md
             .output()
             .unwrap();
         std::process::Command::new("git")
-            .args(["commit", "-m", "second"])
+            .args(["-c", "commit.gpgsign=false", "commit", "-m", "second"])
             .current_dir(vault)
             .output()
             .unwrap();
@@ -274,7 +274,7 @@ notes/daily.md
             .output()
             .unwrap();
         std::process::Command::new("git")
-            .args(["commit", "-m", "initial"])
+            .args(["-c", "commit.gpgsign=false", "commit", "-m", "initial"])
             .current_dir(repository)
             .output()
             .unwrap();

@@ -25,6 +25,7 @@ import { useImageLightbox } from '../hooks/useImageLightbox'
 import { createTranslator, type AppLocale } from '../lib/i18n'
 import { writeClipboardText } from '../utils/clipboardText'
 import { preFilterWikilinks, deduplicateByPath, MIN_QUERY_LENGTH } from '../utils/wikilinkSuggestions'
+import { resolveEntry } from '../utils/wikilink'
 import {
   attachClickHandlers,
   enrichSuggestionItems,
@@ -126,6 +127,7 @@ const TOOLBAR_MOUSE_DOWN_ALLOW_SELECTOR = [
   '[contenteditable="true"]',
 ].join(', ')
 const MAX_BLOCKNOTE_RENDER_RECOVERY_RETRIES = 1
+const WIKILINK_AUTOCOMPLETE_RESULT_LIMIT = 20
 type TestTableBlock = {
   type?: string
   content?: { type?: string; columnWidths?: Array<number | null> }
@@ -790,10 +792,12 @@ function useCompositionAwareEditorChange(options: {
   containerRef: React.RefObject<HTMLDivElement | null>
   onChange?: () => void
 }) {
+  const COMPOSITION_CHANGE_SETTLE_MS = 120
   const { containerRef, onChange } = options
   const onChangeRef = useRef(onChange)
   const composingRef = useRef(false)
   const pendingChangeRef = useRef(false)
+  const settleTimeoutRef = useRef<number | null>(null)
 
   useEffect(() => {
     onChangeRef.current = onChange
@@ -803,31 +807,41 @@ function useCompositionAwareEditorChange(options: {
     const container = containerRef.current
     if (!container) return
 
+    const clearSettleTimeout = () => {
+      if (settleTimeoutRef.current === null) return
+      window.clearTimeout(settleTimeoutRef.current)
+      settleTimeoutRef.current = null
+    }
+
     const flushPendingChange = () => {
+      settleTimeoutRef.current = null
       if (composingRef.current || !pendingChangeRef.current) return
       pendingChangeRef.current = false
       onChangeRef.current?.()
     }
 
     const handleCompositionStart = () => {
+      clearSettleTimeout()
       composingRef.current = true
     }
 
     const handleCompositionEnd = () => {
       composingRef.current = false
-      queueMicrotask(flushPendingChange)
+      clearSettleTimeout()
+      settleTimeoutRef.current = window.setTimeout(flushPendingChange, COMPOSITION_CHANGE_SETTLE_MS)
     }
 
     container.addEventListener('compositionstart', handleCompositionStart, true)
     container.addEventListener('compositionend', handleCompositionEnd, true)
     return () => {
+      clearSettleTimeout()
       container.removeEventListener('compositionstart', handleCompositionStart, true)
       container.removeEventListener('compositionend', handleCompositionEnd, true)
     }
   }, [containerRef])
 
   return useCallback(() => {
-    if (composingRef.current) {
+    if (composingRef.current || settleTimeoutRef.current !== null) {
       pendingChangeRef.current = true
       return
     }
@@ -933,15 +947,30 @@ function useInsertWikilink(
   )
 }
 
+function unresolvedWikilinkCreationItem(
+  query: string,
+  label: string,
+  onCreate: () => void,
+): WikilinkSuggestionItem {
+  return {
+    title: label,
+    path: `__create__:${query}`,
+    onItemClick: onCreate,
+  }
+}
+
 function useSuggestionMenuItems(options: {
   baseItems: ReturnType<typeof buildBaseSuggestionItems>
   editor: ReturnType<typeof useCreateBlockNote>
+  entries: VaultEntry[]
   insertWikilink: (target: string, triggerCharacter: WikilinkAutocompleteTrigger) => void
   locale: AppLocale
+  onNavigateWikilink: (target: string) => void
   runEditorAction: (action: SuggestionAction) => void
+  sourceEntry?: VaultEntry
   vaultPath?: string
 }) {
-  const { baseItems, editor, insertWikilink, locale, runEditorAction, vaultPath } = options
+  const { baseItems, editor, entries, insertWikilink, locale, onNavigateWikilink, runEditorAction, sourceEntry, vaultPath } = options
   const t = useMemo(() => createTranslator(locale), [locale])
 
   const buildItems = useCallback(
@@ -955,12 +984,25 @@ function useSuggestionMenuItems(options: {
       (target) => insertWikilink(target, triggerCharacter),
       vaultPath ?? '',
     )
-    return guardSuggestionMenuItems(
+    const matchedItems = guardSuggestionMenuItems(
       enrichSuggestionItems(items, normalizedQuery),
       runEditorAction,
     )
+    if (!sourceEntry || triggerCharacter !== '[[' || resolveEntry(entries, normalizedQuery)) return matchedItems
+
+    return [
+      ...matchedItems.slice(0, WIKILINK_AUTOCOMPLETE_RESULT_LIMIT - 1),
+      unresolvedWikilinkCreationItem(
+        normalizedQuery,
+        t('editor.wikilink.createNote', { title: normalizedQuery }),
+        () => {
+          insertWikilink(normalizedQuery, triggerCharacter)
+          onNavigateWikilink(normalizedQuery)
+        },
+      ),
+    ]
     },
-    [baseItems, insertWikilink, runEditorAction, vaultPath],
+    [baseItems, entries, insertWikilink, onNavigateWikilink, runEditorAction, sourceEntry, t, vaultPath],
   )
 
   const getWikilinkItems = useCallback(
@@ -1420,9 +1462,12 @@ export function SingleEditorView(options: {
   const suggestionMenuItems = useSuggestionMenuItems({
     baseItems,
     editor,
+    entries,
     insertWikilink,
     locale,
+    onNavigateWikilink,
     runEditorAction,
+    sourceEntry: sourceEntry ?? undefined,
     vaultPath,
   })
 

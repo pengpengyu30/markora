@@ -461,3 +461,13 @@ export const schema = BlockNoteSchema.create({
     video: videoBlock,
   },
 })
+
+// BlockNote appends link marks after inline styles when converting link content.
+// Keep code composable with links and ahead of the built-in link extension so
+// that the resulting marks remain in ProseMirror's canonical order. Mutating
+// the initialized spec avoids BlockNote's overly broad StyleSpec constraint
+// rejecting the boolean-valued built-in code style during schema extension.
+schema.styleSpecs.code.implementation.mark = schema.styleSpecs.code.implementation.mark.extend({
+  excludes: '',
+  priority: 1100,
+})

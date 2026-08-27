@@ -72,7 +72,7 @@ function readRouteJsonBody(route: { request: () => { postDataJSON: () => unknown
 
 async function reloadVaultFromCommandPalette(page: Page): Promise<void> {
   await openCommandPalette(page)
-  await executeCommand(page, 'Reload Vault')
+  await executeCommand(page, 'Reload Project')
   await expect(page.locator('input[placeholder="Type a command..."]')).not.toBeVisible()
 }
 

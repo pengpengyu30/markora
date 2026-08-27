@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   toggleCurrentBlockTodoType,
   turnBlockIntoType,
+  turnBlocksIntoType,
   turnCurrentBlockIntoType,
 } from './richEditorBlockTypeCommands'
 import type { RichEditorBlockTypeDefinition } from '../utils/richEditorBlockTypes'
@@ -64,6 +65,35 @@ describe('richEditorBlockTypeCommands', () => {
       type: 'heading',
       props: { level: 2 },
     })
+  })
+
+  it('updates a captured multi-block selection in one transaction', () => {
+    const { block, editor } = createEditor()
+    const secondBlock = { ...block, id: 'second-paragraph-block' }
+    editor.getBlock.mockImplementation((id: string) => (
+      [block, secondBlock].find((candidate) => candidate.id === id)
+    ))
+
+    const changed = turnBlocksIntoType({
+      blockIds: [block.id, secondBlock.id],
+      editor,
+      source: 'block_menu',
+      target: headingTwo,
+    })
+
+    expect(changed).toBe(true)
+    expect(editor.transact).toHaveBeenCalledOnce()
+    expect(editor.updateBlock).toHaveBeenNthCalledWith(1, block.id, {
+      type: 'heading',
+      props: { level: 2 },
+    })
+    expect(editor.updateBlock).toHaveBeenNthCalledWith(2, secondBlock.id, {
+      type: 'heading',
+      props: { level: 2 },
+    })
+    expect(editor.updateBlock.mock.invocationCallOrder[0]).toBeLessThan(
+      editor.focus.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+    )
   })
 
   it('does nothing when the cursor block is stale or missing', () => {

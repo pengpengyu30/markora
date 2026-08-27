@@ -176,6 +176,27 @@ describe('appCommandDispatcher', () => {
     expectShortcutEventCommand({ key: 'z', code: 'KeyZ', metaKey: true, shiftKey: true }, APP_COMMAND_IDS.editRedo)
   })
 
+  it('recognizes a backslash produced with Scandinavian macOS modifiers', () => {
+    setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)')
+
+    expectShortcutEventCommand(
+      { key: '\\', code: 'Digit7', metaKey: true, altKey: true, shiftKey: true },
+      APP_COMMAND_IDS.editToggleRawEditor,
+    )
+  })
+
+  it('keeps unrelated Option shortcuts and non-macOS layout chords unassigned', () => {
+    setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)')
+    expectShortcutEventCommand({ key: '/', code: 'Digit7', metaKey: true, altKey: true, shiftKey: true }, null)
+    expectShortcutEventCommand({ key: '\\', code: 'Digit7', altKey: true, shiftKey: true }, null)
+
+    setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64)')
+    expectShortcutEventCommand(
+      { key: '\\', code: 'Digit7', ctrlKey: true, altKey: true, shiftKey: true },
+      null,
+    )
+  })
+
   it('maps Ctrl+Y to redo only off macOS', () => {
     setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64)')
     expectShortcutEventCommand({ key: 'y', code: 'KeyY', ctrlKey: true }, APP_COMMAND_IDS.editRedo)

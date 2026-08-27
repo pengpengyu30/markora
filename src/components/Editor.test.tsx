@@ -887,13 +887,14 @@ describe('@ wikilink autocomplete', () => {
     getBracketItems = capturedSuggestionState.getItemsByTrigger['[['] ?? null
   }
 
-  it('returns the same generic note suggestions as [[ without limiting @ to people', async () => {
+  it('keeps @ limited to generic note suggestions while [[ adds unresolved creation', async () => {
     renderForAtAutocomplete()
     const atItems = await getAtItems!('Lap')
     const bracketItems = await getBracketItems!('Lap')
 
     expect(getAtItems).toBeTruthy()
-    expect(atItems.map(item => item.title)).toEqual(bracketItems.map(item => item.title))
+    expect(atItems.map(item => item.title)).toEqual(bracketItems.slice(0, -1).map(item => item.title))
+    expect(bracketItems.at(-1)?.title).toBe('Create a new note called “Lap”')
     expect(atItems).toHaveLength(1)
     expect(atItems[0].title).toBe('Build Laputa App')
     expect(await getAtItems!('Mat')).toEqual([

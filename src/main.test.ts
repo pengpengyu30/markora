@@ -164,7 +164,7 @@ describe('main entrypoint', () => {
     sessionStorage.clear()
   })
 
-  it('shows fatal React root errors without initializing or reporting telemetry', async () => {
+  it('reports caught React root errors without showing a fatal overlay', async () => {
     await importEntrypoint()
 
     expect(mocks.createRoot).toHaveBeenCalledWith(
@@ -178,9 +178,26 @@ describe('main entrypoint', () => {
 
     const error = new Error('Maximum update depth exceeded')
     window.__markoraFrontendReady = true
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
     rootOptions().onCaughtError?.(error, { componentStack: '\n    in App' })
 
-    expect(document.getElementById('markora-fatal-render-error')).toHaveTextContent('Maximum update depth exceeded')
+    expect(consoleError).toHaveBeenCalledWith(
+      '[react] Non-fatal render error:',
+      error,
+      { componentStack: '\n    in App' },
+    )
+    expect(document.getElementById('markora-fatal-render-error')).toBeNull()
+    consoleError.mockRestore()
+  }, MAIN_ENTRYPOINT_IMPORT_TIMEOUT_MS)
+
+  it('keeps the fatal overlay for an uncaught React root error', async () => {
+    await importEntrypoint()
+
+    const error = new Error('Uncaught render failure')
+    window.__markoraFrontendReady = true
+    rootOptions().onUncaughtError?.(error, { componentStack: '\n    in App' })
+
+    expect(document.getElementById('markora-fatal-render-error')).toHaveTextContent('Uncaught render failure')
   }, MAIN_ENTRYPOINT_IMPORT_TIMEOUT_MS)
 
   it('reloads and suppresses startup default-export chunk errors before frontend readiness', async () => {
@@ -227,14 +244,21 @@ describe('main entrypoint', () => {
     expect(document.getElementById('markora-fatal-render-error')).toBeNull()
   }, MAIN_ENTRYPOINT_IMPORT_TIMEOUT_MS)
 
-  it('normalizes missing React component stacks in the fatal overlay', async () => {
+  it('reports recoverable React root errors without a component stack or fatal overlay', async () => {
     await importEntrypoint()
 
     const error = new Error('recoverable render error')
     window.__markoraFrontendReady = true
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
     rootOptions().onRecoverableError?.(error, {})
 
-    expect(document.getElementById('markora-fatal-render-error')).toHaveTextContent('recoverable render error')
+    expect(consoleError).toHaveBeenCalledWith(
+      '[react] Non-fatal render error:',
+      error,
+      { componentStack: '' },
+    )
+    expect(document.getElementById('markora-fatal-render-error')).toBeNull()
+    consoleError.mockRestore()
   }, MAIN_ENTRYPOINT_IMPORT_TIMEOUT_MS)
 
   it('marks macOS chrome for traffic-light layout offsets', async () => {
@@ -272,7 +296,7 @@ describe('main entrypoint', () => {
     })
   }, MAIN_ENTRYPOINT_IMPORT_TIMEOUT_MS)
 
-  it('cancels Escape native defaults when a dialog handles and stops the event', async () => {
+  it('lets a surface-local Escape handler stop the global guard', async () => {
     await importEntrypoint()
     const dialog = document.createElement('div')
     dialog.setAttribute('data-slot', 'dialog-content')
@@ -281,6 +305,18 @@ describe('main entrypoint', () => {
       event.stopPropagation()
       dialog.remove()
     })
+
+    const event = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })
+    dialog.dispatchEvent(event)
+
+    expect(event.defaultPrevented).toBe(false)
+  }, MAIN_ENTRYPOINT_IMPORT_TIMEOUT_MS)
+
+  it('keeps the global Escape default guard as a fallback for an open surface', async () => {
+    await importEntrypoint()
+    const dialog = document.createElement('div')
+    dialog.setAttribute('data-slot', 'dialog-content')
+    document.body.appendChild(dialog)
 
     const event = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })
     dialog.dispatchEvent(event)

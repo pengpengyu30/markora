@@ -17,6 +17,13 @@ type RichEditorBlockTypeUpdate = {
   type: never
 }
 
+type TurnBlocksIntoTypeOptions = {
+  blockIds: string[]
+  editor: RichEditorBlockTypeCommandEditor
+  source: RichEditorBlockTypeCommandSource
+  target: RichEditorBlockTypeDefinition
+}
+
 export type RichEditorBlockTypeCommandEditor = {
   focus?: () => void
   getBlock?: (id: string) => RichEditorBlock | undefined
@@ -45,36 +52,58 @@ function resolveCurrentBlock(editor: RichEditorBlockTypeCommandEditor): RichEdit
   }
 }
 
-function applyBlockTypeUpdate(
+function applyBlockTypeUpdates(
   editor: RichEditorBlockTypeCommandEditor,
-  block: RichEditorBlock,
+  blocks: RichEditorBlock[],
   target: RichEditorBlockTypeDefinition,
+  source: RichEditorBlockTypeCommandSource,
 ): boolean {
+  void source
   const update = {
     type: target.type as never,
     props: target.props as never,
   }
   const runUpdate = () => {
-    editor.updateBlock(block.id, update)
+    for (const block of blocks) {
+      editor.updateBlock(block.id, update)
+    }
   }
 
-  editor.focus?.()
   if (editor.transact) {
     editor.transact(runUpdate)
   } else {
     runUpdate()
   }
+  editor.focus?.()
   return true
 }
 
-function applyResolvedBlockTypeUpdate(
+function applyResolvedBlockTypeUpdates(
   editor: RichEditorBlockTypeCommandEditor,
-  block: RichEditorBlock | null | undefined,
+  blocks: RichEditorBlock[],
   target: RichEditorBlockTypeDefinition,
+  source: RichEditorBlockTypeCommandSource,
 ): boolean {
-  if (!block) return false
+  if (!blocks.length) return false
 
-  return applyBlockTypeUpdate(editor, block, target)
+  return applyBlockTypeUpdates(editor, blocks, target, source)
+}
+
+function resolveBlocksById(
+  editor: RichEditorBlockTypeCommandEditor,
+  blockIds: string[],
+): RichEditorBlock[] {
+  const blocks: RichEditorBlock[] = []
+  for (const blockId of blockIds) {
+    try {
+      const block = editor.getBlock?.(blockId)
+      if (!block) return []
+      blocks.push(block)
+    } catch {
+      return []
+    }
+  }
+  return blocks
 }
 
 export function turnCurrentBlockIntoType(
@@ -82,22 +111,21 @@ export function turnCurrentBlockIntoType(
   target: RichEditorBlockTypeDefinition,
   source: RichEditorBlockTypeCommandSource,
 ): boolean {
-  void source
-  return applyResolvedBlockTypeUpdate(editor, resolveCurrentBlock(editor), target)
+  const block = resolveCurrentBlock(editor)
+  return applyResolvedBlockTypeUpdates(editor, block ? [block] : [], target, source)
 }
 
 export function toggleCurrentBlockTodoType(
   editor: RichEditorBlockTypeCommandEditor,
   source: RichEditorBlockTypeCommandSource,
 ): boolean {
-  void source
   const block = resolveCurrentBlock(editor)
   if (!block) return false
 
   const target = block.type === CHECKLIST_BLOCK_TYPE.type
     ? PARAGRAPH_BLOCK_TYPE
     : CHECKLIST_BLOCK_TYPE
-  return applyResolvedBlockTypeUpdate(editor, block, target)
+  return applyResolvedBlockTypeUpdates(editor, [block], target, source)
 }
 
 export function turnBlockIntoType(
@@ -106,6 +134,24 @@ export function turnBlockIntoType(
   target: RichEditorBlockTypeDefinition,
   source: RichEditorBlockTypeCommandSource,
 ): boolean {
-  void source
-  return applyResolvedBlockTypeUpdate(editor, editor.getBlock?.(blockId), target)
+  return turnBlocksIntoType({
+    blockIds: [blockId],
+    editor,
+    source,
+    target,
+  })
+}
+
+export function turnBlocksIntoType({
+  blockIds,
+  editor,
+  source,
+  target,
+}: TurnBlocksIntoTypeOptions): boolean {
+  return applyResolvedBlockTypeUpdates(
+    editor,
+    resolveBlocksById(editor, blockIds),
+    target,
+    source,
+  )
 }

@@ -51,7 +51,7 @@ function installDismissableEscapeDefaultGuard(): void {
     if (event.key !== 'Escape' || !hasDismissableEscapeSurface()) return
 
     event.preventDefault()
-  }, true)
+  })
 }
 
 async function installMacosFullscreenChromeTracking(): Promise<void> {
@@ -242,6 +242,17 @@ function captureReactRootError(
   reloadFrontendOnceIfStartupFailed()
 }
 
+function reportNonFatalReactRootError(
+  error: unknown,
+  errorInfo: { componentStack?: string },
+): void {
+  if (isResizeObserverLoopError(error)) return
+
+  console.error('[react] Non-fatal render error:', error, {
+    componentStack: errorInfo.componentStack ?? '',
+  })
+}
+
 function shouldIgnoreRecoverableRootError(error: unknown, componentStack: string): boolean {
   if (isResizeObserverLoopError(error)) return true
   if (isRecoveredBlockNoteRenderError(error, componentStack)) return true
@@ -255,7 +266,7 @@ function captureRecoverableReactRootError(
 ): void {
   const componentStack = errorInfo.componentStack ?? ''
   if (shouldIgnoreRecoverableRootError(error, componentStack)) return
-  captureReactRootError(error, { componentStack })
+  reportNonFatalReactRootError(error, { componentStack })
 }
 
 function getRequiredRootElement(): HTMLElement {

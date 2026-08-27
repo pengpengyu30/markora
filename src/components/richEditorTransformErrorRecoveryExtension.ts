@@ -5,6 +5,7 @@ import {
   richEditorRecoveryErrorNeedsDocumentRepair,
   type RichEditorTransformRecoveryReason,
 } from './richEditorRecoveryClassifier'
+import { createMalformedBlockClipboardRecoveryPlugin } from './richEditorMalformedClipboardRecovery'
 export { isStaleBlockReferenceError } from './richEditorRecoveryClassifier'
 
 const DISPATCH_RECOVERY_STATE_KEY = '__markoraRichEditorTransformErrorRecovery'
@@ -280,6 +281,7 @@ export function installRichEditorTransformErrorRecovery(
 
 export const createRichEditorTransformErrorRecoveryExtension = createExtension(({ editor }) => ({
   key: 'richEditorTransformErrorRecovery',
+  prosemirrorPlugins: [createMalformedBlockClipboardRecoveryPlugin()],
   mount: ({ signal }) => {
     const view = recoveryViewFromEditor(editor)
     if (!view) return

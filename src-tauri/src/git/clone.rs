@@ -159,7 +159,13 @@ mod tests {
             .output()
             .unwrap();
         StdCommand::new("git")
-            .args(["commit", "-m", "Initial commit"])
+            .args([
+                "-c",
+                "commit.gpgsign=false",
+                "commit",
+                "-m",
+                "Initial commit",
+            ])
             .current_dir(path)
             .output()
             .unwrap();
