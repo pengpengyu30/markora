@@ -2,6 +2,7 @@ import { lazy, StrictMode, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import '@blocknote/core/fonts/inter.css'
+import './editorThemes/editorThemeFonts.css'
 import './index.css'
 import { FrontendReadyMarker } from './components/FrontendReadyMarker'
 import { LinuxTitlebar } from './components/LinuxTitlebar'
@@ -79,6 +80,11 @@ async function installMacosFullscreenChromeTracking(): Promise<void> {
 
 const RootApp = lazy(async () => {
   markStartupPhase('app_module_requested')
+  if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('editor-theme-lab') === '1') {
+    const laboratoryModule = await import('./editorThemes/EditorThemeLaboratory')
+    markStartupPhase('app_module_loaded')
+    return { default: laboratoryModule.EditorThemeLaboratory }
+  }
   const appModule = await import('./App.tsx')
   markStartupPhase('app_module_loaded')
   return appModule

@@ -11,7 +11,7 @@ describe('useEditorTheme', () => {
     const { result } = renderHook(() => useEditorTheme())
 
     expect(result.current.cssVars['--inline-styles-code-background-color']).toBe(
-      'var(--bg-hover-subtle)'
+      'var(--editor-theme-surfaces-inline-code)'
     )
     expect(result.current.cssVars['--code-blocks-background-color']).toBeUndefined()
   })

@@ -79,12 +79,12 @@ describe('editor theme catalog', () => {
       expect(cssVars['--editor-max-width']).toBe('820px')
       expect(cssVars['--editor-padding-horizontal']).toBe('40px')
       expect(cssVars['--editor-padding-vertical']).toBe('20px')
-      expect(cssVars['--inline-styles-code-background-color']).toBe('var(--bg-hover-subtle)')
+      expect(cssVars['--inline-styles-code-background-color']).toBe('var(--editor-theme-surfaces-inline-code)')
     }
 
-    expect(light['--editor-code-block-background']).toBe('var(--surface-sidebar)')
-    expect(light['--editor-code-block-border']).toBe('var(--border-subtle)')
-    expect(light['--editor-code-block-text']).toBe('var(--text-primary)')
+    expect(light['--editor-code-block-background']).toBe('#F7F6F3')
+    expect(light['--editor-code-block-border']).toBe('#E9E9E7')
+    expect(light['--editor-code-block-text']).toBe('#37352F')
     expect(dark['--editor-code-block-background']).toBe('#161616')
     expect(dark['--editor-code-block-border']).toBe('transparent')
     expect(dark['--editor-code-block-text']).toBe('#FFFFFF')
