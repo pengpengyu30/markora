@@ -1,5 +1,6 @@
 export const APP_STORAGE_KEYS = {
   theme: 'markora-theme',
+  editorTheme: 'markora-editor-theme',
   zoom: 'markora:zoom-level',
   viewMode: 'markora-view-mode',
   configMigrationFlag: 'markora:config-migrated-to-project',

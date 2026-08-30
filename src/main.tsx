@@ -7,6 +7,8 @@ import { FrontendReadyMarker } from './components/FrontendReadyMarker'
 import { LinuxTitlebar } from './components/LinuxTitlebar'
 import { StartupShellFallback } from './components/StartupShellFallback'
 import { applyStoredThemeMode } from './lib/themeMode'
+import { applyEditorThemeIdToDocument, applyStoredEditorTheme } from './lib/editorThemeStorage'
+import { DEFAULT_EDITOR_THEME_ID } from './editorThemes/editorThemeCatalog'
 import {
   APP_COMMAND_EVENT_NAME,
   isAppCommandId,
@@ -128,6 +130,11 @@ if (isMac()) {
 }
 
 applyStoredThemeMode(document, window.localStorage)
+try {
+  applyStoredEditorTheme(document, window.localStorage)
+} catch {
+  applyEditorThemeIdToDocument(document, DEFAULT_EDITOR_THEME_ID)
+}
 
 function dispatchDeterministicShortcutEvent(init: AppCommandShortcutEventInit) {
   const target =

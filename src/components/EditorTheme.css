@@ -1,9 +1,14 @@
 /* ==============================================
    EditorTheme.css — BlockNote theme overrides
-   Driven by CSS custom properties from theme.json
+   Driven by CSS custom properties from the central editor-theme scope
    ============================================== */
 
 /* --- Editor root --- */
+.editor-theme-scope {
+  background: var(--editor-theme-surfaces-canvas, var(--surface-editor));
+  color: var(--editor-theme-text-primary, var(--text-primary));
+}
+
 .editor__blocknote-container {
   position: relative;
 }

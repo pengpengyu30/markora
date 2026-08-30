@@ -59,6 +59,7 @@ function createModel(overrides: Record<string, unknown> = {}) {
     wordCount: 12,
     vaultPath: '/vault',
     cssVars: {},
+    editorThemeId: 'default',
     onNavigateWikilink: vi.fn(),
     onEditorChange: vi.fn(),
     isDeletedPreview: false,
@@ -127,6 +128,22 @@ describe('EditorContentLayout', () => {
 
     expect(container.firstElementChild).toHaveClass('editor-content-width--wide')
     expect(screen.getByTestId('breadcrumb-bar')).toHaveAttribute('data-note-width', 'wide')
+  })
+
+  it('owns editor theme variables at one central canvas scope', () => {
+    const { container } = render(<EditorContentLayout {...createModel({
+      cssVars: { '--editor-font-size': '15px' },
+    })} />)
+
+    const themeScopes = container.querySelectorAll('[data-editor-theme-scope="true"]')
+    const themeScope = themeScopes[0]
+    const findScopes = container.querySelectorAll('[data-editor-find-scope="true"]')
+
+    expect(themeScopes).toHaveLength(1)
+    expect(themeScope).toHaveAttribute('data-editor-theme', 'default')
+    expect(themeScope).toHaveStyle('--editor-font-size: 15px')
+    expect(findScopes).toHaveLength(1)
+    expect(findScopes[0]).not.toHaveStyle('--editor-font-size: 15px')
   })
 
   it('passes the active note content into the breadcrumb', () => {

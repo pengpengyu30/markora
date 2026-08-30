@@ -1,5 +1,22 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
+import { EDITOR_THEME_IDS } from './editorThemes/editorThemeCatalog'
+import { EDITOR_THEME_STORAGE_KEY } from './lib/editorThemeStorage'
+
+const localStorageMock = (() => {
+  let values: Record<string, string> = {}
+  return {
+    getItem: (key: string) => values[key] ?? null,
+    setItem: (key: string, value: string) => { values[key] = value },
+    removeItem: (key: string) => { delete values[key] },
+    clear: () => { values = {} },
+  }
+})()
+
+Object.defineProperty(globalThis, 'localStorage', {
+  configurable: true,
+  value: localStorageMock,
+})
 
 const STARTUP_SHELL_FALLBACK_NODE_KEY = '__markoraStartupShellFallbackNode'
 
@@ -20,6 +37,12 @@ function startupRootContentFromIndex(): string {
 function firstInlineScriptFromIndex(): string {
   const script = inlineScriptsFromIndex()[0]
   if (!script) throw new Error('index.html startup script was not found')
+  return script
+}
+
+function editorThemeStartupScriptFromIndex(): string {
+  const script = inlineScriptsFromIndex().find((candidate) => candidate.includes('data-editor-theme'))
+  if (!script) throw new Error('index.html editor theme startup script was not found')
   return script
 }
 
@@ -83,5 +106,45 @@ describe('index startup script', () => {
     }))
 
     expect(document.body.children).toHaveLength(0)
+  })
+
+  it('prepaints a validated editor identity without changing application appearance', () => {
+    const script = editorThemeStartupScriptFromIndex()
+    document.documentElement.setAttribute('data-theme', 'dark')
+
+    for (const editorThemeId of EDITOR_THEME_IDS) {
+      window.localStorage.setItem(EDITOR_THEME_STORAGE_KEY, editorThemeId)
+      new Function(script)()
+
+      expect(document.documentElement).toHaveAttribute('data-editor-theme', editorThemeId)
+      expect(document.documentElement).toHaveAttribute('data-theme', 'dark')
+    }
+
+    window.localStorage.setItem(EDITOR_THEME_STORAGE_KEY, 'removed-theme')
+    new Function(script)()
+
+    expect(document.documentElement).toHaveAttribute('data-editor-theme', 'default')
+    expect(document.documentElement).toHaveAttribute('data-theme', 'dark')
+  })
+
+  it('falls back to Default when startup cache access is unavailable', () => {
+    const script = editorThemeStartupScriptFromIndex()
+    const localStorageDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage')
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      get: () => { throw new Error('SecurityError') },
+    })
+
+    try {
+      document.documentElement.setAttribute('data-theme', 'dark')
+      new Function(script)()
+
+      expect(document.documentElement).toHaveAttribute('data-editor-theme', 'default')
+      expect(document.documentElement).toHaveAttribute('data-theme', 'dark')
+    } finally {
+      if (localStorageDescriptor) {
+        Object.defineProperty(globalThis, 'localStorage', localStorageDescriptor)
+      }
+    }
   })
 })

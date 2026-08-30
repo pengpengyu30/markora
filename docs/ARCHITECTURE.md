@@ -128,6 +128,10 @@ sequenceDiagram
 
 The native settings store persists installation preferences such as language, theme, date display, note width, ignored-file visibility, media visibility, automatic H1 rename, and the multi-Project switch. The vault registry persists Project paths and their display identity:
 
+`editor_theme` is also an installation-local setting. It stores one of the four app-owned
+editor family IDs and is never written to Project files, Markdown frontmatter, or vault
+configuration. Missing or invalid values resolve to `default`.
+
 ```text
 Project identity = path + label + shortLabel + alias + color + icon + mounted
 registry state   = ordered Projects + active Project + default new-note Project
@@ -188,6 +192,17 @@ The editor supports a rich BlockNote path and a raw CodeMirror/text path. Markdo
 - tabs with content identity checks before reusing a warm cache;
 - PDF and common media previews when the platform supports them;
 - unsupported-file messaging and external-open fallback.
+
+Editor presentation is owned separately from the application shell. The typed catalog in
+`src/editorThemes/editorThemeCatalog.ts` defines the four app-owned families, their complete
+Light/Dark variants, and the schema validator. `useEditorTheme` resolves the current
+application appearance into the validated family selected by the installation setting and
+emits the compatibility CSS variables. `useEditorThemePreference` reconciles the native setting
+after startup and uses the separate `markora-editor-theme` localStorage value only as a pre-React
+cache. `EditorContentLayout` owns one `editor-theme-scope` around the active Rich or Raw surface;
+the breadcrumb, sidebar, menus, and other shell controls remain outside that scope. The old
+`src/theme.json` source was replaced by this catalog, while existing application and editor
+compatibility variable names remain available during the staged migration.
 
 Whiteboards are a deliberate compatibility exception to the original P4 plan. `TldrawWhiteboard.tsx` persists a durable representation inside the note and restores it when the note is reopened. The renderer contains WebKit-specific guards because this path is sensitive to native webview behavior.
 

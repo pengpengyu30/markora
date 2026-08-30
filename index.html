@@ -261,6 +261,27 @@
     </script>
     <script>
       (function () {
+        var editorThemeKey = 'markora-editor-theme';
+        function normalizeEditorTheme(value) {
+          return value === 'default'
+            || value === 'code'
+            || value === 'editorial'
+            || value === 'canvas'
+            ? value
+            : 'default';
+        }
+        function applyEditorTheme(value) {
+          document.documentElement.setAttribute('data-editor-theme', normalizeEditorTheme(value));
+        }
+        try {
+          applyEditorTheme(localStorage.getItem(editorThemeKey));
+        } catch {
+          applyEditorTheme('default');
+        }
+      })();
+    </script>
+    <script>
+      (function () {
         var readyEventName = 'markora:frontend-ready';
         var reloadAttemptKey = 'markora:startup-reload-attempted';
         var startupTimeoutMs = 10000;

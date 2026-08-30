@@ -1,6 +1,7 @@
 import type { ThemeMode } from './lib/themeMode'
 import type { AppLocale } from './lib/i18n'
 import type { DateDisplayFormat } from './utils/dateDisplay'
+import type { EditorThemeId } from './editorThemes/editorThemeCatalog'
 
 export type VaultPropertyScalar = string | number | boolean | null
 export type VaultPropertyArray = Array<string | number | boolean>
@@ -127,6 +128,7 @@ export interface Settings {
   release_channel: string | null
   automatic_update_checks_enabled?: boolean | null
   theme_mode?: ThemeMode | null
+  editor_theme?: EditorThemeId | null
   ui_language?: AppLocale | null
   date_display_format?: DateDisplayFormat | null
   note_width_mode?: NoteWidthMode | null

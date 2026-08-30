@@ -118,6 +118,7 @@ describe('mockHandlers coverage', () => {
       release_channel: 'alpha',
       automatic_update_checks_enabled: null,
       theme_mode: null,
+      editor_theme: null,
       date_display_format: null,
       note_width_mode: null,
       initial_h1_auto_rename_enabled: null,
@@ -143,6 +144,21 @@ describe('mockHandlers coverage', () => {
       vaults: [{ label: 'Work', path: '/work' }],
       active_vault: '/work',
     })
+  })
+
+  it('round-trips every supported editor theme in browser mode', async () => {
+    const { mockHandlers } = await loadHandlers()
+
+    for (const editor_theme of ['default', 'code', 'editorial', 'canvas'] as const) {
+      mockHandlers.save_settings({
+        settings: {
+          auto_pull_interval_minutes: undefined,
+          editor_theme,
+        },
+      })
+
+      expect(mockHandlers.get_settings()).toEqual(expect.objectContaining({ editor_theme }))
+    }
   })
 
   it('builds attachment paths for saved and copied images', async () => {

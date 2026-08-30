@@ -267,7 +267,6 @@ type EditorCanvasProps = Pick<
   | 'isHtmlFile'
   | 'legacyUnsupportedKind'
   | 'richEditorContentReady'
-  | 'cssVars'
   | 'editor'
   | 'activeTab'
   | 'entries'
@@ -310,7 +309,6 @@ function EditorCanvas(props: EditorCanvasProps) {
 function StandardEditorCanvas(options: EditorCanvasProps) {
   const {
     richEditorContentReady,
-    cssVars,
     editor,
     activeTab,
     entries,
@@ -335,7 +333,7 @@ function StandardEditorCanvas(options: EditorCanvasProps) {
   if (!richEditorContentReady) return null
 
   return (
-    <EditorFindScope className="editor-scroll-area" style={cssVars as React.CSSProperties}>
+    <EditorFindScope className="editor-scroll-area">
       <RichEditorFindBar
         editor={editor}
         locale={locale}
@@ -451,7 +449,12 @@ export function EditorContentLayout(model: EditorContentModel) {
         locale={locale}
       />
       {showActiveContent && (
-        <>
+        <div
+          className="editor-theme-scope flex flex-1 min-h-0 flex-col"
+          data-editor-theme-scope="true"
+          data-editor-theme={model.editorThemeId}
+          style={cssVars as React.CSSProperties}
+        >
           <RawModeEditorSection
             activeTab={activeTab}
             entries={entries}
@@ -472,7 +475,6 @@ export function EditorContentLayout(model: EditorContentModel) {
             isHtmlFile={isHtmlFile}
             legacyUnsupportedKind={legacyUnsupportedKind}
             richEditorContentReady={richEditorContentReady}
-            cssVars={cssVars}
             activeTab={activeTab}
             vaultPath={vaultPath}
             editor={editor}
@@ -493,7 +495,7 @@ export function EditorContentLayout(model: EditorContentModel) {
             historyBoundaryPath={model.historyBoundaryPath}
             historyBoundaryVersion={model.historyBoundaryVersion}
           />
-        </>
+        </div>
       )}
     </div>
   )

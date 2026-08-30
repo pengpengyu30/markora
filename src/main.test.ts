@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { Children, createElement, isValidElement, type ReactNode } from 'react'
 import { waitFor } from '@testing-library/react'
+import { EDITOR_THEME_STORAGE_KEY } from './lib/editorThemeStorage'
 
 type ReactRootErrorInfo = { componentStack?: string }
 type ReactRootOptions = {
@@ -10,6 +11,21 @@ type ReactRootOptions = {
 }
 
 const MAIN_ENTRYPOINT_IMPORT_TIMEOUT_MS = 120_000
+
+const localStorageMock = (() => {
+  let values: Record<string, string> = {}
+  return {
+    getItem: (key: string) => values[key] ?? null,
+    setItem: (key: string, value: string) => { values[key] = value },
+    removeItem: (key: string) => { delete values[key] },
+    clear: () => { values = {} },
+  }
+})()
+
+Object.defineProperty(globalThis, 'localStorage', {
+  configurable: true,
+  value: localStorageMock,
+})
 
 const mocks = vi.hoisted(() => {
   const render = vi.fn()
@@ -162,6 +178,7 @@ describe('main entrypoint', () => {
     mocks.onResized.mockClear()
     mocks.setResizeListener(null)
     sessionStorage.clear()
+    window.localStorage.clear()
   })
 
   it('reports caught React root errors without showing a fatal overlay', async () => {
@@ -405,6 +422,14 @@ describe('main entrypoint', () => {
     await importEntrypoint()
 
     expect(hasElementTypeName(renderedTree(), 'FrontendReadyMarker')).toBe(true)
+  })
+
+  it('reapplies the cached editor identity before React mounts', async () => {
+    window.localStorage.setItem(EDITOR_THEME_STORAGE_KEY, 'canvas')
+
+    await importEntrypoint()
+
+    expect(document.documentElement).toHaveAttribute('data-editor-theme', 'canvas')
   })
 
   it('defers app-shell module loading until React resolves the root app route', async () => {

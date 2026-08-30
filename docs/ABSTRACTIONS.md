@@ -45,6 +45,7 @@ The identity is installation-local. It is stored in the registered Project list,
 | Field | Meaning |
 |---|---|
 | `theme_mode` | Light, dark, or system appearance |
+| `editor_theme` | Installation-local built-in editor family ID; missing or invalid values resolve to `default` |
 | `ui_language` | Persisted locale preference; `null` follows the system |
 | `date_display_format` | Date rendering outside editable content |
 | `note_width_mode` | Default rich-editor width |
@@ -166,6 +167,25 @@ Unsupported constructs should remain readable as raw text or a safe fallback. Th
 ### Retained content features
 
 The Markdown conversion path retains tables, math, Mermaid, callouts, code blocks, wikilinks, and images. Linked inline-code labels use a protected Markdown token bridge so links and code styling survive BlockNote parsing and paste. `TldrawWhiteboard.tsx` is a retained compatibility surface for durable whiteboards; it is not part of the Project registry or Git model.
+
+### Editor theme boundary
+
+`src/editorThemes/editorThemeCatalog.ts` is the typed, schema-versioned source of truth for
+the four app-owned editor theme families. It owns family IDs, complete Light/Dark token
+variants, runtime catalog validation, effective-variant resolution, and CSS-variable
+serialization. The installation-local `editor_theme` setting selects the validated family;
+missing and invalid values resolve to `default`.
+
+`useEditorThemePreference` owns native-settings reconciliation and optimistic persistence through
+the failure-safe editor-theme coordinator. The separate `markora-editor-theme` localStorage key
+is a startup cache only: `index.html` and `main.tsx` apply its validated identity before React,
+then native settings overwrite it after load. Cache access failures fall back to `default` and do
+not block startup. `useEditorTheme` is the single React resolution point. `EditorContentLayout`
+applies its variables once on `editor-theme-scope`, which wraps either the Rich or Raw editor
+surface.
+The scope begins below the breadcrumb and does not replace application-shell variables or
+style independent dialogs. Existing `--editor-*`, `--colors-*`, and application semantic
+aliases remain compatibility outputs until later theme-adapter phases consolidate them.
 
 `useSidebarNoteDropTargets` owns document-level note retargeting drag feedback and drop dispatch. It uses the active note path fallback when a browser hides the custom MIME payload, scopes listeners to the mounted app, and clears the fallback on drop, drag end, and unmount.
 

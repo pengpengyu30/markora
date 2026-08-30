@@ -12,6 +12,10 @@ import { normalizeDateDisplayFormat } from '../utils/dateDisplay'
 import { normalizeThemeMode } from '../lib/themeMode'
 import type { Settings } from '../types'
 import { normalizeNoteWidthMode } from '../utils/noteWidth'
+import {
+  DEFAULT_EDITOR_THEME_ID,
+  normalizeEditorThemeId,
+} from '../editorThemes/editorThemeCatalog'
 
 async function invokeNativeIfAvailable<T>(command: string, tauriArgs: Record<string, unknown>): Promise<T | undefined> {
   try {
@@ -43,6 +47,7 @@ const EMPTY_SETTINGS: Settings = {
   release_channel: null,
   automatic_update_checks_enabled: null,
   theme_mode: null,
+  editor_theme: DEFAULT_EDITOR_THEME_ID,
   ui_language: null,
   date_display_format: null,
   note_width_mode: null,
@@ -70,6 +75,7 @@ function normalizeSettings(settings: Settings): Settings {
     ),
     automatic_update_checks_enabled: nullableBoolean(settings.automatic_update_checks_enabled),
     theme_mode: normalizeThemeMode(settings.theme_mode),
+    editor_theme: normalizeEditorThemeId(settings.editor_theme),
     ui_language: serializeUiLanguagePreference(settings.ui_language),
     date_display_format: normalizeDateDisplayFormat(settings.date_display_format),
     note_width_mode: normalizeNoteWidthMode(settings.note_width_mode),
@@ -117,7 +123,7 @@ export function useSettings() {
     }
   }, [])
 
-  const saveSettings = useCallback(async (newSettings: Settings) => {
+  const saveSettings = useCallback(async (newSettings: Settings): Promise<boolean> => {
     const previousHideGitignored = shouldHideGitignoredFiles(settings)
     const normalizedSettings = normalizeSettings(newSettings)
     try {
@@ -127,8 +133,10 @@ export function useSettings() {
       if (previousHideGitignored !== nextHideGitignored) {
         notifyGitignoredVisibilityChanged(nextHideGitignored)
       }
+      return true
     } catch (err) {
       console.error('Failed to save settings:', err)
+      return false
     }
   }, [settings])
 

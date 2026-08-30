@@ -19,7 +19,6 @@ import {
 import { components } from '@blocknote/mantine'
 import { MantineContext, MantineProvider } from '@mantine/core'
 import { useDocumentThemeMode } from '../hooks/useDocumentThemeMode'
-import { useEditorTheme } from '../hooks/useTheme'
 import { useImageDrop, type ImageImportError } from '../hooks/useImageDrop'
 import { useImageLightbox } from '../hooks/useImageLightbox'
 import { createTranslator, type AppLocale } from '../lib/i18n'
@@ -1304,7 +1303,6 @@ export function SingleEditorView(options: {
   historyBoundaryVersion?: number | null
 }) {
   const { editor, entries, historyBoundaryVersion, historyRef, onNavigateWikilink, onChange, onImageImportError, sourceEntry, vaultPath, editable = true, locale = 'en', searchHighlightRequest, availableTags = [], onUpdateTags } = options
-  const { cssVars } = useEditorTheme()
   const themeMode = useDocumentThemeMode()
   const previousThemeModeRef = useRef(themeMode)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -1477,7 +1475,6 @@ export function SingleEditorView(options: {
       role="application"
       aria-label="Rich text editor"
       className={`editor__blocknote-container${isDragOver ? ' editor__blocknote-container--drag-over' : ''}`}
-      style={cssVars as React.CSSProperties}
       onCopyCapture={handleCopyCapture}
       onFocusCapture={handleFocusCapture}
       onMouseLeave={clearCopyTarget}

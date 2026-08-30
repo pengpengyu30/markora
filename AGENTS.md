@@ -70,6 +70,35 @@ For changes touching Project open, note create/save/delete, search, wikilinks, o
 
 Do not claim a gate passed without reading its output. If a pre-existing fixture failure remains, report the exact command, failure, and why it is unrelated; do not fabricate missing release fixtures or weaken the test.
 
+## Project-local browser runtime
+
+- This checkout owns the ignored `.playwright-browsers/` directory for Playwright browser
+  binaries. The current project-local runtime includes both `chromium-1208` and
+  `chromium_headless_shell-1208`.
+- Run Playwright tests with the command-scoped environment variable below. Do not fall back to
+  `/Users/emitor/Library/Caches/ms-playwright`, remove its lock, or install browser binaries
+  globally for this project.
+
+```bash
+PLAYWRIGHT_BROWSERS_PATH="$PWD/.playwright-browsers" pnpm exec playwright install --list
+```
+
+- If the project-local runtime is missing or incomplete, install it into the ignored directory
+  with this command; do not persist the variable in shell or system configuration:
+
+```bash
+PLAYWRIGHT_BROWSERS_PATH="$PWD/.playwright-browsers" pnpm exec playwright install chromium
+```
+
+- The focused Phase 0 editor-theme smoke test must use the same project-local path:
+
+```bash
+PLAYWRIGHT_BROWSERS_PATH="$PWD/.playwright-browsers" BASE_URL=http://127.0.0.1:5202 PLAYWRIGHT_REUSE_SERVER=1 pnpm exec playwright test \
+  --config playwright.smoke.config.ts \
+  tests/smoke/editor-themes-phase-0-baseline.spec.ts \
+  --project=chromium
+```
+
 ## Demo-vault hygiene
 
 - Use `demo-vault-v2/` for disposable QA fixtures when possible.

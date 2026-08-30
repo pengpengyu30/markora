@@ -235,3 +235,4 @@ proposed → active → superseded
 | [0177](0177-mounted-project-global-search-scope.md) | Full-text search spans visible mounted Projects | active |
 | [0178](0178-write-safe-editor-flush-windows.md) | Write-safe editor flush windows | active |
 | [0179](0179-writable-app-config-fallback.md) | Writable fallback for app config | active |
+| [0180](0180-app-owned-editor-theme-families.md) | App-owned editor theme families | active |

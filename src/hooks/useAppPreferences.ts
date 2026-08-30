@@ -14,9 +14,10 @@ import { DEFAULT_DATE_DISPLAY_FORMAT, normalizeDateDisplayFormat, type DateDispl
 import { resolveAllNotesFileVisibility } from '../utils/allNotesFileVisibility'
 import { useDocumentThemeMode } from './useDocumentThemeMode'
 import { useThemeMode } from './useThemeMode'
+import { useEditorThemePreference } from './useEditorThemePreference'
 
 interface AppPreferencesConfig {
-  saveSettings: (settings: Settings) => void | Promise<void>
+  saveSettings: (settings: Settings) => void | Promise<unknown>
   settings: Settings
   settingsLoaded: boolean
 }
@@ -90,6 +91,11 @@ export function useAppPreferences({
   }, [appLocale])
 
   useThemeMode(settings.theme_mode, settingsLoaded)
+  const editorThemePreference = useEditorThemePreference({
+    saveSettings,
+    settings,
+    settingsLoaded,
+  })
   const documentThemeMode = useDocumentThemeMode()
   const handleToggleThemeMode = useCallback(() => {
     const theme_mode = documentThemeMode === 'dark' ? 'light' : 'dark'
@@ -114,5 +120,6 @@ export function useAppPreferences({
     noteListShowFilename,
     selectedUiLanguage,
     systemLocale,
+    ...editorThemePreference,
   }
 }

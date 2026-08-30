@@ -155,7 +155,7 @@ tolaria/
 │   ├── App.css                   # App shell layout styles
 │   ├── types.ts                  # Shared TS types (VaultEntry, Settings, etc.)
 │   ├── mock-tauri.ts             # Mock Tauri layer for browser testing
-│   ├── theme.json                # Editor typography theme configuration
+│   ├── editorThemes/             # Typed editor theme catalog and token validation
 │   ├── index.css                 # Semantic app theme variables + Tailwind setup
 │   │
 │   ├── components/               # UI components (~100 files)
@@ -217,7 +217,7 @@ tolaria/
 │   │   ├── useAutoSync.ts        # Auto git pull/push
 │   │   ├── useConflictResolver.ts # Git conflict handling
 │   │   ├── useEditorSave.ts      # Auto-save with debounce
-│   │   ├── useTheme.ts           # Flatten theme.json → CSS vars
+│   │   ├── useTheme.ts           # Resolve effective editor theme → CSS vars
 │   │   ├── useUnifiedSearch.ts   # Keyword search
 │   │   ├── useNoteSearch.ts      # Note search
 │   │   ├── useCommandRegistry.ts # Command palette registry
@@ -407,7 +407,7 @@ tolaria/
 | File | Why it matters |
 |------|---------------|
 | `src/index.css` | Semantic CSS custom properties for app-owned light/dark themes; System mode resolves to one of these at runtime. |
-| `src/theme.json` | Editor-specific typography theme (fonts, headings, lists, code blocks). |
+| `src/editorThemes/editorThemeCatalog.ts` | Typed editor theme families, variants, and token validation. |
 
 ### Settings & Config
 
@@ -526,7 +526,7 @@ BASE_URL="http://localhost:5173" npx playwright test tests/smoke/<slug>.spec.ts
 ### Modify styling
 
 1. **Global app/theme variables**: Edit `src/index.css`
-2. **Editor typography**: Edit `src/theme.json`
+2. **Editor typography**: Edit the typed catalog in `src/editorThemes/editorThemeCatalog.ts`
 
 ### Work with the AI agent
 

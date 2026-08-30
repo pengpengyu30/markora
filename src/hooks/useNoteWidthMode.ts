@@ -35,7 +35,7 @@ interface UseNoteWidthModeOptions {
   tabs: EditorTab[]
   activeTabPath: VaultPath | null
   settings: Settings
-  saveSettings: (settings: Settings) => Promise<void>
+  saveSettings: (settings: Settings) => Promise<unknown>
   updateFrontmatter: (
     path: VaultPath,
     key: string,
