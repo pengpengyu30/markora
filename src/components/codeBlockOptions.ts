@@ -6,10 +6,14 @@ import {
   EXTRA_CODE_BLOCK_LANGUAGES,
   GO_CODE_BLOCK_LANGUAGE,
 } from '../utils/codeBlockLanguageCatalog'
+import {
+  DEFAULT_EDITOR_THEME_ID,
+  resolveEffectiveEditorTheme,
+  type EffectiveEditorTheme,
+} from '../editorThemes/editorThemeCatalog'
+import { normalizeResolvedThemeMode } from '../lib/themeMode'
 import { supportsShikiRegexFeatures } from '../utils/regexCapabilities'
 
-const LIGHT_CODE_THEME = 'github-light'
-const DARK_CODE_THEME = 'github-dark'
 const GO_LANGUAGE_REGISTRATION = {
   name: 'go',
   displayName: 'Go',
@@ -63,17 +67,115 @@ type TolariaNamedLanguageRegistration = Record<string, unknown> & {
 const GO_LANGUAGE = codeBlockLanguageOptions([GO_CODE_BLOCK_LANGUAGE]).go
 const EXTRA_SUPPORTED_LANGUAGES = codeBlockLanguageOptions(EXTRA_CODE_BLOCK_LANGUAGES)
 
-function currentCodeBlockTheme() {
-  if (typeof document === 'undefined') return LIGHT_CODE_THEME
+type TolariaShikiTheme = {
+  name: string
+  displayName: string
+  type: 'light' | 'dark'
+  fg: string
+  bg: string
+  settings: Array<{
+    scope?: string | string[]
+    settings: {
+      foreground?: string
+      background?: string
+      fontStyle?: string
+    }
+  }>
+  colors: Record<string, string>
+}
+
+type TolariaThemeInput = Parameters<TolariaCodeHighlighter['loadTheme']>[0]
+
+type TolariaCodeThemeController = {
+  highlighter: TolariaCodeHighlighter
+  currentThemeName: string
+  pendingThemeLoad: Promise<void>
+}
+
+let activeEditorTheme: EffectiveEditorTheme | null = null
+const codeThemeControllers = new Set<TolariaCodeThemeController>()
+
+function syntaxRule(
+  scope: string | string[],
+  foreground: string,
+  fontStyle?: string,
+): TolariaShikiTheme['settings'][number] {
+  return {
+    scope,
+    settings: {
+      foreground,
+      ...(fontStyle ? { fontStyle } : {}),
+    },
+  }
+}
+
+export function editorThemeShikiName(theme: Pick<EffectiveEditorTheme, 'id' | 'variant'>): string {
+  return `tolaria-${theme.id}-${theme.variant}`
+}
+
+export function createTolariaShikiTheme(theme: EffectiveEditorTheme): TolariaShikiTheme {
+  const { syntax } = theme.tokens
+
+  return {
+    name: editorThemeShikiName(theme),
+    displayName: `Tolaria ${theme.displayName} ${theme.variant}`,
+    type: theme.variant,
+    fg: syntax.foreground,
+    bg: syntax.codeSurface,
+    settings: [
+      { settings: { foreground: syntax.foreground, background: syntax.codeSurface } },
+      syntaxRule(['punctuation', 'meta.brace', 'meta.delimiter'], syntax.mutedPunctuation),
+      syntaxRule(['comment', 'comment.block', 'comment.line'], syntax.comment, 'italic'),
+      syntaxRule(['keyword', 'storage', 'storage.type', 'storage.modifier'], syntax.keyword),
+      syntaxRule(['string', 'string.quoted', 'constant.other'], syntax.string),
+      syntaxRule(['constant.numeric', 'constant.language', 'support.constant'], syntax.number),
+      syntaxRule(['entity.name.type', 'support.type', 'entity.name.class'], syntax.typeClass),
+      syntaxRule(['entity.name.function', 'support.function', 'meta.function-call'], syntax.function),
+      syntaxRule(['variable', 'variable.other.property', 'variable.other.object.property'], syntax.variableProperty),
+      syntaxRule(['keyword.operator', 'punctuation.definition.operator'], syntax.operator),
+      syntaxRule(['entity.other.attribute-name', 'entity.other.inherited-class'], syntax.tagAttribute),
+      syntaxRule(['invalid', 'invalid.illegal', 'invalid.deprecated'], syntax.invalidError),
+    ],
+    colors: {
+      'editor.background': syntax.codeSurface,
+      'editor.foreground': syntax.foreground,
+      'editor.selectionBackground': syntax.selection,
+      'editor.lineHighlightBackground': syntax.activeLine,
+      'editorIndentGuide.background': syntax.codeBorder,
+    },
+  }
+}
+
+function currentEditorTheme(): EffectiveEditorTheme {
+  if (typeof document === 'undefined') {
+    return resolveEffectiveEditorTheme(DEFAULT_EDITOR_THEME_ID, 'light')
+  }
 
   const root = document.documentElement
-  return root.classList.contains('dark') || root.dataset.theme === 'dark'
-    ? DARK_CODE_THEME
-    : LIGHT_CODE_THEME
+  const variant = normalizeResolvedThemeMode(root.dataset.theme)
+    ?? (root.classList.contains('dark') ? 'dark' : 'light')
+  return resolveEffectiveEditorTheme(root.dataset.editorTheme, variant)
 }
 
 function prioritizeTheme(themes: string[], theme: string) {
   return [theme, ...themes.filter((candidate) => candidate !== theme)]
+}
+
+function queueEditorThemeLoad(
+  controller: TolariaCodeThemeController,
+  theme: EffectiveEditorTheme,
+): Promise<void> {
+  const shikiTheme = createTolariaShikiTheme(theme)
+  controller.currentThemeName = shikiTheme.name
+  controller.pendingThemeLoad = controller.pendingThemeLoad.then(async () => {
+    await controller.highlighter.loadTheme(shikiTheme as TolariaThemeInput)
+  })
+  return controller.pendingThemeLoad
+}
+
+export async function setTolariaCodeHighlightingTheme(theme: EffectiveEditorTheme): Promise<void> {
+  activeEditorTheme = theme
+  await Promise.all([...codeThemeControllers].map(controller => queueEditorThemeLoad(controller, theme)))
 }
 
 function languageInputs(languages: readonly TolariaLanguageInput[]): TolariaLanguageInput[] {
@@ -165,9 +267,22 @@ async function expandLanguage(language: TolariaLanguageInput): Promise<TolariaLa
 
 async function createTolariaCodeHighlighter(): Promise<TolariaCodeHighlighter> {
   const highlighter = await codeBlockOptions.createHighlighter()
+  const controller: TolariaCodeThemeController = {
+    currentThemeName: '',
+    highlighter,
+    pendingThemeLoad: Promise.resolve(),
+  }
+  codeThemeControllers.add(controller)
+  try {
+    await queueEditorThemeLoad(controller, activeEditorTheme ?? currentEditorTheme())
+  } catch (error) {
+    codeThemeControllers.delete(controller)
+    throw error
+  }
+
   return {
     ...highlighter,
-    getLoadedThemes: () => prioritizeTheme(highlighter.getLoadedThemes(), currentCodeBlockTheme()),
+    getLoadedThemes: () => prioritizeTheme(highlighter.getLoadedThemes(), controller.currentThemeName),
     loadLanguage: async (...languages) => {
       const expandedLanguages = await Promise.all(languages.map(expandLanguage))
       return highlighter.loadLanguage(...expandedLanguages.flat())

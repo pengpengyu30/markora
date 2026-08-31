@@ -187,6 +187,27 @@ The scope begins below the breadcrumb and does not replace application-shell var
 style independent dialogs. Existing `--editor-*`, `--colors-*`, and application semantic
 aliases remain compatibility outputs until later theme-adapter phases consolidate them.
 
+`src/extensions/rawEditorTheme.ts` is the CodeMirror adapter boundary. It places editor chrome,
+syntax highlighting, and frontmatter styling in one reconfigurable `Compartment`, preserving the
+same `EditorView` and its document, selection, history, and scroll state across theme changes.
+`src/extensions/rawEditorSyntaxRoles.ts` maps the catalog's semantic syntax roles for Raw
+Markdown, frontmatter, and supported file languages. Raw find/replace UI stays on application
+tokens and is not part of the editor theme scope.
+
+`src/components/codeBlockOptions.ts` is the Rich Shiki adapter. It projects every effective
+syntax role into an isolated theme name and tracks each BlockNote highlighter so a theme change
+can load the new palette before refreshing existing decorations. That refresh is intentionally
+contained in `src/components/richEditorCodeHighlighting.ts`; it is the sole compatibility boundary
+for the private ProseMirror highlight cache. `codeBlockLineNumbers.ts` supplies presentation-only
+line markers, while the theme scope controls their `Code`-only visibility.
+
+`src/components/MermaidDiagram.tsx` owns Mermaid configuration and asynchronous SVG replacement.
+It maps semantic background, text, node, border, cluster, and edge roles to Mermaid's base theme,
+uses a unique ID for each render attempt, and keeps the last valid SVG visible during a rerender.
+`EditorTheme.css` maps the same catalog boundary to KaTeX, Callout visual families, and durable
+red/green/blue/purple highlight names. These adapters never write note bytes; tldraw and media
+remain outside the editor-theme renderer ownership.
+
 `useSidebarNoteDropTargets` owns document-level note retargeting drag feedback and drop dispatch. It uses the active note path fallback when a browser hides the custom MIME payload, scopes listeners to the mounted app, and clears the fallback on drop, drag end, and unmount.
 
 ## Invisible Git abstractions

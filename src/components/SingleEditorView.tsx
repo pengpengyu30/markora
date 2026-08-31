@@ -19,6 +19,11 @@ import {
 import { components } from '@blocknote/mantine'
 import { MantineContext, MantineProvider } from '@mantine/core'
 import { useDocumentThemeMode } from '../hooks/useDocumentThemeMode'
+import {
+  DEFAULT_EDITOR_THEME_ID,
+  resolveEffectiveEditorTheme,
+  type EffectiveEditorTheme,
+} from '../editorThemes/editorThemeCatalog'
 import { useImageDrop, type ImageImportError } from '../hooks/useImageDrop'
 import { useImageLightbox } from '../hooks/useImageLightbox'
 import { createTranslator, type AppLocale } from '../lib/i18n'
@@ -52,6 +57,10 @@ import { NoteTagsPropertyRow } from './NoteTagsRow'
 import { createNoteTagsPropertyPlugin, noteTagsPropertyPluginKey } from './noteTagsPropertyPlugin'
 import { subscribeRichEditorExternalChange } from './editorExternalChangeEvents'
 import { createRichEditorHistoryBoundary } from './richEditorHistoryBoundary'
+import {
+  setTolariaCodeHighlightingTheme,
+} from './codeBlockOptions'
+import { refreshRichEditorCodeBlockHighlighting } from './richEditorCodeHighlighting'
 import {
   activatePlainTextPasteTarget,
   registerPlainTextPasteTarget,
@@ -1171,61 +1180,6 @@ function useRichEditorPlainTextPasteTarget(options: {
   }, [])
 }
 
-const PROSEMIRROR_HIGHLIGHT_PLUGIN_KEY_PREFIX = 'prosemirror-highlight$'
-const PROSEMIRROR_HIGHLIGHT_REFRESH_META = 'prosemirror-highlight-refresh'
-
-type CodeBlockHighlightRefreshTransaction = {
-  setMeta: (key: string, value: boolean) => CodeBlockHighlightRefreshTransaction
-}
-
-type CodeBlockHighlightRefreshView = {
-  dispatch: (transaction: CodeBlockHighlightRefreshTransaction) => void
-  state: {
-    config?: {
-      pluginsByKey?: Record<string, unknown>
-    }
-    tr: CodeBlockHighlightRefreshTransaction
-  }
-}
-
-type EditorWithCodeBlockHighlightRefreshView = {
-  _tiptapEditor?: {
-    view?: CodeBlockHighlightRefreshView | null
-  } | null
-  prosemirrorView?: CodeBlockHighlightRefreshView | null
-}
-
-function clearCodeBlockHighlightCache(view: CodeBlockHighlightRefreshView) {
-  const pluginKey = Object.keys(view.state.config?.pluginsByKey ?? {}).find((key) =>
-    key.startsWith(PROSEMIRROR_HIGHLIGHT_PLUGIN_KEY_PREFIX),
-  )
-  if (!pluginKey) return
-
-  const pluginState = (view.state as Record<string, unknown>)[pluginKey]
-  if (typeof pluginState !== 'object' || pluginState === null) return
-
-  const decorationCache = (pluginState as { cache?: unknown }).cache
-  if (typeof decorationCache !== 'object' || decorationCache === null) return
-
-  const cacheMap = (decorationCache as { cache?: unknown }).cache
-  if (cacheMap instanceof Map) cacheMap.clear()
-}
-
-function codeBlockHighlightRefreshView(editor: ReturnType<typeof useCreateBlockNote>) {
-  const editorWithView = editor as unknown as EditorWithCodeBlockHighlightRefreshView
-  return editorWithView._tiptapEditor?.view ?? editorWithView.prosemirrorView ?? null
-}
-
-function refreshCodeBlockSyntaxHighlighting(editor: ReturnType<typeof useCreateBlockNote>) {
-  const view = codeBlockHighlightRefreshView(editor)
-  if (!view) return
-
-  clearCodeBlockHighlightCache(view)
-  const transaction = view.state.tr.setMeta(PROSEMIRROR_HIGHLIGHT_REFRESH_META, true)
-
-  view.dispatch(transaction)
-}
-
 function useRichEditorSearchHighlight({
   editor,
   path,
@@ -1301,10 +1255,15 @@ export function SingleEditorView(options: {
   onUpdateTags?: (path: string, tags: string[]) => void | Promise<void>
   historyRef?: React.MutableRefObject<EditorHistoryCommands | null>
   historyBoundaryVersion?: number | null
+  editorTheme?: EffectiveEditorTheme
 }) {
   const { editor, entries, historyBoundaryVersion, historyRef, onNavigateWikilink, onChange, onImageImportError, sourceEntry, vaultPath, editable = true, locale = 'en', searchHighlightRequest, availableTags = [], onUpdateTags } = options
   const themeMode = useDocumentThemeMode()
-  const previousThemeModeRef = useRef(themeMode)
+  const effectiveEditorTheme = options.editorTheme ?? resolveEffectiveEditorTheme(
+    typeof document === 'undefined' ? DEFAULT_EDITOR_THEME_ID : document.documentElement.dataset.editorTheme,
+    themeMode,
+  )
+  const previousCodeThemeKeyRef = useRef<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const suppressNextContainerClickRef = useRef(false)
   const [tagPropertyHost] = useState(() => {
@@ -1384,11 +1343,18 @@ export function SingleEditorView(options: {
   }, [editable, editor, historyBoundaryVersion, historyRef, sourceEntry?.path])
 
   useEffect(() => {
-    if (previousThemeModeRef.current === themeMode) return
+    const themeKey = `${effectiveEditorTheme.id}:${effectiveEditorTheme.variant}`
+    if (previousCodeThemeKeyRef.current === themeKey) return
 
-    previousThemeModeRef.current = themeMode
-    refreshCodeBlockSyntaxHighlighting(editor)
-  }, [editor, themeMode])
+    previousCodeThemeKeyRef.current = themeKey
+    void setTolariaCodeHighlightingTheme(effectiveEditorTheme)
+      .then(() => {
+        refreshRichEditorCodeBlockHighlighting(editor)
+      })
+      .catch((error) => {
+        console.warn('[editor] Failed to refresh code block highlighting:', error)
+      })
+  }, [editor, effectiveEditorTheme])
 
   useEffect(() => {
     return subscribeRichEditorExternalChange(editor, handleEditorChange)

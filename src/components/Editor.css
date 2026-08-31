@@ -94,6 +94,11 @@ body.mac-chrome .app:not(:has(.app__sidebar), :has(.app__note-list)) .breadcrumb
 }
 
 /* Scroll area wrapping title + editor — single scroll context for alignment */
+.editor {
+  container-name: editor;
+  container-type: inline-size;
+}
+
 .editor-scroll-area {
   flex: 1;
   min-height: 0;
@@ -596,37 +601,39 @@ body.mac-chrome .app:not(:has(.app__sidebar), :has(.app__note-list)) .breadcrumb
 }
 
 .markora-callout {
-  --callout-accent: var(--feedback-info-text);
-  --callout-background: var(--feedback-info-bg);
+  --callout-accent: currentColor;
+  --callout-background: transparent;
+  --callout-border: currentColor;
   margin: 0.5rem 0;
   overflow: hidden;
   border-radius: 0.5rem;
   background: var(--callout-background);
+  border-inline-start: 3px solid var(--callout-border);
 }
 
 .markora-callout--success {
-  --callout-accent: var(--feedback-success-text);
-  --callout-background: var(--feedback-success-bg);
+  --callout-accent: currentColor;
+  --callout-background: transparent;
 }
 
 .markora-callout--warning {
-  --callout-accent: var(--feedback-warning-text);
-  --callout-background: var(--feedback-warning-bg);
+  --callout-accent: currentColor;
+  --callout-background: transparent;
 }
 
 .markora-callout--error {
-  --callout-accent: var(--feedback-error-text);
-  --callout-background: var(--feedback-error-bg);
+  --callout-accent: currentColor;
+  --callout-background: transparent;
 }
 
 .markora-callout--example {
-  --callout-accent: var(--accent-purple);
-  --callout-background: var(--accent-purple-light);
+  --callout-accent: currentColor;
+  --callout-background: transparent;
 }
 
 .markora-callout--quote {
-  --callout-accent: var(--text-secondary);
-  --callout-background: var(--surface-secondary);
+  --callout-accent: currentColor;
+  --callout-background: transparent;
 }
 
 .markora-callout__header {
@@ -647,7 +654,7 @@ body.mac-chrome .app:not(:has(.app__sidebar), :has(.app__note-list)) .breadcrumb
 
 .markora-callout__body {
   padding: 0.15rem 0.75rem 0.65rem;
-  color: var(--color-foreground);
+  color: currentColor;
 }
 
 .markora-callout__body[hidden] {

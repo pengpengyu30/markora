@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { APP_COMMAND_EVENT_NAME, APP_COMMAND_IDS } from '../hooks/appCommandDispatcher'
+import { resolveEffectiveEditorTheme } from '../editorThemes/editorThemeCatalog'
 import { RUNTIME_STYLE_NONCE } from '../lib/runtimeStyleNonce'
 import { MermaidDiagram } from './MermaidDiagram'
 
@@ -53,8 +54,114 @@ describe('MermaidDiagram', () => {
     expect(mermaidMock.initialize).toHaveBeenCalledWith(expect.objectContaining({
       htmlLabels: false,
       suppressErrorRendering: true,
-      theme: 'default',
+      theme: 'base',
     }))
+  })
+
+  it('uses semantic theme colors and rerenders existing diagrams after a theme change', async () => {
+    const lightTheme = resolveEffectiveEditorTheme('default', 'light')
+    const darkTheme = resolveEffectiveEditorTheme('canvas', 'dark')
+    const source = '```mermaid\nflowchart LR\nA --> B\n```'
+    const { rerender } = render(
+      <MermaidDiagram
+        diagram={'flowchart LR\nA --> B'}
+        editorTheme={lightTheme}
+        source={source}
+      />,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mermaid-diagram-viewport').querySelector('svg')).not.toBeNull()
+    })
+    const renderCountBeforeThemeChange = mermaidMock.render.mock.calls.length
+
+    rerender(
+      <MermaidDiagram
+        diagram={'flowchart LR\nA --> B'}
+        editorTheme={darkTheme}
+        source={source}
+      />,
+    )
+
+    await waitFor(() => {
+      expect(mermaidMock.render.mock.calls.length).toBeGreaterThan(renderCountBeforeThemeChange)
+    })
+    expect(mermaidMock.initialize).toHaveBeenLastCalledWith(expect.objectContaining({
+      theme: 'base',
+      themeVariables: expect.objectContaining({
+        background: darkTheme.tokens.mermaid.background,
+        primaryTextColor: darkTheme.tokens.mermaid.text,
+        primaryColor: darkTheme.tokens.mermaid.nodeBackground,
+        primaryBorderColor: darkTheme.tokens.mermaid.nodeBorder,
+        lineColor: darkTheme.tokens.mermaid.edge,
+      }),
+    }))
+  })
+
+  it('uses a unique Mermaid render id for every render attempt', async () => {
+    const lightTheme = resolveEffectiveEditorTheme('default', 'light')
+    const darkTheme = resolveEffectiveEditorTheme('canvas', 'dark')
+    const source = '```mermaid\nflowchart LR\nA --> B\n```'
+    const { rerender } = render(
+      <MermaidDiagram
+        diagram={'flowchart LR\nA --> B'}
+        editorTheme={lightTheme}
+        source={source}
+      />,
+    )
+
+    await waitFor(() => expect(mermaidMock.render).toHaveBeenCalledTimes(1))
+
+    rerender(
+      <MermaidDiagram
+        diagram={'flowchart LR\nA --> B'}
+        editorTheme={darkTheme}
+        source={source}
+      />,
+    )
+
+    await waitFor(() => expect(mermaidMock.render).toHaveBeenCalledTimes(2))
+    expect(mermaidMock.render.mock.calls[1][0]).not.toBe(mermaidMock.render.mock.calls[0][0])
+  })
+
+  it('keeps the last rendered diagram visible while a theme rerender is pending', async () => {
+    let resolveThemeRender: ((result: { svg: string }) => void) | undefined
+    mermaidMock.render
+      .mockResolvedValueOnce({
+        svg: '<svg aria-label="Old Mermaid"><text>Old diagram</text></svg>',
+      })
+      .mockImplementationOnce(() => new Promise((resolve) => {
+        resolveThemeRender = resolve
+      }))
+
+    const lightTheme = resolveEffectiveEditorTheme('default', 'light')
+    const darkTheme = resolveEffectiveEditorTheme('canvas', 'dark')
+    const { rerender } = render(
+      <MermaidDiagram
+        diagram={'flowchart LR\nA --> B'}
+        editorTheme={lightTheme}
+        source={'```mermaid\nflowchart LR\nA --> B\n```'}
+      />,
+    )
+
+    const viewport = screen.getByTestId('mermaid-diagram-viewport')
+    await waitFor(() => expect(viewport).toHaveTextContent('Old diagram'))
+
+    rerender(
+      <MermaidDiagram
+        diagram={'flowchart LR\nA --> B'}
+        editorTheme={darkTheme}
+        source={'```mermaid\nflowchart LR\nA --> B\n```'}
+      />,
+    )
+
+    await waitFor(() => expect(mermaidMock.render).toHaveBeenCalledTimes(2))
+    expect(viewport).toHaveTextContent('Old diagram')
+
+    resolveThemeRender?.({
+      svg: '<svg aria-label="New Mermaid"><text>New diagram</text></svg>',
+    })
+    await waitFor(() => expect(viewport).toHaveTextContent('New diagram'))
   })
 
   it('opens the rendered SVG in a lightbox', async () => {

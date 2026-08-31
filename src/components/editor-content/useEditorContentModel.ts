@@ -63,7 +63,7 @@ export function useEditorContentModel(props: EditorContentProps) {
     rawMode,
   } = props
 
-  const { cssVars, editorThemeId } = useEditorTheme()
+  const { cssVars, theme: editorTheme, editorThemeId } = useEditorTheme()
   const {
     isDeletedPreview,
     isHtmlFile,
@@ -89,6 +89,7 @@ export function useEditorContentModel(props: EditorContentProps) {
   return {
     ...props,
     cssVars,
+    editorTheme,
     editorThemeId,
     isDeletedPreview,
     isHtmlFile,

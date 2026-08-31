@@ -17,6 +17,10 @@ vi.mock('../RawEditorView', () => ({
   RawEditorView: () => <div data-testid="raw-editor-view" />,
 }))
 
+vi.mock('../RichEditorFindBar', () => ({
+  RichEditorFindBar: () => <div data-testid="rich-editor-find-bar" />,
+}))
+
 vi.mock('../FilePreview', () => ({
   FilePreview: ({ entry }: { entry: { path: string } }) => (
     <div data-testid="file-preview" data-path={entry.path} />
@@ -144,6 +148,48 @@ describe('EditorContentLayout', () => {
     expect(themeScope).toHaveStyle('--editor-font-size: 15px')
     expect(findScopes).toHaveLength(1)
     expect(findScopes[0]).not.toHaveStyle('--editor-font-size: 15px')
+  })
+
+  it('keeps the Rich editor search controls outside the editor theme scope', () => {
+    const { container } = render(<EditorContentLayout {...createModel({
+      findRequest: { id: 1, path: '/vault/project/demo.md', replace: false },
+    })} />)
+
+    const themeScope = container.querySelector('[data-editor-theme-scope="true"]')
+    const findBar = screen.getByTestId('rich-editor-find-bar')
+
+    expect(themeScope).toBeInTheDocument()
+    expect(themeScope).not.toContainElement(findBar)
+    expect(findBar.closest('[data-editor-find-scope="true"]')).toBeInTheDocument()
+  })
+
+  it('updates the rich theme scope without remounting the editor or invoking save callbacks', () => {
+    const editor = {}
+    const onEditorChange = vi.fn()
+    const onSave = vi.fn()
+    const { rerender } = render(<EditorContentLayout {...createModel({
+      editor,
+      editorThemeId: 'default',
+      cssVars: { '--editor-theme-surfaces-canvas': '#FFFFFF' },
+      onEditorChange,
+      onSave,
+    })} />)
+    const editorView = screen.getByTestId('single-editor-view')
+
+    rerender(<EditorContentLayout {...createModel({
+      editor,
+      editorThemeId: 'editorial',
+      cssVars: { '--editor-theme-surfaces-canvas': '#FCF9F5' },
+      onEditorChange,
+      onSave,
+    })} />)
+
+    const themeScope = screen.getByTestId('single-editor-view').closest('[data-editor-theme-scope="true"]')
+    expect(screen.getByTestId('single-editor-view')).toBe(editorView)
+    expect(themeScope).toHaveAttribute('data-editor-theme', 'editorial')
+    expect(themeScope).toHaveStyle('--editor-theme-surfaces-canvas: #FCF9F5')
+    expect(onEditorChange).not.toHaveBeenCalled()
+    expect(onSave).not.toHaveBeenCalled()
   })
 
   it('passes the active note content into the breadcrumb', () => {

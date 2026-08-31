@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { EditorSelection } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
+import { resolveEffectiveEditorTheme } from '../editorThemes/editorThemeCatalog'
 import { RUNTIME_STYLE_NONCE } from '../lib/runtimeStyleNonce'
 import { useCodeMirror, type CodeMirrorCallbacks } from './useCodeMirror'
 
@@ -267,5 +268,37 @@ describe('useCodeMirror', () => {
     const view = result.current.current!
     // The extension overrides posAtCoords on the instance (not the prototype)
     expect(Object.hasOwn(view, 'posAtCoords')).toBe(true)
+  })
+
+  it('reconfigures the existing view when the editor theme changes', () => {
+    const ref = { current: container }
+    const defaultTheme = resolveEffectiveEditorTheme('default', 'light')
+    const codeTheme = resolveEffectiveEditorTheme('code', 'dark')
+    const { result, rerender } = renderHook(
+      ({ theme }) => useCodeMirror(ref, 'alpha\nbeta\ngamma', noopCallbacks, '/vault/note.md', theme),
+      { initialProps: { theme: defaultTheme } },
+    )
+    const view = result.current.current!
+    const editorElement = container.querySelector('.cm-editor')
+
+    act(() => {
+      view.dispatch({
+        changes: { from: 0, insert: 'edited ' },
+        selection: { anchor: 7, head: 12 },
+      })
+      view.scrollDOM.scrollTop = 24
+    })
+    const dispatchSpy = vi.spyOn(view, 'dispatch')
+
+    rerender({ theme: codeTheme })
+
+    expect(result.current.current).toBe(view)
+    expect(container.querySelector('.cm-editor')).toBe(editorElement)
+    expect(view.state.doc.toString()).toBe('edited alpha\nbeta\ngamma')
+    expect(view.state.selection.main.from).toBe(7)
+    expect(view.state.selection.main.to).toBe(12)
+    expect(view.scrollDOM.scrollTop).toBe(24)
+    expect(dispatchSpy).toHaveBeenCalledWith(expect.objectContaining({ effects: expect.anything() }))
+    expect(view.state.facet(EditorView.darkTheme)).toBe(true)
   })
 })

@@ -78,9 +78,16 @@ export function editorThemeContrastPairs(theme: EffectiveEditorTheme): EditorThe
     { name: 'code keyword', foreground: syntax.keyword, background: syntax.codeSurface },
     { name: 'code string', foreground: syntax.string, background: syntax.codeSurface },
     { name: 'Mermaid label', foreground: mermaid.text, background: mermaid.background },
+    { name: 'Mermaid node label', foreground: mermaid.text, background: mermaid.nodeBackground },
+    { name: 'Mermaid node border', foreground: mermaid.nodeBorder, background: mermaid.nodeBackground },
+    { name: 'Mermaid cluster label', foreground: mermaid.text, background: mermaid.cluster },
+    { name: 'Mermaid edge', foreground: mermaid.edge, background: mermaid.background },
     { name: 'info feedback', foreground: feedback.info.text, background: feedback.info.background },
     { name: 'success feedback', foreground: feedback.success.text, background: feedback.success.background },
     { name: 'warning feedback', foreground: feedback.warning.text, background: feedback.warning.background },
     { name: 'error feedback', foreground: feedback.error.text, background: feedback.error.background },
+    { name: 'note feedback', foreground: feedback.note.text, background: feedback.note.background },
+    { name: 'example feedback', foreground: feedback.example.text, background: feedback.example.background },
+    { name: 'quote feedback', foreground: feedback.quote.text, background: feedback.quote.background },
   ]
 }

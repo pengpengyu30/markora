@@ -204,6 +204,29 @@ the breadcrumb, sidebar, menus, and other shell controls remain outside that sco
 `src/theme.json` source was replaced by this catalog, while existing application and editor
 compatibility variable names remain available during the staged migration.
 
+`src/extensions/rawEditorTheme.ts` owns the CodeMirror presentation adapter. It reconfigures one
+existing `EditorView` through a CodeMirror `Compartment`, including the editor chrome, syntax
+highlighting, and frontmatter roles, so a theme change does not recreate the raw editor or alter
+its document state. `src/extensions/rawEditorSyntaxRoles.ts` is the shared semantic mapping
+boundary for Raw Markdown, frontmatter, and supported language highlighting; Raw search controls
+remain application-shell surfaces outside the editor theme contract.
+
+Rich fenced-code presentation is owned by `src/components/codeBlockOptions.ts`. It creates a
+catalog-backed Shiki theme for each effective family/variant and keeps the active theme first in
+the highlighter's theme list. `src/components/richEditorCodeHighlighting.ts` is the only adapter
+allowed to inspect the BlockNote/ProseMirror highlight plugin cache; it clears decorations and
+dispatches a presentation-only refresh without changing the document or editor instance. The
+existing `src/components/codeBlockLineNumbers.ts` decorations remain non-content markers, and
+`EditorTheme.css` makes them visible only for the `Code` family.
+
+`src/components/MermaidDiagram.tsx` owns the Mermaid renderer boundary. It uses Mermaid's `base`
+theme with the effective semantic diagram tokens, rerenders on family or resolved appearance
+changes, and retains the previous SVG until the asynchronous replacement is ready. Each render
+attempt receives a unique ID because Mermaid resolves render IDs globally while the hidden
+measurement host and visible SVG coexist. KaTeX, Callout families, and durable semantic highlights
+remain document-renderer surfaces whose presentation is mapped by `EditorTheme.css`; tldraw and
+media keep their independent visual models.
+
 Whiteboards are a deliberate compatibility exception to the original P4 plan. `TldrawWhiteboard.tsx` persists a durable representation inside the note and restores it when the note is reopened. The renderer contains WebKit-specific guards because this path is sensitive to native webview behavior.
 
 Standalone HTML files are not rendered as an in-app HTML application preview. Existing legacy sheet/HTML metadata is parsed defensively so opening an old file does not crash the editor; unsupported content falls back to raw text or the unsupported-file surface.

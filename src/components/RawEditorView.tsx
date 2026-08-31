@@ -30,6 +30,8 @@ import {
   type SearchHighlightRequest,
 } from '../utils/searchHighlight'
 import type { EditorHistoryCommands } from '../utils/appOrchestration'
+import type { EffectiveEditorTheme } from '../editorThemes/editorThemeCatalog'
+import { DEFAULT_RAW_EDITOR_THEME } from '../extensions/rawEditorTheme'
 import {
   clipboardRemoteImages,
   importRemoteImages,
@@ -53,6 +55,7 @@ export interface RawEditorViewProps {
   findRequest?: RawEditorFindRequest | null
   searchHighlightRequest?: SearchHighlightRequest | null
   onImageImportResult?: (result: Pick<RemoteImageImportResult, 'failedCount' | 'totalCount'>) => void
+  editorTheme?: EffectiveEditorTheme
 }
 
 const DEBOUNCE_MS = 500
@@ -588,7 +591,7 @@ function RawEditorSurface(options: RawEditorSurfaceProps) {
   const { autocomplete, containerRef, findOpen, findRequest, handleItemHover, handleRemoteImagePaste, locale, path, pendingChanges, rawDoc, replaceOpen, rootRef, setFindOpen, setReplaceOpen, showFrontmatterWarning, viewRef } = options
   const dropdownPosition = getRawEditorDropdownPosition(autocomplete, DROPDOWN_MAX_HEIGHT, window)
   return (
-    <div ref={rootRef} className="flex flex-1 flex-col min-h-0 relative" style={{ background: 'var(--background)' }} onPasteCapture={handleRemoteImagePaste}>
+    <div ref={rootRef} className="flex flex-1 flex-col min-h-0 relative" style={{ background: 'var(--editor-theme-surfaces-canvas)', color: 'var(--editor-theme-text-primary)' }} onPasteCapture={handleRemoteImagePaste}>
       <RawEditorYamlErrorBanner error={showFrontmatterWarning ? pendingChanges.yamlError : null} />
       <RawEditorFindBar doc={rawDoc} locale={locale} onClose={() => setFindOpen(false)} onReplaceOpenChange={setReplaceOpen} open={findOpen} path={path} replaceOpen={replaceOpen} request={findRequest} viewRef={viewRef} />
       <div ref={containerRef} className="raw-editor-codemirror flex flex-1 min-h-0" data-testid="raw-editor-codemirror" role="presentation" />
@@ -598,7 +601,7 @@ function RawEditorSurface(options: RawEditorSurfaceProps) {
 }
 
 export function RawEditorView(options: RawEditorViewProps) {
-  const { content, entries, findRequest, historyRef, latestContentRef, locale = 'en', onContentChange, onImageImportResult, onSave, path, searchHighlightRequest, vaultPath } = options
+  const { content, editorTheme = DEFAULT_RAW_EDITOR_THEME, entries, findRequest, historyRef, latestContentRef, locale = 'en', onContentChange, onImageImportResult, onSave, path, searchHighlightRequest, vaultPath } = options
   const rootRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [rawDoc, setRawDoc] = useState(content)
@@ -645,6 +648,7 @@ export function RawEditorView(options: RawEditorViewProps) {
     onEscape: handleEscape,
     },
     path,
+    editorTheme,
   )
   useEffect(() => {
     const view = viewRef.current

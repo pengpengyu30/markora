@@ -14,6 +14,27 @@ import type { useEditorContentModel } from './useEditorContentModel'
 
 type EditorContentModel = ReturnType<typeof useEditorContentModel>
 
+function EditorThemeScope({
+  children,
+  cssVars,
+  editorThemeId,
+}: {
+  children: React.ReactNode
+  cssVars: EditorContentModel['cssVars']
+  editorThemeId: EditorContentModel['editorThemeId']
+}) {
+  return (
+    <div
+      className="editor-theme-scope flex flex-1 min-h-0 flex-col"
+      data-editor-theme-scope="true"
+      data-editor-theme={editorThemeId}
+      style={cssVars as React.CSSProperties}
+    >
+      {children}
+    </div>
+  )
+}
+
 type BreadcrumbActions = Pick<
   EditorContentModel,
   | 'effectiveRawMode'
@@ -80,6 +101,7 @@ function RawModeEditorSection(
     | 'searchHighlightRequest'
     | 'vaultPath'
     | 'historyRef'
+    | 'editorTheme'
   > & {
     rawMode: boolean
     locale?: AppLocale
@@ -126,6 +148,7 @@ function RawModeEditorSection(
           searchHighlightRequest={searchHighlightRequest}
           vaultPath={vaultPath}
           historyRef={historyRef}
+          editorTheme={options.editorTheme}
           locale={locale}
         />
       </div>
@@ -286,6 +309,9 @@ type EditorCanvasProps = Pick<
   | 'historyRef'
   | 'historyBoundaryPath'
   | 'historyBoundaryVersion'
+  | 'cssVars'
+  | 'editorThemeId'
+  | 'editorTheme'
 >
 
 function EditorCanvas(props: EditorCanvasProps) {
@@ -325,6 +351,9 @@ function StandardEditorCanvas(options: EditorCanvasProps) {
     historyRef,
     historyBoundaryPath,
     historyBoundaryVersion,
+    cssVars,
+    editorThemeId,
+    editorTheme,
   } = options
   const [closedFindRequestId, setClosedFindRequestId] = useState<number | null>(null)
   const path = activeTab?.entry.path ?? ''
@@ -333,7 +362,10 @@ function StandardEditorCanvas(options: EditorCanvasProps) {
   if (!richEditorContentReady) return null
 
   return (
-    <EditorFindScope className="editor-scroll-area">
+    <EditorFindScope
+      className="editor-scroll-area"
+      style={{ background: cssVars['--editor-theme-surfaces-canvas'] }}
+    >
       <RichEditorFindBar
         editor={editor}
         locale={locale}
@@ -342,24 +374,27 @@ function StandardEditorCanvas(options: EditorCanvasProps) {
         path={path}
         request={currentFindRequest}
       />
-      <div className="editor-content-wrapper" data-note-document-body="true" data-note-pdf-export-root="true">
-        <SingleEditorView
-          editor={editor}
-          entries={entries}
-          onNavigateWikilink={onNavigateWikilink}
-          onChange={onEditorChange}
-          onImageImportError={onImageImportError}
-          searchHighlightRequest={searchHighlightRequest}
-          sourceEntry={activeTab?.entry ?? null}
-          vaultPath={vaultPath}
-          editable={!isDeletedPreview}
-          locale={locale}
-          availableTags={availableTags}
-          onUpdateTags={onUpdateTags}
-          historyRef={historyRef}
-          historyBoundaryVersion={historyBoundaryPath === activeTab?.entry.path ? historyBoundaryVersion : null}
-        />
-      </div>
+      <EditorThemeScope cssVars={cssVars} editorThemeId={editorThemeId}>
+        <div className="editor-content-wrapper" data-note-document-body="true" data-note-pdf-export-root="true">
+          <SingleEditorView
+            editor={editor}
+            entries={entries}
+            onNavigateWikilink={onNavigateWikilink}
+            onChange={onEditorChange}
+            onImageImportError={onImageImportError}
+            searchHighlightRequest={searchHighlightRequest}
+            sourceEntry={activeTab?.entry ?? null}
+            vaultPath={vaultPath}
+            editable={!isDeletedPreview}
+            locale={locale}
+            availableTags={availableTags}
+            onUpdateTags={onUpdateTags}
+            historyRef={historyRef}
+            editorTheme={editorTheme}
+            historyBoundaryVersion={historyBoundaryPath === activeTab?.entry.path ? historyBoundaryVersion : null}
+          />
+        </div>
+      </EditorThemeScope>
     </EditorFindScope>
   )
 }
@@ -412,6 +447,7 @@ export function EditorContentLayout(model: EditorContentModel) {
     wordCount,
     vaultPath,
     cssVars,
+    editorTheme,
     onNavigateWikilink,
     onEditorChange,
     isDeletedPreview,
@@ -448,13 +484,8 @@ export function EditorContentLayout(model: EditorContentModel) {
         isVaultLoading={isVaultLoading}
         locale={locale}
       />
-      {showActiveContent && (
-        <div
-          className="editor-theme-scope flex flex-1 min-h-0 flex-col"
-          data-editor-theme-scope="true"
-          data-editor-theme={model.editorThemeId}
-          style={cssVars as React.CSSProperties}
-        >
+      {showActiveContent && effectiveRawMode && (
+        <EditorThemeScope cssVars={cssVars} editorThemeId={model.editorThemeId}>
           <RawModeEditorSection
             activeTab={activeTab}
             entries={entries}
@@ -468,34 +499,40 @@ export function EditorContentLayout(model: EditorContentModel) {
             rawLatestContentRef={rawLatestContentRef}
             vaultPath={vaultPath}
             historyRef={historyRef}
+            editorTheme={model.editorTheme}
             locale={locale}
           />
-          <EditorCanvas
-            showEditor={showEditor}
-            isHtmlFile={isHtmlFile}
-            legacyUnsupportedKind={legacyUnsupportedKind}
-            richEditorContentReady={richEditorContentReady}
-            activeTab={activeTab}
-            vaultPath={vaultPath}
-            editor={editor}
-            entries={entries}
-            onNavigateWikilink={onNavigateWikilink}
-            onEditorChange={onEditorChange}
-            onImageImportError={onImageImportError}
-            isDeletedPreview={isDeletedPreview}
-            locale={locale}
-            onOpenExternalFile={model.onOpenExternalFile}
-            onRevealFile={model.onRevealFile}
-            onCopyFilePath={model.onCopyFilePath}
-            searchHighlightRequest={searchHighlightRequest}
-            findRequest={findRequest}
-            availableTags={model.availableTags}
-            onUpdateTags={model.onUpdateTags}
-            historyRef={historyRef}
-            historyBoundaryPath={model.historyBoundaryPath}
-            historyBoundaryVersion={model.historyBoundaryVersion}
-          />
-        </div>
+        </EditorThemeScope>
+      )}
+      {showActiveContent && !effectiveRawMode && (
+        <EditorCanvas
+          showEditor={showEditor}
+          isHtmlFile={isHtmlFile}
+          legacyUnsupportedKind={legacyUnsupportedKind}
+          richEditorContentReady={richEditorContentReady}
+          activeTab={activeTab}
+          vaultPath={vaultPath}
+          editor={editor}
+          entries={entries}
+          onNavigateWikilink={onNavigateWikilink}
+          onEditorChange={onEditorChange}
+          onImageImportError={onImageImportError}
+          isDeletedPreview={isDeletedPreview}
+          locale={locale}
+          onOpenExternalFile={model.onOpenExternalFile}
+          onRevealFile={model.onRevealFile}
+          onCopyFilePath={model.onCopyFilePath}
+          searchHighlightRequest={searchHighlightRequest}
+          findRequest={findRequest}
+          availableTags={model.availableTags}
+          onUpdateTags={model.onUpdateTags}
+          historyRef={historyRef}
+          historyBoundaryPath={model.historyBoundaryPath}
+          historyBoundaryVersion={model.historyBoundaryVersion}
+          cssVars={cssVars}
+          editorThemeId={model.editorThemeId}
+          editorTheme={editorTheme}
+        />
       )}
     </div>
   )

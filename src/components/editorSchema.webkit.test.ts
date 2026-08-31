@@ -68,10 +68,10 @@ describe('editor schema code block highlighting', () => {
     document.documentElement.classList.remove('dark')
     document.documentElement.dataset.theme = 'light'
 
-    const { createTolariaCodeBlockOptions } = await import('./codeBlockOptions')
+    const { createTolariaCodeBlockOptions, editorThemeShikiName } = await import('./codeBlockOptions')
     const highlighter = await createTolariaCodeBlockOptions().createHighlighter?.()
 
-    expect(highlighter?.getLoadedThemes()[0]).toBe('github-light')
+    expect(highlighter?.getLoadedThemes()[0]).toBe(editorThemeShikiName({ id: 'default', variant: 'light' }))
   })
 
   it('uses the dark Shiki theme first in dark mode', async () => {
@@ -79,10 +79,10 @@ describe('editor schema code block highlighting', () => {
     document.documentElement.classList.add('dark')
     document.documentElement.dataset.theme = 'dark'
 
-    const { createTolariaCodeBlockOptions } = await import('./codeBlockOptions')
+    const { createTolariaCodeBlockOptions, editorThemeShikiName } = await import('./codeBlockOptions')
     const highlighter = await createTolariaCodeBlockOptions().createHighlighter?.()
 
-    expect(highlighter?.getLoadedThemes()[0]).toBe('github-dark')
+    expect(highlighter?.getLoadedThemes()[0]).toBe(editorThemeShikiName({ id: 'default', variant: 'dark' }))
   })
 
   it('registers Go as a selectable Shiki code block language', async () => {

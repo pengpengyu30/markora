@@ -22,6 +22,15 @@ describe('editor theme contrast', () => {
         const pairs = editorThemeContrastPairs(effectiveTheme)
 
         expect(pairs.length).toBeGreaterThanOrEqual(10)
+        expect(pairs.map(pair => pair.name)).toEqual(expect.arrayContaining([
+          'Mermaid node label',
+          'Mermaid node border',
+          'Mermaid cluster label',
+          'Mermaid edge',
+          'note feedback',
+          'example feedback',
+          'quote feedback',
+        ]))
         for (const pair of pairs) {
           expect(parseHexColor(pair.foreground), `${theme.id}/${variant} ${pair.name} foreground`)
             .not.toBeNull()
