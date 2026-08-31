@@ -240,6 +240,7 @@ export type SearchMode = 'keyword' | 'semantic' | 'hybrid'
 export type NoteLayout = 'centered' | 'left'
 
 export type NoteWidthMode = 'normal' | 'wide'
+export type NoteWidthPreference = NoteWidthMode | null
 export type NoteDisplayMode = 'text' | 'sheet'
 export type GitSetupPreference = 'prompt' | 'never'
 

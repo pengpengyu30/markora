@@ -236,6 +236,10 @@ vi.mock('./components/SearchPanel', () => ({
   },
 }))
 
+vi.mock('./editorThemes/EditorThemePreview', () => ({
+  EditorThemePreview: () => null,
+}))
+
 // Mock BlockNote components (they need DOM APIs not available in jsdom)
 vi.mock('@blocknote/core', () => ({
   audioParse: vi.fn(() => undefined), createAudioBlockConfig: vi.fn(() => ({})),

@@ -82,7 +82,7 @@ export function useEditorThemePreference({
     writeStoredEditorThemeId(resolvedStorage, loadedEditorThemeId)
   }, [resolvedDocument, resolvedStorage, settings.editor_theme, settingsLoaded])
 
-  const setEditorTheme = useCallback(async (value: unknown): Promise<EditorThemeChangeResult> => {
+  const setEditorTheme = useCallback(async (value: unknown, settingsOverride?: Settings): Promise<EditorThemeChangeResult> => {
     if (!settingsLoaded) {
       return {
         ok: false,
@@ -91,7 +91,7 @@ export function useEditorThemePreference({
       }
     }
 
-    const result = await coordinator.setEditorTheme(normalizeEditorThemeId(value))
+    const result = await coordinator.setEditorTheme(normalizeEditorThemeId(value), settingsOverride)
     setEditorThemeError(result.error)
     return result
   }, [coordinator, editorThemeId, settingsLoaded])

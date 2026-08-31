@@ -15,14 +15,15 @@ import {
   type ReactNode,
   type SetStateAction,
 } from 'react'
-import type { NoteWidthMode, VaultEntry } from '../types'
+import type { NoteWidthMode, NoteWidthPreference, VaultEntry } from '../types'
 import { cn } from '@/lib/utils'
-import { translate, type AppLocale } from '../lib/i18n'
+import { translate, type AppLocale, type TranslationKey } from '../lib/i18n'
 import { APP_COMMAND_IDS, formatShortcutDisplay, getAppCommandShortcutDisplay } from '../hooks/appCommandCatalog'
 import { extractFrontmatterTitleFromContent, extractH1TitleFromContent } from '../utils/noteTitle'
 import { isHtmlFileEntry } from '../utils/filePreview'
 import { normalizeNotePathSeparators, notePathFilename } from '../utils/notePathIdentity'
 import type { TagCount } from '../utils/noteTags'
+import type { NoteWidthSource } from '../utils/noteWidth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ActionTooltip, type ActionTooltipCopy } from '@/components/ui/action-tooltip'
@@ -30,7 +31,11 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuLabel,
   DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
 import {
   Code,
@@ -65,6 +70,9 @@ interface BreadcrumbBarProps {
   onDelete?: () => void
   onRenameFilename?: (path: string, newFilenameStem: string) => void
   noteWidth?: NoteWidthMode
+  noteWidthMaxWidth?: number | null
+  noteWidthSource?: NoteWidthSource
+  onSetNoteWidth?: (mode: NoteWidthPreference) => void
   onToggleNoteWidth?: () => void
   /** Ref for direct DOM manipulation — avoids re-render on scroll. */
   barRef?: React.Ref<HTMLDivElement>
@@ -409,6 +417,21 @@ function noteWidthLabelKey(noteWidth: NoteWidthMode = 'normal'): Parameters<type
 
 function NoteWidthMenuIcon({ noteWidth = 'normal' }: { noteWidth?: NoteWidthMode }) {
   return noteWidth === 'wide' ? <ArrowsInLineHorizontal size={16} /> : <ArrowsOutLineHorizontal size={16} />
+}
+
+type NoteWidthMenuValue = 'theme' | NoteWidthMode
+
+function noteWidthMenuValue(noteWidth: NoteWidthMode | undefined, source: NoteWidthSource | undefined): NoteWidthMenuValue {
+  return source === 'note' ? noteWidth ?? 'normal' : 'theme'
+}
+
+function noteWidthEffectiveSourceKey(source: NoteWidthSource | undefined): TranslationKey {
+  switch (source) {
+    case 'note': return 'editor.toolbar.noteWidthSourceNote'
+    case 'global': return 'editor.toolbar.noteWidthSourceGlobal'
+    case 'theme': return 'editor.toolbar.noteWidthSourceTheme'
+    default: return 'editor.toolbar.noteWidthSourceFallback'
+  }
 }
 
 function pathAction(action: ((path: string) => void) | undefined, path: string): (() => void) | undefined {
@@ -826,6 +849,9 @@ function BreadcrumbActions(options: Omit<BreadcrumbBarProps, 'wordCount' | 'barR
     onToggleRaw,
     forceRawMode,
     noteWidth,
+    noteWidthMaxWidth,
+    noteWidthSource,
+    onSetNoteWidth,
     onToggleNoteWidth,
     showTableOfContents,
     onToggleTableOfContents,
@@ -869,6 +895,9 @@ function BreadcrumbActions(options: Omit<BreadcrumbBarProps, 'wordCount' | 'barR
       <BreadcrumbOverflowMenu
         entry={entry}
         noteWidth={noteWidth}
+        noteWidthMaxWidth={noteWidthMaxWidth}
+        noteWidthSource={noteWidthSource}
+        onSetNoteWidth={onSetNoteWidth}
         onToggleNoteWidth={onToggleNoteWidth}
         showTableOfContents={showTableOfContents}
         onToggleTableOfContents={onToggleTableOfContents}
@@ -887,6 +916,9 @@ function BreadcrumbOverflowMenu(options: Pick<
   BreadcrumbBarProps,
   | 'entry'
   | 'noteWidth'
+  | 'noteWidthMaxWidth'
+  | 'noteWidthSource'
+  | 'onSetNoteWidth'
   | 'onToggleNoteWidth'
   | 'showTableOfContents'
   | 'onToggleTableOfContents'
@@ -901,6 +933,9 @@ function BreadcrumbOverflowMenu(options: Pick<
   const {
     entry,
     noteWidth,
+    noteWidthMaxWidth,
+    noteWidthSource,
+    onSetNoteWidth,
     onToggleNoteWidth,
     showTableOfContents,
     onToggleTableOfContents,
@@ -917,6 +952,13 @@ function BreadcrumbOverflowMenu(options: Pick<
   const runCopyPathAction = pathAction(onCopyFilePath, entry.path)
   const exportPdfLabel = translate(locale, 'editor.toolbar.exportPdf')
   const noteWidthLabel = translate(locale, noteWidthLabelKey(noteWidth))
+  const noteWidthEffectiveLabel = noteWidthMaxWidth === undefined
+    ? null
+    : translate(locale, 'editor.toolbar.noteWidthEffective', {
+      width: noteWidthMaxWidth === null ? translate(locale, 'settings.noteWidth.wide') : `${noteWidthMaxWidth}px`,
+      source: translate(locale, noteWidthEffectiveSourceKey(noteWidthSource)),
+    })
+  const selectedNoteWidth = noteWidthMenuValue(noteWidth, noteWidthSource)
   const tableOfContentsLabel = translate(locale, showTableOfContents ? 'editor.toolbar.closeTableOfContents' : 'editor.toolbar.openTableOfContents')
   const moreActionsLabel = translate(locale, 'editor.toolbar.moreActions')
   const tooltipControl = useBreadcrumbTooltipControl(moreActionsLabel)
@@ -931,6 +973,32 @@ function BreadcrumbOverflowMenu(options: Pick<
             <FilePdf size={16} />
             {exportPdfLabel}
           </DropdownMenuItem>
+        )}
+        {showMarkdownActions && onSetNoteWidth && (
+          <>
+            <DropdownMenuSeparator />
+            {noteWidthEffectiveLabel && <DropdownMenuLabel>{noteWidthEffectiveLabel}</DropdownMenuLabel>}
+            <DropdownMenuRadioGroup
+              value={selectedNoteWidth}
+              onValueChange={(value) => {
+                if (value === 'theme') onSetNoteWidth(null)
+                else if (value === 'normal' || value === 'wide') onSetNoteWidth(value)
+              }}
+            >
+              <DropdownMenuRadioItem value="theme">
+                <ArrowsClockwise size={16} />
+                {translate(locale, 'editor.toolbar.noteWidthDefault')}
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="normal">
+                <ArrowsInLineHorizontal size={16} />
+                {translate(locale, 'settings.noteWidth.normal')}
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="wide">
+                <ArrowsOutLineHorizontal size={16} />
+                {translate(locale, 'settings.noteWidth.wide')}
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </>
         )}
         {showResponsiveActions && showMarkdownActions && (
           <>

@@ -39,7 +39,7 @@ import { RestoreDeletedNoteDialog } from './components/RestoreDeletedNoteDialog'
 import { DeleteProgressNotice } from './components/DeleteProgressNotice'
 import { invoke } from '@tauri-apps/api/core'
 import { isTauri, mockInvoke } from './mock-tauri'
-import type { SidebarSelection, VaultEntry } from './types'
+import type { Settings, SidebarSelection, VaultEntry } from './types'
 import { refreshPulledVaultState } from './utils/pulledVaultRefresh'
 import { RenameDetectedBanner } from './components/RenameDetectedBanner'
 import type { NoteListMultiSelectionCommands } from './components/note-list/multiSelectionCommands'
@@ -62,6 +62,7 @@ import type { RichEditorBlockTypeDefinition } from './utils/richEditorBlockTypes
 import { useManagedGit } from './hooks/useManagedGit'
 import { useVisibleWorkspaceEntries, useWorkspaceGraphState } from './hooks/useWorkspaceGraphState'
 import { AppPreferencesProvider, useAppPreferences } from './hooks/useAppPreferences'
+import { createTranslator } from './lib/i18n'
 import { useVaultRenameDetection } from './hooks/useVaultRenameDetection'
 import { useStartupScreenState } from './hooks/useStartupScreenState'
 import { useStartupStateMilestones } from './hooks/useStartupStateMilestones'
@@ -76,6 +77,8 @@ import {
 import { buildTagCounts, filterEntriesByTags } from './utils/noteTags'
 import type { SearchHighlightRequest } from './utils/searchHighlight'
 import { resolveStartupSelection } from './utils/startupSelection'
+import { DEFAULT_NOTE_WIDTH_PX } from './utils/noteWidth'
+import { EDITOR_THEME_CATALOG } from './editorThemes/editorThemeCatalog'
 import './App.css'
 
 // Type declarations for mock content storage and test overrides
@@ -294,12 +297,27 @@ function MainApp() {
     handleToggleThemeMode,
     noteListShowFilename,
     selectedUiLanguage,
+    setEditorTheme,
+    editorThemeId,
+    editorThemeError,
     systemLocale,
   } = useAppPreferences({
     saveSettings,
     settings,
     settingsLoaded,
   })
+  const editorThemeErrorMessage = useMemo(
+    () => createTranslator(appLocale)('settings.editorTheme.saveError'),
+    [appLocale],
+  )
+  useEffect(() => {
+    if (!editorThemeError) return
+    const timer = window.setTimeout(() => setToastMessage(editorThemeErrorMessage), 0)
+    return () => window.clearTimeout(timer)
+  }, [editorThemeError, editorThemeErrorMessage])
+  const handleSaveEditorTheme = useCallback((nextSettings: Settings) => (
+    setEditorTheme(nextSettings.editor_theme, nextSettings)
+  ), [setEditorTheme])
   const fileActions = useFileActions({
     locale: appLocale,
     selection: effectiveSelection,
@@ -781,10 +799,17 @@ function MainApp() {
     return entries
   }, [reloadVaultForCommand])
 
+  const editorThemeRecommendedWidth = useMemo(
+    () => EDITOR_THEME_CATALOG.find((theme) => theme.id === editorThemeId)?.shared.editor.maxWidth ?? DEFAULT_NOTE_WIDTH_PX,
+    [editorThemeId],
+  )
+
   const {
     activeTab,
     defaultNoteWidth,
     noteWidth: activeNoteWidth,
+    noteWidthMaxWidth: activeNoteWidthMaxWidth,
+    noteWidthSource: activeNoteWidthSource,
     setDefaultNoteWidth: handleSetDefaultNoteWidth,
     setNoteWidth: handleSetActiveNoteWidth,
     toggleNoteWidth: handleToggleNoteWidth,
@@ -794,6 +819,8 @@ function MainApp() {
     settings,
     saveSettings,
     updateFrontmatter: notes.handleUpdateFrontmatter,
+    deleteFrontmatter: notes.handleDeleteFrontmatter,
+    themeRecommendedWidth: editorThemeRecommendedWidth,
     setToastMessage,
   })
   const activeTabEntry = activeTab?.entry ?? null
@@ -900,6 +927,7 @@ function MainApp() {
     selectedUiLanguage,
     onSetUiLanguage: handleSetUiLanguage,
     onSetThemeMode: handleSetThemeMode,
+    onSetEditorTheme: setEditorTheme,
     onReloadVault: handleManualVaultReload,
     onRepairVault: handleRepairVault,
     onRestoreDeletedNote: automaticGitEnabled ? dialogs.openRestoreDeletedNote : undefined,
@@ -1003,6 +1031,9 @@ function MainApp() {
               onSave={handleTrackedSave}
               onRenameFilename={appSave.handleFilenameRename}
               noteWidth={activeNoteWidth}
+              noteWidthMaxWidth={activeNoteWidthMaxWidth}
+              noteWidthSource={activeNoteWidthSource}
+              onSetNoteWidth={handleSetActiveNoteWidth}
               onToggleNoteWidth={handleToggleNoteWidth}
               rawToggleRef={rawToggleRef}
               tableOfContentsToggleRef={tableOfContentsToggleRef}
@@ -1052,7 +1083,7 @@ function MainApp() {
           onClose={noteRetargetingUi.closeDialog}
           onSelectFolder={noteRetargetingUi.selectFolder}
         />
-        <SettingsPanel open={dialogs.showSettings} initialSectionId={settingsInitialSectionId} settings={settings} locale={appLocale} systemLocale={systemLocale} projects={vaultSwitcher.allVaults} defaultProjectPath={vaultSwitcher.defaultWorkspacePath} onSetDefaultProject={vaultSwitcher.setDefaultWorkspace} onRemoveProject={vaultSwitcher.removeVault} onReorderProjects={vaultSwitcher.reorderVaults} onUpdateProjectIdentity={vaultSwitcher.updateWorkspaceIdentity} onSave={saveSettings} onClose={dialogs.closeSettings} />
+        <SettingsPanel open={dialogs.showSettings} initialSectionId={settingsInitialSectionId} settings={settings} locale={appLocale} systemLocale={systemLocale} projects={vaultSwitcher.allVaults} defaultProjectPath={vaultSwitcher.defaultWorkspacePath} onSetDefaultProject={vaultSwitcher.setDefaultWorkspace} onRemoveProject={vaultSwitcher.removeVault} onReorderProjects={vaultSwitcher.reorderVaults} onUpdateProjectIdentity={vaultSwitcher.updateWorkspaceIdentity} onSave={saveSettings} onSaveEditorTheme={handleSaveEditorTheme} onClose={dialogs.closeSettings} />
         {deleteActions.confirmDelete && (
           <ConfirmDeleteDialog
             open={true}

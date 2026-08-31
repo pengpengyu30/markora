@@ -18,17 +18,26 @@ function EditorThemeScope({
   children,
   cssVars,
   editorThemeId,
+  noteWidthMaxWidth,
 }: {
   children: React.ReactNode
   cssVars: EditorContentModel['cssVars']
   editorThemeId: EditorContentModel['editorThemeId']
+  noteWidthMaxWidth?: number | null
 }) {
+  const scopeStyle = {
+    ...cssVars,
+    ...(noteWidthMaxWidth !== null && noteWidthMaxWidth !== undefined
+      ? { '--editor-max-width': `${noteWidthMaxWidth}px` }
+      : {}),
+  } as React.CSSProperties
+
   return (
     <div
       className="editor-theme-scope flex flex-1 min-h-0 flex-col"
       data-editor-theme-scope="true"
       data-editor-theme={editorThemeId}
-      style={cssVars as React.CSSProperties}
+      style={scopeStyle}
     >
       {children}
     </div>
@@ -48,6 +57,9 @@ type BreadcrumbActions = Pick<
   | 'onDeleteNote'
   | 'onRenameFilename'
   | 'noteWidth'
+  | 'noteWidthMaxWidth'
+  | 'noteWidthSource'
+  | 'onSetNoteWidth'
   | 'onToggleNoteWidth'
   | 'availableTags'
   | 'onUpdateTags'
@@ -195,6 +207,9 @@ function ActiveTabBreadcrumb({
       onDelete={bindPath(actions.onDeleteNote, path)}
       onRenameFilename={actions.onRenameFilename}
       noteWidth={actions.noteWidth}
+      noteWidthMaxWidth={actions.noteWidthMaxWidth}
+      noteWidthSource={actions.noteWidthSource}
+      onSetNoteWidth={actions.onSetNoteWidth}
       onToggleNoteWidth={actions.onToggleNoteWidth}
       availableTags={actions.availableTags}
       onUpdateTags={actions.onUpdateTags}
@@ -223,6 +238,9 @@ function EditorLoadingBreadcrumb({
       showTableOfContents={actions.showTableOfContents}
       onToggleTableOfContents={actions.onToggleTableOfContents}
       noteWidth={actions.noteWidth}
+      noteWidthMaxWidth={actions.noteWidthMaxWidth}
+      noteWidthSource={actions.noteWidthSource}
+      onSetNoteWidth={actions.onSetNoteWidth}
       onToggleNoteWidth={actions.onToggleNoteWidth}
       locale={locale}
     />
@@ -242,6 +260,9 @@ function buildBreadcrumbActions(model: EditorContentModel): BreadcrumbActions {
     onDeleteNote: model.onDeleteNote,
     onRenameFilename: model.onRenameFilename,
     noteWidth: model.noteWidth,
+    noteWidthMaxWidth: model.noteWidthMaxWidth,
+    noteWidthSource: model.noteWidthSource,
+    onSetNoteWidth: model.onSetNoteWidth,
     onToggleNoteWidth: model.onToggleNoteWidth,
     availableTags: model.availableTags,
     onUpdateTags: model.onUpdateTags,
@@ -312,6 +333,7 @@ type EditorCanvasProps = Pick<
   | 'cssVars'
   | 'editorThemeId'
   | 'editorTheme'
+  | 'noteWidthMaxWidth'
 >
 
 function EditorCanvas(props: EditorCanvasProps) {
@@ -354,6 +376,7 @@ function StandardEditorCanvas(options: EditorCanvasProps) {
     cssVars,
     editorThemeId,
     editorTheme,
+    noteWidthMaxWidth,
   } = options
   const [closedFindRequestId, setClosedFindRequestId] = useState<number | null>(null)
   const path = activeTab?.entry.path ?? ''
@@ -374,7 +397,11 @@ function StandardEditorCanvas(options: EditorCanvasProps) {
         path={path}
         request={currentFindRequest}
       />
-      <EditorThemeScope cssVars={cssVars} editorThemeId={editorThemeId}>
+      <EditorThemeScope
+        cssVars={cssVars}
+        editorThemeId={editorThemeId}
+        noteWidthMaxWidth={noteWidthMaxWidth}
+      >
         <div className="editor-content-wrapper" data-note-document-body="true" data-note-pdf-export-root="true">
           <SingleEditorView
             editor={editor}
@@ -455,6 +482,7 @@ export function EditorContentLayout(model: EditorContentModel) {
     rawModeContent,
     searchHighlightRequest,
     noteWidth,
+    noteWidthMaxWidth,
     isHtmlFile,
     legacyUnsupportedKind,
     richEditorContentReady,
@@ -485,7 +513,11 @@ export function EditorContentLayout(model: EditorContentModel) {
         locale={locale}
       />
       {showActiveContent && effectiveRawMode && (
-        <EditorThemeScope cssVars={cssVars} editorThemeId={model.editorThemeId}>
+        <EditorThemeScope
+          cssVars={cssVars}
+          editorThemeId={model.editorThemeId}
+          noteWidthMaxWidth={noteWidthMaxWidth}
+        >
           <RawModeEditorSection
             activeTab={activeTab}
             entries={entries}
@@ -532,6 +564,7 @@ export function EditorContentLayout(model: EditorContentModel) {
           cssVars={cssVars}
           editorThemeId={model.editorThemeId}
           editorTheme={editorTheme}
+          noteWidthMaxWidth={noteWidthMaxWidth}
         />
       )}
     </div>

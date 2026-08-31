@@ -8,7 +8,7 @@ import { useNoteActions } from './useNoteActions'
 import type { NoteActionsConfig } from './useNoteActions'
 import { GITIGNORED_VISIBILITY_APPLIED_EVENT } from '../lib/gitignoredVisibilityEvents'
 import { clearNoteContentCache, getCachedNoteContentEntry } from './noteContentCache'
-import { updateMockFrontmatter } from './mockFrontmatterHelpers'
+import { deleteMockFrontmatterProperty, updateMockFrontmatter } from './mockFrontmatterHelpers'
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }))
 vi.mock('../mock-tauri', () => ({
@@ -249,6 +249,18 @@ describe('useNoteActions hook', () => {
 
     expect(updateEntry).toHaveBeenCalledWith('/vault/note.md', { noteWidth: 'wide' })
     expect(setToastMessage).toHaveBeenCalledWith('Property updated')
+  })
+
+  it('handleDeleteFrontmatter uses the narrow frontmatter delete boundary', async () => {
+    const { result } = renderHook(() => useNoteActions(makeConfig()))
+
+    await act(async () => {
+      await result.current.handleDeleteFrontmatter('/vault/note.md', '_width')
+    })
+
+    expect(mockInvoke).toHaveBeenCalledWith('get_note_content', { path: '/vault/note.md' })
+    expect(deleteMockFrontmatterProperty).toHaveBeenCalledWith('/vault/note.md', '_width')
+    expect(Reflect.get(result.current, 'handleDeleteFrontmatter')).toBeTypeOf('function')
   })
 
   it('persists frontmatter updates without exposing app-level undo history', async () => {

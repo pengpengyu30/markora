@@ -69,4 +69,32 @@ describe('editorThemePersistence', () => {
     expect(settings.editor_theme).toBe('code')
     expect(saveSettings).toHaveBeenCalledWith(expect.objectContaining({ editor_theme: 'canvas' }))
   })
+
+  it('persists the complete Settings draft when one is supplied by Settings', async () => {
+    const storage = makeStorage()
+    const settings = makeSettings('code')
+    const saveSettings = vi.fn(async () => true)
+    const coordinator = createEditorThemePersistenceCoordinator({
+      document,
+      getSettings: () => settings,
+      saveSettings,
+      storage,
+    })
+    const draft = {
+      ...settings,
+      editor_theme: 'canvas' as const,
+      theme_mode: 'dark' as const,
+      ui_language: 'zh-CN' as const,
+    }
+
+    const result = await coordinator.setEditorTheme(draft.editor_theme, draft)
+
+    expect(result).toEqual({ ok: true, editorThemeId: 'canvas', error: null })
+    expect(saveSettings).toHaveBeenCalledTimes(1)
+    expect(saveSettings).toHaveBeenCalledWith(expect.objectContaining({
+      editor_theme: 'canvas',
+      theme_mode: 'dark',
+      ui_language: 'zh-CN',
+    }))
+  })
 })

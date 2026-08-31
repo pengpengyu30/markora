@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { AppLocale, UiLanguagePreference } from '../lib/i18n'
 import type { ThemeMode } from '../lib/themeMode'
-import type { NoteWidthMode, SidebarSelection, VaultEntry } from '../types'
+import type { NoteWidthMode, NoteWidthPreference, SidebarSelection, VaultEntry } from '../types'
 import type { ViewMode } from './useViewMode'
 import { buildNavigationCommands } from './commands/navigationCommands'
 import { buildNoteCommands } from './commands/noteCommands'
@@ -10,6 +10,7 @@ import { buildSettingsCommands } from './commands/settingsCommands'
 import { localizeCommandActions } from './commands/localizeCommands'
 import type { ImmediateCreateOptions } from './useNoteCreation'
 import type { RichEditorBlockTypeDefinition } from '../utils/richEditorBlockTypes'
+import type { EditorThemeId } from '../editorThemes/editorThemeCatalog'
 
 // Re-export types and helpers for backward compatibility
 export type { CommandAction, CommandGroup } from './commands/types'
@@ -27,6 +28,7 @@ interface CommandRegistryConfig {
   selectedUiLanguage?: UiLanguagePreference
   onSetUiLanguage?: (language: UiLanguagePreference) => void
   onSetThemeMode?: (mode: ThemeMode) => void
+  onSetEditorTheme?: (themeId: EditorThemeId) => void | Promise<unknown>
   onMoveNoteToFolder?: () => void
   canMoveNoteToFolder?: boolean
   onTurnCurrentBlockInto?: (target: RichEditorBlockTypeDefinition) => void
@@ -48,9 +50,9 @@ interface CommandRegistryConfig {
   onFindInNote?: () => void
   onReplaceInNote?: () => void
   noteWidth?: NoteWidthMode
-  defaultNoteWidth?: NoteWidthMode
+  defaultNoteWidth?: NoteWidthPreference
   onSetNoteWidth?: (mode: NoteWidthMode) => void
-  onSetDefaultNoteWidth?: (mode: NoteWidthMode) => void
+  onSetDefaultNoteWidth?: (mode: NoteWidthPreference) => void
   onToggleTableOfContents?: () => void
   onZoomIn: () => void
   onZoomOut: () => void
@@ -94,7 +96,7 @@ export function useCommandRegistry(config: CommandRegistryConfig): import('./com
     onGoBack, onGoForward, canGoBack, canGoForward,
     onRemoveActiveVault, onRestoreGettingStarted, isGettingStartedHidden, vaultCount,
     onReloadVault, onRepairVault, onRestoreDeletedNote,
-    locale, systemLocale, selectedUiLanguage, onSetUiLanguage, onSetThemeMode,
+    locale, systemLocale, selectedUiLanguage, onSetUiLanguage, onSetThemeMode, onSetEditorTheme,
     onMoveNoteToFolder, canMoveNoteToFolder, onTurnCurrentBlockInto,
     onRevealActiveFile, onCopyActiveFilePath, onOpenActiveFileExternal, onExportNoteAsPdf,
     
@@ -157,12 +159,12 @@ export function useCommandRegistry(config: CommandRegistryConfig): import('./com
     vaultCount, isGettingStartedHidden,
     onOpenSettings, onOpenVault, onCreateEmptyVault, onRemoveActiveVault, onRestoreGettingStarted,
     onReloadVault, onRepairVault, onRestoreDeletedNote,
-    locale, systemLocale, selectedUiLanguage, onSetUiLanguage, onSetThemeMode,
+    locale, systemLocale, selectedUiLanguage, onSetUiLanguage, onSetThemeMode, onSetEditorTheme,
   }), [
     vaultCount, isGettingStartedHidden, onOpenSettings,
     onOpenVault, onCreateEmptyVault, onRemoveActiveVault, onRestoreGettingStarted,
     onReloadVault, onRepairVault, onRestoreDeletedNote,
-    locale, systemLocale, selectedUiLanguage, onSetUiLanguage, onSetThemeMode,
+    locale, systemLocale, selectedUiLanguage, onSetUiLanguage, onSetThemeMode, onSetEditorTheme,
   ])
 
   const commands = useMemo(() => [

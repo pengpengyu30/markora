@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   canPersistNoteWidthMode,
   normalizeNoteWidthMode,
+  resolveNoteWidth,
   resolveNoteWidthMode,
   toggleNoteWidthMode,
 } from './noteWidth'
@@ -17,6 +18,29 @@ describe('noteWidth', () => {
     expect(resolveNoteWidthMode('wide', 'normal')).toBe('wide')
     expect(resolveNoteWidthMode(null, 'wide')).toBe('wide')
     expect(resolveNoteWidthMode(null, 'expanded')).toBe('normal')
+  })
+
+  it('applies per-note, global, theme, and fallback width precedence', () => {
+    expect(resolveNoteWidth('wide', 'normal', 1040)).toEqual({
+      mode: 'wide',
+      source: 'note',
+      maxWidth: null,
+    })
+    expect(resolveNoteWidth(null, 'wide', 1040)).toEqual({
+      mode: 'wide',
+      source: 'global',
+      maxWidth: null,
+    })
+    expect(resolveNoteWidth(null, null, 1040)).toEqual({
+      mode: 'normal',
+      source: 'theme',
+      maxWidth: 1040,
+    })
+    expect(resolveNoteWidth(null, null, null)).toEqual({
+      mode: 'normal',
+      source: 'fallback',
+      maxWidth: 820,
+    })
   })
 
   it('toggles between normal and wide', () => {

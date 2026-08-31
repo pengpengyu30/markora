@@ -4,6 +4,18 @@ import { SettingsPanel } from './SettingsPanel'
 import type { Settings } from '../types'
 import { THEME_MODE_STORAGE_KEY } from '../lib/themeMode'
 
+vi.mock('../editorThemes/EditorThemePreview', () => ({
+  EditorThemePreview: ({ ariaLabel, theme }: { ariaLabel: string; theme: { id: string; variant: string } }) => (
+    <div
+      data-testid="settings-editor-theme-preview"
+      role="region"
+      aria-label={ariaLabel}
+      data-editor-theme={theme.id}
+      data-editor-theme-variant={theme.variant}
+    />
+  ),
+}))
+
 const { registerEscapeSurfaceMock, unregisterEscapeSurfaceMock } = vi.hoisted(() => ({
   registerEscapeSurfaceMock: vi.fn(),
   unregisterEscapeSurfaceMock: vi.fn(),
@@ -169,7 +181,7 @@ describe('SettingsPanel', () => {
       automatic_update_checks_enabled: null,
       theme_mode: 'light',
       date_display_format: 'friendly',
-      note_width_mode: 'normal',
+      note_width_mode: null,
       hide_gitignored_files: true,
       all_notes_show_pdfs: false,
       all_notes_show_images: false,
@@ -304,13 +316,28 @@ describe('SettingsPanel', () => {
     expect(screen.getByText('系统（简体中文）')).toBeInTheDocument()
   })
 
-  it('defaults date display to friendly and note width to normal', () => {
+  it('defaults date display to friendly and note width to the theme default', () => {
     render(
       <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
     )
 
     expect(screen.getByTestId('settings-date-display-format')).toHaveAttribute('data-value', 'friendly')
-    expect(screen.getByTestId('settings-default-note-width')).toHaveAttribute('data-value', 'normal')
+    expect(screen.getByTestId('settings-default-note-width')).toHaveAttribute('data-value', 'theme')
+  })
+
+  it('preserves a null global note width when saving unrelated settings', () => {
+    render(
+      <SettingsPanel
+        open={true}
+        settings={{ ...emptySettings, note_width_mode: null }}
+        onSave={onSave}
+        onClose={onClose}
+      />,
+    )
+
+    fireEvent.click(screen.getByTestId('settings-save'))
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ note_width_mode: null }))
   })
 
   it('preserves saved date display and default note width preferences', () => {
@@ -409,6 +436,78 @@ describe('SettingsPanel', () => {
     expectSettingsSaved({
       theme_mode: 'dark',
     })
+  })
+
+  it('renders four editor-theme cards with a selected state and draft-only selection', () => {
+    renderOpenSettings({ ...emptySettings, editor_theme: 'default' })
+
+    const themeGroup = screen.getByTestId('settings-editor-theme')
+    expect(themeGroup).toHaveAttribute('role', 'radiogroup')
+    expect(within(themeGroup).getAllByRole('radio')).toHaveLength(4)
+    expect(within(themeGroup).getByRole('radio', { name: 'Select Default' })).toHaveAttribute('aria-checked', 'true')
+    expect(within(themeGroup).getByRole('radio', { name: 'Select Code' })).toHaveAttribute('aria-checked', 'false')
+    expect(within(themeGroup).getByText('A compact technical-document theme for code-heavy writing.')).toBeInTheDocument()
+
+    fireEvent.click(within(themeGroup).getByRole('radio', { name: 'Select Code' }))
+
+    expect(within(themeGroup).getByRole('radio', { name: 'Select Code' })).toHaveAttribute('aria-checked', 'true')
+    expect(onSave).not.toHaveBeenCalled()
+    expect(onClose).not.toHaveBeenCalled()
+    expect(document.documentElement).not.toHaveAttribute('data-editor-theme', 'code')
+  })
+
+  it('moves editor-theme card focus with arrow keys', () => {
+    renderOpenSettings({ ...emptySettings, editor_theme: 'default' })
+
+    const themeGroup = screen.getByTestId('settings-editor-theme')
+    const defaultCard = within(themeGroup).getByRole('radio', { name: 'Select Default' })
+    const codeCard = within(themeGroup).getByRole('radio', { name: 'Select Code' })
+
+    defaultCard.focus()
+    fireEvent.keyDown(defaultCard, { key: 'ArrowRight' })
+
+    expect(codeCard).toHaveFocus()
+  })
+
+  it('updates the isolated preview from the editor-theme and appearance drafts', () => {
+    renderOpenSettings({ ...emptySettings, theme_mode: 'dark', editor_theme: 'default' })
+
+    const preview = screen.getByTestId('settings-editor-theme-preview')
+    expect(preview).toHaveAttribute('data-editor-theme', 'default')
+    expect(preview).toHaveAttribute('data-editor-theme-variant', 'dark')
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Select Code' }))
+
+    expect(preview).toHaveAttribute('data-editor-theme', 'code')
+    expect(preview).toHaveAttribute('data-editor-theme-variant', 'dark')
+    expect(document.documentElement).not.toHaveAttribute('data-editor-theme', 'code')
+    expect(onSave).not.toHaveBeenCalled()
+  })
+
+  it('keeps the settings panel open and reports a localized error when editor-theme save fails', async () => {
+    const onSaveEditorTheme = vi.fn().mockResolvedValue({
+      ok: false,
+      editorThemeId: 'default',
+      error: new Error('disk error'),
+    })
+    render(
+      <SettingsPanel
+        open={true}
+        settings={{ ...emptySettings, editor_theme: 'default' }}
+        onSave={onSave}
+        onSaveEditorTheme={onSaveEditorTheme}
+        onClose={onClose}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Select Code' }))
+    fireEvent.click(screen.getByTestId('settings-save'))
+
+    await screen.findByRole('alert')
+    expect(onSaveEditorTheme).toHaveBeenCalledWith(expect.objectContaining({ editor_theme: 'code' }))
+    expect(onClose).not.toHaveBeenCalled()
+    expect(document.documentElement).not.toHaveAttribute('data-editor-theme', 'code')
+    expect(screen.getByRole('alert')).toHaveTextContent('Could not save the editor theme. Your current theme is still active.')
   })
 
   it('saves system color mode while applying the current OS appearance immediately', () => {

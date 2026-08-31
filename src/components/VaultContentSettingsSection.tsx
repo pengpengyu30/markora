@@ -1,6 +1,6 @@
 import { Article } from '@phosphor-icons/react'
 import type { TranslationKey, TranslationValues } from '../lib/i18n'
-import type { NoteWidthMode } from '../types'
+import type { NoteWidthMode, NoteWidthPreference } from '../types'
 import type { AllNotesFileVisibility } from '../utils/allNotesFileVisibility'
 import { DATE_DISPLAY_FORMATS, type DateDisplayFormat } from '../utils/dateDisplay'
 import { SectionHeading, SelectControl, SettingsGroup, SettingsRow, SettingsSwitchRow } from './SettingsControls'
@@ -11,8 +11,8 @@ interface VaultContentSettingsSectionProps {
   t: Translate
   dateDisplayFormat: DateDisplayFormat
   setDateDisplayFormat: (value: DateDisplayFormat) => void
-  defaultNoteWidth: NoteWidthMode
-  setDefaultNoteWidth: (value: NoteWidthMode) => void
+  defaultNoteWidth: NoteWidthPreference
+  setDefaultNoteWidth: (value: NoteWidthPreference) => void
   initialH1AutoRename: boolean
   setInitialH1AutoRename: (value: boolean) => void
   hideGitignoredFiles: boolean
@@ -25,7 +25,8 @@ interface VaultContentSettingsSectionProps {
   setFolderViewShowNonMarkdown: (value: boolean) => void
 }
 
-const NOTE_WIDTH_OPTIONS: readonly NoteWidthMode[] = ['normal', 'wide']
+const NOTE_WIDTH_THEME_VALUE = 'theme'
+const NOTE_WIDTH_OPTIONS: readonly NoteWidthPreference[] = [null, 'normal', 'wide']
 const NOTE_WIDTH_LABEL_KEYS: Record<NoteWidthMode, TranslationKey> = {
   normal: 'settings.noteWidth.normal',
   wide: 'settings.noteWidth.wide',
@@ -37,10 +38,12 @@ const DATE_DISPLAY_LABEL_KEYS: Record<DateDisplayFormat, TranslationKey> = {
   iso: 'settings.dateDisplay.iso',
 }
 
-function buildNoteWidthOptions(t: Translate): Array<{ value: NoteWidthMode; label: string }> {
+function buildNoteWidthOptions(t: Translate): Array<{ value: string; label: string }> {
   return NOTE_WIDTH_OPTIONS.map((value) => ({
-    value,
-    label: t(Reflect.get(NOTE_WIDTH_LABEL_KEYS, value) as Parameters<Translate>[0]),
+    value: value ?? NOTE_WIDTH_THEME_VALUE,
+    label: value === null
+      ? t('settings.noteWidth.theme')
+      : t(Reflect.get(NOTE_WIDTH_LABEL_KEYS, value) as Parameters<Translate>[0]),
   }))
 }
 
@@ -94,8 +97,8 @@ export function VaultContentSettingsSection(functionOptions: VaultContentSetting
         <SettingsRow label={t('settings.noteWidth.default')} description={t('settings.noteWidth.defaultDescription')}>
           <SelectControl
             ariaLabel={t('settings.noteWidth.default')}
-            value={defaultNoteWidth}
-            onValueChange={(value) => setDefaultNoteWidth(value as NoteWidthMode)}
+            value={defaultNoteWidth ?? NOTE_WIDTH_THEME_VALUE}
+            onValueChange={(value) => setDefaultNoteWidth(value === NOTE_WIDTH_THEME_VALUE ? null : value as NoteWidthMode)}
             options={buildNoteWidthOptions(t)}
             testId="settings-default-note-width"
           />

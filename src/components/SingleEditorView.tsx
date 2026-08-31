@@ -23,6 +23,7 @@ import {
   DEFAULT_EDITOR_THEME_ID,
   resolveEffectiveEditorTheme,
   type EffectiveEditorTheme,
+  type EditorThemeVariant,
 } from '../editorThemes/editorThemeCatalog'
 import { useImageDrop, type ImageImportError } from '../hooks/useImageDrop'
 import { useImageLightbox } from '../hooks/useImageLightbox'
@@ -1256,9 +1257,11 @@ export function SingleEditorView(options: {
   historyRef?: React.MutableRefObject<EditorHistoryCommands | null>
   historyBoundaryVersion?: number | null
   editorTheme?: EffectiveEditorTheme
+  themeMode?: EditorThemeVariant
 }) {
   const { editor, entries, historyBoundaryVersion, historyRef, onNavigateWikilink, onChange, onImageImportError, sourceEntry, vaultPath, editable = true, locale = 'en', searchHighlightRequest, availableTags = [], onUpdateTags } = options
-  const themeMode = useDocumentThemeMode()
+  const documentThemeMode = useDocumentThemeMode()
+  const themeMode = options.themeMode ?? documentThemeMode
   const effectiveEditorTheme = options.editorTheme ?? resolveEffectiveEditorTheme(
     typeof document === 'undefined' ? DEFAULT_EDITOR_THEME_ID : document.documentElement.dataset.editorTheme,
     themeMode,

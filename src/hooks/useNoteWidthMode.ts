@@ -1,10 +1,16 @@
 import { useCallback, useMemo, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { isTauri, mockInvoke } from '../mock-tauri'
-import type { NoteWidthMode, Settings, VaultEntry } from '../types'
+import type { NoteWidthMode, NoteWidthPreference, Settings, VaultEntry } from '../types'
 import type { FrontmatterValue } from '../types'
 import type { FrontmatterOpOptions } from './frontmatterOps'
-import { canPersistNoteWidthMode, resolveNoteWidthMode, toggleNoteWidthMode } from '../utils/noteWidth'
+import {
+  canPersistNoteWidthMode,
+  normalizeNoteWidthMode,
+  resolveNoteWidth,
+  toggleNoteWidthMode,
+  type NoteWidthSource,
+} from '../utils/noteWidth'
 
 type VaultPath = VaultEntry['path']
 type MarkdownContent = string
@@ -27,7 +33,8 @@ interface ActiveTabRequest {
 
 interface CurrentWidthRequest {
   activeTab: EditorTab | null
-  defaultNoteWidth: NoteWidthMode
+  defaultNoteWidth: NoteWidthPreference
+  themeRecommendedWidth: number | null | undefined
   transientNoteWidths: Record<VaultPath, NoteWidthMode>
 }
 
@@ -42,14 +49,22 @@ interface UseNoteWidthModeOptions {
     value: FrontmatterValue,
     options?: FrontmatterOpOptions,
   ) => Promise<void>
+  deleteFrontmatter: (
+    path: VaultPath,
+    key: string,
+    options?: FrontmatterOpOptions,
+  ) => Promise<void>
+  themeRecommendedWidth?: number | null
   setToastMessage: (message: ToastMessage) => void
 }
 
 interface PersistWidthRequest {
   activeTab: EditorTab | null
-  mode: NoteWidthMode
+  mode: NoteWidthPreference
   updateFrontmatter: UseNoteWidthModeOptions['updateFrontmatter']
+  deleteFrontmatter: UseNoteWidthModeOptions['deleteFrontmatter']
   rememberTransientWidth: (path: VaultPath, mode: NoteWidthMode) => void
+  clearTransientWidth: (path: VaultPath) => void
   setToastMessage: (message: ToastMessage) => void
 }
 
@@ -60,11 +75,13 @@ function resolveActiveTab({ tabs, activeTabPath }: ActiveTabRequest): EditorTab 
 function resolveCurrentWidth({
   activeTab,
   defaultNoteWidth,
+  themeRecommendedWidth,
   transientNoteWidths,
-}: CurrentWidthRequest): NoteWidthMode {
-  const path = activeTab?.entry.path
-  if (!path) return defaultNoteWidth
-  return resolveNoteWidthMode((Reflect.get(transientNoteWidths, path) as NoteWidthMode | undefined) ?? activeTab.entry.noteWidth, defaultNoteWidth)
+}: CurrentWidthRequest) {
+  const noteWidth = activeTab
+    ? (Reflect.get(transientNoteWidths, activeTab.entry.path) as NoteWidthMode | undefined) ?? activeTab.entry.noteWidth
+    : null
+  return resolveNoteWidth(noteWidth, defaultNoteWidth, themeRecommendedWidth)
 }
 
 async function readNoteContentForWidthPersistence({
@@ -85,7 +102,9 @@ async function persistOrRememberNoteWidth({
   activeTab,
   mode,
   updateFrontmatter,
+  deleteFrontmatter,
   rememberTransientWidth,
+  clearTransientWidth,
   setToastMessage,
 }: PersistWidthRequest): Promise<void> {
   const path = activeTab?.entry.path
@@ -96,15 +115,21 @@ async function persistOrRememberNoteWidth({
     fallbackContent: activeTab.content,
   })
   if (!canPersistNoteWidthMode(persistedContent)) {
-    rememberTransientWidth(path, mode)
+    if (mode === null) clearTransientWidth(path)
+    else rememberTransientWidth(path, mode)
     return
   }
 
   try {
-    await updateFrontmatter(path, '_width', mode, { silent: true })
-    rememberTransientWidth(path, mode)
+    if (mode === null) {
+      await deleteFrontmatter(path, '_width', { silent: true })
+      clearTransientWidth(path)
+    } else {
+      await updateFrontmatter(path, '_width', mode, { silent: true })
+      rememberTransientWidth(path, mode)
+    }
   } catch (err) {
-    setToastMessage(`Failed to update note width: ${err}`)
+    setToastMessage(`Failed to ${mode === null ? 'reset' : 'update'} note width: ${err}`)
   }
 }
 
@@ -114,6 +139,8 @@ export function useNoteWidthMode({
   settings,
   saveSettings,
   updateFrontmatter,
+  deleteFrontmatter,
+  themeRecommendedWidth = null,
   setToastMessage,
 }: UseNoteWidthModeOptions) {
   const [transientNoteWidths, setTransientNoteWidths] = useState<Record<VaultPath, NoteWidthMode>>({})
@@ -122,12 +149,19 @@ export function useNoteWidthMode({
     [activeTabPath, tabs],
   )
   const defaultNoteWidth = useMemo(
-    () => resolveNoteWidthMode(settings.note_width_mode, null),
+    () => normalizeNoteWidthMode(settings.note_width_mode),
     [settings.note_width_mode],
   )
-  const noteWidth = useMemo(() => {
-    return resolveCurrentWidth({ activeTab, defaultNoteWidth, transientNoteWidths })
-  }, [activeTab, defaultNoteWidth, transientNoteWidths])
+  const resolvedNoteWidth = useMemo(
+    () => resolveCurrentWidth({
+      activeTab,
+      defaultNoteWidth,
+      themeRecommendedWidth,
+      transientNoteWidths,
+    }),
+    [activeTab, defaultNoteWidth, themeRecommendedWidth, transientNoteWidths],
+  )
+  const noteWidth = resolvedNoteWidth.mode
 
   const rememberTransientWidth = useCallback((path: VaultPath, mode: NoteWidthMode) => {
     setTransientNoteWidths((previous) => {
@@ -138,19 +172,30 @@ export function useNoteWidthMode({
     })
   }, [])
 
-  const setNoteWidth = useCallback((mode: NoteWidthMode) => persistOrRememberNoteWidth({
+  const clearTransientWidth = useCallback((path: VaultPath) => {
+    setTransientNoteWidths((previous) => {
+      if (!Object.hasOwn(previous, path)) return previous
+      const next = { ...previous }
+      Reflect.deleteProperty(next, path)
+      return next
+    })
+  }, [])
+
+  const setNoteWidth = useCallback((mode: NoteWidthPreference) => persistOrRememberNoteWidth({
     activeTab,
     mode,
     updateFrontmatter,
+    deleteFrontmatter,
     rememberTransientWidth,
+    clearTransientWidth,
     setToastMessage,
-  }), [activeTab, rememberTransientWidth, setToastMessage, updateFrontmatter])
+  }), [activeTab, clearTransientWidth, deleteFrontmatter, rememberTransientWidth, setToastMessage, updateFrontmatter])
 
   const toggleNoteWidth = useCallback(() => {
     void setNoteWidth(toggleNoteWidthMode(noteWidth))
   }, [noteWidth, setNoteWidth])
 
-  const setDefaultNoteWidth = useCallback(async (mode: NoteWidthMode) => {
+  const setDefaultNoteWidth = useCallback(async (mode: NoteWidthPreference) => {
     await saveSettings({ ...settings, note_width_mode: mode })
   }, [saveSettings, settings])
 
@@ -158,6 +203,8 @@ export function useNoteWidthMode({
     activeTab,
     defaultNoteWidth,
     noteWidth,
+    noteWidthMaxWidth: resolvedNoteWidth.maxWidth,
+    noteWidthSource: resolvedNoteWidth.source as NoteWidthSource,
     setDefaultNoteWidth,
     setNoteWidth,
     toggleNoteWidth,

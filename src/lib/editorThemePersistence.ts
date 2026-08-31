@@ -26,7 +26,7 @@ interface EditorThemePersistenceCoordinatorOptions {
 }
 
 export interface EditorThemePersistenceCoordinator {
-  setEditorTheme: (value: unknown) => Promise<EditorThemeChangeResult>
+  setEditorTheme: (value: unknown, settingsOverride?: Settings) => Promise<EditorThemeChangeResult>
 }
 
 function currentDocumentEditorThemeId(documentObject: EditorThemeDocument): EditorThemeId | null {
@@ -41,7 +41,7 @@ export function createEditorThemePersistenceCoordinator({
   storage,
 }: EditorThemePersistenceCoordinatorOptions): EditorThemePersistenceCoordinator {
   return {
-    async setEditorTheme(value: unknown): Promise<EditorThemeChangeResult> {
+    async setEditorTheme(value: unknown, settingsOverride?: Settings): Promise<EditorThemeChangeResult> {
       const currentSettings = getSettings()
       const previousEditorThemeId = currentDocumentEditorThemeId(documentObject)
         ?? normalizeEditorThemeId(currentSettings.editor_theme)
@@ -52,7 +52,7 @@ export function createEditorThemePersistenceCoordinator({
 
       try {
         const result = await saveSettings({
-          ...currentSettings,
+          ...(settingsOverride ?? currentSettings),
           editor_theme: editorThemeId,
         })
         if (result === false) {

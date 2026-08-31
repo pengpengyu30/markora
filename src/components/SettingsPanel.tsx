@@ -10,6 +10,7 @@ import {
   resolveEffectiveLocale,
   serializeUiLanguagePreference,
   type AppLocale,
+  type TranslationKey,
   type UiLanguagePreference,
 } from '../lib/i18n'
 import {
@@ -36,13 +37,23 @@ import {
   settingsWithAllNotesFileVisibility,
   type AllNotesFileVisibility,
 } from '../utils/allNotesFileVisibility'
-import { DEFAULT_NOTE_WIDTH_MODE, normalizeNoteWidthMode } from '../utils/noteWidth'
+import { normalizeNoteWidthMode } from '../utils/noteWidth'
 import { DEFAULT_DATE_DISPLAY_FORMAT, normalizeDateDisplayFormat, type DateDisplayFormat } from '../utils/dateDisplay'
 import { Button } from './ui/button'
-import type { NoteWidthMode } from '../types'
+import type { NoteWidthPreference } from '../types'
 import { SETTINGS_SECTION_IDS } from './settingsSectionIds'
 import { useSettingsPanelAutofocus, useSettingsPanelFocusTrap } from './useSettingsPanelFocus'
 import { registerMacosDismissableEscapeSurface } from '../utils/macosDismissableEscapeSurface'
+import {
+  EDITOR_THEME_CATALOG,
+  SELECTABLE_EDITOR_THEME_IDS,
+  normalizeEditorThemeId,
+  resolveEffectiveEditorTheme,
+  type EditorThemeId,
+  type EditorThemeVariant,
+} from '../editorThemes/editorThemeCatalog'
+import type { EditorThemeChangeResult } from '../lib/editorThemePersistence'
+import { EditorThemePreview } from '../editorThemes/EditorThemePreview'
 
 interface SettingsPanelProps {
   open: boolean
@@ -50,7 +61,8 @@ interface SettingsPanelProps {
   initialSectionId?: string | null
   locale?: AppLocale
   systemLocale?: AppLocale
-  onSave: (settings: Settings) => void
+  onSave: (settings: Settings) => void | boolean | Promise<unknown>
+  onSaveEditorTheme?: (settings: Settings) => Promise<EditorThemeChangeResult>
   onClose: () => void
   projects?: VaultOption[]
   defaultProjectPath?: string | null
@@ -62,9 +74,10 @@ interface SettingsPanelProps {
 
 interface SettingsDraft {
   themeMode: ThemeMode
+  editorTheme: EditorThemeId
   uiLanguage: UiLanguagePreference
   dateDisplayFormat: DateDisplayFormat
-  defaultNoteWidth: NoteWidthMode
+  defaultNoteWidth: NoteWidthPreference
   initialH1AutoRename: boolean
   hideGitignoredFiles: boolean
   allNotesFileVisibility: AllNotesFileVisibility
@@ -77,12 +90,14 @@ interface SettingsBodyProps {
   t: Translate
   themeMode: ThemeMode
   setThemeMode: (value: ThemeMode) => void
+  editorTheme: EditorThemeId
+  setEditorTheme: (value: EditorThemeId) => void
   uiLanguage: UiLanguagePreference
   setUiLanguage: (value: UiLanguagePreference) => void
   dateDisplayFormat: DateDisplayFormat
   setDateDisplayFormat: (value: DateDisplayFormat) => void
-  defaultNoteWidth: NoteWidthMode
-  setDefaultNoteWidth: (value: NoteWidthMode) => void
+  defaultNoteWidth: NoteWidthPreference
+  setDefaultNoteWidth: (value: NoteWidthPreference) => void
   locale: AppLocale
   systemLocale: AppLocale
   initialH1AutoRename: boolean
@@ -111,12 +126,19 @@ function isSaveShortcut(event: { ctrlKey: boolean; key: string; metaKey: boolean
   return event.key === 'Enter' && (event.metaKey || event.ctrlKey)
 }
 
+function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
+  return typeof value === 'object'
+    && value !== null
+    && typeof Reflect.get(value, 'then') === 'function'
+}
+
 function createSettingsDraft(settings: Settings): SettingsDraft {
   return {
     themeMode: resolveSettingsDraftThemeMode(settings.theme_mode),
+    editorTheme: normalizeEditorThemeId(settings.editor_theme),
     uiLanguage: settings.ui_language ?? SYSTEM_UI_LANGUAGE,
     dateDisplayFormat: normalizeDateDisplayFormat(settings.date_display_format) ?? DEFAULT_DATE_DISPLAY_FORMAT,
-    defaultNoteWidth: normalizeNoteWidthMode(settings.note_width_mode) ?? DEFAULT_NOTE_WIDTH_MODE,
+    defaultNoteWidth: normalizeNoteWidthMode(settings.note_width_mode),
     initialH1AutoRename: settings.initial_h1_auto_rename_enabled ?? true,
     hideGitignoredFiles: shouldHideGitignoredFiles(settings),
     allNotesFileVisibility: resolveAllNotesFileVisibility(settings),
@@ -136,6 +158,7 @@ function buildSettingsFromDraft(settings: Settings, draft: SettingsDraft): Setti
   const nextSettings = {
     ...settings,
     theme_mode: draft.themeMode,
+    editor_theme: draft.editorTheme,
     ui_language: serializeUiLanguagePreference(draft.uiLanguage),
     date_display_format: draft.dateDisplayFormat,
     note_width_mode: draft.defaultNoteWidth,
@@ -162,6 +185,7 @@ export function SettingsPanel(options: SettingsPanelProps) {
     locale = 'en',
     systemLocale = locale,
     onSave,
+    onSaveEditorTheme,
     onClose,
     projects = [],
     defaultProjectPath = null,
@@ -182,6 +206,7 @@ export function SettingsPanel(options: SettingsPanelProps) {
       locale={locale}
       systemLocale={systemLocale}
       onSave={onSave}
+      onSaveEditorTheme={onSaveEditorTheme}
       onClose={onClose}
       projects={projects}
       defaultProjectPath={defaultProjectPath}
@@ -203,9 +228,11 @@ type SettingsPanelInnerProps = Omit<
   systemLocale: AppLocale
 }
 
-function useSettingsDraftActions(options: Pick<SettingsPanelInnerProps, 'initialDraft' | 'onClose' | 'onSave' | 'settings'>) {
-  const { initialDraft, onClose, onSave, settings } = options
+function useSettingsDraftActions(options: Pick<SettingsPanelInnerProps, 'initialDraft' | 'onClose' | 'onSave' | 'onSaveEditorTheme' | 'settings'>) {
+  const { initialDraft, onClose, onSave, onSaveEditorTheme, settings } = options
   const [draft, setDraft] = useState(initialDraft)
+  const [saveErrorKey, setSaveErrorKey] = useState<TranslationKey | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
   const updateDraft = useCallback(<Key extends keyof SettingsDraft>(key: Key, value: SettingsDraft[Key]) => {
     setDraft((current) => ({ ...current, [key]: value }))
   }, [])
@@ -223,10 +250,61 @@ function useSettingsDraftActions(options: Pick<SettingsPanelInnerProps, 'initial
     onSave({ ...settings, theme_mode: value })
   }, [onSave, settings, updateDraft])
   const handleSave = useCallback(() => {
-    onSave(buildSettingsFromDraft(settings, draft))
+    if (isSaving) return
+    setSaveErrorKey(null)
+    const nextSettings = buildSettingsFromDraft(settings, draft)
+    const themeChanged = normalizeEditorThemeId(settings.editor_theme) !== draft.editorTheme
+
+    if (themeChanged && onSaveEditorTheme) {
+      setIsSaving(true)
+      let pendingSave: Promise<EditorThemeChangeResult>
+      try {
+        pendingSave = onSaveEditorTheme(nextSettings)
+      } catch {
+        setSaveErrorKey('settings.editorTheme.saveError')
+        setIsSaving(false)
+        return
+      }
+      void pendingSave.then((result) => {
+        if (!result.ok) {
+          setSaveErrorKey('settings.editorTheme.saveError')
+          return
+        }
+        onClose()
+      }).catch(() => {
+        setSaveErrorKey('settings.editorTheme.saveError')
+      }).finally(() => {
+        setIsSaving(false)
+      })
+      return
+    }
+
+    let result: void | boolean | Promise<unknown>
+    try {
+      result = onSave(nextSettings)
+    } catch {
+      setSaveErrorKey('settings.saveError')
+      return
+    }
+    if (isPromiseLike(result)) {
+      void Promise.resolve(result).then((value) => {
+        if (value === false) {
+          setSaveErrorKey('settings.saveError')
+          return
+        }
+        onClose()
+      }).catch(() => {
+        setSaveErrorKey('settings.saveError')
+      })
+      return
+    }
+    if (result === false) {
+      setSaveErrorKey('settings.saveError')
+      return
+    }
     onClose()
-  }, [draft, onClose, onSave, settings])
-  return { draft, updateDraft, handleGitignoredVisibilityChange, handleAllNotesFileVisibilityChange, handleThemeModeChange, handleSave }
+  }, [draft, isSaving, onClose, onSave, onSaveEditorTheme, settings])
+  return { draft, updateDraft, handleGitignoredVisibilityChange, handleAllNotesFileVisibilityChange, handleThemeModeChange, handleSave, isSaving, saveErrorKey }
 }
 
 function useSettingsPanelInteractions(options: {
@@ -276,6 +354,7 @@ function SettingsPanelInner(options: SettingsPanelInnerProps) {
     initialSectionId,
     systemLocale,
     onSave,
+    onSaveEditorTheme,
     onClose,
     projects,
     defaultProjectPath,
@@ -286,7 +365,7 @@ function SettingsPanelInner(options: SettingsPanelInnerProps) {
   } = options
   const backdropRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
-  const { draft, updateDraft, handleGitignoredVisibilityChange, handleAllNotesFileVisibilityChange, handleThemeModeChange, handleSave } = useSettingsDraftActions({ initialDraft, onClose, onSave, settings })
+  const { draft, updateDraft, handleGitignoredVisibilityChange, handleAllNotesFileVisibilityChange, handleThemeModeChange, handleSave, isSaving, saveErrorKey } = useSettingsDraftActions({ initialDraft, onClose, onSave, onSaveEditorTheme, settings })
   const draftLocale = resolveEffectiveLocale(draft.uiLanguage, [systemLocale])
   const t = createTranslator(draftLocale)
   useSettingsPanelInteractions({ backdropRef, handleSave, initialSectionId, onClose, panelRef })
@@ -316,17 +395,24 @@ function SettingsPanelInner(options: SettingsPanelInnerProps) {
           locale={draftLocale}
           systemLocale={systemLocale}
           updateDraft={updateDraft}
-        setThemeMode={handleThemeModeChange}
-        setHideGitignoredFiles={handleGitignoredVisibilityChange}
-        setAllNotesFileVisibility={handleAllNotesFileVisibilityChange}
-        projects={projects ?? []}
-        defaultProjectPath={defaultProjectPath}
-        onSetDefaultProject={onSetDefaultProject}
-        onRemoveProject={onRemoveProject}
-        onReorderProjects={onReorderProjects}
-        onUpdateProjectIdentity={onUpdateProjectIdentity}
+          setThemeMode={handleThemeModeChange}
+          setEditorTheme={(value) => updateDraft('editorTheme', value)}
+          setHideGitignoredFiles={handleGitignoredVisibilityChange}
+          setAllNotesFileVisibility={handleAllNotesFileVisibilityChange}
+          projects={projects ?? []}
+          defaultProjectPath={defaultProjectPath}
+          onSetDefaultProject={onSetDefaultProject}
+          onRemoveProject={onRemoveProject}
+          onReorderProjects={onReorderProjects}
+          onUpdateProjectIdentity={onUpdateProjectIdentity}
         />
-        <SettingsFooter onClose={onClose} onSave={handleSave} t={t} />
+        <SettingsFooter
+          disabled={isSaving}
+          error={saveErrorKey ? t(saveErrorKey) : null}
+          onClose={onClose}
+          onSave={handleSave}
+          t={t}
+        />
       </div>
     </div>
   )
@@ -374,6 +460,7 @@ interface SettingsBodyFromDraftProps {
   systemLocale: AppLocale
   updateDraft: <Key extends keyof SettingsDraft>(key: Key, value: SettingsDraft[Key]) => void
   setThemeMode: (value: ThemeMode) => void
+  setEditorTheme: (value: EditorThemeId) => void
   setHideGitignoredFiles: (value: boolean) => void
   setAllNotesFileVisibility: (value: AllNotesFileVisibility) => void
   projects: VaultOption[]
@@ -392,6 +479,7 @@ function SettingsBodyFromDraft(options: SettingsBodyFromDraftProps) {
     systemLocale,
     updateDraft,
     setThemeMode,
+    setEditorTheme,
     setHideGitignoredFiles,
     setAllNotesFileVisibility,
     projects,
@@ -408,6 +496,8 @@ function SettingsBodyFromDraft(options: SettingsBodyFromDraftProps) {
       systemLocale={systemLocale}
       themeMode={draft.themeMode}
       setThemeMode={setThemeMode}
+      editorTheme={draft.editorTheme}
+      setEditorTheme={setEditorTheme}
       uiLanguage={draft.uiLanguage}
       setUiLanguage={(value) => updateDraft('uiLanguage', value)}
       dateDisplayFormat={draft.dateDisplayFormat}
@@ -482,12 +572,18 @@ function SettingsProjectSections(options: SettingsBodyProps) {
 }
 
 function SettingsSyncAndAppearanceSections(options: SettingsBodyProps) {
-  const { t, locale, systemLocale, themeMode, setThemeMode, uiLanguage, setUiLanguage } = options
+  const { t, locale, systemLocale, themeMode, setThemeMode, editorTheme, setEditorTheme, uiLanguage, setUiLanguage } = options
   return (
     <SettingsSection id={SETTINGS_SECTION_IDS.appearance}>
       <SectionHeading title={t('settings.appearance.title')} />
       <SettingsGroup>
         <AppearanceSettingsSection t={t} themeMode={themeMode} setThemeMode={setThemeMode} />
+        <EditorThemeSettingsSection
+          editorTheme={editorTheme}
+          themeMode={themeMode}
+          setEditorTheme={setEditorTheme}
+          t={t}
+        />
         <LanguageSettingsSection
           t={t}
           locale={locale}
@@ -535,6 +631,108 @@ function AppearanceSettingsSection({
       <ThemeModeControl value={themeMode} onChange={setThemeMode} t={t} />
     </SettingsRow>
   )
+}
+
+function editorThemeSummaryKey(themeId: EditorThemeId): TranslationKey {
+  return `editorTheme.${themeId}.summary` as TranslationKey
+}
+
+function EditorThemeSettingsSection({
+  editorTheme,
+  themeMode,
+  setEditorTheme,
+  t,
+}: {
+  editorTheme: EditorThemeId
+  themeMode: ThemeMode
+  setEditorTheme: (value: EditorThemeId) => void
+  t: Translate
+}) {
+  const cardRefs = useRef<Array<HTMLButtonElement | null>>([])
+  const themes = EDITOR_THEME_CATALOG.filter((theme) => SELECTABLE_EDITOR_THEME_IDS.includes(theme.id))
+  const previewVariant = resolveEditorThemePreviewVariant(themeMode)
+  const previewTheme = resolveEffectiveEditorTheme(editorTheme, previewVariant)
+  const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const direction = event.key === 'ArrowRight' || event.key === 'ArrowDown'
+      ? 1
+      : event.key === 'ArrowLeft' || event.key === 'ArrowUp'
+        ? -1
+        : 0
+    if (direction === 0) return
+    event.preventDefault()
+    const nextIndex = (index + direction + themes.length) % themes.length
+    setEditorTheme(themes[nextIndex].id)
+    cardRefs.current[nextIndex]?.focus()
+  }, [setEditorTheme, themes])
+
+  return (
+    <div className="border-b border-border px-4 py-3 last:border-b-0" data-testid="settings-editor-theme-section">
+      <div className="space-y-1">
+        <div className="text-sm font-medium text-foreground">{t('settings.editorTheme.label')}</div>
+        <div className="text-xs leading-5 text-muted-foreground">{t('settings.editorTheme.description')}</div>
+      </div>
+      <div
+        className="mt-3 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2"
+        role="radiogroup"
+        aria-label={t('settings.editorTheme.label')}
+        data-testid="settings-editor-theme"
+      >
+        {themes.map((theme, index) => {
+          const selected = theme.id === editorTheme
+          const descriptionId = `settings-editor-theme-${theme.id}-description`
+          const summaryId = `settings-editor-theme-${theme.id}-summary`
+          return (
+            <Button
+              key={theme.id}
+              ref={(element) => { cardRefs.current[index] = element }}
+              type="button"
+              variant="outline"
+              role="radio"
+              aria-checked={selected}
+              aria-label={t('settings.editorTheme.select', { theme: theme.displayName })}
+              aria-describedby={`${descriptionId} ${summaryId}`}
+              data-testid={`settings-editor-theme-${theme.id}`}
+              className={selected
+                ? 'h-auto min-h-28 items-start justify-start whitespace-normal border-primary bg-accent/40 p-3 text-left shadow-sm'
+                : 'h-auto min-h-28 items-start justify-start whitespace-normal p-3 text-left'}
+              onClick={() => setEditorTheme(theme.id)}
+              onKeyDown={(event) => handleKeyDown(event, index)}
+            >
+              <span className="flex min-w-0 flex-col items-start gap-1">
+                <span className="flex w-full items-center justify-between gap-2 font-semibold text-foreground">
+                  <span>{theme.displayName}</span>
+                  {selected ? <span className="text-xs font-medium text-primary">{t('settings.editorTheme.selected')}</span> : null}
+                </span>
+                <span id={descriptionId} className="text-xs leading-5 text-muted-foreground">
+                  {t(theme.descriptionKey as TranslationKey)}
+                </span>
+                <span id={summaryId} className="text-[11px] leading-4 text-muted-foreground/80">
+                  {t(editorThemeSummaryKey(theme.id))}
+                </span>
+              </span>
+            </Button>
+          )
+        })}
+      </div>
+      <div className="mt-4 space-y-1.5">
+        <div className="text-sm font-medium text-foreground">{t('settings.editorTheme.preview')}</div>
+        <div className="text-xs leading-5 text-muted-foreground">{t('settings.editorTheme.previewDescription')}</div>
+        <EditorThemePreview
+          ariaLabel={t('settings.editorTheme.preview')}
+          theme={previewTheme}
+        />
+      </div>
+    </div>
+  )
+}
+
+function resolveEditorThemePreviewVariant(themeMode: ThemeMode): EditorThemeVariant {
+  if (themeMode !== 'system') return themeMode
+  try {
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  } catch {
+    return 'light'
+  }
 }
 
 function ThemeModeControl({

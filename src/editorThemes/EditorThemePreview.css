@@ -1,0 +1,48 @@
+.editor-theme-preview {
+  box-sizing: border-box;
+  container-type: inline-size;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--editor-theme-borders-default);
+  border-radius: 6px;
+  background: var(--editor-theme-surfaces-canvas);
+  color: var(--editor-theme-text-primary);
+}
+
+.editor-theme-preview__surface {
+  height: 420px;
+  overflow: auto;
+  background: var(--editor-theme-surfaces-canvas);
+}
+
+.editor-theme-preview .editor__blocknote-container {
+  min-height: 420px;
+  cursor: default;
+}
+
+.editor-theme-preview .editor__blocknote-container .bn-editor {
+  box-sizing: border-box;
+  min-height: 420px;
+}
+
+.editor-theme-preview .editor__blocknote-container .bn-editor [contenteditable="true"] {
+  caret-color: transparent;
+}
+
+.editor-theme-preview__error {
+  margin: 0;
+  padding: 16px;
+  color: var(--editor-theme-text-error);
+  font: 12px/1.5 var(--editor-raw-font-family);
+}
+
+@container (max-width: 560px) {
+  .editor-theme-preview__surface {
+    height: 360px;
+  }
+
+  .editor-theme-preview .editor__blocknote-container,
+  .editor-theme-preview .editor__blocknote-container .bn-editor {
+    min-height: 360px;
+  }
+}

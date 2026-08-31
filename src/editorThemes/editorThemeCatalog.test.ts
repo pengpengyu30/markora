@@ -16,10 +16,10 @@ function cloneCatalog() {
 }
 
 describe('editor theme catalog', () => {
-  it('contains the four stable families but exposes only Default for selection in Phase 1', () => {
+  it('contains the four stable families and exposes all four for selection', () => {
     expect(EDITOR_THEME_IDS).toEqual(['default', 'code', 'editorial', 'canvas'])
     expect(EDITOR_THEME_CATALOG.map(theme => theme.id)).toEqual([...EDITOR_THEME_IDS])
-    expect(SELECTABLE_EDITOR_THEME_IDS).toEqual(['default'])
+    expect(SELECTABLE_EDITOR_THEME_IDS).toEqual(['default', 'code', 'editorial', 'canvas'])
   })
 
   it('requires the official schema, both variants, and the complete token shape', () => {

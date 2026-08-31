@@ -134,6 +134,16 @@ describe('EditorContentLayout', () => {
     expect(screen.getByTestId('breadcrumb-bar')).toHaveAttribute('data-note-width', 'wide')
   })
 
+  it('passes the inherited theme width into the central editor scope', () => {
+    const { container } = render(<EditorContentLayout {...createModel({
+      noteWidth: 'normal',
+      noteWidthMaxWidth: 1040,
+    })} />)
+
+    const themeScope = container.querySelector('[data-editor-theme-scope="true"]')
+    expect(themeScope).toHaveStyle('--editor-max-width: 1040px')
+  })
+
   it('owns editor theme variables at one central canvas scope', () => {
     const { container } = render(<EditorContentLayout {...createModel({
       cssVars: { '--editor-font-size': '15px' },

@@ -6,7 +6,7 @@ export const EDITOR_THEME_IDS = ['default', 'code', 'editorial', 'canvas'] as co
 export type EditorThemeId = typeof EDITOR_THEME_IDS[number]
 
 export const DEFAULT_EDITOR_THEME_ID = 'default' as const
-export const SELECTABLE_EDITOR_THEME_IDS = [DEFAULT_EDITOR_THEME_ID] as const
+export const SELECTABLE_EDITOR_THEME_IDS = EDITOR_THEME_IDS
 
 export type EditorThemeVariant = 'light' | 'dark'
 
