@@ -74,7 +74,26 @@ The native names are historical. New code should use Project terminology in copy
 
 ### Settings store
 
-`useSettings.ts` loads and normalizes native settings. `useAppPreferences.ts` derives effective theme and locale without mutating the stored preference. The settings panel edits a draft and persists only after the user confirms Save.
+`useSettings.ts` loads and normalizes native settings. `useAppPreferences.ts` derives effective
+application appearance, editor theme, and locale without mutating the stored preference. The
+settings panel edits an editor-theme draft and persists it only after the user confirms Save;
+the existing Light/Dark/System appearance control retains its immediate-apply behavior. Native
+`Settings.editor_theme` is durable; the `markora-editor-theme` localStorage entry is only a
+validated pre-React cache and never replaces native settings.
+
+### Note width resolution
+
+`useNoteWidthMode.ts` and `src/utils/noteWidth.ts` resolve the effective rich-editor width in
+this order:
+
+```text
+per-note `_width` > global `note_width_mode` > theme recommendation > 820px fallback
+```
+
+The global preference is nullable. `null` or a missing value is **Theme default**, while
+`normal` and `wide` remain explicit persisted choices. The note-level `Use default` action
+deletes only `_width` through `frontmatterOps`; malformed or unsafe notes keep the existing
+no-destructive-write behavior and unrelated frontmatter remains untouched.
 
 ### Filesystem and cache
 
@@ -208,6 +227,10 @@ uses a unique ID for each render attempt, and keeps the last valid SVG visible d
 red/green/blue/purple highlight names. These adapters never write note bytes; tldraw and media
 remain outside the editor-theme renderer ownership.
 
+The catalog's `createVariant` helper only reuses values while materializing a complete declaration
+at module load. `validateEditorThemeCatalog` checks the emitted shape for every official family and
+variant, so runtime resolution has no element-level fallback to `Default`.
+
 `useSidebarNoteDropTargets` owns document-level note retargeting drag feedback and drop dispatch. It uses the active note path fallback when a browser hides the custom MIME payload, scopes listeners to the mounted app, and clears the fallback on drop, drag end, and unmount.
 
 ## Invisible Git abstractions
@@ -261,6 +284,11 @@ Prefer a small component with explicit props over a new global store. Hooks shou
 - Rust tests cover command helpers, path boundaries, frontmatter parsing, cache/snapshot behavior, search, Git scope, and file operations.
 - `tests/smoke/` covers browser-mode core flows. Add a smoke case when changing Project open, note create/save/delete, search, wikilinks, or tag filtering.
 - Native macOS testing is required for Tauri menu shortcuts, real filesystem persistence, Project restart behavior, and whiteboard/webview behavior.
+
+For editor themes, the focused browser layer proves token completeness, localization, optimistic
+save/rollback, Settings preview isolation, Rich/Raw presentation, semantic content renderers,
+width precedence, and no-content-mutation flows. It does not replace the native matrix for
+prepaint, packaged fonts/CSP, native restart, System mode changes, or WebKit interaction state.
 
 When a test needs a Project, use `demo-vault-v2` or a temporary directory inside the repository/test harness. Do not leave test notes in a user vault.
 

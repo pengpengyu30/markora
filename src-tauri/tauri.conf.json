@@ -58,6 +58,9 @@
     "targets": "all",
     "createUpdaterArtifacts": false,
     "category": "Productivity",
+    "resources": {
+      "../dist/editor-theme-fonts/licenses/": "editor-theme-fonts/licenses/"
+    },
     "windows": {
       "webviewInstallMode": {
         "type": "downloadBootstrapper"

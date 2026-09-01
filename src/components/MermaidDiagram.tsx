@@ -113,7 +113,7 @@ function initializeMermaid(mermaid: MermaidApi, theme: EffectiveEditorTheme) {
     theme: 'base',
     suppressErrorRendering: true,
     themeVariables: {
-      fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+      fontFamily: theme.shared.editor.uiFontFamily,
       ...mermaidThemeVariables(theme),
     },
   })

@@ -608,7 +608,6 @@ body.mac-chrome .app:not(:has(.app__sidebar), :has(.app__note-list)) .breadcrumb
   overflow: hidden;
   border-radius: 0.5rem;
   background: var(--callout-background);
-  border-inline-start: 3px solid var(--callout-border);
 }
 
 .markora-callout--success {

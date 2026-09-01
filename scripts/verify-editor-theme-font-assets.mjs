@@ -1,6 +1,7 @@
 import { readdir, readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { EDITOR_THEME_FONT_LICENSE_FILES } from './copy-editor-theme-font-licenses.mjs'
 
 export const REQUIRED_EDITOR_THEME_FONT_FACES = Object.freeze([
   { family: 'Tolaria Inter', style: 'normal', fileStem: 'inter-latin-var' },
@@ -96,6 +97,29 @@ async function resolveLocalFontAsset(url, cssFile, distDirectory) {
   return candidate
 }
 
+async function verifyLicenseAssets(distDirectory) {
+  const licenseDirectory = path.join(distDirectory, 'editor-theme-fonts', 'licenses')
+  for (const fileName of EDITOR_THEME_FONT_LICENSE_FILES) {
+    const candidate = path.join(licenseDirectory, fileName)
+    let fileStats
+    try {
+      fileStats = await stat(candidate)
+    } catch {
+      throw new Error(`Editor theme font license is missing: ${candidate}`)
+    }
+    if (!fileStats.isFile() || fileStats.size === 0) {
+      throw new Error(`Editor theme font license is not a valid file: ${candidate}`)
+    }
+
+    const content = await readFile(candidate, 'utf8')
+    if (!content.includes('SIL Open Font License')) {
+      throw new Error(`Editor theme font license does not contain the OFL text: ${candidate}`)
+    }
+  }
+
+  return [...EDITOR_THEME_FONT_LICENSE_FILES]
+}
+
 export async function verifyEditorThemeFontAssets(distDirectory) {
   const resolvedDistDirectory = path.resolve(distDirectory)
   const cssFiles = await listCssFiles(resolvedDistDirectory)
@@ -128,9 +152,12 @@ export async function verifyEditorThemeFontAssets(distDirectory) {
     }
   }
 
+  const licensesChecked = await verifyLicenseAssets(resolvedDistDirectory)
+
   return {
     facesChecked: REQUIRED_EDITOR_THEME_FONT_FACES.length,
     families: [...new Set(REQUIRED_EDITOR_THEME_FONT_FACES.map(face => face.family))],
+    licensesChecked: licensesChecked.length,
   }
 }
 
@@ -139,7 +166,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   try {
     const result = await verifyEditorThemeFontAssets(distDirectory)
     console.log(
-      `Verified ${result.facesChecked} local editor-theme font faces for ${result.families.join(', ')}.`,
+      `Verified ${result.facesChecked} local editor-theme font faces and ${result.licensesChecked} bundled licenses for ${result.families.join(', ')}.`,
     )
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error))

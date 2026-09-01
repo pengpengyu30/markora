@@ -85,7 +85,8 @@ async function readComplexMarkdownSnapshot(page: Page) {
       callouts: Array.from(scope.querySelectorAll<HTMLElement>('.markora-callout')).map((callout) => ({
         type: callout.dataset.calloutType ?? '',
         background: readStyle(callout, 'background-color'),
-        border: readStyle(callout, 'border-inline-start-color'),
+        border: readStyle(callout, '--callout-border'),
+        borderWidth: readStyle(callout, 'border-inline-start-width'),
         header: readStyle(callout.querySelector('.markora-callout__header'), 'color'),
       })),
       highlights: Array.from(scope.querySelectorAll<HTMLElement>('mark.markdown-highlight')).map((highlight) => ({
@@ -182,7 +183,8 @@ test.describe('Editor theme Phase 6 complex Markdown', () => {
           if (!family) throw new Error(`Unknown callout type ${callout.type}`)
           const feedback = variant.feedback[family]
           expect(callout.background).toBe(cssRgb(feedback.background))
-          expect(callout.border).toBe(cssRgb(feedback.border))
+          expect(callout.border).toBe(feedback.border)
+          expect(callout.borderWidth).toBe('0px')
           expect(callout.header).toBe(cssRgb(feedback.text))
         }
 
@@ -199,7 +201,7 @@ test.describe('Editor theme Phase 6 complex Markdown', () => {
           text: cssRgb(variant.mermaid.text),
           edge: cssRgb(variant.mermaid.edge),
         })
-        expect(page.getByTestId('unsaved-indicator')).toHaveCount(0)
+        await expect(page.getByTestId('unsaved-indicator')).toHaveCount(0)
         observedSnapshots.push(`${appearance}/${themeId}:${snapshot.code.background}:${snapshot.mermaid.background}`)
       }
     }

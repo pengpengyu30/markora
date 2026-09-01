@@ -9,7 +9,6 @@ import { resolveBlocksForTarget } from '../hooks/editorBlockResolution'
 import { RUNTIME_STYLE_NONCE } from '../lib/runtimeStyleNonce'
 import {
   EDITOR_THEME_CATALOG,
-  EDITOR_THEME_IDS,
   resolveEffectiveEditorTheme,
   type EditorThemeId,
   type EditorThemeVariant,
@@ -120,9 +119,11 @@ function LaboratoryPreview({
           <SingleEditorView
             editor={editor}
             editable={false}
+            editorTheme={theme}
             entries={[LABORATORY_ENTRY]}
             locale="en"
             onNavigateWikilink={() => {}}
+            themeMode={variant}
           />
         </div>
       )}
@@ -182,7 +183,7 @@ export function EditorThemeLaboratory() {
           </div>
         </header>
         <div className="editor-theme-laboratory__grid">
-          {EDITOR_THEME_CATALOG.filter(theme => EDITOR_THEME_IDS.includes(theme.id)).map(theme => (
+          {EDITOR_THEME_CATALOG.map(theme => (
             <LaboratoryPreview
               key={theme.id}
               themeId={theme.id}

@@ -28,6 +28,9 @@ test('local manifests expose the Markora product identity', async () => {
   assert.equal(tauriConfig.productName, 'Markora')
   assert.equal(tauriConfig.identifier, 'io.github.pengpengyu30.markora')
   assert.equal(tauriConfig.app.windows[0].title, 'Markora')
+  assert.deepEqual(tauriConfig.bundle.resources, {
+    '../dist/editor-theme-fonts/licenses/': 'editor-theme-fonts/licenses/',
+  })
   assert.equal(devConfig.productName, 'Markora Dev')
   assert.equal(devConfig.identifier, 'io.github.pengpengyu30.markora.dev')
   assert.equal(packageJson.name, 'markora')

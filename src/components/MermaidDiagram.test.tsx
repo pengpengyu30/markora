@@ -58,7 +58,7 @@ describe('MermaidDiagram', () => {
     }))
   })
 
-  it('uses semantic theme colors and rerenders existing diagrams after a theme change', async () => {
+  it('uses semantic theme tokens and rerenders existing diagrams after a theme change', async () => {
     const lightTheme = resolveEffectiveEditorTheme('default', 'light')
     const darkTheme = resolveEffectiveEditorTheme('canvas', 'dark')
     const source = '```mermaid\nflowchart LR\nA --> B\n```'
@@ -89,6 +89,7 @@ describe('MermaidDiagram', () => {
     expect(mermaidMock.initialize).toHaveBeenLastCalledWith(expect.objectContaining({
       theme: 'base',
       themeVariables: expect.objectContaining({
+        fontFamily: darkTheme.shared.editor.uiFontFamily,
         background: darkTheme.tokens.mermaid.background,
         primaryTextColor: darkTheme.tokens.mermaid.text,
         primaryColor: darkTheme.tokens.mermaid.nodeBackground,

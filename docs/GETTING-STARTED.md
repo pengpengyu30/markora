@@ -407,18 +407,18 @@ tolaria/
 | File | Why it matters |
 |------|---------------|
 | `src/index.css` | Semantic CSS custom properties for app-owned light/dark themes; System mode resolves to one of these at runtime. |
-| `src/editorThemes/editorThemeCatalog.ts` | Typed editor theme families, variants, and token validation. |
+| `src/editorThemes/editorThemeCatalog.ts` | Typed editor theme families, complete Light/Dark variants, semantic tokens, and token validation. |
 
 ### Settings & Config
 
 | File | Why it matters |
 |------|---------------|
-| `src/hooks/useSettings.ts` | App settings (telemetry, release channel, theme mode, UI language, date display format, Git visibility, auto-sync interval, default note width, sidebar type pluralization, default AI agent). |
+| `src/hooks/useSettings.ts` | App settings (telemetry, release channel, application appearance, editor theme, UI language, date display format, Git visibility, auto-sync interval, default note width, sidebar type pluralization, default AI agent). |
 | `src/lib/releaseChannel.ts` | Normalizes persisted updater-channel values (`stable` default, optional `alpha`). |
 | `src/lib/appUpdater.ts` | Frontend wrapper for channel-aware updater commands. |
 | `src/hooks/useMainWindowSizeConstraints.ts` | Derives the main-window minimum width from the visible panes and asks Tauri to grow back to fit wider layouts. |
 | `src/hooks/useVaultConfig.ts` | Per-vault local UI preferences (zoom, view mode, colors, Inbox columns, explicit organization workflow, Git setup prompt preference, AI permission mode). |
-| `src/components/SettingsPanel.tsx` | Settings UI for telemetry, release channel, Git visibility, sync interval, UI language, content display preferences, default AI agent, and the vault-level explicit organization toggle. |
+| `src/components/SettingsPanel.tsx` | Settings UI for application appearance, editor-theme preview/save, telemetry, release channel, Git visibility, sync interval, UI language, content display preferences, default AI agent, and the vault-level explicit organization toggle. |
 | `src/hooks/useUpdater.ts` | In-app updates using the selected alpha/stable feed. |
 
 ## Architecture Patterns
@@ -454,7 +454,7 @@ type SidebarSelection =
 
 ### Command Registry
 
-`useCommandRegistry` + `useAppCommands` build a centralized command registry. Commands are registered with labels, shortcuts, and handlers. The `CommandPalette` (Cmd+K) fuzzy-searches this registry. Settings commands can update installation-local preferences directly when they reuse an existing settings path, such as the Light/Dark/System theme-mode actions writing `settings.theme_mode`. Shortcut combos live in `appCommandCatalog.ts`; real keypresses always flow through `useAppKeyboard`, native menu clicks emit the same command IDs through `useMenuEvents`, and `appCommandDispatcher.ts` suppresses the duplicate native/renderer echo from a single shortcut. Plain-text paste follows this same path: the command owns `Cmd+Shift+V`, the menu and palette expose the same action, and `plainTextPaste.ts` resolves the active rich/raw editor target or focused text control before reading clipboard text. On macOS, any browser-reserved chord that WKWebView swallows before that path must also be added to the narrow `tauri-plugin-prevent-default` registration in `src-tauri/src/lib.rs`. On Linux and Windows, `LinuxTitlebar.tsx` and `LinuxMenuButton.tsx` reuse the same command IDs through `trigger_menu_command` because those builds use Tolaria's custom chrome instead of the native desktop menu bar. The same shortcut manifest also declares the deterministic QA mode for each shortcut-capable command.
+`useCommandRegistry` + `useAppCommands` build a centralized command registry. Commands are registered with labels, shortcuts, and handlers. The `CommandPalette` (Cmd+K) fuzzy-searches this registry. Settings commands can update installation-local preferences directly when they reuse an existing settings path, such as the Light/Dark/System application-appearance actions writing `settings.theme_mode` or the editor-theme actions writing `settings.editor_theme` through the persistence coordinator. Shortcut combos live in `appCommandCatalog.ts`; real keypresses always flow through `useAppKeyboard`, native menu clicks emit the same command IDs through `useMenuEvents`, and `appCommandDispatcher.ts` suppresses the duplicate native/renderer echo from a single shortcut. Plain-text paste follows this same path: the command owns `Cmd+Shift+V`, the menu and palette expose the same action, and `plainTextPaste.ts` resolves the active rich/raw editor target or focused text control before reading clipboard text. On macOS, any browser-reserved chord that WKWebView swallows before that path must also be added to the narrow `tauri-plugin-prevent-default` registration in `src-tauri/src/lib.rs`. On Linux and Windows, `LinuxTitlebar.tsx` and `LinuxMenuButton.tsx` reuse the same command IDs through `trigger_menu_command` because those builds use Tolaria's custom chrome instead of the native desktop menu bar. The same shortcut manifest also declares the deterministic QA mode for each shortcut-capable command.
 
 Commands whose availability depends on the current note or Git state must also flow through `update_menu_state` so the native menu stays in sync with the command palette. The deleted-note restore action in Changes view is the reference example: the row opens a deleted diff preview, the command palette exposes "Restore Deleted Note", and the Note menu enables the same action only while that preview is active.
 
@@ -466,6 +466,31 @@ For automated shortcut QA, use the explicit proof path from `appCommandCatalog.t
 - `window.__laputaTest.triggerMenuCommand()` for deterministic native menu-command coverage
 
 That browser harness is a deterministic desktop command bridge, not real native accelerator QA. For macOS browser-reserved chords, still perform native QA in the real Tauri app because the webview-init prevent-default layer is only active there. Do not treat flaky synthesized macOS keystrokes as proof that a shortcut works unless you also confirm the visible app behavior.
+
+### Editor Themes
+
+Tolaria keeps application appearance and editor presentation independent. Application appearance
+offers `Light`, `Dark`, and `System` for the shell, while Editor theme offers four built-in
+families for the central Rich and Raw editor canvas: `Default`, `Code`, `Editorial`, and `Canvas`.
+Each family has Light and Dark variants selected by the resolved application appearance.
+
+Open Settings → Appearance to select an editor-theme card. The card group changes a read-only
+preview only; `Save` commits the selected family, while Cancel, Escape, backdrop close, or any
+other non-save close discards the draft. The same four families are available in the command
+palette as `Editor Theme: Default`, `Editor Theme: Code`, `Editor Theme: Editorial`, and
+`Editor Theme: Canvas`; `Reset Editor Theme` returns to `Default`.
+
+The selected editor theme is global to the installation and is stored in native application
+settings. It is not written to Projects, vault configuration, Markdown frontmatter, or note
+content. Theme changes are presentational: they preserve note bytes, dirty state, caret,
+selection, undo history, and scroll position. Rich and Raw mode share the same family and
+appearance variant, while code, Mermaid, math, Callouts, highlights, media, and PDF export keep
+their documented renderer or application ownership.
+
+Global note width offers `Theme default`, `Normal`, and `Wide`. A per-note width override still
+takes precedence, and the note action menu can remove that override with `Use theme default`.
+Changing the editor theme never changes the global width preference or the per-note `_width`
+frontmatter field.
 
 ## Running Tests
 

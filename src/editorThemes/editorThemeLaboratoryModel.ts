@@ -2,11 +2,10 @@ import {
   flattenEditorTheme,
   type EffectiveEditorTheme,
 } from './editorThemeCatalog'
+import { DEFAULT_NOTE_WIDTH_PX } from '../utils/noteWidth'
 
 export const EDITOR_THEME_LABORATORY_WIDTH_MODES = ['theme', 'normal', 'wide'] as const
 export type ThemeLaboratoryWidthMode = typeof EDITOR_THEME_LABORATORY_WIDTH_MODES[number]
-
-const NORMAL_EDITOR_WIDTH = 820
 
 function colorMix(colorVariable: string, percentage: number, baseVariable: string): string {
   return `color-mix(in srgb, var(${colorVariable}) ${percentage}%, var(${baseVariable}))`
@@ -19,7 +18,7 @@ export function buildThemeLaboratoryStyle(
   const style = flattenEditorTheme(theme)
   style['--editor-max-width'] = widthMode === 'wide'
     ? 'none'
-    : `${widthMode === 'normal' ? NORMAL_EDITOR_WIDTH : theme.shared.editor.maxWidth}px`
+    : `${widthMode === 'normal' ? DEFAULT_NOTE_WIDTH_PX : theme.shared.editor.maxWidth}px`
 
   Object.assign(style, {
     '--surface-app': 'var(--editor-theme-surfaces-canvas)',

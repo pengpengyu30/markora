@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict'
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
+import { copyEditorThemeFontLicenses } from './copy-editor-theme-font-licenses.mjs'
 import { verifyEditorThemeFontAssets } from './verify-editor-theme-font-assets.mjs'
 
 const validFontFaces = [
@@ -17,6 +18,11 @@ async function withFixture(run) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'tolaria-editor-font-assets-'))
   try {
     await mkdir(path.join(root, 'assets'))
+    const licenseDirectory = path.join(root, 'editor-theme-fonts', 'licenses')
+    await mkdir(licenseDirectory, { recursive: true })
+    for (const fileName of ['OFL-Inter.txt', 'OFL-Source-Serif-4.txt', 'OFL-JetBrains-Mono.txt']) {
+      await writeFile(path.join(licenseDirectory, fileName), `SIL Open Font License:${fileName}\n`)
+    }
     for (const [, , fileName] of validFontFaces) {
       await writeFile(
         path.join(root, 'assets', fileName),
@@ -56,6 +62,38 @@ test('rejects a remote or missing production font URL', async () => {
     await assert.rejects(
       verifyEditorThemeFontAssets(root),
       /local WOFF2 asset|remote URL|missing/u,
+    )
+  })
+})
+
+test('copies upstream editor font licenses into the production asset directory', async () => {
+  await withFixture(async (root) => {
+    const sourceDirectory = path.join(root, 'font-source')
+    const licenseFiles = ['OFL-Inter.txt', 'OFL-Source-Serif-4.txt', 'OFL-JetBrains-Mono.txt']
+    await mkdir(sourceDirectory)
+    for (const fileName of licenseFiles) {
+      await writeFile(path.join(sourceDirectory, fileName), `license:${fileName}\n`)
+    }
+
+    const result = await copyEditorThemeFontLicenses(root, sourceDirectory)
+
+    assert.deepEqual(result.files, licenseFiles)
+    for (const fileName of licenseFiles) {
+      assert.equal(
+        await readFile(path.join(root, 'editor-theme-fonts', 'licenses', fileName), 'utf8'),
+        `license:${fileName}\n`,
+      )
+    }
+  })
+})
+
+test('rejects production assets without a bundled editor font license', async () => {
+  await withFixture(async (root) => {
+    await rm(path.join(root, 'editor-theme-fonts', 'licenses', 'OFL-Inter.txt'))
+
+    await assert.rejects(
+      verifyEditorThemeFontAssets(root),
+      /font license is missing/u,
     )
   })
 })

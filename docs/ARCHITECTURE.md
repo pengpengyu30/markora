@@ -126,11 +126,15 @@ sequenceDiagram
 
 ### Installation-local state
 
-The native settings store persists installation preferences such as language, theme, date display, note width, ignored-file visibility, media visibility, automatic H1 rename, and the multi-Project switch. The vault registry persists Project paths and their display identity:
+The native settings store persists installation preferences such as language, application appearance, editor theme, date display, note width, ignored-file visibility, media visibility, automatic H1 rename, and the multi-Project switch. The vault registry persists Project paths and their display identity:
 
 `editor_theme` is also an installation-local setting. It stores one of the four app-owned
 editor family IDs and is never written to Project files, Markdown frontmatter, or vault
-configuration. Missing or invalid values resolve to `default`.
+configuration. Native settings are the durable authority. The `markora-editor-theme`
+localStorage value is only a validated startup rendering cache: `index.html` and `main.tsx`
+prepaint its root attribute, then the native setting overwrites and repairs the cache after
+settings load. Missing, invalid, or unavailable cache data resolves to `default` without
+blocking startup.
 
 ```text
 Project identity = path + label + shortLabel + alias + color + icon + mounted
@@ -227,6 +231,14 @@ measurement host and visible SVG coexist. KaTeX, Callout families, and durable s
 remain document-renderer surfaces whose presentation is mapped by `EditorTheme.css`; tldraw and
 media keep their independent visual models.
 
+Effective rich-editor width is resolved by `src/utils/noteWidth.ts` and consumed by
+`useNoteWidthMode`: an explicit per-note `_width` wins over an explicit global
+`Settings.note_width_mode`, which wins over the selected theme's recommended width, which wins
+over the 820px application fallback. A null or missing global value means **Theme default** and
+is preserved as null when unrelated settings are saved. The note-level `Use default` action
+removes only `_width` through the narrow frontmatter boundary; it does not rewrite unknown
+metadata or alter the selected editor theme.
+
 Whiteboards are a deliberate compatibility exception to the original P4 plan. `TldrawWhiteboard.tsx` persists a durable representation inside the note and restores it when the note is reopened. The renderer contains WebKit-specific guards because this path is sensitive to native webview behavior.
 
 Standalone HTML files are not rendered as an in-app HTML application preview. Existing legacy sheet/HTML metadata is parsed defensively so opening an old file does not crash the editor; unsupported content falls back to raw text or the unsupported-file surface.
@@ -268,6 +280,13 @@ The test layers are:
 - Rust unit/integration tests for path validation, frontmatter, Git scope, search, cache, and commands;
 - Playwright smoke tests for browser-mode core flows such as opening Projects, creating/saving/deleting notes, search, wikilinks, and tag filtering;
 - native macOS QA for Tauri-specific menus, filesystem access, settings persistence, and webview-sensitive whiteboards.
+
+Editor-theme contracts are covered by catalog/schema and contrast tests, settings/storage and
+CodeMirror/Rich/Mermaid adapter tests, and focused smoke tests for the theme laboratory,
+complex Markdown, width inheritance/reset, and Rich/Raw transitions. Browser smoke uses the
+mock native bridge and cannot prove prepaint timing, native settings restart persistence,
+packaged font loading, live System appearance changes, or WKWebView focus/selection behavior;
+those remain explicit native macOS release checks.
 
 The final M8 validation commands are listed in [the phase plan](refactor/03-phase-plan.md). Release-workflow assertions are retained and run when the fork contains the corresponding workflow fixtures; this checkout has no release pipeline, so those two assertions are explicitly skipped rather than replaced with fabricated workflows.
 
