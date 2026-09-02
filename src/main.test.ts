@@ -430,6 +430,8 @@ describe('main entrypoint', () => {
     await importEntrypoint()
 
     expect(document.documentElement).toHaveAttribute('data-editor-theme', 'canvas')
+    expect(document.documentElement.style.getPropertyValue('--surface-app')).toBe('#F7F9FC')
+    expect(document.documentElement.style.getPropertyValue('--primary')).toBe('#4F46B8')
   })
 
   it('defers app-shell module loading until React resolves the root app route', async () => {

@@ -171,7 +171,7 @@
   "settings.theme.dark": "Темная",
   "settings.theme.system": "Система",
   "settings.editorTheme.label": "Тема редактора",
-  "settings.editorTheme.description": "Выберите оформление редактора. Оформление приложения остается независимым.",
+  "settings.editorTheme.description": "Выберите оформление редактора и основных рабочих областей приложения.",
   "settings.editorTheme.selected": "Выбрано",
   "settings.editorTheme.select": "Выбрать {theme}",
   "settings.editorTheme.preview": "Предпросмотр",

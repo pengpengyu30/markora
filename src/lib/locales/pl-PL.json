@@ -171,7 +171,7 @@
   "settings.theme.dark": "Ciemny",
   "settings.theme.system": "System",
   "settings.editorTheme.label": "Motyw edytora",
-  "settings.editorTheme.description": "Wybierz wygląd wewnątrz edytora. Wygląd aplikacji pozostaje niezależny.",
+  "settings.editorTheme.description": "Wybierz wygląd edytora i głównych obszarów roboczych aplikacji.",
   "settings.editorTheme.selected": "Wybrano",
   "settings.editorTheme.select": "Wybierz {theme}",
   "settings.editorTheme.preview": "Podgląd",

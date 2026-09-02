@@ -192,7 +192,7 @@
   "settings.theme.dark": "Dark",
   "settings.theme.system": "System",
   "settings.editorTheme.label": "Editor theme",
-  "settings.editorTheme.description": "Choose the presentation used inside the editor. Application appearance remains independent.",
+  "settings.editorTheme.description": "Choose the presentation used across the editor and main workspace surfaces.",
   "settings.editorTheme.selected": "Selected",
   "settings.editorTheme.select": "Select {theme}",
   "settings.editorTheme.preview": "Preview",

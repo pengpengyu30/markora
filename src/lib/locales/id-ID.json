@@ -171,7 +171,7 @@
   "settings.theme.dark": "Gelap",
   "settings.theme.system": "Sistem",
   "settings.editorTheme.label": "Tema editor",
-  "settings.editorTheme.description": "Pilih tampilan di dalam editor. Tampilan aplikasi tetap terpisah.",
+  "settings.editorTheme.description": "Pilih tampilan untuk editor dan area kerja utama aplikasi.",
   "settings.editorTheme.selected": "Dipilih",
   "settings.editorTheme.select": "Pilih {theme}",
   "settings.editorTheme.preview": "Pratinjau",

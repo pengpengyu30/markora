@@ -199,12 +199,17 @@ missing and invalid values resolve to `default`.
 the failure-safe editor-theme coordinator. The separate `markora-editor-theme` localStorage key
 is a startup cache only: `index.html` and `main.tsx` apply its validated identity before React,
 then native settings overwrite it after load. Cache access failures fall back to `default` and do
-not block startup. `useEditorTheme` is the single React resolution point. `EditorContentLayout`
-applies its variables once on `editor-theme-scope`, which wraps either the Rich or Raw editor
-surface.
-The scope begins below the breadcrumb and does not replace application-shell variables or
-style independent dialogs. Existing `--editor-*`, `--colors-*`, and application semantic
-aliases remain compatibility outputs until later theme-adapter phases consolidate them.
+not block startup. `useEditorTheme` is the single React resolution point. `AppThemeScope` maps the
+effective family/variant to a narrow semantic application role set used by the Project tree,
+sidebar, note list, tabs, breadcrumbs, toolbars, status bar, Settings, menus, and dialogs. It does
+not expose raw `--editor-theme-*`, `--editor-*`, `--colors-*`, or `--headings-*` variables to those
+surfaces. The startup HTML owns a matching prepaint palette so the shell does not flash Default.
+
+`EditorContentLayout` applies the complete editor variables once on `editor-theme-scope`, which
+wraps either the Rich or Raw editor surface. This scope begins below the breadcrumb and owns
+renderer-specific typography, syntax, and embedded-content roles. Existing application aliases
+remain compatibility outputs, while tldraw, media, and PDF export retain their independent
+visual or export models.
 
 `src/extensions/rawEditorTheme.ts` is the CodeMirror adapter boundary. It places editor chrome,
 syntax highlighting, and frontmatter styling in one reconfigurable `Compartment`, preserving the

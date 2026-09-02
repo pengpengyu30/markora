@@ -197,23 +197,31 @@ The editor supports a rich BlockNote path and a raw CodeMirror/text path. Markdo
 - PDF and common media previews when the platform supports them;
 - unsupported-file messaging and external-open fallback.
 
-Editor presentation is owned separately from the application shell. The typed catalog in
-`src/editorThemes/editorThemeCatalog.ts` defines the four app-owned families, their complete
-Light/Dark variants, and the schema validator. `useEditorTheme` resolves the current
-application appearance into the validated family selected by the installation setting and
-emits the compatibility CSS variables. `useEditorThemePreference` reconciles the native setting
-after startup and uses the separate `markora-editor-theme` localStorage value only as a pre-React
-cache. `EditorContentLayout` owns one `editor-theme-scope` around the active Rich or Raw surface;
-the breadcrumb, sidebar, menus, and other shell controls remain outside that scope. The old
+Editor presentation is owned by the typed catalog in `src/editorThemes/editorThemeCatalog.ts`,
+which defines the four app-owned families, their complete Light/Dark variants, and the schema
+validator. `useEditorTheme` resolves the current application appearance into the validated family
+selected by the installation setting and emits the complete editor compatibility variables.
+`useEditorThemePreference` reconciles the native setting after startup and uses the separate
+`markora-editor-theme` localStorage value only as a pre-React cache. `AppThemeScope` projects the
+selected family onto a deliberately small set of application semantic roles for the Project tree,
+sidebar, note list, tabs, breadcrumbs, toolbars, status bar, Settings, menus, and dialogs. It does
+not expose the raw `--editor-theme-*`, `--editor-*`, `--colors-*`, or `--headings-*` namespaces to
+the shell. `index.html` prepaints the corresponding palette before React mounts, and `main.tsx`
+reconciles the complete projection during startup.
+
+`EditorContentLayout` still owns one `editor-theme-scope` around the active Rich or Raw surface;
+the scope carries renderer-specific typography, syntax, and embedded-content tokens. The old
 `src/theme.json` source was replaced by this catalog, while existing application and editor
-compatibility variable names remain available during the staged migration.
+compatibility variable names remain available during the staged migration. This split and its
+shell projection are recorded in [ADR-0181](adr/0181-editor-theme-application-shell-projection.md).
 
 `src/extensions/rawEditorTheme.ts` owns the CodeMirror presentation adapter. It reconfigures one
 existing `EditorView` through a CodeMirror `Compartment`, including the editor chrome, syntax
 highlighting, and frontmatter roles, so a theme change does not recreate the raw editor or alter
 its document state. `src/extensions/rawEditorSyntaxRoles.ts` is the shared semantic mapping
 boundary for Raw Markdown, frontmatter, and supported language highlighting; Raw search controls
-remain application-shell surfaces outside the editor theme contract.
+remain application-owned surfaces and consume the projected application roles rather than raw
+editor tokens.
 
 Rich fenced-code presentation is owned by `src/components/codeBlockOptions.ts`. It creates a
 catalog-backed Shiki theme for each effective family/variant and keeps the active theme first in

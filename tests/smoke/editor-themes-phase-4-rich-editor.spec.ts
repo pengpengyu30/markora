@@ -56,10 +56,14 @@ type RichSnapshot = {
     mermaidBackground: string
   }
   shell: {
-    appEditorThemeToken: string
-    noteListEditorThemeToken: string
-    statusBarEditorThemeToken: string
-    breadcrumbEditorThemeToken: string
+    appSurface: string
+    projectTreeSurface: string
+    sidebarSurface: string
+    noteListSurface: string
+    statusBarSurface: string
+    breadcrumbSurface: string
+    toolbarSurface: string
+    primary: string
   }
 }
 
@@ -88,10 +92,13 @@ async function readRichSnapshot(page: Page): Promise<RichSnapshot> {
     const editor = document.querySelector<HTMLElement>('.bn-editor')
     const scrollArea = document.querySelector<HTMLElement>('.editor-scroll-area')
     const app = document.querySelector<HTMLElement>('.app')
+    const sidebar = document.querySelector<HTMLElement>('.app__sidebar')
+    const projectTree = document.querySelector<HTMLElement>('[data-testid^="folder-row:"]')
     const noteList = document.querySelector<HTMLElement>('.app__note-list')
     const statusBar = document.querySelector<HTMLElement>('[data-testid="status-bar"]')
     const breadcrumb = document.querySelector<HTMLElement>('.breadcrumb-bar')
-    if (!scope || !editor || !scrollArea || !app || !noteList || !statusBar || !breadcrumb) {
+    const toolbar = document.querySelector<HTMLElement>('.breadcrumb-bar__actions')
+    if (!scope || !editor || !scrollArea || !app || !sidebar || !projectTree || !noteList || !statusBar || !breadcrumb || !toolbar) {
       throw new Error('Rich editor snapshot target is missing')
     }
 
@@ -140,10 +147,14 @@ async function readRichSnapshot(page: Page): Promise<RichSnapshot> {
         mermaidBackground: readToken(scope.querySelector('.mermaid-diagram__viewport') ?? scope, 'background-color'),
       },
       shell: {
-        appEditorThemeToken: readToken(app, '--editor-theme-surfaces-canvas'),
-        noteListEditorThemeToken: readToken(noteList, '--editor-theme-surfaces-canvas'),
-        statusBarEditorThemeToken: readToken(statusBar, '--editor-theme-surfaces-canvas'),
-        breadcrumbEditorThemeToken: readToken(breadcrumb, '--editor-theme-surfaces-canvas'),
+        appSurface: readToken(app, '--surface-app'),
+        projectTreeSurface: readToken(projectTree, '--surface-sidebar'),
+        sidebarSurface: readToken(sidebar, '--surface-sidebar'),
+        noteListSurface: readToken(noteList, '--surface-card'),
+        statusBarSurface: readToken(statusBar, '--sidebar'),
+        breadcrumbSurface: readToken(breadcrumb, '--background'),
+        toolbarSurface: readToken(toolbar, '--surface-app'),
+        primary: readToken(app, '--primary'),
       },
     }
   })
@@ -248,11 +259,18 @@ test.describe('Editor theme Phase 4 Rich editor', () => {
         expect(snapshot.colors.calloutBackground).not.toBe('')
         expect(snapshot.colors.tableHeaderBackground).not.toBe('')
         expect(snapshot.colors.mermaidBackground).not.toBe('')
+        const themeDefinition = EDITOR_THEME_CATALOG.find((candidate) => candidate.id === theme)
+        if (!themeDefinition) throw new Error(`Theme definition is missing: ${theme}`)
+        const expectedVariant = themeDefinition.variants[appearance]
         expect(snapshot.shell).toEqual({
-          appEditorThemeToken: '',
-          noteListEditorThemeToken: '',
-          statusBarEditorThemeToken: '',
-          breadcrumbEditorThemeToken: '',
+          appSurface: expectedVariant.surfaces.canvas,
+          projectTreeSurface: expectedVariant.surfaces.code,
+          sidebarSurface: expectedVariant.surfaces.code,
+          noteListSurface: expectedVariant.surfaces.quote,
+          statusBarSurface: expectedVariant.surfaces.code,
+          breadcrumbSurface: expectedVariant.surfaces.canvas,
+          toolbarSurface: expectedVariant.surfaces.canvas,
+          primary: expectedVariant.accents.primary,
         })
       }
     }
@@ -334,8 +352,24 @@ test.describe('Editor theme Phase 4 Rich editor', () => {
     expect(fs.readFileSync(notePath, 'utf8')).toBe(originalContent)
   })
 
-  test('keeps application surfaces outside the Rich editor theme scope @smoke', async ({ page }) => {
+  test('projects the selected theme into shell surfaces without leaking raw editor tokens @smoke', async ({ page }) => {
     await setEditorTheme(page, 'canvas')
+
+    const shell = await readRichSnapshot(page)
+    const expectedCanvas = EDITOR_THEME_CATALOG.find((theme) => theme.id === 'canvas')?.variants.light
+    if (!expectedCanvas) throw new Error('Canvas theme definition is missing')
+    expect(shell.shell).toEqual({
+      appSurface: expectedCanvas.surfaces.canvas,
+      projectTreeSurface: expectedCanvas.surfaces.code,
+      sidebarSurface: expectedCanvas.surfaces.code,
+      noteListSurface: expectedCanvas.surfaces.quote,
+      statusBarSurface: expectedCanvas.surfaces.code,
+      breadcrumbSurface: expectedCanvas.surfaces.canvas,
+      toolbarSurface: expectedCanvas.surfaces.canvas,
+      primary: expectedCanvas.accents.primary,
+    })
+    expect(await readEditorThemeToken(page, '[data-testid^="folder-row:"]')).toBe('')
+    expect(await readEditorThemeToken(page, '.breadcrumb-bar__actions')).toBe('')
 
     await page.locator('.bn-editor').click()
     await page.keyboard.press(process.platform === 'darwin' ? 'Meta+F' : 'Control+F')

@@ -171,7 +171,7 @@
   "settings.theme.dark": "Tối",
   "settings.theme.system": "Hệ thống",
   "settings.editorTheme.label": "Giao diện trình soạn thảo",
-  "settings.editorTheme.description": "Chọn cách hiển thị bên trong trình soạn thảo. Giao diện ứng dụng vẫn độc lập.",
+  "settings.editorTheme.description": "Chọn cách hiển thị cho trình soạn thảo và các khu vực làm việc chính của ứng dụng.",
   "settings.editorTheme.selected": "Đã chọn",
   "settings.editorTheme.select": "Chọn {theme}",
   "settings.editorTheme.preview": "Xem trước",

@@ -191,7 +191,7 @@
   "settings.theme.dark": "深色",
   "settings.theme.system": "系统",
   "settings.editorTheme.label": "编辑器主题",
-  "settings.editorTheme.description": "选择编辑器内部的呈现方式。应用外观保持独立。",
+  "settings.editorTheme.description": "选择应用于编辑器和主要工作区界面的整体呈现方式。",
   "settings.editorTheme.selected": "已选择",
   "settings.editorTheme.select": "选择 {theme}",
   "settings.editorTheme.preview": "预览",

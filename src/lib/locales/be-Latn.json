@@ -171,7 +171,7 @@
   "settings.theme.dark": "Ciomnaja",
   "settings.theme.system": "Sistemnaja",
   "settings.editorTheme.label": "Tema redaktara",
-  "settings.editorTheme.description": "Abiarycie vyhliad redaktara. Vyhliad prah ramy zastaecca niezaleznym.",
+  "settings.editorTheme.description": "Abiarycie vyhliad redaktara i asnoŭnyh pracoŭnyh ablascoŭ prahramy.",
   "settings.editorTheme.selected": "Vybrana",
   "settings.editorTheme.select": "Vybrać {theme}",
   "settings.editorTheme.preview": "Papjaredni prahljad",

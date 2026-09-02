@@ -68,6 +68,7 @@ import { useStartupScreenState } from './hooks/useStartupScreenState'
 import { useStartupStateMilestones } from './hooks/useStartupStateMilestones'
 import { shouldReplaceSyncedTabEntry } from './utils/tabEntrySync'
 import { dispatchRichEditorExternalFlush } from './components/editorExternalChangeEvents'
+import { AppThemeScope } from './components/AppThemeScope'
 import {
   isActiveElementInsideEditorSurface,
   runEditorHistoryCommand,
@@ -93,7 +94,11 @@ const DEFAULT_SELECTION: SidebarSelection = { kind: 'filter', filter: 'all' }
 
 /** Wraps useEditorSave to also keep outgoingLinks in sync on save and on content change. */
 function App() {
-  return <MainApp />
+  return (
+    <AppThemeScope>
+      <MainApp />
+    </AppThemeScope>
+  )
 }
 
 function MainApp() {

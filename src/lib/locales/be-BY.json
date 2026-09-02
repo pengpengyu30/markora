@@ -171,7 +171,7 @@
   "settings.theme.dark": "Цёмная",
   "settings.theme.system": "Сістэмная",
   "settings.editorTheme.label": "Тэма рэдактара",
-  "settings.editorTheme.description": "Выберыце выгляд рэдактара. Выгляд праграмы застаецца незалежным.",
+  "settings.editorTheme.description": "Выберыце выгляд рэдактара і асноўных працоўных абласцей праграмы.",
   "settings.editorTheme.selected": "Выбрана",
   "settings.editorTheme.select": "Выбраць {theme}",
   "settings.editorTheme.preview": "Папярэдні прагляд",

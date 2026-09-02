@@ -171,7 +171,7 @@
   "settings.theme.dark": "Dark",
   "settings.theme.system": "시스템",
   "settings.editorTheme.label": "편집기 테마",
-  "settings.editorTheme.description": "편집기 안에서 사용할 표현을 선택합니다. 앱 외관과는 독립적입니다.",
+  "settings.editorTheme.description": "편집기와 앱의 주요 작업 영역에 적용할 표현을 선택합니다.",
   "settings.editorTheme.selected": "선택됨",
   "settings.editorTheme.select": "{theme} 선택",
   "settings.editorTheme.preview": "미리보기",

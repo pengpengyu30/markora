@@ -171,7 +171,7 @@
   "settings.theme.dark": "Mörkt",
   "settings.theme.system": "System",
   "settings.editorTheme.label": "Redigeringstema",
-  "settings.editorTheme.description": "Välj presentationen i redigeraren. Appens utseende förblir oberoende.",
+  "settings.editorTheme.description": "Välj presentationen för redigeraren och appens viktigaste arbetsytor.",
   "settings.editorTheme.selected": "Valt",
   "settings.editorTheme.select": "Välj {theme}",
   "settings.editorTheme.preview": "Förhandsvisning",

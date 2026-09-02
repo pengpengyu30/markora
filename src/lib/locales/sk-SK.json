@@ -171,7 +171,7 @@
   "settings.theme.dark": "Tmavý",
   "settings.theme.system": "Systém",
   "settings.editorTheme.label": "Téma editora",
-  "settings.editorTheme.description": "Vyberte vzhľad v editore. Vzhľad aplikácie zostáva nezávislý.",
+  "settings.editorTheme.description": "Vyberte vzhľad editora a hlavných pracovných plôch aplikácie.",
   "settings.editorTheme.selected": "Vybrané",
   "settings.editorTheme.select": "Vybrať {theme}",
   "settings.editorTheme.preview": "Ukážka",

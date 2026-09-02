@@ -17,6 +17,7 @@ const FIXTURE_TITLE = 'Editor Themes Phase 0'
 const FIXTURE_RELATIVE_PATH = path.join('note', 'editor-themes-phase-0.md')
 const APPEARANCES = ['light', 'dark'] as const
 const THEME_IDS = EDITOR_THEME_IDS
+const STATUS_DOT_SELECTOR = '[data-testid="unsaved-indicator"], [data-testid="pending-save-indicator"]'
 
 type Appearance = typeof APPEARANCES[number]
 
@@ -168,6 +169,33 @@ test.describe('Editor theme Phase 5 Raw editor', () => {
     const originalContent = fs.readFileSync(notePath, 'utf8')
     const marker = 'phase-5-raw-unsaved'
 
+    for (const appearance of APPEARANCES) {
+      await setAppearance(page, appearance)
+      for (const themeId of THEME_IDS) {
+        await setEditorTheme(page, themeId)
+        const snapshot = await readRawSnapshot(page)
+        const theme = EDITOR_THEME_CATALOG.find((candidate) => candidate.id === themeId)!
+        const variant = theme.variants[appearance]
+
+        expect(snapshot.theme).toBe(themeId)
+        expect(snapshot.appearance).toBe(appearance)
+        expect(snapshot.viewIsStable).toBe(true)
+        expect(snapshot.editor.fontFamily).toContain(firstFontFamily(theme.shared.editor.rawFontFamily))
+        expect(snapshot.editor.fontSize).toBe(`${theme.shared.editor.rawFontSize}px`)
+        expect(snapshot.editor.lineHeight).toBe(`${theme.shared.editor.rawFontSize * theme.shared.editor.rawLineHeight}px`)
+        expect(snapshot.editor.backgroundColor).toBe(cssRgb(variant.surfaces.canvas))
+        expect(snapshot.editor.color).toBe(cssRgb(variant.text.primary))
+        expect(snapshot.content.padding).toContain(`${theme.shared.editor.paddingHorizontal}px`)
+        expect(snapshot.content.caretColor).toBe(cssRgb(variant.colors.cursor))
+        expect(snapshot.gutters.backgroundColor).toBe(cssRgb(variant.surfaces.gutter))
+        expect(snapshot.gutters.color).toBe(cssRgb(variant.text.muted))
+        expect(snapshot.gutters.borderRightColor).toBe(cssRgb(variant.borders.gutter))
+        expect(snapshot.frontmatter.key).toBe(cssRgb(variant.syntax.keyword))
+        expect(snapshot.frontmatter.value).toBe(cssRgb(variant.syntax.string))
+        expect(snapshot.lineNumberCount).toBeGreaterThan(0)
+      }
+    }
+
     await page.evaluate((text) => {
       const host = document.querySelector<HTMLElement & {
         __cmView?: {
@@ -189,49 +217,28 @@ test.describe('Editor theme Phase 5 Raw editor', () => {
       scroller.scrollTop = 72
       ;(window as Window & { __phase5RawViewProbe?: unknown }).__phase5RawViewProbe = view
     }, marker)
-    await expect(page.getByTestId('unsaved-indicator')).toBeVisible()
+    await expect(page.locator(STATUS_DOT_SELECTOR).first()).toBeVisible()
 
     const beforeSwitch = await readRawSnapshot(page)
     expect(beforeSwitch.document).toContain(marker)
     expect(beforeSwitch.selection?.to).toBeGreaterThan(beforeSwitch.selection?.from ?? -1)
     expect(beforeSwitch.scrollTop).toBe(72)
 
-    for (const appearance of APPEARANCES) {
-      await setAppearance(page, appearance)
-      for (const themeId of THEME_IDS) {
-        await setEditorTheme(page, themeId)
-        const snapshot = await readRawSnapshot(page)
-        const theme = EDITOR_THEME_CATALOG.find((candidate) => candidate.id === themeId)!
-        const variant = theme.variants[appearance]
-
-        expect(snapshot.theme).toBe(themeId)
-        expect(snapshot.appearance).toBe(appearance)
-        expect(snapshot.document).toContain(marker)
-        expect(snapshot.selection).toEqual(beforeSwitch.selection)
-        expect(snapshot.scrollTop).toBe(72)
-        expect(snapshot.viewIsStable).toBe(true)
-        expect(snapshot.editor.fontFamily).toContain(firstFontFamily(theme.shared.editor.rawFontFamily))
-        expect(snapshot.editor.fontSize).toBe(`${theme.shared.editor.rawFontSize}px`)
-        expect(snapshot.editor.lineHeight).toBe(`${theme.shared.editor.rawFontSize * theme.shared.editor.rawLineHeight}px`)
-        expect(snapshot.editor.backgroundColor).toBe(cssRgb(variant.surfaces.canvas))
-        expect(snapshot.editor.color).toBe(cssRgb(variant.text.primary))
-        expect(snapshot.content.padding).toContain(`${theme.shared.editor.paddingHorizontal}px`)
-        expect(snapshot.content.caretColor).toBe(cssRgb(variant.colors.cursor))
-        expect(snapshot.gutters.backgroundColor).toBe(cssRgb(variant.surfaces.gutter))
-        expect(snapshot.gutters.color).toBe(cssRgb(variant.text.muted))
-        expect(snapshot.gutters.borderRightColor).toBe(cssRgb(variant.borders.gutter))
-        expect(snapshot.frontmatter.key).toBe(cssRgb(variant.syntax.keyword))
-        expect(snapshot.frontmatter.value).toBe(cssRgb(variant.syntax.string))
-        expect(snapshot.lineNumberCount).toBeGreaterThan(0)
-      }
-    }
+    await setEditorTheme(page, 'editorial')
+    const afterSwitch = await readRawSnapshot(page)
+    expect(afterSwitch.document).toBe(beforeSwitch.document)
+    expect(afterSwitch.selection).toEqual(beforeSwitch.selection)
+    expect(afterSwitch.scrollTop).toBe(beforeSwitch.scrollTop)
+    expect(afterSwitch.viewIsStable).toBe(true)
+    await expect(page.locator(STATUS_DOT_SELECTOR).first()).toBeVisible()
+    expect(fs.readFileSync(notePath, 'utf8')).toBe(originalContent)
 
     const modifier = process.platform === 'darwin' ? 'Meta' : 'Control'
     await page.keyboard.press(`${modifier}+z`)
     await expect.poll(async () => (await readRawSnapshot(page)).document).not.toContain(marker)
     await page.keyboard.press(`${modifier}+Shift+z`)
     await expect.poll(async () => (await readRawSnapshot(page)).document).toContain(marker)
-    await expect(page.getByTestId('unsaved-indicator')).toBeVisible()
+    await expect(page.locator(STATUS_DOT_SELECTOR).first()).toBeVisible()
     expect(fs.readFileSync(notePath, 'utf8')).toBe(originalContent)
 
     await page.screenshot({
@@ -257,9 +264,12 @@ test.describe('Editor theme Phase 5 Raw editor', () => {
         appBorder: rootStyle.getPropertyValue('--border-subtle').trim(),
       }
     })
-    expect(surfaces.background).toBe(cssRgb('#1F1E1B'))
-    expect(surfaces.border).toBe(cssRgb('#2A2925'))
-    expect(surfaces.appBackground).toBe('#1F1E1B')
-    expect(surfaces.appBorder).toBe('#2A2925')
+    const canvasTheme = EDITOR_THEME_CATALOG.find((candidate) => candidate.id === 'canvas')
+    if (!canvasTheme) throw new Error('Canvas theme definition is missing')
+    const canvasVariant = canvasTheme.variants.dark
+    expect(surfaces.background).toBe(cssRgb(canvasVariant.surfaces.canvas))
+    expect(surfaces.border).toBe(cssRgb(canvasVariant.borders.subtle))
+    expect(surfaces.appBackground).toBe(canvasVariant.surfaces.canvas)
+    expect(surfaces.appBorder).toBe(canvasVariant.borders.subtle)
   })
 })

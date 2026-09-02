@@ -108,16 +108,49 @@ describe('index startup script', () => {
     expect(document.body.children).toHaveLength(0)
   })
 
-  it('prepaints a validated editor identity without changing application appearance', () => {
+  it('prepaints the validated editor identity and projected application surfaces', () => {
     const script = editorThemeStartupScriptFromIndex()
-    document.documentElement.setAttribute('data-theme', 'dark')
+    const expected = {
+      default: {
+        light: { app: '#FFFFFF', sidebar: '#F7F6F3', panel: '#F7F6F3', card: '#FFFFFF', popover: '#EBEBEA', button: '#EBEBEA', primary: '#155DFF', heading: '#37352F' },
+        dark: { app: '#1F1E1B', sidebar: '#161616', panel: '#161616', card: '#23221F', popover: '#34322D', button: '#34322D', primary: '#8AB4FF', heading: '#F1ECE3' },
+      },
+      code: {
+        light: { app: '#F6F8FB', sidebar: '#F0F4F8', panel: '#F0F4F8', card: '#F8FAFC', popover: '#E7EDF4', button: '#E7EDF4', primary: '#1D4ED8', heading: '#111827' },
+        dark: { app: '#111827', sidebar: '#162033', panel: '#162033', card: '#172235', popover: '#25344B', button: '#25344B', primary: '#8AB4FF', heading: '#F8FAFC' },
+      },
+      editorial: {
+        light: { app: '#FCF9F5', sidebar: '#F3EBE5', panel: '#F3EBE5', card: '#F7F0EA', popover: '#EFE5DE', button: '#EFE5DE', primary: '#8F3D52', heading: '#2B2525' },
+        dark: { app: '#211D1B', sidebar: '#2A2221', panel: '#2A2221', card: '#2A2221', popover: '#4A3937', button: '#4A3937', primary: '#E39AAA', heading: '#FFF6F1' },
+      },
+      canvas: {
+        light: { app: '#F7F9FC', sidebar: '#EEF2F7', panel: '#EEF2F7', card: '#F3F6FB', popover: '#E9EDF5', button: '#E9EDF5', primary: '#4F46B8', heading: '#172033' },
+        dark: { app: '#202225', sidebar: '#292C35', panel: '#292C35', card: '#282B33', popover: '#3F4350', button: '#3F4350', primary: '#A8A4FF', heading: '#FFFFFF' },
+      },
+    } as const
 
-    for (const editorThemeId of EDITOR_THEME_IDS) {
-      window.localStorage.setItem(EDITOR_THEME_STORAGE_KEY, editorThemeId)
-      new Function(script)()
+    for (const appearance of ['light', 'dark'] as const) {
+      document.documentElement.setAttribute('data-theme', appearance)
+      for (const editorThemeId of EDITOR_THEME_IDS) {
+        window.localStorage.setItem(EDITOR_THEME_STORAGE_KEY, editorThemeId)
+        new Function(script)()
 
-      expect(document.documentElement).toHaveAttribute('data-editor-theme', editorThemeId)
-      expect(document.documentElement).toHaveAttribute('data-theme', 'dark')
+        expect(document.documentElement).toHaveAttribute('data-editor-theme', editorThemeId)
+        expect(document.documentElement).toHaveAttribute('data-theme', appearance)
+        const palette = expected[editorThemeId][appearance]
+        expect(document.documentElement.style.getPropertyValue('--surface-app')).toBe(palette.app)
+        expect(document.documentElement.style.getPropertyValue('--surface-sidebar')).toBe(palette.sidebar)
+        expect(document.documentElement.style.getPropertyValue('--surface-panel')).toBe(palette.panel)
+        expect(document.documentElement.style.getPropertyValue('--surface-card')).toBe(palette.card)
+        expect(document.documentElement.style.getPropertyValue('--surface-popover')).toBe(palette.popover)
+        expect(document.documentElement.style.getPropertyValue('--surface-button')).toBe(palette.button)
+        expect(document.documentElement.style.getPropertyValue('--card')).toBe(palette.card)
+        expect(document.documentElement.style.getPropertyValue('--bg-card')).toBe(palette.card)
+        expect(document.documentElement.style.getPropertyValue('--text-heading')).toBe(palette.heading)
+        expect(document.documentElement.style.getPropertyValue('--primary')).toBe(palette.primary)
+        expect(document.documentElement.style.getPropertyValue('--background')).toBe(palette.app)
+        expect(document.documentElement.style.getPropertyValue('--sidebar')).toBe(palette.sidebar)
+      }
     }
 
     window.localStorage.setItem(EDITOR_THEME_STORAGE_KEY, 'removed-theme')
@@ -125,6 +158,10 @@ describe('index startup script', () => {
 
     expect(document.documentElement).toHaveAttribute('data-editor-theme', 'default')
     expect(document.documentElement).toHaveAttribute('data-theme', 'dark')
+    expect(document.documentElement.style.getPropertyValue('--surface-app')).toBe('#1F1E1B')
+    expect(document.documentElement.style.getPropertyValue('--surface-card')).toBe('#23221F')
+    expect(document.documentElement.style.getPropertyValue('--card')).toBe('#23221F')
+    expect(document.documentElement.style.getPropertyValue('--primary')).toBe('#8AB4FF')
   })
 
   it('falls back to Default when startup cache access is unavailable', () => {
@@ -141,6 +178,7 @@ describe('index startup script', () => {
 
       expect(document.documentElement).toHaveAttribute('data-editor-theme', 'default')
       expect(document.documentElement).toHaveAttribute('data-theme', 'dark')
+      expect(document.documentElement.style.getPropertyValue('--surface-app')).toBe('#1F1E1B')
     } finally {
       if (localStorageDescriptor) {
         Object.defineProperty(globalThis, 'localStorage', localStorageDescriptor)

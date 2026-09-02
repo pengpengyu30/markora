@@ -10,6 +10,7 @@ import { StartupShellFallback } from './components/StartupShellFallback'
 import { applyStoredThemeMode } from './lib/themeMode'
 import { applyEditorThemeIdToDocument, applyStoredEditorTheme } from './lib/editorThemeStorage'
 import { DEFAULT_EDITOR_THEME_ID } from './editorThemes/editorThemeCatalog'
+import { applyEditorThemeApplicationFromDocument } from './editorThemes/editorThemeApplication'
 import {
   APP_COMMAND_EVENT_NAME,
   isAppCommandId,
@@ -141,6 +142,7 @@ try {
 } catch {
   applyEditorThemeIdToDocument(document, DEFAULT_EDITOR_THEME_ID)
 }
+applyEditorThemeApplicationFromDocument(document)
 
 function dispatchDeterministicShortcutEvent(init: AppCommandShortcutEventInit) {
   const target =

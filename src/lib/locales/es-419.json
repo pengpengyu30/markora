@@ -171,7 +171,7 @@
   "settings.theme.dark": "Oscuro",
   "settings.theme.system": "Sistema",
   "settings.editorTheme.label": "Tema del editor",
-  "settings.editorTheme.description": "Elige la presentación dentro del editor. La apariencia de la aplicación es independiente.",
+  "settings.editorTheme.description": "Elige la presentación del editor y de las áreas principales de trabajo de la aplicación.",
   "settings.editorTheme.selected": "Seleccionado",
   "settings.editorTheme.select": "Seleccionar {theme}",
   "settings.editorTheme.preview": "Vista previa",

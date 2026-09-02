@@ -469,10 +469,12 @@ That browser harness is a deterministic desktop command bridge, not real native 
 
 ### Editor Themes
 
-Tolaria keeps application appearance and editor presentation independent. Application appearance
-offers `Light`, `Dark`, and `System` for the shell, while Editor theme offers four built-in
-families for the central Rich and Raw editor canvas: `Default`, `Code`, `Editorial`, and `Canvas`.
-Each family has Light and Dark variants selected by the resolved application appearance.
+Tolaria keeps application appearance mode and editor family as separate settings, while applying
+the selected family's visual identity consistently across the main workspace. Application
+appearance offers `Light`, `Dark`, and `System`; Editor theme offers four built-in families for
+the Project tree, note list, breadcrumbs, toolbars, status bar, and central Rich/Raw editor canvas:
+`Default`, `Code`, `Editorial`, and `Canvas`. Each family has Light and Dark variants selected by
+the resolved application appearance.
 
 Open Settings → Appearance to select an editor-theme card. The card group changes a read-only
 preview only; `Save` commits the selected family, while Cancel, Escape, backdrop close, or any
@@ -484,8 +486,9 @@ The selected editor theme is global to the installation and is stored in native 
 settings. It is not written to Projects, vault configuration, Markdown frontmatter, or note
 content. Theme changes are presentational: they preserve note bytes, dirty state, caret,
 selection, undo history, and scroll position. Rich and Raw mode share the same family and
-appearance variant, while code, Mermaid, math, Callouts, highlights, media, and PDF export keep
-their documented renderer or application ownership.
+appearance variant. Application controls use projected semantic roles without receiving
+renderer-specific editor tokens; code, Mermaid, math, Callouts, highlights, media, and PDF
+export keep their documented renderer or application ownership.
 
 Global note width offers `Theme default`, `Normal`, and `Wide`. A per-note width override still
 takes precedence, and the note action menu can remove that override with `Use theme default`.

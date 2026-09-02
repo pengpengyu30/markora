@@ -171,7 +171,7 @@
   "settings.theme.dark": "Sombre",
   "settings.theme.system": "Système",
   "settings.editorTheme.label": "Thème de l’éditeur",
-  "settings.editorTheme.description": "Choisissez la présentation utilisée dans l’éditeur. L’apparence de l’application reste indépendante.",
+  "settings.editorTheme.description": "Choisissez la présentation de l’éditeur et des principales zones de travail de l’application.",
   "settings.editorTheme.selected": "Sélectionné",
   "settings.editorTheme.select": "Sélectionner {theme}",
   "settings.editorTheme.preview": "Aperçu",
