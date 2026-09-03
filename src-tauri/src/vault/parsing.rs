@@ -1,6 +1,52 @@
 //! Pure text-processing helpers for markdown content parsing.
 //! Snippet extraction, markdown stripping, date parsing, and string utilities.
 
+use regex::Regex;
+use serde::Deserialize;
+use std::sync::OnceLock;
+
+const WORD_COUNT_CONTRACT_JSON: &str = include_str!("../../../src/shared/wordCountContract.json");
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct WordCountPatternSources {
+    wikilink: String,
+    markdown_marker: String,
+    unspaced_cjk: String,
+    word: String,
+}
+
+#[derive(Deserialize)]
+struct WordCountContract {
+    patterns: WordCountPatternSources,
+}
+
+struct WordCountPatterns {
+    wikilink: Regex,
+    markdown_marker: Regex,
+    unspaced_cjk: Regex,
+    word: Regex,
+}
+
+fn compile_word_count_pattern(source: &str) -> Regex {
+    Regex::new(source).expect("shared word-count pattern must be a valid Rust regex")
+}
+
+fn word_count_patterns() -> &'static WordCountPatterns {
+    static PATTERNS: OnceLock<WordCountPatterns> = OnceLock::new();
+    PATTERNS.get_or_init(|| {
+        let contract: WordCountContract = serde_json::from_str(WORD_COUNT_CONTRACT_JSON)
+            .expect("shared word-count contract must be valid JSON");
+        let sources = contract.patterns;
+        WordCountPatterns {
+            wikilink: compile_word_count_pattern(&sources.wikilink),
+            markdown_marker: compile_word_count_pattern(&sources.markdown_marker),
+            unspaced_cjk: compile_word_count_pattern(&sources.unspaced_cjk),
+            word: compile_word_count_pattern(&sources.word),
+        }
+    })
+}
+
 #[derive(Clone, Copy)]
 struct TextSlice<'a>(&'a str);
 
@@ -157,12 +203,18 @@ fn truncate_with_ellipsis(s: TextSlice<'_>, max_len: usize) -> String {
 pub(super) fn count_body_words(content: &str) -> u32 {
     let without_fm = strip_frontmatter(TextSlice(content));
     let body = without_h1_line(TextSlice(without_fm)).unwrap_or(without_fm);
-    body.split_whitespace()
-        .filter(|w| {
-            !w.chars()
-                .all(|c| matches!(c, '#' | '*' | '_' | '`' | '~' | '-' | '>' | '|'))
-        })
-        .count() as u32
+    let patterns = word_count_patterns();
+    let without_wikilinks = patterns.wikilink.replace_all(body, "");
+    let text = patterns.markdown_marker.replace_all(&without_wikilinks, "");
+    count_multilingual_words(&text)
+}
+
+fn count_multilingual_words(text: &str) -> u32 {
+    let patterns = word_count_patterns();
+    let cjk_count = patterns.unspaced_cjk.find_iter(text).count();
+    let text_with_cjk_boundaries = patterns.unspaced_cjk.replace_all(text, " ");
+    let word_count = patterns.word.find_iter(&text_with_cjk_boundaries).count();
+    u32::try_from(cjk_count.saturating_add(word_count)).unwrap_or(u32::MAX)
 }
 
 /// Extract a snippet: first ~160 chars of content after frontmatter/title, stripped of markdown.
@@ -344,3 +396,7 @@ pub(super) fn extract_outgoing_links(content: &str) -> Vec<String> {
 #[cfg(test)]
 #[path = "parsing_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "word_count_tests.rs"]
+mod word_count_tests;
