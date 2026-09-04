@@ -3,6 +3,8 @@ import { useEffect, useId, useMemo, useState, type SyntheticEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import { APP_COMMAND_EVENT_NAME, APP_COMMAND_IDS } from '../hooks/appCommandDispatcher'
 import { useAppLocale } from '../hooks/useAppPreferences'
+import { useEditorTheme } from '../hooks/useTheme'
+import type { EffectiveEditorTheme } from '../editorThemes/editorThemeCatalog'
 import { translate, type AppLocale } from '../lib/i18n'
 import { SafeSvgDiv } from './SafeMarkup'
 import { ImageLightbox } from './ImageLightbox'
@@ -12,6 +14,7 @@ type MermaidApi = typeof import('mermaid')['default']
 interface MermaidDiagramProps {
   diagram: string
   source: string
+  editorTheme?: EffectiveEditorTheme
 }
 
 interface MermaidSvgViewportProps {
@@ -23,12 +26,13 @@ interface MermaidSvgViewportProps {
 
 interface RenderState {
   diagram: string
+  themeKey: string
   svg: string
   error: boolean
 }
 
-let initialized = false
 let renderQueue = Promise.resolve()
+let mermaidRenderSequence = 0
 
 const TIMELINE_HEADER_PATTERN = /^\s*timeline(?:\s+(?:LR|TD))?\b/iu
 const TIMELINE_PERIOD_DELIMITER_PATTERN = /^(\s*)(.*?)(:\s+.*)$/u
@@ -49,20 +53,70 @@ function renderIdFromReactId(reactId: string): string {
   return `markora-mermaid-${safeId || 'diagram'}`
 }
 
-function initializeMermaid(mermaid: MermaidApi) {
-  if (initialized) return
+function mermaidThemeVariables(theme: EffectiveEditorTheme): Record<string, string> {
+  const { mermaid } = theme.tokens
+  return {
+    background: mermaid.background,
+    primaryTextColor: mermaid.text,
+    primaryColor: mermaid.nodeBackground,
+    primaryBorderColor: mermaid.nodeBorder,
+    lineColor: mermaid.edge,
+    secondaryColor: mermaid.cluster,
+    tertiaryColor: mermaid.background,
+    clusterBkg: mermaid.cluster,
+    clusterBorder: mermaid.nodeBorder,
+    edgeLabelBackground: mermaid.background,
+    titleColor: mermaid.text,
+    textColor: mermaid.text,
+    nodeTextColor: mermaid.text,
+    mainBkg: mermaid.nodeBackground,
+    nodeBorder: mermaid.nodeBorder,
+    actorBkg: mermaid.nodeBackground,
+    actorBorder: mermaid.nodeBorder,
+    actorTextColor: mermaid.text,
+    actorLineColor: mermaid.edge,
+    signalColor: mermaid.edge,
+    labelBoxBkgColor: mermaid.nodeBackground,
+    labelTextColor: mermaid.text,
+    loopTextColor: mermaid.text,
+    activationBkgColor: mermaid.cluster,
+    activationBorderColor: mermaid.nodeBorder,
+    sequenceNumberColor: mermaid.text,
+    sectionBkgColor: mermaid.cluster,
+    altSectionBkgColor: mermaid.background,
+    taskBkgColor: mermaid.nodeBackground,
+    taskTextColor: mermaid.text,
+    taskTextLightColor: mermaid.text,
+    taskBorderColor: mermaid.nodeBorder,
+    taskTextOutsideColor: mermaid.text,
+    activeTaskBorderColor: mermaid.accent,
+    gridColor: mermaid.cluster,
+    doneTaskBkgColor: mermaid.cluster,
+    doneTaskBorderColor: mermaid.nodeBorder,
+    critBkgColor: mermaid.nodeBackground,
+    critBorderColor: mermaid.accent,
+    todayLineColor: mermaid.accent,
+    noteBkgColor: mermaid.cluster,
+    noteTextColor: mermaid.text,
+    noteBorderColor: mermaid.nodeBorder,
+    labelColor: mermaid.text,
+    errorBkgColor: mermaid.nodeBackground,
+    errorTextColor: mermaid.text,
+  }
+}
 
+function initializeMermaid(mermaid: MermaidApi, theme: EffectiveEditorTheme) {
   mermaid.initialize({
     startOnLoad: false,
     securityLevel: 'strict',
     htmlLabels: false,
-    theme: 'default',
+    theme: 'base',
     suppressErrorRendering: true,
     themeVariables: {
-      fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+      fontFamily: theme.shared.editor.uiFontFamily,
+      ...mermaidThemeVariables(theme),
     },
   })
-  initialized = true
 }
 
 function isTimelineDiagram(diagram: string): boolean {
@@ -128,20 +182,23 @@ function centerMermaidNodeLabels(svg: string): string {
 
 async function renderMermaidDiagram({
   diagram,
+  editorTheme,
   renderId,
 }: {
   diagram: string
+  editorTheme: EffectiveEditorTheme
   renderId: string
 }): Promise<string> {
+  const renderAttemptId = `${renderId}-${++mermaidRenderSequence}`
   const render = async () => {
     const mermaid = (await import('mermaid')).default
-    initializeMermaid(mermaid)
+    initializeMermaid(mermaid, editorTheme)
     const renderHost = appendMermaidRenderHost()
     try {
-      const result = await mermaid.render(renderId, normalizeTimelinePeriodLabelsForRender(diagram), renderHost)
+      const result = await mermaid.render(renderAttemptId, normalizeTimelinePeriodLabelsForRender(diagram), renderHost)
       return centerMermaidNodeLabels(result.svg)
     } finally {
-      removeMermaidRenderArtifacts(renderId, renderHost)
+      removeMermaidRenderArtifacts(renderAttemptId, renderHost)
     }
   }
   const nextRender = renderQueue.then(render, render)
@@ -232,28 +289,35 @@ function MermaidSourceFallback({ source }: { source: string }) {
   return <pre role="img" aria-label="Mermaid source"><code>{source}</code></pre>
 }
 
-export function MermaidDiagram({ diagram, source }: MermaidDiagramProps) {
+export function MermaidDiagram({ diagram, source, editorTheme: providedEditorTheme }: MermaidDiagramProps) {
   const locale = useAppLocale()
+  const { theme: documentEditorTheme } = useEditorTheme()
+  const editorTheme = providedEditorTheme ?? documentEditorTheme
   const reactId = useId()
   const renderId = useMemo(() => renderIdFromReactId(reactId), [reactId])
-  const [state, setState] = useState<RenderState>({ diagram: '', svg: '', error: false })
+  const themeKey = `${editorTheme.id}:${editorTheme.variant}`
+  const [state, setState] = useState<RenderState>({ diagram: '', themeKey: '', svg: '', error: false })
 
   useEffect(() => {
     let active = true
     if (!diagram.trim()) return () => { active = false }
 
-    renderMermaidDiagram({ diagram, renderId })
+    renderMermaidDiagram({ diagram, editorTheme, renderId })
       .then((svg) => {
-        if (active) setState({ diagram, svg, error: false })
+        if (active) setState({ diagram, themeKey, svg, error: false })
       })
       .catch(() => {
-        if (active) setState({ diagram, svg: '', error: true })
+        if (active) setState({ diagram, themeKey, svg: '', error: true })
       })
 
     return () => { active = false }
-  }, [diagram, renderId])
+  }, [diagram, editorTheme, renderId, themeKey])
 
-  const currentState = state.diagram === diagram ? state : { diagram, svg: '', error: false }
+  const currentState = state.diagram === diagram && (
+    state.themeKey === themeKey || (state.svg.length > 0 && !state.error)
+  )
+    ? state
+    : { diagram, themeKey, svg: '', error: false }
   if (!diagram.trim() || currentState.error) {
     return (
       <figure className="mermaid-diagram mermaid-diagram--error" data-testid="mermaid-diagram-error">

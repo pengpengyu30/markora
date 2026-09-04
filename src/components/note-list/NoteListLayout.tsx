@@ -86,7 +86,7 @@ function NoteListLoadingRow({ title, line, selected }: { title: number; line: nu
       className="border-b border-border"
       style={{
         padding: '12px 12px 10px',
-        background: selected ? 'var(--accent-green-light)' : undefined,
+        background: selected ? 'var(--state-selected)' : undefined,
       }}
     >
       <div className="mb-3 flex items-start justify-between gap-3">

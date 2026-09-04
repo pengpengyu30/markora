@@ -246,6 +246,10 @@ vi.mock('./components/SearchPanel', () => ({
   },
 }))
 
+vi.mock('./editorThemes/EditorThemePreview', () => ({
+  EditorThemePreview: () => null,
+}))
+
 // Mock BlockNote components (they need DOM APIs not available in jsdom)
 vi.mock('@blocknote/core', () => ({
   audioParse: vi.fn(() => undefined), createAudioBlockConfig: vi.fn(() => ({})),
@@ -663,6 +667,7 @@ describe('App', () => {
         list: {
           vaults: [],
           active_vault: expectedDefaultVaultPath,
+          default_workspace_path: expectedDefaultVaultPath,
           hidden_defaults: [],
         },
       })

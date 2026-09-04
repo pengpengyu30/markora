@@ -52,6 +52,7 @@ function createView() {
   const view = Object.assign(Object.create(prototype), {
     contentDOM,
     posAtDOM: vi.fn(() => 17),
+    state: { doc: { length: 20 } },
   })
 
   return {
@@ -154,6 +155,52 @@ describe('zoomCursorFix behavior', () => {
     pluginFactory(third.view)
     expect(third.view.posAtCoords({ x: 60, y: 80 }, false)).toBe(11)
     expect(third.origPosAtCoords).toHaveBeenCalledWith({ x: 30, y: 40 }, false)
+
+    inlineSpy.mockRestore()
+    computedSpy.mockRestore()
+  })
+
+  it('falls back when caretRangeFromPoint resolves outside the current document', () => {
+    const computedSpy = mockComputedZoom('normal')
+    const inlineSpy = mockInlineZoom('200%')
+    const { view, textNode, origPosAtCoords, origPosAndSideAtCoords } = createView()
+    view.state.doc.length = 5
+    view.posAtDOM.mockReturnValueOnce(-1)
+
+    Object.defineProperty(document, 'caretRangeFromPoint', {
+      configurable: true,
+      value: vi.fn(() => ({ startContainer: textNode, startOffset: 2 })),
+    })
+
+    const pluginFactory = zoomCursorFix() as unknown as (view: typeof view) => { destroy: () => void }
+    pluginFactory(view)
+
+    expect(view.posAtCoords({ x: 10, y: 20 }, true)).toBe(11)
+    expect(view.posAndSideAtCoords({ x: 10, y: 20 }, false)).toEqual({ pos: 13, assoc: -1 })
+    expect(origPosAtCoords).toHaveBeenCalledWith({ x: 5, y: 10 }, true)
+    expect(origPosAndSideAtCoords).toHaveBeenCalledWith({ x: 5, y: 10 }, false)
+
+    inlineSpy.mockRestore()
+    computedSpy.mockRestore()
+  })
+
+  it('falls back when caretRangeFromPoint resolves past the document end', () => {
+    const computedSpy = mockComputedZoom('normal')
+    const inlineSpy = mockInlineZoom('200%')
+    const { view, textNode, origPosAtCoords } = createView()
+    view.state.doc.length = 5
+    view.posAtDOM.mockReturnValueOnce(6)
+
+    Object.defineProperty(document, 'caretRangeFromPoint', {
+      configurable: true,
+      value: vi.fn(() => ({ startContainer: textNode, startOffset: 2 })),
+    })
+
+    const pluginFactory = zoomCursorFix() as unknown as (view: typeof view) => { destroy: () => void }
+    pluginFactory(view)
+
+    expect(view.posAtCoords({ x: 12, y: 22 }, true)).toBe(11)
+    expect(origPosAtCoords).toHaveBeenCalledWith({ x: 6, y: 11 }, true)
 
     inlineSpy.mockRestore()
     computedSpy.mockRestore()

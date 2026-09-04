@@ -20,6 +20,7 @@ const defaultSettings: Settings = {
   release_channel: null,
   automatic_update_checks_enabled: null,
   theme_mode: null,
+  editor_theme: 'default',
   ui_language: null,
   date_display_format: null,
   note_width_mode: null,
@@ -43,6 +44,7 @@ const savedSettings: Settings = {
   release_channel: null,
   automatic_update_checks_enabled: null,
   theme_mode: null,
+  editor_theme: 'canvas',
   ui_language: null,
   date_display_format: null,
   note_width_mode: null,
@@ -99,6 +101,7 @@ function changedSettings(): Settings {
     release_channel: null,
     automatic_update_checks_enabled: false,
     theme_mode: null,
+    editor_theme: 'code',
     ui_language: 'zh-CN',
     date_display_format: 'iso',
     note_width_mode: 'wide',
@@ -139,13 +142,58 @@ describe('useSettings', () => {
     expect(mockInvokeFn).toHaveBeenCalledWith('get_settings', {})
   })
 
+  it('normalizes missing and invalid editor themes to Default on load', async () => {
+    const legacySettings = { ...defaultSettings }
+    delete (legacySettings as { editor_theme?: unknown }).editor_theme
+    mockSettingsStore = legacySettings
+
+    expect((await renderLoadedSettings()).editor_theme).toBe('default')
+
+    mockSettingsStore = {
+      ...defaultSettings,
+      editor_theme: 'removed-theme' as Settings['editor_theme'],
+    }
+    expect((await renderLoadedSettings()).editor_theme).toBe('default')
+  })
+
+  it('round-trips every supported editor theme through the settings backend', async () => {
+    const { result } = renderHook(() => useSettings())
+
+    await waitFor(() => {
+      expect(result.current.loaded).toBe(true)
+    })
+
+    for (const editor_theme of ['default', 'code', 'editorial', 'canvas'] as const) {
+      await act(async () => {
+        await result.current.saveSettings({ ...result.current.settings, editor_theme })
+      })
+      expect(result.current.settings.editor_theme).toBe(editor_theme)
+    }
+  })
+
   it('loads settings from native invoke when Tauri globals are not detectable', async () => {
-    nativeInvoke.mockResolvedValueOnce({ ...savedSettings, ui_language: 'zh-Hans' })
+    nativeInvoke.mockResolvedValueOnce({
+      ...savedSettings,
+      editor_theme: 'editorial',
+      ui_language: 'zh-Hans',
+    })
 
     const settings = await renderLoadedSettings()
 
     expect(settings.ui_language).toBe('zh-CN')
+    expect(settings.editor_theme).toBe('editorial')
     expect(mockInvokeFn).not.toHaveBeenCalledWith('get_settings', {})
+  })
+
+  it('normalizes an invalid editor theme returned by native invoke to Default', async () => {
+    nativeInvoke.mockResolvedValueOnce({
+      ...defaultSettings,
+      editor_theme: 'removed-theme' as Settings['editor_theme'],
+    })
+
+    const settings = await renderLoadedSettings()
+
+    expect(settings.editor_theme).toBe('default')
   })
 
   it('normalizes a legacy beta release channel back to stable on load', async () => {
@@ -327,12 +375,14 @@ describe('useSettings', () => {
 
     mockInvokeFn.mockImplementationOnce(() => Promise.reject(new Error('write failed')))
 
+    let resultValue: unknown
     await act(async () => {
-      await result.current.saveSettings(savedSettings)
+      resultValue = await result.current.saveSettings(savedSettings)
     })
 
     // Settings should not have changed on error
     expect(result.current.settings).toEqual(defaultSettings)
+    expect(resultValue).toBe(false)
     errorSpy.mockRestore()
   })
 })

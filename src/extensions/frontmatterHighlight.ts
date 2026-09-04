@@ -1,6 +1,12 @@
 import { ViewPlugin, Decoration, type DecorationSet, EditorView } from '@codemirror/view'
 import { yamlLanguage } from '@codemirror/lang-yaml'
 import type { Range } from '@codemirror/state'
+import {
+  DEFAULT_EDITOR_THEME_ID,
+  resolveEffectiveEditorTheme,
+  type EffectiveEditorTheme,
+} from '../editorThemes/editorThemeCatalog'
+import { rawEditorSyntaxRoleMap } from './rawEditorSyntaxRoles'
 
 const frontmatterDelimiter = Decoration.mark({ class: 'cm-frontmatter-delimiter' })
 const frontmatterKey = Decoration.mark({ class: 'cm-frontmatter-key' })
@@ -120,15 +126,21 @@ export const frontmatterHighlightPlugin = ViewPlugin.fromClass(
   { decorations: (v) => v.decorations },
 )
 
-export function frontmatterHighlightTheme() {
-  return EditorView.baseTheme({
-    '.cm-frontmatter-delimiter': { color: 'var(--syntax-frontmatter-key)', fontWeight: '600' },
-    '.cm-frontmatter-key': { color: 'var(--syntax-frontmatter-key)' },
-    '.cm-frontmatter-value': { color: 'var(--syntax-frontmatter-value)' },
+export function frontmatterHighlightTheme(
+  themeOrLegacyDark?: EffectiveEditorTheme | boolean,
+) {
+  const theme = typeof themeOrLegacyDark === 'boolean'
+    ? resolveEffectiveEditorTheme(DEFAULT_EDITOR_THEME_ID, themeOrLegacyDark ? 'dark' : 'light')
+    : themeOrLegacyDark ?? resolveEffectiveEditorTheme(DEFAULT_EDITOR_THEME_ID, 'light')
+  const roles = rawEditorSyntaxRoleMap(theme)
+  return EditorView.theme({
+    '.cm-frontmatter-delimiter': { color: roles.frontmatterKey, fontWeight: '600' },
+    '.cm-frontmatter-key': { color: roles.frontmatterKey },
+    '.cm-frontmatter-value': { color: roles.frontmatterValue },
     '.cm-frontmatter-error': {
-      backgroundColor: 'var(--feedback-error-bg)',
-      textDecoration: 'underline wavy var(--feedback-error-text)',
+      backgroundColor: theme.tokens.feedback.error.background,
+      textDecoration: `underline wavy ${roles.invalidError}`,
       textDecorationSkipInk: 'none',
     },
-  })
+  }, { dark: theme.variant === 'dark' })
 }

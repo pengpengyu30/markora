@@ -476,7 +476,8 @@ test('@smoke new-note H1 auto-rename does not recreate the untitled file when a 
   const lateBody = 'Body typed right before rename'
 
   await createUntitledNote(page)
-  const untitledStem = (await page.getByTestId('breadcrumb-filename-trigger').textContent())?.trim()
+  const breadcrumbDisplay = (await page.getByTestId('breadcrumb-filename-trigger').textContent())?.trim() ?? ''
+  const untitledStem = breadcrumbDisplay.split('/').at(-1)?.trim() ?? ''
   expect(untitledStem).toMatch(/^untitled-note-\d+(?:-\d+)?$/i)
 
   await writeNewHeading(page, title)

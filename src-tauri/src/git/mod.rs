@@ -443,7 +443,15 @@ pub(crate) mod tests {
         run_git_command(dir.path(), &["config", "user.email", "test@example.com"]);
         run_git_command(
             dir.path(),
-            &["commit", "--allow-empty", "--no-verify", "-m", "initial"],
+            &[
+                "-c",
+                "commit.gpgsign=false",
+                "commit",
+                "--allow-empty",
+                "--no-verify",
+                "-m",
+                "initial",
+            ],
         );
         dir
     }

@@ -261,6 +261,136 @@
     </script>
     <script>
       (function () {
+        var editorThemeKey = 'markora-editor-theme';
+        var startupPalettes = {
+          "default": {
+            light: { uiFont: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", app: '#FFFFFF', sidebar: '#F7F6F3', panel: '#F7F6F3', card: '#FFFFFF', popover: '#EBEBEA', input: '#FFFFFF', button: '#EBEBEA', dialog: '#FFFFFF', text: '#37352F', heading: '#37352F', secondary: '#5F5D58', muted: '#595752', inverse: '#FFFFFF', border: '#E9E9E7', borderSubtle: '#E9E9E7', borderStrong: '#D9D9D6', focus: '#155DFF', hover: '#E0E0DE', hoverSubtle: '#F0F0EF', primary: '#155DFF', primaryHover: '#0D4AD6', selected: '#DDEBFF' },
+            dark: { uiFont: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", app: '#1F1E1B', sidebar: '#161616', panel: '#161616', card: '#23221F', popover: '#34322D', input: '#1F1E1B', button: '#34322D', dialog: '#1F1E1B', text: '#E6E1D8', heading: '#F1ECE3', secondary: '#B8B1A6', muted: '#A69E92', inverse: '#151411', border: '#34322D', borderSubtle: '#2A2925', borderStrong: '#46433B', focus: '#8AB4FF', hover: '#403E37', hoverSubtle: '#262520', primary: '#8AB4FF', primaryHover: '#B0CCFF', selected: '#2B4A6D' }
+          },
+          "code": {
+            light: { uiFont: "'Tolaria Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans CJK SC', sans-serif", app: '#F6F8FB', sidebar: '#F0F4F8', panel: '#F0F4F8', card: '#F8FAFC', popover: '#E7EDF4', input: '#F6F8FB', button: '#E7EDF4', dialog: '#F6F8FB', text: '#1F2937', heading: '#111827', secondary: '#4B5563', muted: '#52606D', inverse: '#FFFFFF', border: '#CBD5E1', borderSubtle: '#D7E0EA', borderStrong: '#94A3B8', focus: '#1D4ED8', hover: '#DCE5EF', hoverSubtle: '#EAF0F6', primary: '#1D4ED8', primaryHover: '#1E40AF', selected: '#DCEBFF' },
+            dark: { uiFont: "'Tolaria Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans CJK SC', sans-serif", app: '#111827', sidebar: '#162033', panel: '#162033', card: '#172235', popover: '#25344B', input: '#111827', button: '#25344B', dialog: '#111827', text: '#E5EEF9', heading: '#F8FAFC', secondary: '#B7C7DB', muted: '#A8B6C8', inverse: '#0F172A', border: '#334155', borderSubtle: '#293A50', borderStrong: '#52657E', focus: '#8AB4FF', hover: '#30445E', hoverSubtle: '#18263A', primary: '#8AB4FF', primaryHover: '#B0CCFF', selected: '#203A5F' }
+          },
+          "editorial": {
+            light: { uiFont: "'Tolaria Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans CJK SC', sans-serif", app: '#FCF9F5', sidebar: '#F3EBE5', panel: '#F3EBE5', card: '#F7F0EA', popover: '#EFE5DE', input: '#FCF9F5', button: '#EFE5DE', dialog: '#FCF9F5', text: '#302B2B', heading: '#2B2525', secondary: '#5B5552', muted: '#625B57', inverse: '#FFFFFF', border: '#D7C9C0', borderSubtle: '#E3D8D1', borderStrong: '#B9A79D', focus: '#8F3D52', hover: '#E5D8D0', hoverSubtle: '#F8F1EC', primary: '#8F3D52', primaryHover: '#742F41', selected: '#F2DDE2' },
+            dark: { uiFont: "'Tolaria Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans CJK SC', sans-serif", app: '#211D1B', sidebar: '#2A2221', panel: '#2A2221', card: '#2A2221', popover: '#4A3937', input: '#211D1B', button: '#4A3937', dialog: '#211D1B', text: '#F1E5DF', heading: '#FFF6F1', secondary: '#D3BFB7', muted: '#C6B0A8', inverse: '#211D1B', border: '#4A3937', borderSubtle: '#3D302F', borderStrong: '#6A504D', focus: '#F2A7B8', hover: '#594442', hoverSubtle: '#2A2220', primary: '#E39AAA', primaryHover: '#F2B8C5', selected: '#5A303B' }
+          },
+          "canvas": {
+            light: { uiFont: "'Tolaria Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans CJK SC', sans-serif", app: '#F7F9FC', sidebar: '#EEF2F7', panel: '#EEF2F7', card: '#F3F6FB', popover: '#E9EDF5', input: '#F7F9FC', button: '#E9EDF5', dialog: '#F7F9FC', text: '#263449', heading: '#172033', secondary: '#536176', muted: '#5D6A7D', inverse: '#FFFFFF', border: '#D1D9E6', borderSubtle: '#DEE5EF', borderStrong: '#A7B5C8', focus: '#4F46B8', hover: '#DDE4F0', hoverSubtle: '#EEF2F7', primary: '#4F46B8', primaryHover: '#4338A3', selected: '#E5E7FF' },
+            dark: { uiFont: "'Tolaria Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans CJK SC', sans-serif", app: '#202225', sidebar: '#292C35', panel: '#292C35', card: '#282B33', popover: '#3F4350', input: '#202225', button: '#3F4350', dialog: '#202225', text: '#F1F3FF', heading: '#FFFFFF', secondary: '#CCD1E1', muted: '#B8BED1', inverse: '#202225', border: '#3F4350', borderSubtle: '#353945', borderStrong: '#5C6273', focus: '#A8A4FF', hover: '#4A4F5E', hoverSubtle: '#292C35', primary: '#A8A4FF', primaryHover: '#C1BEFF', selected: '#413C70' }
+          }
+        };
+        function normalizeEditorTheme(value) {
+          return value === 'default'
+            || value === 'code'
+            || value === 'editorial'
+            || value === 'canvas'
+            ? value
+            : 'default';
+        }
+        function colorMix(color, percentage) {
+          return 'color-mix(in srgb, ' + color + ' ' + percentage + '%, transparent)';
+        }
+        function applyStartupPalette(editorThemeId) {
+          var appearance = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+          var palette = startupPalettes[editorThemeId][appearance];
+          var rootStyle = document.documentElement.style;
+          rootStyle.setProperty('--app-ui-font-family', palette.uiFont);
+          rootStyle.setProperty('--app-heading-font-family', palette.uiFont);
+          rootStyle.setProperty('--surface-app', palette.app);
+          rootStyle.setProperty('--surface-sidebar', palette.sidebar);
+          rootStyle.setProperty('--surface-panel', palette.panel);
+          rootStyle.setProperty('--surface-card', palette.card);
+          rootStyle.setProperty('--surface-popover', palette.popover);
+          rootStyle.setProperty('--surface-input', palette.input);
+          rootStyle.setProperty('--surface-button', palette.button);
+          rootStyle.setProperty('--surface-dialog', palette.dialog);
+          rootStyle.setProperty('--surface-editor', palette.app);
+          rootStyle.setProperty('--text-primary', palette.text);
+          rootStyle.setProperty('--text-secondary', palette.secondary);
+          rootStyle.setProperty('--text-tertiary', palette.secondary);
+          rootStyle.setProperty('--text-muted', palette.muted);
+          rootStyle.setProperty('--text-faint', palette.muted);
+          rootStyle.setProperty('--text-heading', palette.heading);
+          rootStyle.setProperty('--text-inverse', palette.inverse);
+          rootStyle.setProperty('--border-default', palette.border);
+          rootStyle.setProperty('--border-subtle', palette.borderSubtle);
+          rootStyle.setProperty('--border-strong', palette.borderStrong);
+          rootStyle.setProperty('--border-input', palette.border);
+          rootStyle.setProperty('--border-dialog', palette.border);
+          rootStyle.setProperty('--border-focus', palette.focus);
+          rootStyle.setProperty('--state-hover', palette.hover);
+          rootStyle.setProperty('--state-hover-subtle', palette.hoverSubtle);
+          rootStyle.setProperty('--state-selected', palette.selected);
+          rootStyle.setProperty('--state-selected-strong', palette.selected);
+          rootStyle.setProperty('--state-active', palette.selected);
+          rootStyle.setProperty('--state-focus-ring', palette.focus);
+          rootStyle.setProperty('--state-drag-target', colorMix(palette.primary, 18));
+          rootStyle.setProperty('--state-disabled', palette.button);
+          rootStyle.setProperty('--primary', palette.primary);
+          rootStyle.setProperty('--primary-foreground', palette.inverse);
+          rootStyle.setProperty('--accent-blue', palette.primary);
+          rootStyle.setProperty('--accent-blue-bg', colorMix(palette.primary, 20));
+          rootStyle.setProperty('--accent-blue-hover', palette.primaryHover);
+          rootStyle.setProperty('--accent-blue-light', colorMix(palette.primary, 12));
+          rootStyle.setProperty('--secondary', palette.hover);
+          rootStyle.setProperty('--secondary-foreground', palette.text);
+          rootStyle.setProperty('--muted', palette.hoverSubtle);
+          rootStyle.setProperty('--muted-foreground', palette.secondary);
+          rootStyle.setProperty('--accent', palette.hover);
+          rootStyle.setProperty('--accent-foreground', palette.text);
+          rootStyle.setProperty('--background', palette.app);
+          rootStyle.setProperty('--foreground', palette.text);
+          rootStyle.setProperty('--card', palette.card);
+          rootStyle.setProperty('--card-foreground', palette.text);
+          rootStyle.setProperty('--popover', palette.popover);
+          rootStyle.setProperty('--popover-foreground', palette.text);
+          rootStyle.setProperty('--border', palette.border);
+          rootStyle.setProperty('--input', palette.border);
+          rootStyle.setProperty('--ring', palette.focus);
+          rootStyle.setProperty('--sidebar', palette.sidebar);
+          rootStyle.setProperty('--sidebar-foreground', palette.text);
+          rootStyle.setProperty('--sidebar-primary', palette.primary);
+          rootStyle.setProperty('--sidebar-primary-foreground', palette.inverse);
+          rootStyle.setProperty('--sidebar-accent', palette.hover);
+          rootStyle.setProperty('--sidebar-accent-foreground', palette.text);
+          rootStyle.setProperty('--sidebar-border', palette.border);
+          rootStyle.setProperty('--sidebar-ring', palette.focus);
+          rootStyle.setProperty('--bg-primary', palette.app);
+          rootStyle.setProperty('--bg-sidebar', palette.sidebar);
+          rootStyle.setProperty('--bg-card', palette.card);
+          rootStyle.setProperty('--bg-hover', palette.hover);
+          rootStyle.setProperty('--bg-hover-subtle', palette.hoverSubtle);
+          rootStyle.setProperty('--bg-selected', palette.selected);
+          rootStyle.setProperty('--bg-input', palette.input);
+          rootStyle.setProperty('--bg-button', palette.button);
+          rootStyle.setProperty('--bg-dialog', palette.dialog);
+          rootStyle.setProperty('--border-primary', palette.border);
+          rootStyle.setProperty('--hover', palette.hover);
+          rootStyle.setProperty('--link-color', palette.primary);
+          rootStyle.setProperty('--link-hover', palette.primaryHover);
+          rootStyle.setProperty('--startup-surface-app', palette.app);
+          rootStyle.setProperty('--startup-surface-sidebar', palette.sidebar);
+          rootStyle.setProperty('--startup-surface-editor', palette.app);
+          rootStyle.setProperty('--startup-border-primary', palette.border);
+          rootStyle.setProperty('--startup-border-subtle', palette.border);
+          rootStyle.setProperty('--startup-text-muted', palette.text);
+          rootStyle.setProperty('--startup-state-selected', palette.selected);
+        }
+        function applyEditorTheme(value) {
+          var editorThemeId = normalizeEditorTheme(value);
+          document.documentElement.setAttribute('data-editor-theme', editorThemeId);
+          applyStartupPalette(editorThemeId);
+        }
+        try {
+          applyEditorTheme(localStorage.getItem(editorThemeKey));
+        } catch {
+          applyEditorTheme('default');
+        }
+      })();
+    </script>
+    <script>
+      (function () {
         var readyEventName = 'markora:frontend-ready';
         var reloadAttemptKey = 'markora:startup-reload-attempted';
         var startupTimeoutMs = 10000;

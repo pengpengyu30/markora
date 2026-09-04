@@ -721,6 +721,47 @@ describe('BreadcrumbBar — note width toggle', () => {
 
     expect(onToggleNoteWidth).toHaveBeenCalledOnce()
   })
+
+  it('shows the effective width and lets the note inherit the current default', async () => {
+    const onSetNoteWidth = vi.fn()
+    render(
+      <BreadcrumbBar
+        entry={baseEntry}
+        {...defaultProps}
+        noteWidth="normal"
+        noteWidthMaxWidth={720}
+        noteWidthSource="theme"
+        onSetNoteWidth={onSetNoteWidth}
+      />,
+    )
+
+    const menu = await openOverflowMenu()
+    expect(within(menu).getByText('Effective width: 720px (Theme default)')).toBeInTheDocument()
+    expect(within(menu).getByRole('menuitemradio', { name: 'Use theme default note width' }))
+      .toHaveAttribute('aria-checked', 'true')
+
+    fireEvent.click(within(menu).getByRole('menuitemradio', { name: 'Use theme default note width' }))
+    expect(onSetNoteWidth).toHaveBeenCalledWith(null)
+  })
+
+  it('marks an explicit note width override as selected', async () => {
+    render(
+      <BreadcrumbBar
+        entry={baseEntry}
+        {...defaultProps}
+        noteWidth="wide"
+        noteWidthMaxWidth={null}
+        noteWidthSource="note"
+        onSetNoteWidth={vi.fn()}
+      />,
+    )
+
+    const menu = await openOverflowMenu()
+    expect(within(menu).getByText('Effective width: Wide (Note override)')).toBeInTheDocument()
+    expect(within(menu).getByRole('menuitemradio', { name: 'Wide' })).toHaveAttribute('aria-checked', 'true')
+    expect(within(menu).getByRole('menuitemradio', { name: 'Use theme default note width' }))
+      .toHaveAttribute('aria-checked', 'false')
+  })
 })
 
 describe('BreadcrumbBar — table of contents toggle', () => {

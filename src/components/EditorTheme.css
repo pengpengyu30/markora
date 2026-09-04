@@ -1,9 +1,24 @@
 /* ==============================================
    EditorTheme.css — BlockNote theme overrides
-   Driven by CSS custom properties from theme.json
+   Driven by CSS custom properties from the central editor-theme scope
    ============================================== */
 
 /* --- Editor root --- */
+.editor-theme-scope {
+  background: var(--editor-theme-surfaces-canvas);
+  color: var(--editor-theme-text-primary);
+}
+
+/* Keep BlockNote's document surface on the editor-theme boundary while its
+   menus and other application-owned overlays continue to use app tokens. */
+.editor-theme-scope .editor__blocknote-container .bn-container {
+  background: var(--editor-theme-surfaces-canvas);
+  color: var(--editor-theme-text-primary);
+  font-size: var(--editor-font-size);
+  --bn-colors-editor-background: var(--editor-theme-surfaces-canvas);
+  --bn-colors-editor-text: var(--editor-theme-text-primary);
+}
+
 .editor__blocknote-container {
   position: relative;
 }
@@ -16,8 +31,8 @@
   margin: 0 auto;  /* Center the editor body */
   padding: var(--editor-padding-vertical) var(--editor-padding-horizontal);
   padding-bottom: max(var(--editor-padding-vertical), 50vh);
-  color: var(--colors-text);
-  caret-color: var(--colors-cursor);
+  color: var(--editor-theme-text-primary);
+  caret-color: var(--editor-theme-colors-cursor);
 }
 
 .editor-content-width--wide .editor__blocknote-container .bn-editor {
@@ -45,8 +60,8 @@
 [data-markora-text-direction="rtl"]:is(blockquote),
 [data-markora-text-direction="rtl"] blockquote {
   border-left-width: 0;
-  border-inline-start: var(--blockquote-border-left-width, 3px) solid var(--blockquote-border-left-color, var(--border));
-  padding-inline-start: var(--blockquote-padding-left, 0.75em);
+  border-inline-start: var(--blockquote-border-left-width) solid var(--blockquote-border-left-color);
+  padding-inline-start: var(--blockquote-padding-left);
 }
 
 /* Override BlockNote's default line-height on block-outer so our theme controls it */
@@ -85,7 +100,8 @@
 }
 
 .editor__blocknote-container .bn-editor ::selection {
-  background: var(--colors-selection);
+  background: var(--editor-theme-surfaces-selection);
+  color: var(--editor-theme-text-primary);
 }
 
 .editor__blocknote-container
@@ -116,7 +132,7 @@
 }
 
 .editor__blocknote-container .bn-block-outer.markora-rich-editor-block-selected::after {
-  background: color-mix(in srgb, var(--colors-selection) 82%, transparent);
+  background: color-mix(in srgb, var(--editor-theme-surfaces-selection) 82%, transparent);
   border-radius: 6px;
   content: "";
   inset:
@@ -144,7 +160,7 @@
 }
 
 .editor__blocknote-container .bn-block.markora-rich-editor-block-selected {
-  background: color-mix(in srgb, var(--colors-selection) 82%, transparent);
+  background: color-mix(in srgb, var(--editor-theme-surfaces-selection) 82%, transparent);
   border-radius: 6px;
   box-decoration-break: clone;
 }
@@ -375,8 +391,8 @@
 
 /* --- Inline: Markdown highlight --- */
 .editor__blocknote-container .bn-editor mark.markdown-highlight {
-  background-color: var(--feedback-warning-bg);
-  color: var(--colors-text);
+  background-color: var(--editor-theme-feedback-warning-background);
+  color: var(--editor-theme-text-primary);
   border-radius: 2px;
   padding: 0 0.12em;
 }
@@ -385,28 +401,76 @@
 .editor__blocknote-container .bn-editor [data-style-type="backgroundColor"][data-value="green"]:has(mark.markdown-highlight),
 .editor__blocknote-container .bn-editor [data-style-type="backgroundColor"][data-value="green"] mark.markdown-highlight,
 .editor__blocknote-container .bn-editor mark.markdown-highlight [data-style-type="backgroundColor"][data-value="green"] {
-  background-color: var(--accent-green-light);
+  background-color: color-mix(in srgb, var(--editor-theme-accents-highlights-green) 14%, var(--editor-theme-surfaces-canvas));
 }
 
 .editor__blocknote-container .bn-editor mark.markdown-highlight:has([data-style-type="backgroundColor"][data-value="red"]),
 .editor__blocknote-container .bn-editor [data-style-type="backgroundColor"][data-value="red"]:has(mark.markdown-highlight),
 .editor__blocknote-container .bn-editor [data-style-type="backgroundColor"][data-value="red"] mark.markdown-highlight,
 .editor__blocknote-container .bn-editor mark.markdown-highlight [data-style-type="backgroundColor"][data-value="red"] {
-  background-color: var(--accent-red-light);
+  background-color: color-mix(in srgb, var(--editor-theme-accents-highlights-red) 14%, var(--editor-theme-surfaces-canvas));
 }
 
 .editor__blocknote-container .bn-editor mark.markdown-highlight:has([data-style-type="backgroundColor"][data-value="blue"]),
 .editor__blocknote-container .bn-editor [data-style-type="backgroundColor"][data-value="blue"]:has(mark.markdown-highlight),
 .editor__blocknote-container .bn-editor [data-style-type="backgroundColor"][data-value="blue"] mark.markdown-highlight,
 .editor__blocknote-container .bn-editor mark.markdown-highlight [data-style-type="backgroundColor"][data-value="blue"] {
-  background-color: var(--accent-blue-light);
+  background-color: color-mix(in srgb, var(--editor-theme-accents-highlights-blue) 14%, var(--editor-theme-surfaces-canvas));
 }
 
 .editor__blocknote-container .bn-editor mark.markdown-highlight:has([data-style-type="backgroundColor"][data-value="purple"]),
 .editor__blocknote-container .bn-editor [data-style-type="backgroundColor"][data-value="purple"]:has(mark.markdown-highlight),
 .editor__blocknote-container .bn-editor [data-style-type="backgroundColor"][data-value="purple"] mark.markdown-highlight,
 .editor__blocknote-container .bn-editor mark.markdown-highlight [data-style-type="backgroundColor"][data-value="purple"] {
-  background-color: var(--accent-purple-light);
+  background-color: color-mix(in srgb, var(--editor-theme-accents-highlights-purple) 14%, var(--editor-theme-surfaces-canvas));
+}
+
+/* Callout colors are document content, so they follow the active editor
+   theme while keeping the existing stable visual-family classes. */
+.editor-theme-scope .editor__blocknote-container .markora-callout {
+  --callout-accent: var(--editor-theme-feedback-info-text);
+  --callout-background: var(--editor-theme-feedback-info-background);
+  --callout-border: var(--editor-theme-feedback-info-border);
+}
+
+.editor-theme-scope .editor__blocknote-container .markora-callout--note {
+  --callout-accent: var(--editor-theme-feedback-note-text);
+  --callout-background: var(--editor-theme-feedback-note-background);
+  --callout-border: var(--editor-theme-feedback-note-border);
+}
+
+.editor-theme-scope .editor__blocknote-container .markora-callout--success {
+  --callout-accent: var(--editor-theme-feedback-success-text);
+  --callout-background: var(--editor-theme-feedback-success-background);
+  --callout-border: var(--editor-theme-feedback-success-border);
+}
+
+.editor-theme-scope .editor__blocknote-container .markora-callout--warning {
+  --callout-accent: var(--editor-theme-feedback-warning-text);
+  --callout-background: var(--editor-theme-feedback-warning-background);
+  --callout-border: var(--editor-theme-feedback-warning-border);
+}
+
+.editor-theme-scope .editor__blocknote-container .markora-callout--error {
+  --callout-accent: var(--editor-theme-feedback-error-text);
+  --callout-background: var(--editor-theme-feedback-error-background);
+  --callout-border: var(--editor-theme-feedback-error-border);
+}
+
+.editor-theme-scope .editor__blocknote-container .markora-callout--example {
+  --callout-accent: var(--editor-theme-feedback-example-text);
+  --callout-background: var(--editor-theme-feedback-example-background);
+  --callout-border: var(--editor-theme-feedback-example-border);
+}
+
+.editor-theme-scope .editor__blocknote-container .markora-callout--quote {
+  --callout-accent: var(--editor-theme-feedback-quote-text);
+  --callout-background: var(--editor-theme-feedback-quote-background);
+  --callout-border: var(--editor-theme-feedback-quote-border);
+}
+
+.editor-theme-scope .editor__blocknote-container .markora-callout__body {
+  color: var(--editor-theme-text-primary);
 }
 
 .markora-highlight-toolbar-group {
@@ -418,7 +482,7 @@
   min-width: 18px;
   height: 28px;
   padding: 0 3px;
-  color: var(--text-primary);
+  color: var(--editor-theme-embedded-controls-text);
 }
 
 .markora-highlight-color-dropdown {
@@ -450,8 +514,13 @@
 }
 
 .editor__blocknote-container .math {
-  color: var(--colors-text);
+  color: var(--editor-theme-text-primary);
   cursor: text;
+}
+
+.editor-theme-scope .katex {
+  color: var(--editor-theme-text-primary);
+  font-size: 1em;
 }
 
 .editor__blocknote-container .math--inline {
@@ -476,8 +545,8 @@
 }
 
 .editor__blocknote-container .math-block-source::selection {
-  background: var(--colors-selection);
-  color: var(--colors-text);
+  background: var(--editor-theme-surfaces-selection);
+  color: var(--editor-theme-text-primary);
 }
 
 .editor__blocknote-container .math--block {
@@ -487,7 +556,7 @@
 }
 
 .editor__blocknote-container .math .katex-error {
-  color: var(--destructive) !important;
+  color: var(--editor-theme-text-error) !important;
   white-space: pre-wrap;
 }
 
@@ -495,16 +564,16 @@
   position: relative;
   width: 100%;
   margin: 10px 0;
-  color: var(--colors-text);
+  color: var(--editor-theme-text-primary);
 }
 
 .editor__blocknote-container .mermaid-diagram__viewport {
   max-width: 100%;
   overflow: auto;
   padding: 14px;
-  border: 1px solid var(--border-primary);
+  border: 1px solid var(--editor-theme-borders-default);
   border-radius: 8px;
-  background: var(--surface-editor);
+  background: var(--editor-theme-mermaid-background);
 }
 
 .editor__blocknote-container .mermaid-diagram__edit-button,
@@ -513,7 +582,9 @@
   top: 8px;
   z-index: 1;
   opacity: 0;
-  background: var(--surface-editor);
+  background: var(--editor-theme-embedded-controls-background);
+  border-color: var(--editor-theme-embedded-controls-border);
+  color: var(--editor-theme-embedded-controls-text);
   box-shadow: 0 6px 16px rgb(15 23 42 / 0.14);
 }
 
@@ -530,8 +601,13 @@
   opacity: 1;
 }
 
+.editor__blocknote-container .mermaid-diagram__edit-button:hover,
+.editor__blocknote-container .mermaid-diagram__expand-button:hover {
+  background: var(--editor-theme-embedded-controls-hover-background);
+}
+
 .editor__blocknote-container .mermaid-diagram__viewport:focus-visible {
-  outline: 2px solid var(--border-focus);
+  outline: 2px solid var(--editor-theme-borders-focus);
   outline-offset: 2px;
 }
 
@@ -584,14 +660,14 @@
 
 .editor__blocknote-container .mermaid-diagram--error {
   padding: 12px;
-  border: 1px solid var(--destructive);
+  border: 1px solid var(--editor-theme-text-error);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--destructive) 8%, transparent);
+  background: color-mix(in srgb, var(--editor-theme-text-error) 8%, transparent);
 }
 
 .editor__blocknote-container .mermaid-diagram--error figcaption {
   margin-bottom: 8px;
-  color: var(--destructive);
+  color: var(--editor-theme-text-error);
   font-size: 0.85rem;
   font-weight: 600;
 }
@@ -790,17 +866,33 @@ body.tldraw-whiteboard-fullscreen-open {
   border: 1px solid color-mix(in srgb, var(--editor-code-block-language) 42%, transparent);
   border-radius: 6px;
   appearance: auto;
-  background-color: color-mix(in srgb, var(--editor-code-block-background) 88%, var(--surface-app));
+  background-color: color-mix(in srgb, var(--editor-theme-surfaces-code) 88%, var(--editor-theme-embedded-controls-background));
   color: var(--editor-code-block-language) !important;
   cursor: pointer;
   font: inherit;
   font-size: 0.85rem;
   line-height: 1.3;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.editor__code-block-language-overlay {
+  position: fixed;
+  z-index: 30;
+  pointer-events: auto;
+}
+
+.editor__code-block-language-trigger {
+  min-width: 5rem;
+}
+
+.editor__code-block-language-trigger:disabled {
+  opacity: 0.72;
 }
 
 .editor__blocknote-container .bn-block-content[data-content-type="codeBlock"] > div > select > option {
-  background: var(--popover);
-  color: var(--foreground);
+  background: var(--editor-theme-embedded-controls-background);
+  color: var(--editor-theme-embedded-controls-text);
 }
 
 .editor__blocknote-container .bn-block-content[data-content-type="codeBlock"] > div > select:hover,
@@ -820,7 +912,7 @@ body.tldraw-whiteboard-fullscreen-open {
 }
 
 .editor__code-line-number {
-  color: var(--text-muted);
+  color: var(--editor-theme-text-muted);
   display: inline-block;
   margin-inline-end: 1rem;
   margin-inline-start: -3rem;
@@ -828,6 +920,14 @@ body.tldraw-whiteboard-fullscreen-open {
   text-align: right;
   user-select: none;
   width: 2rem;
+}
+
+.editor-theme-scope[data-editor-theme="code"] .editor__code-line-number {
+  display: inline-block;
+}
+
+.editor-theme-scope:not([data-editor-theme="code"]) .editor__code-line-number {
+  display: none;
 }
 
 .editor__code-line-number::before {
@@ -918,4 +1018,11 @@ body.tldraw-whiteboard-fullscreen-open {
 .editor__blocknote-container .bn-block-outer:has(hr)
   + .bn-block-outer:has(> .bn-block > [data-content-type="heading"]) {
   margin-top: var(--editor-divider-followed-by-heading-margin-top) !important;
+}
+
+/* Keep narrow Rich documents readable after theme-specific padding is applied. */
+@container editor (max-width: 600px) {
+  .editor__blocknote-container .bn-editor {
+    padding: 12px 0;
+  }
 }

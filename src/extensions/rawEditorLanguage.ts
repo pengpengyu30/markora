@@ -16,37 +16,59 @@ function javascriptLanguage(id: RawEditorLanguageId): Extension {
   return javascript()
 }
 
-function highlighted(language: Extension): Extension[] {
-  return [language, rawEditorSyntaxHighlighting()]
+interface RawEditorLanguageOptions {
+  syntaxHighlighting?: Extension | null
+  frontmatterTheme?: Extension | null
 }
 
-function markupLanguage(id: RawEditorLanguageId): Extension[] | null {
+function highlighted(language: Extension, syntaxHighlighting: Extension | null): Extension[] {
+  return syntaxHighlighting ? [language, syntaxHighlighting] : [language]
+}
+
+function markupLanguage(
+  id: RawEditorLanguageId,
+  syntaxHighlighting: Extension | null,
+  frontmatterTheme: Extension | null,
+): Extension[] | null {
   switch (id) {
-    case 'html': return highlighted(html())
-    case 'json': return highlighted(json())
-    case 'markdown': return [markdownLanguage(), frontmatterHighlightTheme(), frontmatterHighlightPlugin]
+    case 'html': return highlighted(html(), syntaxHighlighting)
+    case 'json': return highlighted(json(), syntaxHighlighting)
+    case 'markdown': return [markdownLanguage(syntaxHighlighting), ...(frontmatterTheme ? [frontmatterTheme] : []), frontmatterHighlightPlugin]
     case 'plain': return []
-    case 'python': return highlighted(python())
-    case 'sql': return highlighted(sql())
-    case 'yaml': return highlighted(yaml())
+    case 'python': return highlighted(python(), syntaxHighlighting)
+    case 'sql': return highlighted(sql(), syntaxHighlighting)
+    case 'yaml': return highlighted(yaml(), syntaxHighlighting)
     default: return null
   }
 }
 
-function scriptLanguage(id: RawEditorLanguageId): Extension[] {
+function scriptLanguage(id: RawEditorLanguageId, syntaxHighlighting: Extension | null): Extension[] {
   switch (id) {
-    case 'javascript': return highlighted(javascriptLanguage('javascript'))
-    case 'jsx': return highlighted(javascriptLanguage('jsx'))
-    case 'tsx': return highlighted(javascriptLanguage('tsx'))
-    case 'typescript': return highlighted(javascriptLanguage('typescript'))
+    case 'javascript': return highlighted(javascriptLanguage('javascript'), syntaxHighlighting)
+    case 'jsx': return highlighted(javascriptLanguage('jsx'), syntaxHighlighting)
+    case 'tsx': return highlighted(javascriptLanguage('tsx'), syntaxHighlighting)
+    case 'typescript': return highlighted(javascriptLanguage('typescript'), syntaxHighlighting)
     default: return []
   }
 }
 
-function rawEditorLanguage(id: RawEditorLanguageId): Extension[] {
-  return markupLanguage(id) ?? scriptLanguage(id)
+function rawEditorLanguage(
+  id: RawEditorLanguageId,
+  syntaxHighlighting: Extension | null,
+  frontmatterTheme: Extension | null,
+): Extension[] {
+  return markupLanguage(id, syntaxHighlighting, frontmatterTheme) ?? scriptLanguage(id, syntaxHighlighting)
 }
 
-export function rawEditorLanguageExtensionsForPath(path?: string | null): Extension[] {
-  return rawEditorLanguage(rawEditorLanguageIdForPath(path))
+export function rawEditorLanguageExtensionsForPath(
+  path?: string | null,
+  options: RawEditorLanguageOptions = {},
+): Extension[] {
+  const syntaxHighlighting = options.syntaxHighlighting === undefined
+    ? rawEditorSyntaxHighlighting()
+    : options.syntaxHighlighting
+  const frontmatterTheme = options.frontmatterTheme === undefined
+    ? frontmatterHighlightTheme()
+    : options.frontmatterTheme
+  return rawEditorLanguage(rawEditorLanguageIdForPath(path), syntaxHighlighting, frontmatterTheme)
 }

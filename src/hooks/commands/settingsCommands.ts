@@ -11,6 +11,10 @@ import {
   type UiLanguagePreference,
 } from '../../lib/i18n'
 import type { ThemeMode } from '../../lib/themeMode'
+import {
+  EDITOR_THEME_CATALOG,
+  type EditorThemeId,
+} from '../../editorThemes/editorThemeCatalog'
 
 interface SettingsCommandsConfig {
   vaultCount?: number
@@ -29,6 +33,7 @@ interface SettingsCommandsConfig {
   selectedUiLanguage?: UiLanguagePreference
   onSetUiLanguage?: (language: UiLanguagePreference) => void
   onSetThemeMode?: (mode: ThemeMode) => void
+  onSetEditorTheme?: (themeId: EditorThemeId) => void | Promise<unknown>
 }
 
 function commandKeywords(raw: string): string[] {
@@ -140,6 +145,58 @@ function buildThemeCommands({
   ]
 }
 
+const EDITOR_THEME_COMMANDS = [
+  { id: 'set-editor-theme-default', themeId: 'default', labelKey: 'command.settings.editorThemeDefault', descriptionKey: 'editorTheme.default.description' },
+  { id: 'set-editor-theme-code', themeId: 'code', labelKey: 'command.settings.editorThemeCode', descriptionKey: 'editorTheme.code.description' },
+  { id: 'set-editor-theme-editorial', themeId: 'editorial', labelKey: 'command.settings.editorThemeEditorial', descriptionKey: 'editorTheme.editorial.description' },
+  { id: 'set-editor-theme-canvas', themeId: 'canvas', labelKey: 'command.settings.editorThemeCanvas', descriptionKey: 'editorTheme.canvas.description' },
+] as const
+
+function buildEditorThemeKeywords(
+  themeId: EditorThemeId,
+  description: string,
+  label: string,
+): string[] {
+  const theme = EDITOR_THEME_CATALOG.find((item) => item.id === themeId)
+  return Array.from(new Set([
+    'editor theme',
+    theme?.displayName.toLowerCase() ?? themeId,
+    'theme',
+    ...commandKeywords(label.toLowerCase()),
+    ...commandKeywords(description.toLowerCase()),
+  ]))
+}
+
+function buildEditorThemeCommands({
+  locale = 'en',
+  onSetEditorTheme,
+}: Pick<SettingsCommandsConfig, 'locale' | 'onSetEditorTheme'>): CommandAction[] {
+  const t = createTranslator(locale)
+  const canSetEditorTheme = !!onSetEditorTheme
+  const commands = EDITOR_THEME_COMMANDS.map(({ id, themeId, labelKey, descriptionKey }) => {
+    const label = t(labelKey)
+    return {
+      id,
+      label,
+      group: 'Settings' as const,
+      keywords: buildEditorThemeKeywords(themeId, t(descriptionKey), t('settings.editorTheme.label')),
+      enabled: canSetEditorTheme,
+      execute: () => { void onSetEditorTheme?.(themeId) },
+    }
+  })
+  return [
+    ...commands,
+    {
+      id: 'reset-editor-theme',
+      label: t('command.settings.resetEditorTheme'),
+      group: 'Settings' as const,
+      keywords: buildEditorThemeKeywords('default', t('settings.editorTheme.label'), t('command.settings.resetEditorTheme')),
+      enabled: canSetEditorTheme,
+      execute: () => { void onSetEditorTheme?.('default') },
+    },
+  ]
+}
+
 function buildVaultSettingsCommands({
   vaultCount,
   isGettingStartedHidden,
@@ -183,11 +240,13 @@ export function buildSettingsCommands(config: SettingsCommandsConfig): CommandAc
     onOpenSettings, onOpenVault, onCreateEmptyVault, onRemoveActiveVault, onRestoreGettingStarted,
     onReloadVault, onRepairVault, onRestoreDeletedNote, onToggleGitignoredFilesVisibility,
     locale = 'en', systemLocale = locale, selectedUiLanguage = SYSTEM_UI_LANGUAGE, onSetUiLanguage, onSetThemeMode,
+    onSetEditorTheme,
   } = config
 
   return [
     ...buildPrimarySettingsCommands({ locale, onOpenSettings }),
     ...buildThemeCommands({ locale, onSetThemeMode }),
+    ...buildEditorThemeCommands({ locale, onSetEditorTheme }),
     ...buildLanguageCommands({
       locale,
       systemLocale,

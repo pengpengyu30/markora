@@ -20,16 +20,9 @@ import { rawEditorTextInputAttributes } from '../lib/nativeTextAssistance'
 import { isInsideMarkdownFence } from '../utils/markdownFences'
 import { isWindows } from '../utils/platform'
 import { searchHighlightExtension } from '../extensions/searchHighlight'
-
-const FONT_FAMILY = '"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace'
-const RAW_EDITOR_COLORS = {
-  activeLineBackground: 'var(--state-hover-subtle)',
-  background: 'var(--surface-editor)',
-  foreground: 'var(--text-primary)',
-  gutterBackground: 'var(--surface-editor)',
-  gutterBorder: 'var(--border-subtle)',
-  gutterText: 'var(--text-muted)',
-}
+import type { EffectiveEditorTheme } from '../editorThemes/editorThemeCatalog'
+import { Compartment } from '@codemirror/state'
+import { createRawEditorTheme, DEFAULT_RAW_EDITOR_THEME } from '../extensions/rawEditorTheme'
 
 const AUTO_TEXT_DIRECTION_LINE = Decoration.line({
   attributes: { dir: 'auto' },
@@ -68,54 +61,6 @@ export interface CodeMirrorCallbacks {
   onCursorActivity: (view: EditorView) => void
   onSave: () => void
   onEscape: () => boolean
-}
-
-function buildBaseTheme() {
-  return EditorView.theme({
-    '&': {
-      fontSize: '13px',
-      fontFamily: FONT_FAMILY,
-      backgroundColor: RAW_EDITOR_COLORS.background,
-      color: RAW_EDITOR_COLORS.foreground,
-      flex: '1',
-      minHeight: '0',
-    },
-    '.cm-scroller': {
-      fontFamily: FONT_FAMILY,
-      lineHeight: '1.6',
-      padding: '0',
-      overflow: 'auto',
-    },
-    '.cm-content': {
-      padding: '16px 32px 16px 12px',
-      caretColor: RAW_EDITOR_COLORS.foreground,
-    },
-    '.cm-gutters': {
-      backgroundColor: RAW_EDITOR_COLORS.gutterBackground,
-      color: RAW_EDITOR_COLORS.gutterText,
-      borderRight: `1px solid ${RAW_EDITOR_COLORS.gutterBorder}`,
-      minHeight: '100%',
-      paddingTop: '0',
-      paddingLeft: '6px',
-    },
-    '.cm-lineNumbers .cm-gutterElement': {
-      paddingRight: '12px',
-      minWidth: '28px',
-      textAlign: 'right',
-    },
-    '.cm-activeLine': {
-      backgroundColor: RAW_EDITOR_COLORS.activeLineBackground,
-    },
-    '.cm-activeLineGutter': {
-      backgroundColor: RAW_EDITOR_COLORS.activeLineBackground,
-    },
-    '&.cm-focused': { outline: 'none' },
-    '.cm-line': {
-      padding: '0',
-      unicodeBidi: 'plaintext',
-      textAlign: 'start',
-    },
-  })
 }
 
 function buildAutoTextDirectionDecorations(view: EditorView): DecorationSet {
@@ -328,10 +273,19 @@ export function useCodeMirror(
   content: string,
   callbacks: CodeMirrorCallbacks,
   sourcePath?: string | null,
+  editorTheme: EffectiveEditorTheme = DEFAULT_RAW_EDITOR_THEME,
 ) {
   const viewRef = useRef<EditorView | null>(null)
+  const themeCompartmentRef = useRef(new Compartment())
+  const editorThemeRef = useRef(editorTheme)
+  const editorThemeKey = `${editorTheme.id}:${editorTheme.variant}`
+  const initialEditorThemeKeyRef = useRef(editorThemeKey)
+  const appliedEditorThemeKeyRef = useRef<string | null>(null)
   const callbacksRef = useRef(callbacks)
   const initialContentRef = useRef(content)
+  useEffect(() => {
+    editorThemeRef.current = editorTheme
+  }, [editorTheme])
   useEffect(() => {
     callbacksRef.current = callbacks
   }, [callbacks])
@@ -364,10 +318,13 @@ export function useCodeMirror(
         buildArrowLigaturesExtension(),
         buildRawEditorKeymap(),
         buildSaveKeymap(callbacksRef),
-        buildBaseTheme(),
+        themeCompartmentRef.current.of(createRawEditorTheme(editorThemeRef.current)),
         EditorView.cspNonce.of(RUNTIME_STYLE_NONCE),
         EditorView.contentAttributes.of(rawEditorTextInputAttributes),
-        rawEditorLanguageExtensionsForPath(sourcePath),
+        rawEditorLanguageExtensionsForPath(sourcePath, {
+          syntaxHighlighting: null,
+          frontmatterTheme: null,
+        }),
         searchHighlightExtension(),
         zoomCursorFix(),
         EditorView.updateListener.of((update) => {
@@ -383,6 +340,7 @@ export function useCodeMirror(
 
     const view = new EditorView({ state, parent })
     viewRef.current = view
+    appliedEditorThemeKeyRef.current = initialEditorThemeKeyRef.current
     // Expose EditorView on the parent DOM for Playwright test access
     Reflect.set(parent, '__cmView', view)
 
@@ -398,8 +356,19 @@ export function useCodeMirror(
       Reflect.deleteProperty(parent, '__cmView')
       view.destroy()
       viewRef.current = null
+      appliedEditorThemeKeyRef.current = null
     }
   }, [containerRef, sourcePath])
+
+  useEffect(() => {
+    const view = viewRef.current
+    if (!view || appliedEditorThemeKeyRef.current === editorThemeKey) return
+
+    view.dispatch({
+      effects: themeCompartmentRef.current.reconfigure(createRawEditorTheme(editorThemeRef.current)),
+    })
+    appliedEditorThemeKeyRef.current = editorThemeKey
+  }, [editorThemeKey])
 
   return viewRef
 }

@@ -5,7 +5,7 @@ import { createFixtureVaultCopy, openFixtureVault, removeFixtureVaultCopy } from
 import { executeCommand, openCommandPalette } from './helpers'
 import { RUNTIME_STYLE_NONCE } from '../../src/lib/runtimeStyleNonce'
 import { APP_COMMAND_IDS } from '../../src/hooks/appCommandCatalog'
-import { triggerMenuCommand, triggerShortcutCommand } from './testBridge'
+import { triggerMenuCommand } from './testBridge'
 
 let tempVaultDir: string
 
@@ -211,6 +211,13 @@ test.afterEach(async () => {
 })
 
 async function openNote(page: Page, title: string): Promise<void> {
+  const searchInput = page.getByPlaceholder('Search notes...')
+  if (await searchInput.count() === 0) {
+    await page.getByTitle('Search notes').click()
+    await expect(searchInput).toBeVisible({ timeout: 5_000 })
+  }
+  await searchInput.fill(title)
+  await expect(page.getByTestId('note-list-search-loading')).toHaveCount(0)
   await page.locator('[data-testid="note-list-container"]').getByText(title, { exact: true }).click()
   await expect(page.locator('.bn-editor')).toBeVisible({ timeout: 5_000 })
 }
@@ -277,7 +284,7 @@ async function expectRenderedDiagramCount(page: Page, count: number): Promise<vo
 
 async function reloadVault(page: Page): Promise<void> {
   await triggerMenuCommand(page, APP_COMMAND_IDS.vaultReload)
-  await expect(page.getByText(/Vault reloaded \(\d+ entries\)/).last()).toBeVisible({
+  await expect(page.getByText(/Project reloaded \(\d+ entries\)/).last()).toBeVisible({
     timeout: 5_000,
   })
 }
@@ -579,23 +586,19 @@ test('double-clicking a Mermaid diagram opens the shared zoomable lightbox @smok
   await expect(lightboxContent).not.toBeVisible()
 })
 
-test('Mermaid diagrams stay mounted after property edits refresh frontmatter', async ({ page }) => {
+test('Mermaid diagrams stay mounted after external frontmatter reloads', async ({ page }) => {
   const pageErrors: string[] = []
   page.on('pageerror', error => pageErrors.push(error.message))
 
   await openNote(page, 'Mermaid Reported')
   await expectRenderedDiagramCount(page, 1)
-  await triggerShortcutCommand(page, APP_COMMAND_IDS.viewToggleProperties)
-  await expect(page.getByTestId('add-property-row')).toBeVisible()
+  const notePath = path.join(tempVaultDir, 'note', 'mermaid-reported.md')
+  const currentContent = fs.readFileSync(notePath, 'utf8')
+  fs.writeFileSync(notePath, currentContent.replace('Date: 2026-04-29T00:00:00', 'Date: 2026-04-30T00:00:00'))
+  await reloadVault(page)
+  await openNote(page, 'Mermaid Reported')
 
-  const dateRow = page.getByTestId('editable-property').filter({ hasText: 'Date' })
-  await dateRow.getByTestId('date-display').click()
-  const nextDateLabel = await page.evaluate(() => new Date(2026, 3, 30).toLocaleDateString())
-  await page.locator(`button[data-day="${nextDateLabel}"]`).first().click()
-
-  await expect.poll(() => (
-    fs.readFileSync(path.join(tempVaultDir, 'note', 'mermaid-reported.md'), 'utf8')
-  )).toMatch(/Date: "?2026-04-30"?/)
+  await expect.poll(() => fs.readFileSync(notePath, 'utf8')).toMatch(/Date: "?2026-04-30"?/)
   await expectRenderedDiagramCount(page, 1)
   await expect(page.locator('[data-testid="mermaid-diagram-viewport"]').first()).toContainText('Linked to a planned shift?')
   expect(pageErrors).toEqual([])

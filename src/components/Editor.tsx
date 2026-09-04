@@ -12,7 +12,8 @@ import {
 } from '../hooks/useImageDrop'
 import { translate, type AppLocale } from '../lib/i18n'
 import { RUNTIME_STYLE_NONCE } from '../lib/runtimeStyleNonce'
-import type { VaultEntry, NoteWidthMode } from '../types'
+import type { NoteWidthMode, NoteWidthPreference, VaultEntry } from '../types'
+import type { NoteWidthSource } from '../utils/noteWidth'
 import { ResizeHandle } from './ResizeHandle'
 import { useEditorFocus } from '../hooks/useEditorFocus'
 import { useDragRegion } from '../hooks/useDragRegion'
@@ -95,6 +96,9 @@ export interface EditorProps {
   /** Called when the user explicitly renames the filename from the breadcrumb. */
   onRenameFilename?: (path: string, newFilenameStem: string) => void
   noteWidth?: NoteWidthMode
+  noteWidthMaxWidth?: number | null
+  noteWidthSource?: NoteWidthSource
+  onSetNoteWidth?: (mode: NoteWidthPreference) => void
   onToggleNoteWidth?: () => void
   canGoBack?: boolean
   canGoForward?: boolean
@@ -404,6 +408,9 @@ function useEditorSetup(options: EditorSetupParams) {
       searchHighlightRequest?: SearchHighlightRequest | null
       onRenameFilename?: (path: string, newFilenameStem: string) => void
       noteWidth?: NoteWidthMode
+      noteWidthMaxWidth?: number | null
+      noteWidthSource?: NoteWidthSource
+      onSetNoteWidth?: (mode: NoteWidthPreference) => void
       onToggleNoteWidth?: () => void
       onRightPanelResize: (delta: number) => void
       rightPanelWidth: number
@@ -451,6 +458,9 @@ function useEditorSetup(options: EditorSetupParams) {
       searchHighlightRequest,
       onRenameFilename,
       noteWidth,
+      noteWidthMaxWidth,
+      noteWidthSource,
+      onSetNoteWidth,
       onToggleNoteWidth,
       onRightPanelResize,
       rightPanelWidth,
@@ -510,6 +520,9 @@ function useEditorSetup(options: EditorSetupParams) {
               searchHighlightRequest={searchHighlightRequest}
               onRenameFilename={onRenameFilename}
               noteWidth={noteWidth}
+              noteWidthMaxWidth={noteWidthMaxWidth}
+              noteWidthSource={noteWidthSource}
+              onSetNoteWidth={onSetNoteWidth}
               onToggleNoteWidth={onToggleNoteWidth}
               onImageImportError={onImageImportError}
               historyRef={historyRef}

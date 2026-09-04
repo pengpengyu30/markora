@@ -414,7 +414,14 @@ mod tests {
         assert!(add.status.success(), "git add failed: {:?}", add);
 
         let commit = git_command()
-            .args(["commit", "--no-verify", "-m", message])
+            .args([
+                "-c",
+                "commit.gpgsign=false",
+                "commit",
+                "--no-verify",
+                "-m",
+                message,
+            ])
             .current_dir(vp)
             .output()
             .unwrap();
@@ -480,7 +487,7 @@ mod tests {
             .output()
             .unwrap();
         git_command()
-            .args(["commit", "-m", "Add note"])
+            .args(["-c", "commit.gpgsign=false", "commit", "-m", "Add note"])
             .current_dir(vault)
             .output()
             .unwrap();
@@ -524,7 +531,7 @@ mod tests {
             .output()
             .unwrap();
         git_command()
-            .args(["commit", "-m", "Add note"])
+            .args(["-c", "commit.gpgsign=false", "commit", "-m", "Add note"])
             .current_dir(vault)
             .output()
             .unwrap();
@@ -553,7 +560,7 @@ mod tests {
             .output()
             .unwrap();
         git_command()
-            .args(["commit", "-m", "Initial"])
+            .args(["-c", "commit.gpgsign=false", "commit", "-m", "Initial"])
             .current_dir(vault)
             .output()
             .unwrap();

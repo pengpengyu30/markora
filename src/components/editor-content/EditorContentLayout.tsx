@@ -14,6 +14,36 @@ import type { useEditorContentModel } from './useEditorContentModel'
 
 type EditorContentModel = ReturnType<typeof useEditorContentModel>
 
+function EditorThemeScope({
+  children,
+  cssVars,
+  editorThemeId,
+  noteWidthMaxWidth,
+}: {
+  children: React.ReactNode
+  cssVars: EditorContentModel['cssVars']
+  editorThemeId: EditorContentModel['editorThemeId']
+  noteWidthMaxWidth?: number | null
+}) {
+  const scopeStyle = {
+    ...cssVars,
+    ...(noteWidthMaxWidth !== null && noteWidthMaxWidth !== undefined
+      ? { '--editor-max-width': `${noteWidthMaxWidth}px` }
+      : {}),
+  } as React.CSSProperties
+
+  return (
+    <div
+      className="editor-theme-scope flex flex-1 min-h-0 flex-col"
+      data-editor-theme-scope="true"
+      data-editor-theme={editorThemeId}
+      style={scopeStyle}
+    >
+      {children}
+    </div>
+  )
+}
+
 type BreadcrumbActions = Pick<
   EditorContentModel,
   | 'effectiveRawMode'
@@ -27,6 +57,9 @@ type BreadcrumbActions = Pick<
   | 'onDeleteNote'
   | 'onRenameFilename'
   | 'noteWidth'
+  | 'noteWidthMaxWidth'
+  | 'noteWidthSource'
+  | 'onSetNoteWidth'
   | 'onToggleNoteWidth'
   | 'availableTags'
   | 'onUpdateTags'
@@ -80,6 +113,7 @@ function RawModeEditorSection(
     | 'searchHighlightRequest'
     | 'vaultPath'
     | 'historyRef'
+    | 'editorTheme'
   > & {
     rawMode: boolean
     locale?: AppLocale
@@ -126,6 +160,7 @@ function RawModeEditorSection(
           searchHighlightRequest={searchHighlightRequest}
           vaultPath={vaultPath}
           historyRef={historyRef}
+          editorTheme={options.editorTheme}
           locale={locale}
         />
       </div>
@@ -172,6 +207,9 @@ function ActiveTabBreadcrumb({
       onDelete={bindPath(actions.onDeleteNote, path)}
       onRenameFilename={actions.onRenameFilename}
       noteWidth={actions.noteWidth}
+      noteWidthMaxWidth={actions.noteWidthMaxWidth}
+      noteWidthSource={actions.noteWidthSource}
+      onSetNoteWidth={actions.onSetNoteWidth}
       onToggleNoteWidth={actions.onToggleNoteWidth}
       availableTags={actions.availableTags}
       onUpdateTags={actions.onUpdateTags}
@@ -200,6 +238,9 @@ function EditorLoadingBreadcrumb({
       showTableOfContents={actions.showTableOfContents}
       onToggleTableOfContents={actions.onToggleTableOfContents}
       noteWidth={actions.noteWidth}
+      noteWidthMaxWidth={actions.noteWidthMaxWidth}
+      noteWidthSource={actions.noteWidthSource}
+      onSetNoteWidth={actions.onSetNoteWidth}
       onToggleNoteWidth={actions.onToggleNoteWidth}
       locale={locale}
     />
@@ -219,6 +260,9 @@ function buildBreadcrumbActions(model: EditorContentModel): BreadcrumbActions {
     onDeleteNote: model.onDeleteNote,
     onRenameFilename: model.onRenameFilename,
     noteWidth: model.noteWidth,
+    noteWidthMaxWidth: model.noteWidthMaxWidth,
+    noteWidthSource: model.noteWidthSource,
+    onSetNoteWidth: model.onSetNoteWidth,
     onToggleNoteWidth: model.onToggleNoteWidth,
     availableTags: model.availableTags,
     onUpdateTags: model.onUpdateTags,
@@ -267,7 +311,6 @@ type EditorCanvasProps = Pick<
   | 'isHtmlFile'
   | 'legacyUnsupportedKind'
   | 'richEditorContentReady'
-  | 'cssVars'
   | 'editor'
   | 'activeTab'
   | 'entries'
@@ -287,6 +330,10 @@ type EditorCanvasProps = Pick<
   | 'historyRef'
   | 'historyBoundaryPath'
   | 'historyBoundaryVersion'
+  | 'cssVars'
+  | 'editorThemeId'
+  | 'editorTheme'
+  | 'noteWidthMaxWidth'
 >
 
 function EditorCanvas(props: EditorCanvasProps) {
@@ -310,7 +357,6 @@ function EditorCanvas(props: EditorCanvasProps) {
 function StandardEditorCanvas(options: EditorCanvasProps) {
   const {
     richEditorContentReady,
-    cssVars,
     editor,
     activeTab,
     entries,
@@ -327,6 +373,10 @@ function StandardEditorCanvas(options: EditorCanvasProps) {
     historyRef,
     historyBoundaryPath,
     historyBoundaryVersion,
+    cssVars,
+    editorThemeId,
+    editorTheme,
+    noteWidthMaxWidth,
   } = options
   const [closedFindRequestId, setClosedFindRequestId] = useState<number | null>(null)
   const path = activeTab?.entry.path ?? ''
@@ -335,7 +385,10 @@ function StandardEditorCanvas(options: EditorCanvasProps) {
   if (!richEditorContentReady) return null
 
   return (
-    <EditorFindScope className="editor-scroll-area" style={cssVars as React.CSSProperties}>
+    <EditorFindScope
+      className="editor-scroll-area"
+      style={{ background: cssVars['--editor-theme-surfaces-canvas'] }}
+    >
       <RichEditorFindBar
         editor={editor}
         locale={locale}
@@ -344,24 +397,31 @@ function StandardEditorCanvas(options: EditorCanvasProps) {
         path={path}
         request={currentFindRequest}
       />
-      <div className="editor-content-wrapper" data-note-document-body="true" data-note-pdf-export-root="true">
-        <SingleEditorView
-          editor={editor}
-          entries={entries}
-          onNavigateWikilink={onNavigateWikilink}
-          onChange={onEditorChange}
-          onImageImportError={onImageImportError}
-          searchHighlightRequest={searchHighlightRequest}
-          sourceEntry={activeTab?.entry ?? null}
-          vaultPath={vaultPath}
-          editable={!isDeletedPreview}
-          locale={locale}
-          availableTags={availableTags}
-          onUpdateTags={onUpdateTags}
-          historyRef={historyRef}
-          historyBoundaryVersion={historyBoundaryPath === activeTab?.entry.path ? historyBoundaryVersion : null}
-        />
-      </div>
+      <EditorThemeScope
+        cssVars={cssVars}
+        editorThemeId={editorThemeId}
+        noteWidthMaxWidth={noteWidthMaxWidth}
+      >
+        <div className="editor-content-wrapper" data-note-document-body="true" data-note-pdf-export-root="true">
+          <SingleEditorView
+            editor={editor}
+            entries={entries}
+            onNavigateWikilink={onNavigateWikilink}
+            onChange={onEditorChange}
+            onImageImportError={onImageImportError}
+            searchHighlightRequest={searchHighlightRequest}
+            sourceEntry={activeTab?.entry ?? null}
+            vaultPath={vaultPath}
+            editable={!isDeletedPreview}
+            locale={locale}
+            availableTags={availableTags}
+            onUpdateTags={onUpdateTags}
+            historyRef={historyRef}
+            editorTheme={editorTheme}
+            historyBoundaryVersion={historyBoundaryPath === activeTab?.entry.path ? historyBoundaryVersion : null}
+          />
+        </div>
+      </EditorThemeScope>
     </EditorFindScope>
   )
 }
@@ -414,6 +474,7 @@ export function EditorContentLayout(model: EditorContentModel) {
     wordCount,
     vaultPath,
     cssVars,
+    editorTheme,
     onNavigateWikilink,
     onEditorChange,
     isDeletedPreview,
@@ -421,6 +482,7 @@ export function EditorContentLayout(model: EditorContentModel) {
     rawModeContent,
     searchHighlightRequest,
     noteWidth,
+    noteWidthMaxWidth,
     isHtmlFile,
     legacyUnsupportedKind,
     richEditorContentReady,
@@ -450,8 +512,12 @@ export function EditorContentLayout(model: EditorContentModel) {
         isVaultLoading={isVaultLoading}
         locale={locale}
       />
-      {showActiveContent && (
-        <>
+      {showActiveContent && effectiveRawMode && (
+        <EditorThemeScope
+          cssVars={cssVars}
+          editorThemeId={model.editorThemeId}
+          noteWidthMaxWidth={noteWidthMaxWidth}
+        >
           <RawModeEditorSection
             activeTab={activeTab}
             entries={entries}
@@ -465,35 +531,41 @@ export function EditorContentLayout(model: EditorContentModel) {
             rawLatestContentRef={rawLatestContentRef}
             vaultPath={vaultPath}
             historyRef={historyRef}
+            editorTheme={model.editorTheme}
             locale={locale}
           />
-          <EditorCanvas
-            showEditor={showEditor}
-            isHtmlFile={isHtmlFile}
-            legacyUnsupportedKind={legacyUnsupportedKind}
-            richEditorContentReady={richEditorContentReady}
-            cssVars={cssVars}
-            activeTab={activeTab}
-            vaultPath={vaultPath}
-            editor={editor}
-            entries={entries}
-            onNavigateWikilink={onNavigateWikilink}
-            onEditorChange={onEditorChange}
-            onImageImportError={onImageImportError}
-            isDeletedPreview={isDeletedPreview}
-            locale={locale}
-            onOpenExternalFile={model.onOpenExternalFile}
-            onRevealFile={model.onRevealFile}
-            onCopyFilePath={model.onCopyFilePath}
-            searchHighlightRequest={searchHighlightRequest}
-            findRequest={findRequest}
-            availableTags={model.availableTags}
-            onUpdateTags={model.onUpdateTags}
-            historyRef={historyRef}
-            historyBoundaryPath={model.historyBoundaryPath}
-            historyBoundaryVersion={model.historyBoundaryVersion}
-          />
-        </>
+        </EditorThemeScope>
+      )}
+      {showActiveContent && !effectiveRawMode && (
+        <EditorCanvas
+          showEditor={showEditor}
+          isHtmlFile={isHtmlFile}
+          legacyUnsupportedKind={legacyUnsupportedKind}
+          richEditorContentReady={richEditorContentReady}
+          activeTab={activeTab}
+          vaultPath={vaultPath}
+          editor={editor}
+          entries={entries}
+          onNavigateWikilink={onNavigateWikilink}
+          onEditorChange={onEditorChange}
+          onImageImportError={onImageImportError}
+          isDeletedPreview={isDeletedPreview}
+          locale={locale}
+          onOpenExternalFile={model.onOpenExternalFile}
+          onRevealFile={model.onRevealFile}
+          onCopyFilePath={model.onCopyFilePath}
+          searchHighlightRequest={searchHighlightRequest}
+          findRequest={findRequest}
+          availableTags={model.availableTags}
+          onUpdateTags={model.onUpdateTags}
+          historyRef={historyRef}
+          historyBoundaryPath={model.historyBoundaryPath}
+          historyBoundaryVersion={model.historyBoundaryVersion}
+          cssVars={cssVars}
+          editorThemeId={model.editorThemeId}
+          editorTheme={editorTheme}
+          noteWidthMaxWidth={noteWidthMaxWidth}
+        />
       )}
     </div>
   )

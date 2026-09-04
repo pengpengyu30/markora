@@ -47,6 +47,7 @@ export async function loadVaultList(): Promise<{
   vaults: VaultOption[]
   activeVault: string | null
   defaultWorkspacePath: string | null
+  hasPersistedDefaultWorkspace: boolean
   hiddenDefaults: string[]
 }> {
   const data = await tauriCall<PersistedVaultList>('load_vault_list', {})
@@ -56,6 +57,7 @@ export async function loadVaultList(): Promise<{
     vaults: checked,
     activeVault: data.active_vault,
     defaultWorkspacePath: data.default_workspace_path ?? data.active_vault,
+    hasPersistedDefaultWorkspace: data.default_workspace_path !== undefined,
     hiddenDefaults: data.hidden_defaults ?? [],
   }
 }
@@ -77,9 +79,7 @@ export function saveVaultList(
       ...(v.mounted === false ? { mounted: false } : {}),
     })),
     active_vault: activeVault,
-    ...(defaultWorkspacePath && defaultWorkspacePath !== activeVault
-      ? { default_workspace_path: defaultWorkspacePath }
-      : {}),
+    default_workspace_path: defaultWorkspacePath,
     hidden_defaults: hiddenDefaults,
   }
   return tauriCall('save_vault_list', { list })

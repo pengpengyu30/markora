@@ -45,6 +45,7 @@ The identity is installation-local. It is stored in the registered Project list,
 | Field | Meaning |
 |---|---|
 | `theme_mode` | Light, dark, or system appearance |
+| `editor_theme` | Installation-local built-in editor family ID; missing or invalid values resolve to `default` |
 | `ui_language` | Persisted locale preference; `null` follows the system |
 | `date_display_format` | Date rendering outside editable content |
 | `note_width_mode` | Default rich-editor width |
@@ -73,7 +74,26 @@ The native names are historical. New code should use Project terminology in copy
 
 ### Settings store
 
-`useSettings.ts` loads and normalizes native settings. `useAppPreferences.ts` derives effective theme and locale without mutating the stored preference. The settings panel edits a draft and persists only after the user confirms Save.
+`useSettings.ts` loads and normalizes native settings. `useAppPreferences.ts` derives effective
+application appearance, editor theme, and locale without mutating the stored preference. The
+settings panel edits an editor-theme draft and persists it only after the user confirms Save;
+the existing Light/Dark/System appearance control retains its immediate-apply behavior. Native
+`Settings.editor_theme` is durable; the `markora-editor-theme` localStorage entry is only a
+validated pre-React cache and never replaces native settings.
+
+### Note width resolution
+
+`useNoteWidthMode.ts` and `src/utils/noteWidth.ts` resolve the effective rich-editor width in
+this order:
+
+```text
+per-note `_width` > global `note_width_mode` > theme recommendation > 820px fallback
+```
+
+The global preference is nullable. `null` or a missing value is **Theme default**, while
+`normal` and `wide` remain explicit persisted choices. The note-level `Use default` action
+deletes only `_width` through `frontmatterOps`; malformed or unsafe notes keep the existing
+no-destructive-write behavior and unrelated frontmatter remains untouched.
 
 ### Filesystem and cache
 
@@ -167,6 +187,55 @@ Unsupported constructs should remain readable as raw text or a safe fallback. Th
 
 The Markdown conversion path retains tables, math, Mermaid, callouts, code blocks, wikilinks, and images. Linked inline-code labels use a protected Markdown token bridge so links and code styling survive BlockNote parsing and paste. `TldrawWhiteboard.tsx` is a retained compatibility surface for durable whiteboards; it is not part of the Project registry or Git model.
 
+### Editor theme boundary
+
+`src/editorThemes/editorThemeCatalog.ts` is the typed, schema-versioned source of truth for
+the four app-owned editor theme families. It owns family IDs, complete Light/Dark token
+variants, runtime catalog validation, effective-variant resolution, and CSS-variable
+serialization. The installation-local `editor_theme` setting selects the validated family;
+missing and invalid values resolve to `default`.
+
+`useEditorThemePreference` owns native-settings reconciliation and optimistic persistence through
+the failure-safe editor-theme coordinator. The separate `markora-editor-theme` localStorage key
+is a startup cache only: `index.html` and `main.tsx` apply its validated identity before React,
+then native settings overwrite it after load. Cache access failures fall back to `default` and do
+not block startup. `useEditorTheme` is the single React resolution point. `AppThemeScope` maps the
+effective family/variant to a narrow semantic application role set used by the Project tree,
+sidebar, note list, tabs, breadcrumbs, toolbars, status bar, Settings, menus, and dialogs. It does
+not expose raw `--editor-theme-*`, `--editor-*`, `--colors-*`, or `--headings-*` variables to those
+surfaces. The startup HTML owns a matching prepaint palette so the shell does not flash Default.
+
+`EditorContentLayout` applies the complete editor variables once on `editor-theme-scope`, which
+wraps either the Rich or Raw editor surface. This scope begins below the breadcrumb and owns
+renderer-specific typography, syntax, and embedded-content roles. Existing application aliases
+remain compatibility outputs, while tldraw, media, and PDF export retain their independent
+visual or export models.
+
+`src/extensions/rawEditorTheme.ts` is the CodeMirror adapter boundary. It places editor chrome,
+syntax highlighting, and frontmatter styling in one reconfigurable `Compartment`, preserving the
+same `EditorView` and its document, selection, history, and scroll state across theme changes.
+`src/extensions/rawEditorSyntaxRoles.ts` maps the catalog's semantic syntax roles for Raw
+Markdown, frontmatter, and supported file languages. Raw find/replace UI stays on application
+tokens and is not part of the editor theme scope.
+
+`src/components/codeBlockOptions.ts` is the Rich Shiki adapter. It projects every effective
+syntax role into an isolated theme name and tracks each BlockNote highlighter so a theme change
+can load the new palette before refreshing existing decorations. That refresh is intentionally
+contained in `src/components/richEditorCodeHighlighting.ts`; it is the sole compatibility boundary
+for the private ProseMirror highlight cache. `codeBlockLineNumbers.ts` supplies presentation-only
+line markers, while the theme scope controls their `Code`-only visibility.
+
+`src/components/MermaidDiagram.tsx` owns Mermaid configuration and asynchronous SVG replacement.
+It maps semantic background, text, node, border, cluster, and edge roles to Mermaid's base theme,
+uses a unique ID for each render attempt, and keeps the last valid SVG visible during a rerender.
+`EditorTheme.css` maps the same catalog boundary to KaTeX, Callout visual families, and durable
+red/green/blue/purple highlight names. These adapters never write note bytes; tldraw and media
+remain outside the editor-theme renderer ownership.
+
+The catalog's `createVariant` helper only reuses values while materializing a complete declaration
+at module load. `validateEditorThemeCatalog` checks the emitted shape for every official family and
+variant, so runtime resolution has no element-level fallback to `Default`.
+
 `useSidebarNoteDropTargets` owns document-level note retargeting drag feedback and drop dispatch. It uses the active note path fallback when a browser hides the custom MIME payload, scopes listeners to the mounted app, and clears the fallback on drop, drag end, and unmount.
 
 ## Invisible Git abstractions
@@ -220,6 +289,11 @@ Prefer a small component with explicit props over a new global store. Hooks shou
 - Rust tests cover command helpers, path boundaries, frontmatter parsing, cache/snapshot behavior, search, Git scope, and file operations.
 - `tests/smoke/` covers browser-mode core flows. Add a smoke case when changing Project open, note create/save/delete, search, wikilinks, or tag filtering.
 - Native macOS testing is required for Tauri menu shortcuts, real filesystem persistence, Project restart behavior, and whiteboard/webview behavior.
+
+For editor themes, the focused browser layer proves token completeness, localization, optimistic
+save/rollback, Settings preview isolation, Rich/Raw presentation, semantic content renderers,
+width precedence, and no-content-mutation flows. It does not replace the native matrix for
+prepaint, packaged fonts/CSP, native restart, System mode changes, or WebKit interaction state.
 
 When a test needs a Project, use `demo-vault-v2` or a temporary directory inside the repository/test harness. Do not leave test notes in a user vault.
 

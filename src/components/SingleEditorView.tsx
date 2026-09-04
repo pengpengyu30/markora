@@ -19,12 +19,18 @@ import {
 import { components } from '@blocknote/mantine'
 import { MantineContext, MantineProvider } from '@mantine/core'
 import { useDocumentThemeMode } from '../hooks/useDocumentThemeMode'
-import { useEditorTheme } from '../hooks/useTheme'
+import {
+  DEFAULT_EDITOR_THEME_ID,
+  resolveEffectiveEditorTheme,
+  type EffectiveEditorTheme,
+  type EditorThemeVariant,
+} from '../editorThemes/editorThemeCatalog'
 import { useImageDrop, type ImageImportError } from '../hooks/useImageDrop'
 import { useImageLightbox } from '../hooks/useImageLightbox'
 import { createTranslator, type AppLocale } from '../lib/i18n'
 import { writeClipboardText } from '../utils/clipboardText'
 import { preFilterWikilinks, deduplicateByPath, MIN_QUERY_LENGTH } from '../utils/wikilinkSuggestions'
+import { resolveEntry } from '../utils/wikilink'
 import {
   attachClickHandlers,
   enrichSuggestionItems,
@@ -52,6 +58,10 @@ import { NoteTagsPropertyRow } from './NoteTagsRow'
 import { createNoteTagsPropertyPlugin, noteTagsPropertyPluginKey } from './noteTagsPropertyPlugin'
 import { subscribeRichEditorExternalChange } from './editorExternalChangeEvents'
 import { createRichEditorHistoryBoundary } from './richEditorHistoryBoundary'
+import {
+  setTolariaCodeHighlightingTheme,
+} from './codeBlockOptions'
+import { refreshRichEditorCodeBlockHighlighting } from './richEditorCodeHighlighting'
 import {
   activatePlainTextPasteTarget,
   registerPlainTextPasteTarget,
@@ -126,6 +136,7 @@ const TOOLBAR_MOUSE_DOWN_ALLOW_SELECTOR = [
   '[contenteditable="true"]',
 ].join(', ')
 const MAX_BLOCKNOTE_RENDER_RECOVERY_RETRIES = 1
+const WIKILINK_AUTOCOMPLETE_RESULT_LIMIT = 20
 type TestTableBlock = {
   type?: string
   content?: { type?: string; columnWidths?: Array<number | null> }
@@ -790,10 +801,12 @@ function useCompositionAwareEditorChange(options: {
   containerRef: React.RefObject<HTMLDivElement | null>
   onChange?: () => void
 }) {
+  const COMPOSITION_CHANGE_SETTLE_MS = 120
   const { containerRef, onChange } = options
   const onChangeRef = useRef(onChange)
   const composingRef = useRef(false)
   const pendingChangeRef = useRef(false)
+  const settleTimeoutRef = useRef<number | null>(null)
 
   useEffect(() => {
     onChangeRef.current = onChange
@@ -803,31 +816,41 @@ function useCompositionAwareEditorChange(options: {
     const container = containerRef.current
     if (!container) return
 
+    const clearSettleTimeout = () => {
+      if (settleTimeoutRef.current === null) return
+      window.clearTimeout(settleTimeoutRef.current)
+      settleTimeoutRef.current = null
+    }
+
     const flushPendingChange = () => {
+      settleTimeoutRef.current = null
       if (composingRef.current || !pendingChangeRef.current) return
       pendingChangeRef.current = false
       onChangeRef.current?.()
     }
 
     const handleCompositionStart = () => {
+      clearSettleTimeout()
       composingRef.current = true
     }
 
     const handleCompositionEnd = () => {
       composingRef.current = false
-      queueMicrotask(flushPendingChange)
+      clearSettleTimeout()
+      settleTimeoutRef.current = window.setTimeout(flushPendingChange, COMPOSITION_CHANGE_SETTLE_MS)
     }
 
     container.addEventListener('compositionstart', handleCompositionStart, true)
     container.addEventListener('compositionend', handleCompositionEnd, true)
     return () => {
+      clearSettleTimeout()
       container.removeEventListener('compositionstart', handleCompositionStart, true)
       container.removeEventListener('compositionend', handleCompositionEnd, true)
     }
   }, [containerRef])
 
   return useCallback(() => {
-    if (composingRef.current) {
+    if (composingRef.current || settleTimeoutRef.current !== null) {
       pendingChangeRef.current = true
       return
     }
@@ -933,15 +956,30 @@ function useInsertWikilink(
   )
 }
 
+function unresolvedWikilinkCreationItem(
+  query: string,
+  label: string,
+  onCreate: () => void,
+): WikilinkSuggestionItem {
+  return {
+    title: label,
+    path: `__create__:${query}`,
+    onItemClick: onCreate,
+  }
+}
+
 function useSuggestionMenuItems(options: {
   baseItems: ReturnType<typeof buildBaseSuggestionItems>
   editor: ReturnType<typeof useCreateBlockNote>
+  entries: VaultEntry[]
   insertWikilink: (target: string, triggerCharacter: WikilinkAutocompleteTrigger) => void
   locale: AppLocale
+  onNavigateWikilink: (target: string) => void
   runEditorAction: (action: SuggestionAction) => void
+  sourceEntry?: VaultEntry
   vaultPath?: string
 }) {
-  const { baseItems, editor, insertWikilink, locale, runEditorAction, vaultPath } = options
+  const { baseItems, editor, entries, insertWikilink, locale, onNavigateWikilink, runEditorAction, sourceEntry, vaultPath } = options
   const t = useMemo(() => createTranslator(locale), [locale])
 
   const buildItems = useCallback(
@@ -955,12 +993,25 @@ function useSuggestionMenuItems(options: {
       (target) => insertWikilink(target, triggerCharacter),
       vaultPath ?? '',
     )
-    return guardSuggestionMenuItems(
+    const matchedItems = guardSuggestionMenuItems(
       enrichSuggestionItems(items, normalizedQuery),
       runEditorAction,
     )
+    if (!sourceEntry || triggerCharacter !== '[[' || resolveEntry(entries, normalizedQuery)) return matchedItems
+
+    return [
+      ...matchedItems.slice(0, WIKILINK_AUTOCOMPLETE_RESULT_LIMIT - 1),
+      unresolvedWikilinkCreationItem(
+        normalizedQuery,
+        t('editor.wikilink.createNote', { title: normalizedQuery }),
+        () => {
+          insertWikilink(normalizedQuery, triggerCharacter)
+          onNavigateWikilink(normalizedQuery)
+        },
+      ),
+    ]
     },
-    [baseItems, insertWikilink, runEditorAction, vaultPath],
+    [baseItems, entries, insertWikilink, onNavigateWikilink, runEditorAction, sourceEntry, t, vaultPath],
   )
 
   const getWikilinkItems = useCallback(
@@ -1130,61 +1181,6 @@ function useRichEditorPlainTextPasteTarget(options: {
   }, [])
 }
 
-const PROSEMIRROR_HIGHLIGHT_PLUGIN_KEY_PREFIX = 'prosemirror-highlight$'
-const PROSEMIRROR_HIGHLIGHT_REFRESH_META = 'prosemirror-highlight-refresh'
-
-type CodeBlockHighlightRefreshTransaction = {
-  setMeta: (key: string, value: boolean) => CodeBlockHighlightRefreshTransaction
-}
-
-type CodeBlockHighlightRefreshView = {
-  dispatch: (transaction: CodeBlockHighlightRefreshTransaction) => void
-  state: {
-    config?: {
-      pluginsByKey?: Record<string, unknown>
-    }
-    tr: CodeBlockHighlightRefreshTransaction
-  }
-}
-
-type EditorWithCodeBlockHighlightRefreshView = {
-  _tiptapEditor?: {
-    view?: CodeBlockHighlightRefreshView | null
-  } | null
-  prosemirrorView?: CodeBlockHighlightRefreshView | null
-}
-
-function clearCodeBlockHighlightCache(view: CodeBlockHighlightRefreshView) {
-  const pluginKey = Object.keys(view.state.config?.pluginsByKey ?? {}).find((key) =>
-    key.startsWith(PROSEMIRROR_HIGHLIGHT_PLUGIN_KEY_PREFIX),
-  )
-  if (!pluginKey) return
-
-  const pluginState = (view.state as Record<string, unknown>)[pluginKey]
-  if (typeof pluginState !== 'object' || pluginState === null) return
-
-  const decorationCache = (pluginState as { cache?: unknown }).cache
-  if (typeof decorationCache !== 'object' || decorationCache === null) return
-
-  const cacheMap = (decorationCache as { cache?: unknown }).cache
-  if (cacheMap instanceof Map) cacheMap.clear()
-}
-
-function codeBlockHighlightRefreshView(editor: ReturnType<typeof useCreateBlockNote>) {
-  const editorWithView = editor as unknown as EditorWithCodeBlockHighlightRefreshView
-  return editorWithView._tiptapEditor?.view ?? editorWithView.prosemirrorView ?? null
-}
-
-function refreshCodeBlockSyntaxHighlighting(editor: ReturnType<typeof useCreateBlockNote>) {
-  const view = codeBlockHighlightRefreshView(editor)
-  if (!view) return
-
-  clearCodeBlockHighlightCache(view)
-  const transaction = view.state.tr.setMeta(PROSEMIRROR_HIGHLIGHT_REFRESH_META, true)
-
-  view.dispatch(transaction)
-}
-
 function useRichEditorSearchHighlight({
   editor,
   path,
@@ -1260,11 +1256,17 @@ export function SingleEditorView(options: {
   onUpdateTags?: (path: string, tags: string[]) => void | Promise<void>
   historyRef?: React.MutableRefObject<EditorHistoryCommands | null>
   historyBoundaryVersion?: number | null
+  editorTheme?: EffectiveEditorTheme
+  themeMode?: EditorThemeVariant
 }) {
   const { editor, entries, historyBoundaryVersion, historyRef, onNavigateWikilink, onChange, onImageImportError, sourceEntry, vaultPath, editable = true, locale = 'en', searchHighlightRequest, availableTags = [], onUpdateTags } = options
-  const { cssVars } = useEditorTheme()
-  const themeMode = useDocumentThemeMode()
-  const previousThemeModeRef = useRef(themeMode)
+  const documentThemeMode = useDocumentThemeMode()
+  const themeMode = options.themeMode ?? documentThemeMode
+  const effectiveEditorTheme = options.editorTheme ?? resolveEffectiveEditorTheme(
+    typeof document === 'undefined' ? DEFAULT_EDITOR_THEME_ID : document.documentElement.dataset.editorTheme,
+    themeMode,
+  )
+  const previousCodeThemeKeyRef = useRef<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const suppressNextContainerClickRef = useRef(false)
   const [tagPropertyHost] = useState(() => {
@@ -1344,11 +1346,18 @@ export function SingleEditorView(options: {
   }, [editable, editor, historyBoundaryVersion, historyRef, sourceEntry?.path])
 
   useEffect(() => {
-    if (previousThemeModeRef.current === themeMode) return
+    const themeKey = `${effectiveEditorTheme.id}:${effectiveEditorTheme.variant}`
+    if (previousCodeThemeKeyRef.current === themeKey) return
 
-    previousThemeModeRef.current = themeMode
-    refreshCodeBlockSyntaxHighlighting(editor)
-  }, [editor, themeMode])
+    previousCodeThemeKeyRef.current = themeKey
+    void setTolariaCodeHighlightingTheme(effectiveEditorTheme)
+      .then(() => {
+        refreshRichEditorCodeBlockHighlighting(editor)
+      })
+      .catch((error) => {
+        console.warn('[editor] Failed to refresh code block highlighting:', error)
+      })
+  }, [editor, effectiveEditorTheme])
 
   useEffect(() => {
     return subscribeRichEditorExternalChange(editor, handleEditorChange)
@@ -1420,9 +1429,12 @@ export function SingleEditorView(options: {
   const suggestionMenuItems = useSuggestionMenuItems({
     baseItems,
     editor,
+    entries,
     insertWikilink,
     locale,
+    onNavigateWikilink,
     runEditorAction,
+    sourceEntry: sourceEntry ?? undefined,
     vaultPath,
   })
 
@@ -1432,7 +1444,6 @@ export function SingleEditorView(options: {
       role="application"
       aria-label="Rich text editor"
       className={`editor__blocknote-container${isDragOver ? ' editor__blocknote-container--drag-over' : ''}`}
-      style={cssVars as React.CSSProperties}
       onCopyCapture={handleCopyCapture}
       onFocusCapture={handleFocusCapture}
       onMouseLeave={clearCopyTarget}

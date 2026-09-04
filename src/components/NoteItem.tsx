@@ -242,8 +242,8 @@ function noteItemStyle(
   }
   if (isMultiSelected) base.backgroundColor = 'color-mix(in srgb, var(--accent-blue) 10%, transparent)'
   else if (isSelected) {
-    base.borderLeftColor = 'var(--accent-green)'
-    base.backgroundColor = 'var(--accent-green-light)'
+    base.borderLeftColor = 'var(--accent-blue)'
+    base.backgroundColor = 'var(--state-selected)'
   }
   return base
 }

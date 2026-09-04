@@ -12,6 +12,10 @@ Markora is an independent open-source project based on the AGPL-licensed codebas
 principles, and development process, and is not affiliated with or endorsed by the original
 project or its maintainers.
 
+<p align="center">
+  <img src="docs/assets/markora-overview.png" alt="Markora desktop app with a local Markdown notebook" width="1200">
+</p>
+
 ## Why Markora
 
 - **Plain files you own.** Notes remain portable Markdown files instead of being locked in a hosted

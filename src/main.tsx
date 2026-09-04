@@ -2,11 +2,15 @@ import { lazy, StrictMode, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import '@blocknote/core/fonts/inter.css'
+import './editorThemes/editorThemeFonts.css'
 import './index.css'
 import { FrontendReadyMarker } from './components/FrontendReadyMarker'
 import { LinuxTitlebar } from './components/LinuxTitlebar'
 import { StartupShellFallback } from './components/StartupShellFallback'
 import { applyStoredThemeMode } from './lib/themeMode'
+import { applyEditorThemeIdToDocument, applyStoredEditorTheme } from './lib/editorThemeStorage'
+import { DEFAULT_EDITOR_THEME_ID } from './editorThemes/editorThemeCatalog'
+import { applyEditorThemeApplicationFromDocument } from './editorThemes/editorThemeApplication'
 import {
   APP_COMMAND_EVENT_NAME,
   isAppCommandId,
@@ -51,7 +55,7 @@ function installDismissableEscapeDefaultGuard(): void {
     if (event.key !== 'Escape' || !hasDismissableEscapeSurface()) return
 
     event.preventDefault()
-  }, true)
+  })
 }
 
 async function installMacosFullscreenChromeTracking(): Promise<void> {
@@ -77,6 +81,11 @@ async function installMacosFullscreenChromeTracking(): Promise<void> {
 
 const RootApp = lazy(async () => {
   markStartupPhase('app_module_requested')
+  if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('editor-theme-lab') === '1') {
+    const laboratoryModule = await import('./editorThemes/EditorThemeLaboratory')
+    markStartupPhase('app_module_loaded')
+    return { default: laboratoryModule.EditorThemeLaboratory }
+  }
   const appModule = await import('./App.tsx')
   markStartupPhase('app_module_loaded')
   return appModule
@@ -128,6 +137,12 @@ if (isMac()) {
 }
 
 applyStoredThemeMode(document, window.localStorage)
+try {
+  applyStoredEditorTheme(document, window.localStorage)
+} catch {
+  applyEditorThemeIdToDocument(document, DEFAULT_EDITOR_THEME_ID)
+}
+applyEditorThemeApplicationFromDocument(document)
 
 function dispatchDeterministicShortcutEvent(init: AppCommandShortcutEventInit) {
   const target =
@@ -242,6 +257,17 @@ function captureReactRootError(
   reloadFrontendOnceIfStartupFailed()
 }
 
+function reportNonFatalReactRootError(
+  error: unknown,
+  errorInfo: { componentStack?: string },
+): void {
+  if (isResizeObserverLoopError(error)) return
+
+  console.error('[react] Non-fatal render error:', error, {
+    componentStack: errorInfo.componentStack ?? '',
+  })
+}
+
 function shouldIgnoreRecoverableRootError(error: unknown, componentStack: string): boolean {
   if (isResizeObserverLoopError(error)) return true
   if (isRecoveredBlockNoteRenderError(error, componentStack)) return true
@@ -255,7 +281,7 @@ function captureRecoverableReactRootError(
 ): void {
   const componentStack = errorInfo.componentStack ?? ''
   if (shouldIgnoreRecoverableRootError(error, componentStack)) return
-  captureReactRootError(error, { componentStack })
+  reportNonFatalReactRootError(error, { componentStack })
 }
 
 function getRequiredRootElement(): HTMLElement {

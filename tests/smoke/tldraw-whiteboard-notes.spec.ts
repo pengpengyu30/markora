@@ -113,6 +113,24 @@ async function expectNoEditorNodeSelection(page: Page): Promise<void> {
   expect(await hasSelectedEditorNode(page)).toBe(false)
 }
 
+async function pressTldrawControl(page: Page, testId: string): Promise<void> {
+  await page.getByTestId(testId).press('Enter')
+}
+
+async function drawingPoints(whiteboard: Locator): Promise<{ start: { x: number, y: number }, end: { x: number, y: number } }> {
+  const canvasBox = await whiteboard.locator('.tl-canvas').boundingBox()
+  expect(canvasBox).not.toBeNull()
+
+  const start = {
+    x: canvasBox!.x + Math.min(180, canvasBox!.width - 150),
+    y: canvasBox!.y + Math.min(260, canvasBox!.height - 110),
+  }
+  return {
+    start,
+    end: { x: start.x + 120, y: start.y + 90 },
+  }
+}
+
 async function expectPaintedTldrawIcon(icon: Locator): Promise<void> {
   await expect(icon).toBeVisible({ timeout: 5_000 })
   const paintState = await icon.evaluate((element) => {
@@ -191,12 +209,10 @@ test('@smoke preserves a drawing when switching documents before the debounce wi
 
   const whiteboard = page.locator('.tldraw-whiteboard')
   await expect(whiteboard).toBeVisible({ timeout: 20_000 })
-  const boardBox = await whiteboard.boundingBox()
-  expect(boardBox).not.toBeNull()
+  await expect(whiteboard.locator('.tl-container')).toBeVisible({ timeout: 20_000 })
 
   await page.getByTestId('tools.draw').click()
-  const start = { x: boardBox!.x + 180, y: boardBox!.y + 180 }
-  const end = { x: start.x + 120, y: start.y + 90 }
+  const { start, end } = await drawingPoints(whiteboard)
   await page.mouse.move(start.x, start.y)
   await page.mouse.down()
   await page.mouse.move(end.x, end.y, { steps: 8 })
@@ -322,8 +338,8 @@ test('embedded tldraw dialogs appear and release focus when closed', async ({ pa
   const whiteboard = page.locator('.tldraw-whiteboard')
   await expect(whiteboard).toBeVisible({ timeout: 20_000 })
 
-  await page.getByTestId('main-menu.button').click()
-  await page.getByTestId('main-menu.keyboard-shortcuts-button').click()
+  await pressTldrawControl(page, 'main-menu.button')
+  await pressTldrawControl(page, 'main-menu.keyboard-shortcuts-button')
 
   const shortcutsDialog = page.locator('.tldraw-whiteboard .tlui-dialog__content')
   await expect(shortcutsDialog).toBeVisible({ timeout: 5_000 })
@@ -350,8 +366,8 @@ test('embedded tldraw insert embed dialog opens without crashing the note', asyn
   const whiteboard = page.locator('.tldraw-whiteboard')
   await expect(whiteboard).toBeVisible({ timeout: 20_000 })
 
-  await page.getByTestId('main-menu.button').click()
-  await page.getByTestId('main-menu.insert-embed').click()
+  await pressTldrawControl(page, 'main-menu.button')
+  await pressTldrawControl(page, 'main-menu.insert-embed')
 
   const embedDialog = page.locator('.tldraw-whiteboard .tlui-dialog__content')
   await expect(embedDialog).toBeVisible({ timeout: 5_000 })
@@ -396,19 +412,9 @@ test('embedded tldraw drawing uses the clicked coordinates while zoomed', async 
 
   const whiteboard = page.locator('.tldraw-whiteboard')
   await expect(whiteboard).toBeVisible({ timeout: 20_000 })
-  const boardBox = await whiteboard.boundingBox()
-  expect(boardBox).not.toBeNull()
 
   await page.getByTestId('tools.draw').click()
-
-  const start = {
-    x: boardBox!.x + 180,
-    y: boardBox!.y + 180,
-  }
-  const end = {
-    x: start.x + 120,
-    y: start.y + 90,
-  }
+  const { start, end } = await drawingPoints(whiteboard)
 
   await page.mouse.move(start.x, start.y)
   await page.mouse.down()

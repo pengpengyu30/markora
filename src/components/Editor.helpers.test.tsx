@@ -55,6 +55,10 @@ const blockNoteCreation = vi.hoisted(() => ({
 const blockNoteViewState = vi.hoisted(() => ({
   onChange: null as (() => void) | null,
 }))
+const mockCodeStyleSpec = vi.hoisted(() => ({
+  config: { type: 'code', propSchema: 'boolean' },
+  implementation: { mark: { extend: vi.fn(() => ({})) } },
+}))
 type MockEditorWithDirectMarkdownState = typeof mockEditor & {
   __markoraDirectMarkdownCache?: unknown
   __markoraLastDirectMarkdownMetrics?: unknown
@@ -63,7 +67,11 @@ type MockEditorWithDirectMarkdownState = typeof mockEditor & {
 
 vi.mock('@blocknote/core', () => ({
   audioParse: vi.fn(() => undefined),
-  BlockNoteSchema: { create: () => ({ extend: () => ({}) }) },
+  BlockNoteSchema: {
+    create: () => ({
+      extend: () => ({ styleSpecs: { code: mockCodeStyleSpec } }),
+    }),
+  },
   createAudioBlockConfig: vi.fn(() => ({})),
   createCodeBlockSpec: vi.fn(() => ({})),
   createExtension: (factory: unknown) => () => factory,

@@ -235,5 +235,7 @@ proposed → active → superseded
 | [0177](0177-mounted-project-global-search-scope.md) | Full-text search spans visible mounted Projects | active |
 | [0178](0178-write-safe-editor-flush-windows.md) | Write-safe editor flush windows | active |
 | [0179](0179-writable-app-config-fallback.md) | Writable fallback for app config | active |
-| [0181](0181-multi-root-filesystem-watching.md) | Multi-root filesystem watching with path-scoped invalidation | active |
-| [0182](0182-in-place-clean-note-refresh-preserves-scroll.md) | In-place clean note refresh preserves editor scroll | active |
+| [0180](0180-app-owned-editor-theme-families.md) | App-owned editor theme families | active |
+| [0181](0181-editor-theme-application-shell-projection.md) | Editor theme semantic projection across the application shell | active |
+| [0182](0181-multi-root-filesystem-watching.md) | Multi-root filesystem watching with path-scoped invalidation | active |
+| [0183](0182-in-place-clean-note-refresh-preserves-scroll.md) | In-place clean note refresh preserves editor scroll | active |

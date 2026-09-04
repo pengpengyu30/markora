@@ -127,6 +127,43 @@ describe('buildSettingsCommands', () => {
     })
   })
 
+  it('adds the four editor theme commands and a reset command', () => {
+    const onSetEditorTheme = vi.fn()
+    const commands = buildSettingsCommands({
+      onOpenSettings: vi.fn(),
+      onSetEditorTheme,
+    })
+    const expected = [
+      ['set-editor-theme-default', 'Editor Theme: Default', 'default'],
+      ['set-editor-theme-code', 'Editor Theme: Code', 'code'],
+      ['set-editor-theme-editorial', 'Editor Theme: Editorial', 'editorial'],
+      ['set-editor-theme-canvas', 'Editor Theme: Canvas', 'canvas'],
+      ['reset-editor-theme', 'Reset Editor Theme', 'default'],
+    ] as const
+
+    for (const [id, label, themeId] of expected) {
+      const command = commands.find((item) => item.id === id)
+      expect(command).toMatchObject({ label, enabled: true, group: 'Settings' })
+      expect(command?.keywords).toEqual(expect.arrayContaining(['editor theme']))
+      command?.execute()
+      expect(onSetEditorTheme).toHaveBeenCalledWith(themeId)
+    }
+    expect(onSetEditorTheme).toHaveBeenCalledTimes(expected.length)
+  })
+
+  it('keeps editor theme commands visible but disabled until the coordinator is available', () => {
+    const commands = buildSettingsCommands({ onOpenSettings: vi.fn() })
+
+    expect(commands.find((item) => item.id === 'set-editor-theme-default')).toMatchObject({
+      label: 'Editor Theme: Default',
+      enabled: false,
+    })
+    expect(commands.find((item) => item.id === 'reset-editor-theme')).toMatchObject({
+      label: 'Reset Editor Theme',
+      enabled: false,
+    })
+  })
+
   it('localizes language commands', () => {
     const commands = buildSettingsCommands({
       onOpenSettings: vi.fn(),
@@ -148,6 +185,12 @@ describe('buildSettingsCommands', () => {
     })
     expect(commands.find((item) => item.id === 'use-system-theme-mode')).toMatchObject({
       label: '使用系统主题',
+    })
+    expect(commands.find((item) => item.id === 'set-editor-theme-code')).toMatchObject({
+      label: '编辑器主题：Code',
+    })
+    expect(commands.find((item) => item.id === 'reset-editor-theme')).toMatchObject({
+      label: '重置编辑器主题',
     })
   })
 

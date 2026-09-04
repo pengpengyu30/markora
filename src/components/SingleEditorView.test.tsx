@@ -397,33 +397,47 @@ describe('SingleEditorView', () => {
     expect(state.capturedMantineGetStyleNonce?.()).toBe(RUNTIME_STYLE_NONCE)
   })
 
-  it('defers rich-editor change propagation until IME composition ends', async () => {
+  it('defers rich-editor change propagation until a late IME commit can settle', () => {
+    vi.useFakeTimers()
     const editor = createEditor()
     const onChange = vi.fn()
 
-    render(
-      <SingleEditorView
-        editor={editor as never}
-        entries={[makeEntry()]}
-        onNavigateWikilink={vi.fn()}
-        onChange={onChange}
-      />,
-    )
+    try {
+      render(
+        <SingleEditorView
+          editor={editor as never}
+          entries={[makeEntry()]}
+          onNavigateWikilink={vi.fn()}
+          onChange={onChange}
+        />,
+      )
 
-    const blockNoteView = screen.getByTestId('blocknote-view')
+      const blockNoteView = screen.getByTestId('blocknote-view')
 
-    fireEvent.compositionStart(blockNoteView)
-    act(() => {
-      state.capturedBlockNoteOnChange?.()
-    })
-    expect(onChange).not.toHaveBeenCalled()
+      fireEvent.compositionStart(blockNoteView)
+      act(() => {
+        state.capturedBlockNoteOnChange?.()
+      })
+      expect(onChange).not.toHaveBeenCalled()
 
-    fireEvent.compositionEnd(blockNoteView)
-    await act(async () => {
-      await Promise.resolve()
-    })
+      fireEvent.compositionEnd(blockNoteView)
+      act(() => {
+        state.capturedBlockNoteOnChange?.()
+      })
+      expect(onChange).not.toHaveBeenCalled()
 
-    expect(onChange).toHaveBeenCalledTimes(1)
+      act(() => {
+        vi.advanceTimersByTime(119)
+      })
+      expect(onChange).not.toHaveBeenCalled()
+
+      act(() => {
+        vi.advanceTimersByTime(1)
+      })
+      expect(onChange).toHaveBeenCalledTimes(1)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('copies selected fenced code text without markdown escape backslashes', async () => {

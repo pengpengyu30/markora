@@ -41,6 +41,28 @@ The site covers stable behavior through v2026-07-22, including:
 - Parent Git repository support, AutoGit, manual commits, and remote sync.
 - Spreadsheet notes, cross-note formulas, HTML blocks, and vault expressions.
 - System theme mode and sidebar pluralization settings.
+- Built-in editor themes (`Default`, `Code`, `Editorial`, and `Canvas`), independent from
+  application appearance, with Rich/Raw rendering and note-width inheritance.
+
+## Editor Themes Documentation Impact
+
+The editor-theme release adds user-facing Appearance, command-palette, Rich/Raw, and note-width
+behavior that should be covered by public reference pages when the public-docs source is restored.
+
+Public docs impact:
+- updated: this plan now records the editor-theme coverage and the future reference-page scope.
+- not needed because: the current checkout contains only generated `site/.vitepress/dist/` output,
+  not editable public Markdown source; generated output is intentionally left unchanged.
+
+Getting Started vault impact:
+- updated: not needed; editor themes are installation-local application settings and do not belong
+  in the starter Project or its Markdown examples.
+- not needed because: no note content, Project configuration, or starter-vault workflow changed.
+
+Future public reference coverage should explain the independent Application appearance and Editor
+theme controls, the four fixed family names, Settings preview/save/cancel behavior, command-palette
+actions, Rich/Raw parity, presentation-only switching, and `Theme default`/`Normal`/`Wide` width
+precedence including the per-note reset action.
 
 Every user-visible app change should answer:
 

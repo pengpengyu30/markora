@@ -8,6 +8,12 @@
   box-shadow: inset 0 0 0 1px var(--border-primary);
 }
 
+.app-theme-scope {
+  background: var(--surface-app);
+  color: var(--text-primary);
+  font-family: var(--app-ui-font-family, inherit);
+}
+
 .app {
   display: flex;
   flex: 1;

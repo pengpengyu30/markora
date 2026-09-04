@@ -1,13 +1,17 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { renderHook } from '@testing-library/react'
 import { useEditorTheme } from './useTheme'
 
 describe('useEditorTheme', () => {
+  beforeEach(() => {
+    document.documentElement.removeAttribute('data-editor-theme')
+  })
+
   it('keeps inline code on the muted editor surface without exporting code block overrides', () => {
     const { result } = renderHook(() => useEditorTheme())
 
     expect(result.current.cssVars['--inline-styles-code-background-color']).toBe(
-      'var(--bg-hover-subtle)'
+      'var(--editor-theme-surfaces-inline-code)'
     )
     expect(result.current.cssVars['--code-blocks-background-color']).toBeUndefined()
   })
@@ -28,5 +32,16 @@ describe('useEditorTheme', () => {
     const { result } = renderHook(() => useEditorTheme())
 
     expect(result.current.cssVars['--editor-max-width']).toBe('820px')
+  })
+
+  it('resolves only the validated editor family from the document identity', () => {
+    document.documentElement.setAttribute('data-editor-theme', 'code')
+    const codeTheme = renderHook(() => useEditorTheme())
+    expect(codeTheme.result.current.editorThemeId).toBe('code')
+    codeTheme.unmount()
+
+    document.documentElement.setAttribute('data-editor-theme', 'removed-theme')
+    const fallbackTheme = renderHook(() => useEditorTheme())
+    expect(fallbackTheme.result.current.editorThemeId).toBe('default')
   })
 })

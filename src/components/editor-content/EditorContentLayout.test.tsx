@@ -17,6 +17,10 @@ vi.mock('../RawEditorView', () => ({
   RawEditorView: () => <div data-testid="raw-editor-view" />,
 }))
 
+vi.mock('../RichEditorFindBar', () => ({
+  RichEditorFindBar: () => <div data-testid="rich-editor-find-bar" />,
+}))
+
 vi.mock('../FilePreview', () => ({
   FilePreview: ({ entry }: { entry: { path: string } }) => (
     <div data-testid="file-preview" data-path={entry.path} />
@@ -59,6 +63,7 @@ function createModel(overrides: Record<string, unknown> = {}) {
     wordCount: 12,
     vaultPath: '/vault',
     cssVars: {},
+    editorThemeId: 'default',
     onNavigateWikilink: vi.fn(),
     onEditorChange: vi.fn(),
     isDeletedPreview: false,
@@ -127,6 +132,74 @@ describe('EditorContentLayout', () => {
 
     expect(container.firstElementChild).toHaveClass('editor-content-width--wide')
     expect(screen.getByTestId('breadcrumb-bar')).toHaveAttribute('data-note-width', 'wide')
+  })
+
+  it('passes the inherited theme width into the central editor scope', () => {
+    const { container } = render(<EditorContentLayout {...createModel({
+      noteWidth: 'normal',
+      noteWidthMaxWidth: 1040,
+    })} />)
+
+    const themeScope = container.querySelector('[data-editor-theme-scope="true"]')
+    expect(themeScope).toHaveStyle('--editor-max-width: 1040px')
+  })
+
+  it('owns editor theme variables at one central canvas scope', () => {
+    const { container } = render(<EditorContentLayout {...createModel({
+      cssVars: { '--editor-font-size': '15px' },
+    })} />)
+
+    const themeScopes = container.querySelectorAll('[data-editor-theme-scope="true"]')
+    const themeScope = themeScopes[0]
+    const findScopes = container.querySelectorAll('[data-editor-find-scope="true"]')
+
+    expect(themeScopes).toHaveLength(1)
+    expect(themeScope).toHaveAttribute('data-editor-theme', 'default')
+    expect(themeScope).toHaveStyle('--editor-font-size: 15px')
+    expect(findScopes).toHaveLength(1)
+    expect(findScopes[0]).not.toHaveStyle('--editor-font-size: 15px')
+  })
+
+  it('keeps the Rich editor search controls outside the editor theme scope', () => {
+    const { container } = render(<EditorContentLayout {...createModel({
+      findRequest: { id: 1, path: '/vault/project/demo.md', replace: false },
+    })} />)
+
+    const themeScope = container.querySelector('[data-editor-theme-scope="true"]')
+    const findBar = screen.getByTestId('rich-editor-find-bar')
+
+    expect(themeScope).toBeInTheDocument()
+    expect(themeScope).not.toContainElement(findBar)
+    expect(findBar.closest('[data-editor-find-scope="true"]')).toBeInTheDocument()
+  })
+
+  it('updates the rich theme scope without remounting the editor or invoking save callbacks', () => {
+    const editor = {}
+    const onEditorChange = vi.fn()
+    const onSave = vi.fn()
+    const { rerender } = render(<EditorContentLayout {...createModel({
+      editor,
+      editorThemeId: 'default',
+      cssVars: { '--editor-theme-surfaces-canvas': '#FFFFFF' },
+      onEditorChange,
+      onSave,
+    })} />)
+    const editorView = screen.getByTestId('single-editor-view')
+
+    rerender(<EditorContentLayout {...createModel({
+      editor,
+      editorThemeId: 'editorial',
+      cssVars: { '--editor-theme-surfaces-canvas': '#FCF9F5' },
+      onEditorChange,
+      onSave,
+    })} />)
+
+    const themeScope = screen.getByTestId('single-editor-view').closest('[data-editor-theme-scope="true"]')
+    expect(screen.getByTestId('single-editor-view')).toBe(editorView)
+    expect(themeScope).toHaveAttribute('data-editor-theme', 'editorial')
+    expect(themeScope).toHaveStyle('--editor-theme-surfaces-canvas: #FCF9F5')
+    expect(onEditorChange).not.toHaveBeenCalled()
+    expect(onSave).not.toHaveBeenCalled()
   })
 
   it('passes the active note content into the breadcrumb', () => {

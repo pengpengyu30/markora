@@ -7,6 +7,7 @@ const COVERAGE_SHARD_TEST_TIMEOUT_MS = 30_000
 const {
   blockHasTypeMock,
   editorHasBlockWithTypeMock,
+  blockTypeMenuState,
   formattingToolbarStore,
   hoverGuardMock,
   positionPopoverState,
@@ -14,6 +15,7 @@ const {
   useBlockNoteEditorMock,
 } = vi.hoisted(() => ({
   blockHasTypeMock: vi.fn(() => true),
+  blockTypeMenuState: { lastProps: null as null | Record<string, unknown> },
   editorHasBlockWithTypeMock: vi.fn(() => true),
   formattingToolbarStore: { setState: vi.fn() },
   hoverGuardMock: vi.fn(),
@@ -96,7 +98,10 @@ vi.mock('@mantine/core', () => ({
   Button: ({ children, ...props }: { children?: ReactNode }) => <button type="button" {...props}>{children}</button>,
   CheckIcon: () => <span data-testid="mantine-check">check</span>,
   Menu: Object.assign(
-    ({ children }: { children?: ReactNode }) => <div data-testid="mantine-menu">{children}</div>,
+    ({ children, ...props }: { children?: ReactNode }) => {
+      if ('opened' in props || 'onChange' in props) blockTypeMenuState.lastProps = props
+      return <div data-testid="mantine-menu">{children}</div>
+    },
     {
       Target: ({ children }: { children?: ReactNode }) => <>{children}</>,
       Dropdown: ({ children, ...props }: { children?: ReactNode }) => <div {...props}>{children}</div>,
@@ -203,7 +208,10 @@ function createMockEditor(blockType = 'image', props: Record<string, unknown> = 
 describe('tolariaEditorFormatting behavior', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    blockHasTypeMock.mockReturnValue(true)
+    editorHasBlockWithTypeMock.mockReturnValue(true)
     document.body.innerHTML = ''
+    blockTypeMenuState.lastProps = null
     positionPopoverState.lastProps = null
     showState.value = true
     useBlockNoteEditorMock.mockReturnValue(createMockEditor())
@@ -380,6 +388,30 @@ describe('tolariaEditorFormatting behavior', () => {
     expect(focusSpy).toHaveBeenCalled()
 
     focusSpy.mockRestore()
+  })
+
+  it('pins the toolbar while the block type menu is open and closes on editor interaction', () => {
+    const editor = createMockEditor('paragraph')
+    const editorInput = editor.domElement.firstElementChild as HTMLElement
+    useBlockNoteEditorMock.mockReturnValue(editor)
+
+    render(<TolariaFormattingToolbarController />)
+
+    expect(screen.getAllByRole('button', { name: 'Paragraph' }).length).toBeGreaterThan(0)
+    expect(blockTypeMenuState.lastProps?.opened).toBe(false)
+
+    act(() => {
+      const onChange = blockTypeMenuState.lastProps?.onChange as ((opened: boolean) => void)
+      onChange(true)
+    })
+
+    expect(blockTypeMenuState.lastProps?.opened).toBe(true)
+
+    showState.value = false
+    fireEvent.pointerDown(editorInput)
+
+    expect(screen.queryByTestId('mantine-menu')).not.toBeInTheDocument()
+    expect(formattingToolbarStore.setState).toHaveBeenCalledWith(false)
   })
 
   it('keeps the toolbar open during close grace and clears the timeout on unmount', () => {

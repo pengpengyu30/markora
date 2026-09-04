@@ -254,6 +254,28 @@ describe('useCommandRegistry', () => {
     expect(onSetDefaultNoteWidth).toHaveBeenCalledWith('wide')
   })
 
+  it('exposes a command to restore the theme default note width', () => {
+    const onSetDefaultNoteWidth = vi.fn()
+    const config = makeConfig({ defaultNoteWidth: 'wide', onSetDefaultNoteWidth })
+    const { result } = renderHook(() => useCommandRegistry(config))
+    const cmd = findCommand(result.current, 'set-default-note-width-theme')
+
+    expect(cmd).toMatchObject({
+      label: 'Use Theme Default Note Width by Default',
+      group: 'View',
+      enabled: true,
+    })
+
+    cmd!.execute()
+    expect(onSetDefaultNoteWidth).toHaveBeenCalledWith(null)
+    expect(findCommand(result.current, 'set-default-note-width-normal')?.enabled).toBe(true)
+    expect(findCommand(result.current, 'set-default-note-width-wide')?.enabled).toBe(false)
+
+    const inheritedConfig = makeConfig({ defaultNoteWidth: null, onSetDefaultNoteWidth })
+    const inherited = renderHook(() => useCommandRegistry(inheritedConfig))
+    expect(findCommand(inherited.result.current, 'set-default-note-width-theme')?.enabled).toBe(false)
+  })
+
   it('exposes command palette actions for light and dark mode', () => {
     const onSetThemeMode = vi.fn()
     const config = makeConfig({ onSetThemeMode })

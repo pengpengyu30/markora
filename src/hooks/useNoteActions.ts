@@ -289,6 +289,36 @@ async function updateFrontmatterAndMaybeRename({
   return true
 }
 
+interface DeleteFrontmatterParams {
+  config: NoteActionsConfig
+  deps: TitleRenameDeps
+  key: string
+  options?: FrontmatterOpOptions
+  path: string
+  runFrontmatterOp: RunFrontmatterOp
+}
+
+async function deleteFrontmatterAndApply({
+  config,
+  deps,
+  key,
+  options,
+  path,
+  runFrontmatterOp,
+}: DeleteFrontmatterParams): Promise<boolean> {
+  if (!activePathGuardAllowsMutation(path, deps.activeTabPathRef, options)) return false
+  const canFlush = await flushBeforeNoteMutation(path, config.flushBeforeNoteMutation)
+  if (!canFlush) return false
+  if (!activePathGuardAllowsMutation(path, deps.activeTabPathRef, options)) return false
+
+  config.onInternalVaultWrite?.(path)
+  const newContent = await runFrontmatterOp('delete', path, key, undefined, options)
+  if (!applyFrontmatterCallbacks({ config, path, newContent })) return false
+
+  await notifyFrontmatterPersisted(config)
+  return true
+}
+
 function buildTabManagementOptions(
   config: Pick<
     NoteActionsConfig,
@@ -435,7 +465,45 @@ function useFrontmatterActionHandlers(functionOptions: {
     ],
   )
 
+  const handleDeleteFrontmatter = useCallback(
+    async (path: string, key: string, options?: FrontmatterOpOptions) => {
+      if (!isWritableFrontmatterKey(key)) return
+      await deleteFrontmatterAndApply({
+        config,
+        deps: {
+          vaultPath: config.vaultPath,
+          tabsRef: renameTabsRef,
+          reloadVault: config.reloadVault,
+          replaceEntry: config.replaceEntry,
+          onPathRenamed,
+          setTabs,
+          activeTabPathRef,
+          handleSwitchTab,
+          setToastMessage,
+          updateTabContent,
+          onInternalVaultWrite: config.onInternalVaultWrite,
+        },
+        key,
+        options,
+        path,
+        runFrontmatterOp,
+      })
+    },
+    [
+      activeTabPathRef,
+      config,
+      handleSwitchTab,
+      onPathRenamed,
+      renameTabsRef,
+      runFrontmatterOp,
+      setTabs,
+      setToastMessage,
+      updateTabContent,
+    ],
+  )
+
   return {
+    handleDeleteFrontmatter,
     handleUpdateFrontmatter,
   }
 }
@@ -510,6 +578,7 @@ function buildNoteActionsResult({
     handleNavigateWikilink,
     handleCreateNote: creation.handleCreateNote,
     handleCreateNoteImmediate: creation.handleCreateNoteImmediate,
+    handleDeleteFrontmatter: frontmatterActions.handleDeleteFrontmatter,
     handleUpdateFrontmatter: frontmatterActions.handleUpdateFrontmatter,
     handleRenameNote: rename.handleRenameNote,
     handleRenameFilename: rename.handleRenameFilename,

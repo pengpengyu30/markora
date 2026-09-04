@@ -4,6 +4,7 @@ use std::path::PathBuf;
 
 pub const DEFAULT_HIDE_GITIGNORED_FILES: bool = true;
 const SUPPORTED_NOTE_WIDTH_MODES: &[&str] = &["normal", "wide"];
+const SUPPORTED_EDITOR_THEME_IDS: &[&str] = &["default", "code", "editorial", "canvas"];
 const SUPPORTED_DATE_DISPLAY_FORMATS: &[&str] = &["us", "european", "friendly", "iso"];
 const SUPPORTED_UI_LANGUAGE_ALIASES: &[(&str, &str)] = &[
     ("en", "en"),
@@ -81,6 +82,7 @@ pub struct Settings {
     pub release_channel: Option<String>,
     pub automatic_update_checks_enabled: Option<bool>,
     pub theme_mode: Option<String>,
+    pub editor_theme: Option<String>,
     pub ui_language: Option<String>,
     pub date_display_format: Option<String>,
     pub note_width_mode: Option<String>,
@@ -122,6 +124,13 @@ pub fn effective_release_channel(value: Option<&str>) -> &'static str {
 pub fn normalize_theme_mode(value: Option<&str>) -> Option<String> {
     match value.map(|candidate| candidate.trim().to_ascii_lowercase()) {
         Some(mode) if mode == "light" || mode == "dark" || mode == "system" => Some(mode),
+        _ => None,
+    }
+}
+
+pub fn normalize_editor_theme(value: Option<&str>) -> Option<String> {
+    match value.map(|candidate| candidate.trim().to_ascii_lowercase()) {
+        Some(theme) if SUPPORTED_EDITOR_THEME_IDS.contains(&theme.as_str()) => Some(theme),
         _ => None,
     }
 }
@@ -192,6 +201,7 @@ fn normalize_settings(settings: Settings) -> Settings {
         release_channel: normalize_release_channel(settings.release_channel.as_deref()),
         automatic_update_checks_enabled: settings.automatic_update_checks_enabled,
         theme_mode: normalize_theme_mode(settings.theme_mode.as_deref()),
+        editor_theme: normalize_editor_theme(settings.editor_theme.as_deref()),
         ui_language: normalize_ui_language(settings.ui_language.as_deref()),
         date_display_format: normalize_date_display_format(settings.date_display_format.as_deref()),
         note_width_mode: normalize_note_width_mode(settings.note_width_mode.as_deref()),
@@ -326,6 +336,7 @@ mod tests {
             release_channel: Some("alpha".to_string()),
             automatic_update_checks_enabled: Some(false),
             theme_mode: Some("dark".to_string()),
+            editor_theme: Some("canvas".to_string()),
             ui_language: Some("zh-Hans".to_string()),
             date_display_format: Some("iso".to_string()),
             note_width_mode: Some("wide".to_string()),
@@ -430,6 +441,7 @@ mod tests {
             git_wsl_distro: Some("  Ubuntu  ".to_string()),
             release_channel: Some("  alpha  ".to_string()),
             theme_mode: Some("  dark  ".to_string()),
+            editor_theme: Some("  CANVAS  ".to_string()),
             ui_language: Some("  zh-cn  ".to_string()),
             date_display_format: Some("  ISO  ".to_string()),
             note_width_mode: Some("  WIDE  ".to_string()),
@@ -440,6 +452,7 @@ mod tests {
         assert_eq!(loaded.git_wsl_distro.as_deref(), Some("Ubuntu"));
         assert_eq!(loaded.release_channel.as_deref(), Some("alpha"));
         assert_eq!(loaded.theme_mode.as_deref(), Some("dark"));
+        assert_eq!(loaded.editor_theme.as_deref(), Some("canvas"));
         assert_eq!(loaded.ui_language.as_deref(), Some("zh-CN"));
         assert_eq!(loaded.date_display_format.as_deref(), Some("iso"));
         assert_eq!(loaded.note_width_mode.as_deref(), Some("wide"));
@@ -490,6 +503,37 @@ mod tests {
             ..Default::default()
         });
         assert!(loaded.theme_mode.is_none());
+    }
+
+    #[test]
+    fn test_editor_theme_settings_roundtrip_all_supported_ids() {
+        for id in SUPPORTED_EDITOR_THEME_IDS {
+            let loaded = save_and_reload(Settings {
+                editor_theme: Some((*id).to_string()),
+                ..Default::default()
+            });
+            assert_eq!(loaded.editor_theme.as_deref(), Some(*id));
+        }
+    }
+
+    #[test]
+    fn test_invalid_editor_theme_is_filtered() {
+        let loaded = save_and_reload(Settings {
+            editor_theme: Some("removed-theme".to_string()),
+            ..Default::default()
+        });
+        assert!(loaded.editor_theme.is_none());
+    }
+
+    #[test]
+    fn test_old_settings_without_editor_theme_load_as_missing_default() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let path = dir.path().join("settings.json");
+        fs::write(&path, r#"{"theme_mode":"dark"}"#).unwrap();
+
+        let loaded = get_settings_at(&path).unwrap();
+
+        assert!(loaded.editor_theme.is_none());
     }
 
     #[test]

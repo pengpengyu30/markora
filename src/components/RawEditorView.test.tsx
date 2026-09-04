@@ -138,6 +138,13 @@ describe('RawEditorView', () => {
     expect(cmScroller).toBeInTheDocument()
   })
 
+  it('uses the editor theme canvas surface for the Raw editor root', () => {
+    render(<RawEditorView {...defaultProps} />)
+
+    const root = screen.getByTestId('raw-editor-codemirror').parentElement
+    expect(root).toHaveStyle({ background: 'var(--editor-theme-surfaces-canvas)' })
+  })
+
   it('cleans up CodeMirror view on unmount', () => {
     const { unmount } = render(<RawEditorView {...defaultProps} />)
     const container = screen.getByTestId('raw-editor-codemirror')

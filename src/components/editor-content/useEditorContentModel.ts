@@ -2,7 +2,7 @@ import type React from 'react'
 import { useMemo, useRef } from 'react'
 import type { useCreateBlockNote } from '@blocknote/react'
 import type { AppLocale } from '../../lib/i18n'
-import type { NoteWidthMode, VaultEntry } from '../../types'
+import type { NoteWidthMode, NoteWidthPreference, VaultEntry } from '../../types'
 import { useEditorTheme } from '../../hooks/useTheme'
 import { deriveEditorContentState } from './editorContentState'
 import type { RawEditorFindRequest } from '../RawEditorFindBar'
@@ -10,6 +10,7 @@ import type { ImageImportError } from '../../hooks/useImageDrop'
 import type { TagCount } from '../../utils/noteTags'
 import type { SearchHighlightRequest } from '../../utils/searchHighlight'
 import type { EditorHistoryCommands } from '../../utils/appOrchestration'
+import type { NoteWidthSource } from '../../utils/noteWidth'
 
 export interface Tab {
   entry: VaultEntry
@@ -47,6 +48,9 @@ export interface EditorContentProps {
   searchHighlightRequest?: SearchHighlightRequest | null
   onRenameFilename?: (path: string, newFilenameStem: string) => void
   noteWidth?: NoteWidthMode
+  noteWidthMaxWidth?: number | null
+  noteWidthSource?: NoteWidthSource
+  onSetNoteWidth?: (mode: NoteWidthPreference) => void
   onToggleNoteWidth?: () => void
   onImageImportError?: (error: ImageImportError) => void
   historyRef?: React.MutableRefObject<EditorHistoryCommands | null>
@@ -63,7 +67,7 @@ export function useEditorContentModel(props: EditorContentProps) {
     rawMode,
   } = props
 
-  const { cssVars } = useEditorTheme()
+  const { cssVars, theme: editorTheme, editorThemeId } = useEditorTheme()
   const {
     isDeletedPreview,
     isHtmlFile,
@@ -89,6 +93,8 @@ export function useEditorContentModel(props: EditorContentProps) {
   return {
     ...props,
     cssVars,
+    editorTheme,
+    editorThemeId,
     isDeletedPreview,
     isHtmlFile,
     legacyUnsupportedKind,

@@ -123,6 +123,13 @@ describe('MathBlockEditor', () => {
     expect(editorThemeCss).toContain('width: 100%;')
   })
 
+  it('routes rendered KaTeX through the effective editor text role', () => {
+    const editorThemeCss = readFileSync(`${process.cwd()}/src/components/EditorTheme.css`, 'utf8')
+
+    expect(editorThemeCss).toContain('.editor-theme-scope .katex')
+    expect(editorThemeCss).toContain('color: var(--editor-theme-text-primary)')
+  })
+
   it('does not stack divider bottom spacing with following heading top spacing', () => {
     const editorThemeCss = readFileSync(`${process.cwd()}/src/components/EditorTheme.css`, 'utf8')
 

@@ -33,6 +33,7 @@ const STATIC_LABEL_KEYS: Partial<Record<string, TranslationKey>> = {
   'toggle-raw-editor': 'command.view.toggleRaw',
   'set-note-width-normal': 'command.view.noteWidthNormal',
   'set-note-width-wide': 'command.view.noteWidthWide',
+  'set-default-note-width-theme': 'command.view.defaultNoteWidthTheme',
   'set-default-note-width-normal': 'command.view.defaultNoteWidthNormal',
   'set-default-note-width-wide': 'command.view.defaultNoteWidthWide',
   'toggle-backlinks': 'command.view.toggleBacklinks',
@@ -47,6 +48,11 @@ const STATIC_LABEL_KEYS: Partial<Record<string, TranslationKey>> = {
   'use-light-mode': 'command.settings.useLightMode',
   'use-dark-mode': 'command.settings.useDarkMode',
   'use-system-theme-mode': 'command.settings.useSystemTheme',
+  'set-editor-theme-default': 'command.settings.editorThemeDefault',
+  'set-editor-theme-code': 'command.settings.editorThemeCode',
+  'set-editor-theme-editorial': 'command.settings.editorThemeEditorial',
+  'set-editor-theme-canvas': 'command.settings.editorThemeCanvas',
+  'reset-editor-theme': 'command.settings.resetEditorTheme',
   'toggle-gitignored-files-visibility': 'command.settings.toggleGitignoredFilesVisibility',
 }
 

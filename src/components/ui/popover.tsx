@@ -21,6 +21,7 @@ function PopoverContent({
   align = "center",
   sideOffset = 4,
   collisionPadding = 8,
+  onEscapeKeyDown,
   ref,
   ...props
 }: React.ComponentProps<typeof PopoverPrimitive.Content>) {
@@ -38,6 +39,10 @@ function PopoverContent({
           "bg-popover text-popover-foreground z-[12000] w-72 origin-(--radix-popover-content-transform-origin) rounded-md border p-4 shadow-md outline-hidden",
           className
         )}
+        onEscapeKeyDown={(event) => {
+          onEscapeKeyDown?.(event)
+          event.stopPropagation()
+        }}
         {...props}
       />
     </PopoverPrimitive.Portal>

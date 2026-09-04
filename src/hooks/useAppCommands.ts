@@ -6,11 +6,12 @@ import { useCommandRegistry } from './useCommandRegistry'
 import type { CommandAction } from './useCommandRegistry'
 import { useKeyboardNavigation } from './useKeyboardNavigation'
 import { useMenuEvents } from './useMenuEvents'
-import type { NoteWidthMode, SidebarSelection, SidebarFilter, VaultEntry } from '../types'
+import type { NoteWidthMode, NoteWidthPreference, SidebarSelection, SidebarFilter, VaultEntry } from '../types'
 import type { ViewMode } from './useViewMode'
 import type { ImmediateCreateOptions } from './useNoteCreation'
 import type { NoteListMultiSelectionCommands } from '../components/note-list/multiSelectionCommands'
 import type { RichEditorBlockTypeDefinition } from '../utils/richEditorBlockTypes'
+import type { EditorThemeId } from '../editorThemes/editorThemeCatalog'
 
 interface AppCommandsConfig {
   activeTabPath: string | null
@@ -35,9 +36,9 @@ interface AppCommandsConfig {
   onToggleBacklinks: () => void
   onToggleRawEditor?: () => void
   noteWidth?: NoteWidthMode
-  defaultNoteWidth?: NoteWidthMode
+  defaultNoteWidth?: NoteWidthPreference
   onSetNoteWidth?: (mode: NoteWidthMode) => void
-  onSetDefaultNoteWidth?: (mode: NoteWidthMode) => void
+  onSetDefaultNoteWidth?: (mode: NoteWidthPreference) => void
   onZoomIn: () => void
   onZoomOut: () => void
   onZoomReset: () => void
@@ -63,6 +64,7 @@ interface AppCommandsConfig {
   selectedUiLanguage?: UiLanguagePreference
   onSetUiLanguage?: (language: UiLanguagePreference) => void
   onSetThemeMode?: (mode: ThemeMode) => void
+  onSetEditorTheme?: (themeId: EditorThemeId) => void | Promise<unknown>
   onReloadVault?: () => void
   onRepairVault?: () => void
   onRestoreDeletedNote?: () => void
@@ -126,6 +128,7 @@ type CommandRegistryVaultActions = Pick<
   | 'selectedUiLanguage'
   | 'onSetUiLanguage'
   | 'onSetThemeMode'
+  | 'onSetEditorTheme'
   | 'onRemoveActiveVault'
   | 'onRestoreGettingStarted'
   | 'isGettingStartedHidden'
@@ -334,6 +337,7 @@ function createCommandRegistryVaultConfig(
     selectedUiLanguage: config.selectedUiLanguage,
     onSetUiLanguage: config.onSetUiLanguage,
     onSetThemeMode: config.onSetThemeMode,
+    onSetEditorTheme: config.onSetEditorTheme,
     onRemoveActiveVault: config.onRemoveActiveVault,
     onRestoreGettingStarted: config.onRestoreGettingStarted,
     isGettingStartedHidden: config.isGettingStartedHidden,

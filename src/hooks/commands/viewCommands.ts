@@ -1,7 +1,7 @@
 import { APP_COMMAND_IDS, getAppCommandShortcutDisplay } from '../appCommandCatalog'
 import type { CommandAction } from './types'
 import type { ViewMode } from '../useViewMode'
-import type { NoteWidthMode } from '../../types'
+import type { NoteWidthMode, NoteWidthPreference } from '../../types'
 import { DEFAULT_NOTE_WIDTH_MODE } from '../../utils/noteWidth'
 
 const NOTE_WIDTH_COMMAND_LABELS: Record<NoteWidthMode, string> = {
@@ -13,6 +13,7 @@ const DEFAULT_NOTE_WIDTH_COMMAND_LABELS: Record<NoteWidthMode, string> = {
   normal: 'Use Normal Note Width by Default',
   wide: 'Use Wide Note Width by Default',
 }
+const THEME_DEFAULT_NOTE_WIDTH_COMMAND_LABEL = 'Use Theme Default Note Width by Default'
 
 const noop = () => {}
 
@@ -22,9 +23,9 @@ interface ViewCommandsConfig {
   onToggleBacklinks: () => void
   onToggleRawEditor?: () => void
   noteWidth?: NoteWidthMode
-  defaultNoteWidth?: NoteWidthMode
+  defaultNoteWidth?: NoteWidthPreference
   onSetNoteWidth?: (mode: NoteWidthMode) => void
-  onSetDefaultNoteWidth?: (mode: NoteWidthMode) => void
+  onSetDefaultNoteWidth?: (mode: NoteWidthPreference) => void
   onToggleTableOfContents?: () => void
   zoomLevel: number
   onZoomIn: () => void
@@ -49,15 +50,19 @@ function buildSetNoteWidthCommand(
 }
 
 function buildSetDefaultNoteWidthCommand(
-  mode: NoteWidthMode,
-  defaultMode: NoteWidthMode,
-  onSetDefaultNoteWidth?: (mode: NoteWidthMode) => void,
+  mode: NoteWidthPreference,
+  defaultMode: NoteWidthPreference,
+  onSetDefaultNoteWidth?: (mode: NoteWidthPreference) => void,
 ): CommandAction {
+  const modeLabel = mode === null
+    ? THEME_DEFAULT_NOTE_WIDTH_COMMAND_LABEL
+    : Reflect.get(DEFAULT_NOTE_WIDTH_COMMAND_LABELS, mode) as string
+
   return {
-    id: `set-default-note-width-${mode}`,
-    label: Reflect.get(DEFAULT_NOTE_WIDTH_COMMAND_LABELS, mode) as string,
+    id: `set-default-note-width-${mode ?? 'theme'}`,
+    label: modeLabel,
     group: 'View',
-    keywords: ['layout', 'note', 'column', 'width', mode, 'default', 'reading'],
+    keywords: ['layout', 'note', 'column', 'width', mode ?? 'theme', 'default', 'reading'],
     enabled: Boolean(onSetDefaultNoteWidth) && defaultMode !== mode,
     execute: onSetDefaultNoteWidth ? () => onSetDefaultNoteWidth(mode) : noop,
   }
@@ -82,7 +87,7 @@ export function buildViewCommands(config: ViewCommandsConfig): CommandAction[] {
   const {
     hasActiveNote,
     onSetViewMode, onToggleBacklinks, onToggleRawEditor,
-    noteWidth = DEFAULT_NOTE_WIDTH_MODE, defaultNoteWidth = DEFAULT_NOTE_WIDTH_MODE,
+    noteWidth = DEFAULT_NOTE_WIDTH_MODE, defaultNoteWidth = null,
     onSetNoteWidth, onSetDefaultNoteWidth, onToggleTableOfContents,
     zoomLevel, onZoomIn, onZoomOut, onZoomReset,
   } = config
@@ -94,6 +99,7 @@ export function buildViewCommands(config: ViewCommandsConfig): CommandAction[] {
     { id: 'toggle-raw-editor', label: 'Toggle Raw Editor', group: 'View', keywords: ['raw', 'source', 'markdown', 'frontmatter', 'code', 'textarea'], enabled: hasActiveNote && !!onToggleRawEditor, execute: () => onToggleRawEditor?.() },
     buildSetNoteWidthCommand('normal', noteWidth, hasActiveNote, onSetNoteWidth),
     buildSetNoteWidthCommand('wide', noteWidth, hasActiveNote, onSetNoteWidth),
+    buildSetDefaultNoteWidthCommand(null, defaultNoteWidth, onSetDefaultNoteWidth),
     buildSetDefaultNoteWidthCommand('normal', defaultNoteWidth, onSetDefaultNoteWidth),
     buildSetDefaultNoteWidthCommand('wide', defaultNoteWidth, onSetDefaultNoteWidth),
     buildToggleTableOfContentsCommand(hasActiveNote, onToggleTableOfContents),

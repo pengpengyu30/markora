@@ -180,6 +180,7 @@ describe('useVaultSwitcher', () => {
         path: '/selected/vault',
       }],
       active_vault: '/selected/vault',
+      default_workspace_path: '/selected/vault',
       hidden_defaults: [],
     })
   })
@@ -201,8 +202,23 @@ describe('useVaultSwitcher', () => {
     expect(mockVaultListStore).toEqual({
       vaults: [],
       active_vault: expectedDefaultVaultPath,
+      default_workspace_path: expectedDefaultVaultPath,
       hidden_defaults: [],
     })
+  })
+
+  it('keeps an explicitly persisted default selection after reload', async () => {
+    mockVaultListStore = {
+      vaults: [],
+      active_vault: expectedDefaultVaultPath,
+      default_workspace_path: expectedDefaultVaultPath,
+      hidden_defaults: [],
+    }
+
+    const { result } = await renderLoadedVaultSwitcher()
+
+    expect(result.current.selectedVaultPath).toBe(expectedDefaultVaultPath)
+    expect(result.current.defaultWorkspacePath).toBe(expectedDefaultVaultPath)
   })
 
   it('persists active vault when switching', async () => {
@@ -304,6 +320,7 @@ describe('useVaultSwitcher', () => {
           path: '/work/vault',
         }],
         active_vault: '/work/vault',
+        default_workspace_path: '/work/vault',
         hidden_defaults: [],
       })
     })
@@ -326,6 +343,7 @@ describe('useVaultSwitcher', () => {
       expect(mockVaultListStore).toEqual({
         vaults: [],
         active_vault: null,
+        default_workspace_path: null,
         hidden_defaults: [],
       })
     })

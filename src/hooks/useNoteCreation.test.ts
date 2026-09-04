@@ -126,6 +126,18 @@ describe('resolveNewNote', () => {
     expect(content).toBe('')
   })
 
+  it('creates a default note in the explicitly configured Project', () => {
+    const { entry } = resolveNewNote({
+      defaultWorkspacePath: '/project-default',
+      title: 'Default Note',
+      vaultPath: '/project-active',
+      vaults: [{ label: 'Default', path: '/project-default', available: true, mounted: true }],
+    })
+
+    expect(entry.path).toBe('/project-default/default-note.md')
+    expect(entry.workspace?.path).toBe('/project-default')
+  })
+
   it('creates a named note in the Active Project and Active Folder', () => {
     const { entry } = resolveNewNote({
       activeProject: { projectPath: '/project-b', folderPath: 'docs' },
