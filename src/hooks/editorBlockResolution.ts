@@ -220,6 +220,10 @@ function traceResolvedState(
   return resolved
 }
 
+function preservedScrollTop(context: BlockResolutionContext): number {
+  return context.cache.get(context.targetPath)?.scrollTop ?? 0
+}
+
 function cachedTabResolution(context: BlockResolutionContext): CachedTabState | null {
   const cached = context.cache.get(context.targetPath)
   if (cached?.sourceContent !== context.content) return null
@@ -236,7 +240,7 @@ function parsedCacheResolution(context: BlockResolutionContext): CachedTabState 
 
   const resolved = cacheResolvedEditorState(context.cache, context.targetPath, {
     blocks: parsedCache.blocks,
-    scrollTop: parsedCache.scrollTop,
+    scrollTop: context.cache.get(context.targetPath)?.scrollTop ?? parsedCache.scrollTop,
     sourceContent: context.content,
   }, context.vaultPath)
   return traceResolvedState(context, resolved, 'parsed-cache')
@@ -252,7 +256,7 @@ function fastPathResolution(
 
   const resolved = cacheResolvedEditorState(context.cache, context.targetPath, {
     blocks: repairMalformedEditorBlocks(injectRichEditorMarkdownBlocks(fastPathBlocks)) as EditorBlocks,
-    scrollTop: 0,
+    scrollTop: preservedScrollTop(context),
     sourceContent: context.content,
   }, context.vaultPath)
   return traceResolvedState(context, resolved, body.trim() ? 'fast-h1' : 'blank')
@@ -269,7 +273,7 @@ async function directMarkdownResolution(
 
   const resolved = cacheResolvedEditorState(context.cache, context.targetPath, {
     blocks: repairParsedMarkdownBlocks({ blocks: direct.blocks, usedSourceFallback: false }),
-    scrollTop: 0,
+    scrollTop: preservedScrollTop(context),
     sourceContent: context.content,
   }, context.vaultPath)
   return { fallbackReason: null, resolved: traceResolvedState(context, resolved, 'direct-markdown') }
@@ -291,7 +295,7 @@ async function blockNoteParserResolution(options: {
   })
   const resolved = cacheResolvedEditorState(context.cache, context.targetPath, {
     blocks: repairParsedMarkdownBlocks(parsed),
-    scrollTop: 0,
+    scrollTop: preservedScrollTop(context),
     sourceContent: context.content,
   }, context.vaultPath)
   return traceResolvedState(context, resolved, 'blocknote-parser', directFallbackReason)

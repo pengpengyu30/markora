@@ -204,9 +204,9 @@ Startup snapshot and cached Project-list loads must prepare the cumulative Tauri
 
 ## Events and watchers
 
-The native watcher emits changes for registered Project roots. The renderer batches events, suppresses recent app-owned writes, and asks the loader/reconciler for the smallest safe refresh. A full reload is the recovery path when entry identity, deletion, rename, or cache validity cannot be established incrementally.
+The native watcher watches every mounted Project root and emits `vault-changed` for the deepest root that contains the file. The renderer batches events, suppresses recent app-owned writes, and refreshes only the reported paths through `refresh_changed_vault_paths`. A full `reload_vault` is the recovery path when the changed-path batch is empty or that incremental refresh fails.
 
-Watcher code must ignore generated/internal churn such as `.git`, `node_modules`, temporary files, and rename transaction artifacts. A watcher is a refresh signal, not an authority that can overwrite unsaved editor content.
+Gitignore is a display filter, not a watch filter. Watcher code must still ignore generated/internal churn such as `.git`, `node_modules`, temporary files, and rename transaction artifacts. A watcher is a refresh signal, not an authority that can overwrite unsaved editor content. A same-path clean refresh updates the mounted editor in place and keeps the current `.editor-scroll-area` offset; moved or deleted notes still close and reopen.
 
 ## Component conventions
 

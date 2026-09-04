@@ -155,6 +155,11 @@ const mockCommandResults: Record<string, unknown> = {
   get_note_content: mockAllContent['/vault/project/test.md'] || '',
   save_note_content: null,
   reload_vault_entry: ({ path }: { path: string }) => mockEntries.find((entry) => entry.path === path) ?? null,
+  refresh_changed_vault_paths: ({ paths }: { paths?: string[] } = {}) => ({
+    upserts: (paths ?? []).map((path) => mockEntries.find((entry) => entry.path === path)).filter(Boolean),
+    removed: [],
+    folderReload: false,
+  }),
   get_settings: createSettings(),
   git_workspace_info: {
     vaultRoot: '/vault',
@@ -190,6 +195,11 @@ function resetMockCommandResults() {
     get_settings: createSettings(),
     save_note_content: null,
     reload_vault_entry: ({ path }: { path: string }) => mockEntries.find((entry) => entry.path === path) ?? null,
+    refresh_changed_vault_paths: ({ paths }: { paths?: string[] } = {}) => ({
+      upserts: (paths ?? []).map((path) => mockEntries.find((entry) => entry.path === path)).filter(Boolean),
+      removed: [],
+      folderReload: false,
+    }),
     git_workspace_info: {
       vaultRoot: '/vault',
       gitRoot: '/vault',

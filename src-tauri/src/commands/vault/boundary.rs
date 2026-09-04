@@ -204,7 +204,7 @@ fn build_vault_root_paths(raw_vault_path: &str) -> Result<VaultRootPaths, String
     })
 }
 
-fn canonicalize_candidate_for_write(path: &Path) -> Result<PathBuf, String> {
+pub(crate) fn canonicalize_candidate_for_write(path: &Path) -> Result<PathBuf, String> {
     let (ancestor, tail) = find_existing_ancestor(path)?;
     Ok(tail
         .into_iter()

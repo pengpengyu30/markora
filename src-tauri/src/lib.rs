@@ -68,10 +68,9 @@ fn focus_main_window(app_handle: &tauri::AppHandle) {
 
 #[cfg(desktop)]
 fn with_desktop_entry_plugins(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<tauri::Wry> {
-    builder
-        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
-            focus_main_window(app);
-        }))
+    builder.plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+        focus_main_window(app);
+    }))
 }
 
 #[cfg(desktop)]
@@ -212,6 +211,7 @@ macro_rules! app_invoke_handler {
             commands::reload_vault,
             commands::ensure_vault_asset_scope,
             commands::reload_vault_entry,
+            commands::refresh_changed_vault_paths,
             commands::open_vault_file_external,
             commands::reveal_path_in_file_manager,
             commands::sync_note_title,

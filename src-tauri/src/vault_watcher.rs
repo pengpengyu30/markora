@@ -69,6 +69,34 @@ fn resolve_git_dir(vault_path: &Path) -> Option<PathBuf> {
     })
 }
 
+fn path_is_within_root(path: &Path, root: &Path) -> bool {
+    path == root || path.starts_with(root)
+}
+
+/// Prefer the deepest watched Project root that contains `path`.
+/// Nested Projects such as `repo/docs` must win over a parent `repo` root.
+fn deepest_watched_root<'a, I>(path: &Path, roots: I) -> Option<&'a PathBuf>
+where
+    I: IntoIterator<Item = &'a PathBuf>,
+{
+    roots
+        .into_iter()
+        .filter(|root| path_is_within_root(path, root))
+        .max_by_key(|root| root.components().count())
+}
+
+fn register_watch_root(
+    roots: &mut std::collections::HashMap<PathBuf, Option<PathBuf>>,
+    vault_path: PathBuf,
+) -> bool {
+    if roots.contains_key(&vault_path) {
+        return false;
+    }
+    let git_dir = resolve_git_dir(&vault_path);
+    roots.insert(vault_path, git_dir);
+    true
+}
+
 fn is_watchable_path(path: &Path, git_dir: Option<&Path>) -> bool {
     if has_ignored_component(path) {
         return false;
@@ -86,7 +114,8 @@ fn is_watchable_path(path: &Path, git_dir: Option<&Path>) -> bool {
 
 #[cfg(desktop)]
 mod desktop {
-    use std::sync::Mutex;
+    use std::collections::HashMap;
+    use std::sync::{Arc, Mutex};
 
     use notify::{
         recommended_watcher, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher,
@@ -94,16 +123,19 @@ mod desktop {
     use tauri::Emitter;
 
     use super::{
-        is_watchable_path, resolve_git_dir, Path, PathBuf, VaultChangedPayload, VAULT_CHANGED_EVENT,
+        deepest_watched_root, is_watchable_path, register_watch_root, Path, PathBuf,
+        VaultChangedPayload, VAULT_CHANGED_EVENT,
     };
 
-    struct ActiveVaultWatcher {
-        path: PathBuf,
-        _watcher: RecommendedWatcher,
+    type WatchedRoots = HashMap<PathBuf, Option<PathBuf>>;
+
+    struct ActiveVaultWatchers {
+        roots: Arc<Mutex<WatchedRoots>>,
+        watcher: RecommendedWatcher,
     }
 
     pub struct VaultWatcherState {
-        active: Mutex<Option<ActiveVaultWatcher>>,
+        active: Mutex<Option<ActiveVaultWatchers>>,
     }
 
     impl Default for VaultWatcherState {
@@ -149,23 +181,63 @@ mod desktop {
             .collect()
     }
 
-    fn emit_vault_change(
-        app: &tauri::AppHandle,
-        vault_path: &Path,
-        git_dir: Option<&Path>,
-        event: Event,
-    ) {
-        let paths = changed_paths(event, git_dir);
-        if paths.is_empty() {
-            return;
+    fn group_changed_paths(event: Event, roots: &WatchedRoots) -> HashMap<PathBuf, Vec<String>> {
+        if !should_emit_event(&event) {
+            return HashMap::new();
         }
-        let payload = VaultChangedPayload {
-            vault_path: vault_path.to_string_lossy().to_string(),
-            paths,
-        };
-        if let Err(err) = app.emit(VAULT_CHANGED_EVENT, payload) {
-            log::warn!("Failed to emit vault watcher event: {}", err);
+
+        let mut grouped: HashMap<PathBuf, Vec<String>> = HashMap::new();
+        for path in event.paths {
+            let Some(root) = deepest_watched_root(&path, roots.keys()) else {
+                continue;
+            };
+            let git_dir = roots.get(root).and_then(Option::as_deref);
+            if !is_watchable_path(&path, git_dir) {
+                continue;
+            }
+            grouped
+                .entry(root.clone())
+                .or_default()
+                .push(path.to_string_lossy().to_string());
         }
+        grouped
+    }
+
+    fn emit_vault_changes(app: &tauri::AppHandle, roots: &WatchedRoots, event: Event) {
+        for (vault_path, paths) in group_changed_paths(event, roots) {
+            if paths.is_empty() {
+                continue;
+            }
+            let payload = VaultChangedPayload {
+                vault_path: vault_path.to_string_lossy().to_string(),
+                paths,
+            };
+            if let Err(err) = app.emit(VAULT_CHANGED_EVENT, payload) {
+                log::warn!("Failed to emit vault watcher event: {}", err);
+            }
+        }
+    }
+
+    fn create_shared_watcher(
+        app: tauri::AppHandle,
+        roots: Arc<Mutex<WatchedRoots>>,
+    ) -> Result<RecommendedWatcher, String> {
+        recommended_watcher(move |event| match event {
+            Ok(event) => {
+                let Ok(roots) = roots.lock() else {
+                    return;
+                };
+                emit_vault_changes(&app, &roots, event);
+            }
+            Err(err) => log::warn!("Vault watcher event failed: {}", err),
+        })
+        .map_err(|err| format!("Failed to create vault watcher: {err}"))
+    }
+
+    fn watch_vault_path(watcher: &mut RecommendedWatcher, vault_path: &Path) -> Result<(), String> {
+        watcher
+            .watch(vault_path, RecursiveMode::Recursive)
+            .map_err(|err| format!("Failed to watch {}: {err}", vault_path.display()))
     }
 
     pub fn start(
@@ -178,34 +250,26 @@ mod desktop {
             .active
             .lock()
             .map_err(|_| "Failed to lock vault watcher state".to_string())?;
-        if active
-            .as_ref()
-            .is_some_and(|watcher| watcher.path == vault_path)
-        {
-            return Ok(());
+
+        if let Some(active_watchers) = active.as_mut() {
+            {
+                let mut roots = active_watchers
+                    .roots
+                    .lock()
+                    .map_err(|_| "Failed to lock vault watcher roots".to_string())?;
+                if !register_watch_root(&mut roots, vault_path.clone()) {
+                    return Ok(());
+                }
+            }
+            return watch_vault_path(&mut active_watchers.watcher, &vault_path);
         }
 
-        let event_vault_path = vault_path.clone();
-        let event_git_dir = resolve_git_dir(&vault_path);
-        let event_app = app.clone();
-        let mut watcher = recommended_watcher(move |event| match event {
-            Ok(event) => emit_vault_change(
-                &event_app,
-                &event_vault_path,
-                event_git_dir.as_deref(),
-                event,
-            ),
-            Err(err) => log::warn!("Vault watcher event failed: {}", err),
-        })
-        .map_err(|err| format!("Failed to create vault watcher: {err}"))?;
-        watcher
-            .watch(&vault_path, RecursiveMode::Recursive)
-            .map_err(|err| format!("Failed to watch {}: {err}", vault_path.display()))?;
-
-        *active = Some(ActiveVaultWatcher {
-            path: vault_path,
-            _watcher: watcher,
-        });
+        let mut roots = WatchedRoots::new();
+        register_watch_root(&mut roots, vault_path.clone());
+        let roots = Arc::new(Mutex::new(roots));
+        let mut watcher = create_shared_watcher(app, roots.clone())?;
+        watch_vault_path(&mut watcher, &vault_path)?;
+        *active = Some(ActiveVaultWatchers { roots, watcher });
         Ok(())
     }
 
@@ -222,6 +286,7 @@ mod desktop {
     mod tests {
         use notify::event::{AccessKind, CreateKind, EventAttributes};
         use notify::{Event, EventKind};
+        use std::collections::HashMap;
 
         use super::*;
 
@@ -299,6 +364,43 @@ mod desktop {
 
             assert_eq!(paths, vec!["notes/keep.md"]);
         }
+
+        #[test]
+        fn group_changed_paths_emits_the_deepest_watched_root() {
+            let parent = PathBuf::from("/Users/me/projects/repo");
+            let nested = PathBuf::from("/Users/me/projects/repo/docs");
+            let other = PathBuf::from("/Users/me/notes");
+            let mut roots = HashMap::new();
+            roots.insert(parent.clone(), None);
+            roots.insert(nested.clone(), None);
+            roots.insert(other.clone(), None);
+
+            let grouped = group_changed_paths(
+                event(
+                    EventKind::Create(CreateKind::File),
+                    &[
+                        "/Users/me/projects/repo/docs/rca/note.md",
+                        "/Users/me/projects/repo/README.md",
+                        "/Users/me/notes/inbox.md",
+                        "/Users/me/projects/repo/.git/index.lock",
+                    ],
+                ),
+                &roots,
+            );
+
+            assert_eq!(
+                grouped.get(&nested),
+                Some(&vec!["/Users/me/projects/repo/docs/rca/note.md".to_string()])
+            );
+            assert_eq!(
+                grouped.get(&parent),
+                Some(&vec!["/Users/me/projects/repo/README.md".to_string()])
+            );
+            assert_eq!(
+                grouped.get(&other),
+                Some(&vec!["/Users/me/notes/inbox.md".to_string()])
+            );
+        }
     }
 }
 
@@ -364,8 +466,50 @@ pub fn stop_vault_watcher() -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{is_watchable_path, resolve_git_dir};
+    use super::{
+        deepest_watched_root, is_watchable_path, register_watch_root, resolve_git_dir,
+    };
+    use std::collections::HashMap;
     use std::path::{Path, PathBuf};
+
+    #[test]
+    fn deepest_watched_root_prefers_the_nested_project() {
+        let parent = PathBuf::from("/Users/me/projects/repo");
+        let nested = PathBuf::from("/Users/me/projects/repo/docs");
+        let other = PathBuf::from("/Users/me/projects/other");
+        let roots = [parent, nested, other];
+
+        assert_eq!(
+            deepest_watched_root(
+                Path::new("/Users/me/projects/repo/docs/rca/note.md"),
+                roots.iter(),
+            ),
+            Some(&roots[1])
+        );
+        assert_eq!(
+            deepest_watched_root(Path::new("/Users/me/projects/repo/README.md"), roots.iter()),
+            Some(&roots[0])
+        );
+        assert_eq!(
+            deepest_watched_root(Path::new("/Users/me/projects/unrelated/note.md"), roots.iter()),
+            None
+        );
+    }
+
+    #[test]
+    fn register_watch_root_keeps_every_project_instead_of_replacing() {
+        let mut roots = HashMap::new();
+        let first = PathBuf::from("/vault-a");
+        let second = PathBuf::from("/vault-b");
+
+        assert!(register_watch_root(&mut roots, first.clone()));
+        assert!(register_watch_root(&mut roots, second.clone()));
+        assert!(!register_watch_root(&mut roots, first.clone()));
+
+        assert_eq!(roots.len(), 2);
+        assert!(roots.contains_key(&first));
+        assert!(roots.contains_key(&second));
+    }
 
     #[test]
     fn ignores_git_and_dependency_directory_changes() {

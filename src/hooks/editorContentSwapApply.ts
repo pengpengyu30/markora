@@ -2,7 +2,7 @@ import type { MutableRefObject } from 'react'
 import type { useCreateBlockNote } from '@blocknote/react'
 import { classifyRichEditorRecoveryError } from '../components/richEditorRecoveryClassifier'
 import { blankParagraphBlocks } from './editorTabContent'
-import { EDITOR_CONTAINER_SELECTOR } from './editorDomSelection'
+import { restoreEditorScrollTop } from './editorDomSelection'
 import { resetTextSelectionBeforeContentSwap } from './editorTiptapSelection'
 import { repairMalformedEditorBlocks } from './editorBlockRepair'
 import { logEditorBlockApplyTrace } from '../utils/editorPerformanceTrace'
@@ -306,8 +306,7 @@ function commitAppliedEditorContent(
       return
     }
     editorContentPathRef.current = targetPath
-    const scrollEl = document.querySelector(EDITOR_CONTAINER_SELECTOR)
-    if (scrollEl) scrollEl.scrollTop = scrollTop
+    restoreEditorScrollTop(scrollTop)
     onCommitted?.()
     suppressChangeRef.current = false
   })

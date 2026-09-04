@@ -477,6 +477,7 @@ function MainApp() {
       isActiveTabContentCurrent,
       reloadFolders: vault.reloadFolders,
       reloadVault: vault.reloadVault,
+      reloadChangedPaths: vault.reloadChangedPaths,
       replaceActiveTab: handleReplaceActiveTab,
       refocusActiveEditor,
       shouldRefocusActiveEditor: isActiveElementInsideEditorSurface,
@@ -496,6 +497,7 @@ function MainApp() {
       resolvedPath,
       vault.reloadFolders,
       vault.reloadVault,
+      vault.reloadChangedPaths,
       vault.unsavedPaths,
     ])
   const handleFocusedVaultUpdate = useCallback((updatedFiles: string[]) => {

@@ -121,7 +121,7 @@ sequenceDiagram
   content does not schedule a second write.
 - Frontmatter writes are narrow. Tags may update only the `tags` key; unrelated keys and formatting are preserved by the existing frontmatter path.
 - Renames and folder moves use validated paths and transactional recovery helpers.
-- External changes are reconciled by watcher events. A clean active note may be refreshed; unsaved content is preserved according to the editor save contract.
+- External changes are reconciled by native filesystem watchers on every mounted Project root. Known changed paths update those index entries and may refresh a clean active note in place without resetting editor scroll; unsaved content is preserved according to the editor save contract. Empty or failed batches fall back to a full Project reload.
 - Derived caches are disposable and may be rebuilt without changing the Project files.
 
 ### Installation-local state

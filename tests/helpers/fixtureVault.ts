@@ -347,6 +347,12 @@ async function installFixtureVaultInitScript({ page, vaultPath, isGitRepo, folde
     const buildFixtureReadHandlers = () => ({
       list_vault: (commandArgs?: FixtureCommandArgs) => readVaultList(commandArgs),
       reload_vault: (commandArgs?: FixtureCommandArgs) => readVaultList(commandArgs, true),
+      refresh_changed_vault_paths: (commandArgs?: FixtureCommandArgs) => ({
+        upserts: [],
+        removed: [],
+        folderReload: false,
+        paths: commandArgs,
+      }),
       list_vault_folders: () => fixtureFolders,
       list_views: () => [],
       get_modified_files: () => [],

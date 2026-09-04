@@ -15,8 +15,10 @@ import {
   loadMountedVaultFolders,
   loadVaultFolders,
   reloadVaultEntries,
+  refreshChangedVaultPaths,
   tauriCall,
 } from './vaultLoaderCommands'
+import { mergeChangedVaultEntries } from '../utils/changedVaultEntries'
 import { normalizeVaultEntry } from '../utils/vaultMetadataNormalization'
 import {
   recordActiveVaultSnapshot,
@@ -573,6 +575,7 @@ interface VaultReloadOptions {
   vaultPath: string
   isCurrentVaultPath: (path: string) => boolean
   loadModifiedFiles: () => Promise<void>
+  entriesRef: MutableRefObject<VaultEntry[]>
   setEntries: (entries: VaultEntry[]) => void
   setFolders: (folders: FolderNode[]) => void
   vaults?: VaultOption[]
@@ -661,6 +664,55 @@ function useEntryReload(options: EntryReloadOptions) {
   return useCoalescedAsyncTask(runEntryReload)
 }
 
+function useChangedPathReload(options: VaultReloadOptions & { reloadVault: () => Promise<VaultEntry[]> }) {
+  const {
+    defaultWorkspacePath,
+    entriesRef,
+    handleVaultUnavailable,
+    isCurrentVaultPath,
+    reloadVault,
+    setEntries,
+    vaultPath,
+    vaults,
+  } = options
+
+  return useCallback(async (paths: string[]) => {
+    const path = vaultPath
+    if (!hasVaultPath({ vaultPath: path }) || paths.length === 0) return reloadVault()
+    try {
+      const result = await refreshChangedVaultPaths({
+        defaultWorkspacePath,
+        paths,
+        vaultPath: path,
+        vaults,
+      })
+      if (!isCurrentVaultPath(path)) return [] as VaultEntry[]
+      const merged = mergeChangedVaultEntries({
+        current: entriesRef.current,
+        removed: result.removed,
+        upserts: result.upserts,
+      })
+      setEntries(merged)
+      return merged
+    } catch (err) {
+      if (await handleUnavailableVaultPath({ handleVaultUnavailable, isCurrentVaultPath, path })) {
+        return [] as VaultEntry[]
+      }
+      console.warn('Changed-path vault refresh failed:', err)
+      return reloadVault()
+    }
+  }, [
+    defaultWorkspacePath,
+    entriesRef,
+    handleVaultUnavailable,
+    isCurrentVaultPath,
+    reloadVault,
+    setEntries,
+    vaultPath,
+    vaults,
+  ])
+}
+
 function useVaultReloads(options: VaultReloadOptions) {
   const [activeReloads, setActiveReloads] = useState(0)
   const isReloading = activeReloads > 0
@@ -669,8 +721,9 @@ function useVaultReloads(options: VaultReloadOptions) {
   const resetReloading = useCallback(() => setActiveReloads(0), [])
   const reloadFolders = useFolderReload(options)
   const reloadVault = useEntryReload({ ...options, beginReload, finishReload })
+  const reloadChangedPaths = useChangedPathReload({ ...options, reloadVault })
 
-  return { isReloading, reloadFolders, reloadVault, resetReloading }
+  return { isReloading, reloadFolders, reloadVault, reloadChangedPaths, resetReloading }
 }
 
 function useGitignoredVisibilityReloads(
@@ -700,6 +753,10 @@ function useGitignoredVisibilityReloads(
 
 function useVaultState(vaultPath: string, loadModifiedFiles: boolean) {
   const [entries, setEntries] = useState<VaultEntry[]>([])
+  const entriesRef = useRef<VaultEntry[]>([])
+  useEffect(() => {
+    entriesRef.current = entries
+  }, [entries])
   const [folders, setFolders] = useState<FolderNode[]>([])
   const [hasCompletedInitialLoad, setHasCompletedInitialLoad] = useState(false)
   const [isLoading, setIsLoading] = useState(() => hasVaultPath({ vaultPath }))
@@ -710,6 +767,7 @@ function useVaultState(vaultPath: string, loadModifiedFiles: boolean) {
 
   return {
     entries,
+    entriesRef,
     folders,
     hasCompletedInitialLoad,
     isCurrentVaultPath,
@@ -1079,6 +1137,7 @@ function useVaultLoaderResult({
     loadModifiedFiles: modified.loadModifiedFiles,
     getNoteStatus,
     reloadVault: vaultReloads.reloadVault,
+    reloadChangedPaths: vaultReloads.reloadChangedPaths,
     reloadFolders: vaultReloads.reloadFolders,
     markVaultUnavailable: unavailableVault.markVaultUnavailable,
     addPendingSave: pendingSave.addPendingSave,
@@ -1109,6 +1168,7 @@ export function useVaultLoader(
     vaults,
     isCurrentVaultPath: state.isCurrentVaultPath,
     loadModifiedFiles: state.modified.loadModifiedFiles,
+    entriesRef: state.entriesRef,
     setEntries: state.setEntries,
     setFolders: state.setFolders,
   })

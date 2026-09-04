@@ -2,9 +2,12 @@ use crate::commands::expand_tilde;
 use crate::search::SearchResponse;
 use crate::vault::VaultEntry;
 use crate::{search, vault, vault_list};
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
-use super::boundary::{with_validated_path, ValidatedPathMode};
+use super::boundary::{
+    canonicalize_candidate_for_write, with_validated_path, ValidatedPathMode,
+};
 
 fn collect_registered_vault_roots(vault_list: &vault_list::VaultList) -> Vec<PathBuf> {
     let mut roots = Vec::new();
@@ -82,10 +85,7 @@ fn resolve_reload_vault_path(
 }
 
 #[tauri::command]
-pub fn ensure_vault_asset_scope(
-    app_handle: tauri::AppHandle,
-    path: String,
-) -> Result<(), String> {
+pub fn ensure_vault_asset_scope(app_handle: tauri::AppHandle, path: String) -> Result<(), String> {
     let path = expand_tilde(&path).into_owned();
 
     #[cfg(desktop)]
@@ -116,6 +116,86 @@ pub fn reload_vault_entry(
         ValidatedPathMode::Existing,
         |validated_path| vault::reload_entry(Path::new(validated_path)),
     )
+}
+
+fn group_changed_paths_by_vault(
+    paths: &[String],
+    registered_roots: &[PathBuf],
+) -> HashMap<PathBuf, Vec<PathBuf>> {
+    let mut grouped: HashMap<PathBuf, Vec<PathBuf>> = HashMap::new();
+    for raw in paths {
+        let expanded = PathBuf::from(expand_tilde(raw).into_owned());
+        if !expanded.is_absolute() {
+            continue;
+        }
+        let lookup_path = canonicalize_candidate_for_write(&expanded).unwrap_or(expanded.clone());
+        let Some(root) = find_registered_vault_root(&lookup_path, registered_roots)
+            .or_else(|| find_registered_vault_root(&expanded, registered_roots))
+        else {
+            continue;
+        };
+        let validated = with_validated_path(
+            &expanded.to_string_lossy(),
+            Some(&root.to_string_lossy()),
+            ValidatedPathMode::Writable,
+            |validated_path| Ok(PathBuf::from(validated_path)),
+        );
+        let Ok(validated_path) = validated else {
+            log::warn!(
+                "Skipping watcher path outside registered Projects: {}",
+                expanded.display()
+            );
+            continue;
+        };
+        grouped.entry(root).or_default().push(validated_path);
+    }
+    grouped
+}
+
+fn apply_gitignore_display_filter(
+    vault_path: &Path,
+    refresh: vault::ChangedPathRefresh,
+) -> vault::ChangedPathRefresh {
+    let hide = crate::settings::hide_gitignored_files_enabled();
+    if !hide {
+        return refresh;
+    }
+
+    let visible = vault::filter_gitignored_entries(vault_path, refresh.upserts.clone(), true);
+    let visible_paths: HashSet<String> = visible.iter().map(|entry| entry.path.clone()).collect();
+    let mut removed = refresh.removed;
+    for entry in &refresh.upserts {
+        if !visible_paths.contains(&entry.path) {
+            removed.push(entry.path.clone());
+        }
+    }
+    vault::ChangedPathRefresh {
+        upserts: visible,
+        removed,
+        folder_reload: refresh.folder_reload,
+    }
+}
+
+#[tauri::command]
+pub async fn refresh_changed_vault_paths(
+    paths: Vec<String>,
+) -> Result<vault::ChangedPathRefresh, String> {
+    tokio::task::spawn_blocking(move || {
+        let vault_list = vault_list::load_vault_list()?;
+        let registered_roots = collect_registered_vault_roots(&vault_list);
+        let grouped = group_changed_paths_by_vault(&paths, &registered_roots);
+        let mut combined = vault::ChangedPathRefresh::default();
+        for (root, vault_paths) in grouped {
+            let refresh =
+                apply_gitignore_display_filter(&root, vault::refresh_changed_paths(&root, &vault_paths));
+            combined.folder_reload |= refresh.folder_reload;
+            combined.removed.extend(refresh.removed);
+            combined.upserts.extend(refresh.upserts);
+        }
+        Ok(combined)
+    })
+    .await
+    .map_err(|e| format!("Task panicked: {e}"))?
 }
 
 #[tauri::command]

@@ -9,6 +9,7 @@ interface PulledVaultRefreshOptions {
   isActiveTabContentCurrent?: (path: string) => Promise<boolean> | boolean
   reloadFolders: () => Promise<unknown> | unknown
   reloadVault: () => Promise<VaultEntry[]>
+  reloadChangedPaths?: (paths: string[]) => Promise<VaultEntry[]>
   replaceActiveTab: (entry: VaultEntry) => Promise<void>
   refocusActiveEditor?: (path: string) => void
   shouldRefocusActiveEditor?: () => boolean
@@ -118,6 +119,7 @@ async function shouldKeepCurrentActiveEntryMounted(options: {
 
 async function applyActiveEntryReplacement(options: {
   closeAllTabs: PulledVaultRefreshOptions['closeAllTabs']
+  preserveMountedEditor: boolean
   replaceActiveTab: PulledVaultRefreshOptions['replaceActiveTab']
   refocusActiveEditor?: PulledVaultRefreshOptions['refocusActiveEditor']
   replacementEntry: VaultEntry | null
@@ -126,6 +128,7 @@ async function applyActiveEntryReplacement(options: {
 }): Promise<boolean> {
   const {
     closeAllTabs,
+    preserveMountedEditor,
     replaceActiveTab,
     refocusActiveEditor,
     replacementEntry,
@@ -133,6 +136,11 @@ async function applyActiveEntryReplacement(options: {
     shouldReplace,
   } = options
   if (!replacementEntry || !shouldReplace) return false
+
+  if (preserveMountedEditor) {
+    await replaceActiveTab(replacementEntry)
+    return true
+  }
 
   const shouldRefocus = shouldRefocusActiveEditor?.() === true
   closeAllTabs()
@@ -150,6 +158,7 @@ export async function refreshPulledVaultState(options: PulledVaultRefreshOptions
     isActiveTabContentCurrent,
     reloadFolders,
     reloadVault,
+    reloadChangedPaths,
     replaceActiveTab,
     refocusActiveEditor,
     shouldRefocusActiveEditor,
@@ -158,7 +167,9 @@ export async function refreshPulledVaultState(options: PulledVaultRefreshOptions
   } = options
 
   const [entries] = await Promise.all([
-    reloadVault(),
+    updatedFiles.length > 0 && reloadChangedPaths
+      ? reloadChangedPaths(updatedFiles)
+      : reloadVault(),
     Promise.resolve(reloadFolders()),
   ])
 
@@ -192,6 +203,7 @@ export async function refreshPulledVaultState(options: PulledVaultRefreshOptions
 
   const handledReplacement = await applyActiveEntryReplacement({
     closeAllTabs,
+    preserveMountedEditor: !movedEntry && !!refreshedEntry,
     replaceActiveTab,
     refocusActiveEditor,
     replacementEntry,

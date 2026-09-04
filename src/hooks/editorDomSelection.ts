@@ -1,6 +1,25 @@
 export const EDITOR_CONTAINER_SELECTOR = '.editor__blocknote-container'
+export const EDITOR_SCROLL_AREA_SELECTOR = '.editor-scroll-area'
 
 const EDITOR_EDITABLE_SELECTOR = `${EDITOR_CONTAINER_SELECTOR} [contenteditable="true"]`
+
+function queryScrollHost(selector: string): { scrollTop: number } | null {
+  return document.querySelector(selector) as { scrollTop: number } | null
+}
+
+export function readLiveEditorScrollTop(): number | null {
+  const scrollArea = queryScrollHost(EDITOR_SCROLL_AREA_SELECTOR)
+  if (scrollArea) return scrollArea.scrollTop
+  const container = queryScrollHost(EDITOR_CONTAINER_SELECTOR)
+  return container ? container.scrollTop : null
+}
+
+export function restoreEditorScrollTop(scrollTop: number): void {
+  for (const selector of [EDITOR_SCROLL_AREA_SELECTOR, EDITOR_CONTAINER_SELECTOR]) {
+    const scrollHost = queryScrollHost(selector)
+    if (scrollHost) scrollHost.scrollTop = scrollTop
+  }
+}
 
 function getElementForNode(node: Node | null): Element | null {
   if (node instanceof Element) return node

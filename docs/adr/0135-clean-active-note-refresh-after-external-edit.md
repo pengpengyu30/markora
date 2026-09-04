@@ -2,9 +2,10 @@
 type: ADR
 id: "0135"
 title: "Clean active notes refresh immediately after external edits"
-status: active
+status: superseded
 date: 2026-05-30
 supersedes: "0111"
+superseded_by: "0182"
 ---
 
 ## Context

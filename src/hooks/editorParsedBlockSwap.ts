@@ -1,6 +1,7 @@
 import type { useCreateBlockNote } from '@blocknote/react'
 import type { MutableRefObject } from 'react'
 import { failNoteOpenTrace } from '../utils/noteOpenPerformance'
+import { readLiveEditorScrollTop } from './editorDomSelection'
 import {
   applyBlocksToEditorProgressively,
   type EditorContentPathRef,
@@ -31,6 +32,7 @@ export function scheduleParsedBlockSwap(options: {
   tabsRef: MutableRefObject<Tab[]>
   token: SwapToken
   signalTabSwap: (options: { path: string }) => void
+  preserveLiveScroll?: boolean
   vaultPath?: string
 }) {
   const {
@@ -45,6 +47,7 @@ export function scheduleParsedBlockSwap(options: {
     tabsRef,
     token,
     signalTabSwap,
+    preserveLiveScroll,
     vaultPath,
   } = options
 
@@ -52,10 +55,12 @@ export function scheduleParsedBlockSwap(options: {
   void resolveBlocksForTarget({ editor, cache, targetPath, content, vaultPath })
     .then(async ({ blocks, scrollTop }) => {
       if (shouldAbort()) return
+      const liveScrollTop = preserveLiveScroll ? readLiveEditorScrollTop() : null
+      const appliedScroll = liveScrollTop ?? scrollTop
       const applied = await applyBlocksToEditorProgressively({
         editor,
         blocks,
-        scrollTop,
+        scrollTop: appliedScroll,
         suppressChangeRef,
         editorContentPathRef,
         targetPath,

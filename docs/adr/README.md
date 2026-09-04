@@ -193,7 +193,7 @@ proposed → active → superseded
 | [0133](0133-request-scoped-ai-stream-events.md) | Request-scoped AI stream event channels | active |
 | [0134](0134-sheet-nodes-with-plain-text-workbook-storage.md) | Sheet nodes with plain-text workbook storage | experimental |
 | [0134](0134-direct-shiki-language-registrations.md) | Direct Shiki language registrations for code blocks | active |
-| [0135](0135-clean-active-note-refresh-after-external-edit.md) | Clean active notes refresh immediately after external edits | active |
+| [0135](0135-clean-active-note-refresh-after-external-edit.md) | Clean active notes refresh immediately after external edits | superseded -> [0182](0182-in-place-clean-note-refresh-preserves-scroll.md) |
 | [0136](0136-macos-webview-pdf-export.md) | macOS Webview PDF export | active |
 | [0137](0137-shared-rich-editor-input-transforms.md) | Shared rich-editor input transforms | active |
 | [0138](0138-authenticode-required-for-all-release-channels.md) | Require Authenticode signing for all Windows release channels | superseded -> [0139](0139-temporary-windows-authenticode-soft-gate.md) |
@@ -221,7 +221,7 @@ proposed → active → superseded
 | [0161](0161-parent-git-workspace-context.md) | Parent Git workspace context | active |
 | [0162](0162-safe-local-import-of-remote-paste-images.md) | Safe local import of remote paste images | active |
 | [0163](0163-agent-owned-model-selection.md) | Agent-owned model discovery and selection | active |
-| [0165](0165-window-owned-vault-watchers-and-main-window-git-background-work.md) | Window-owned vault watchers and main-window Git background work | active |
+| [0165](0165-window-owned-vault-watchers-and-main-window-git-background-work.md) | Window-owned vault watchers and main-window Git background work | superseded -> [0181](0181-multi-root-filesystem-watching.md) |
 | [0166](0166-snapshot-first-progressive-vault-startup.md) | Snapshot-first progressive vault startup | active |
 | [0167](0167-non-collapsible-callout-scope.md) | Non-collapsible callout scope | active |
 | [0168](0168-sandboxed-standalone-html-file-previews.md) | Sandboxed standalone HTML file previews | active |
@@ -235,3 +235,5 @@ proposed → active → superseded
 | [0177](0177-mounted-project-global-search-scope.md) | Full-text search spans visible mounted Projects | active |
 | [0178](0178-write-safe-editor-flush-windows.md) | Write-safe editor flush windows | active |
 | [0179](0179-writable-app-config-fallback.md) | Writable fallback for app config | active |
+| [0181](0181-multi-root-filesystem-watching.md) | Multi-root filesystem watching with path-scoped invalidation | active |
+| [0182](0182-in-place-clean-note-refresh-preserves-scroll.md) | In-place clean note refresh preserves editor scroll | active |

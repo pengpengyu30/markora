@@ -81,9 +81,18 @@ function useWatchRootsRef(watchRoots: WatchPath[]) {
   return { watchRootsRef, watchRootsKey }
 }
 
-function rootForPath(path: WatchPath, roots: readonly WatchPath[]): WatchPath | null {
+export function deepestWatchRoot(path: WatchPath, roots: readonly WatchPath[]): WatchPath | null {
   const normalizedPath = normalizeWatchPath(path)
-  return roots.find((root) => isSamePathOrChild({ path: normalizedPath, parent: root })) ?? null
+  let match: WatchPath | null = null
+  for (const root of roots) {
+    if (!isSamePathOrChild({ path: normalizedPath, parent: root })) continue
+    if (!match || root.length > match.length) match = root
+  }
+  return match
+}
+
+function rootForPath(path: WatchPath, roots: readonly WatchPath[]): WatchPath | null {
+  return deepestWatchRoot(path, roots)
 }
 
 function resolvePathForKnownRoots({

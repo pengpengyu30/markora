@@ -29,6 +29,7 @@ type MockCommandHandler = (args?: Record<string, unknown>) => unknown
 const defaultMockHandlers: Record<string, MockCommandHandler> = {
   list_vault: () => mockEntries,
   reload_vault: () => mockEntries,
+  refresh_changed_vault_paths: () => ({ upserts: [], removed: [], folderReload: false }),
   get_all_content: () => mockContent,
   get_modified_files: () => mockModifiedFiles,
 }

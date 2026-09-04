@@ -2,9 +2,10 @@
 type: ADR
 id: "0165"
 title: "Window-owned vault watchers and main-window Git background work"
-status: active
+status: superseded
 date: 2026-07-20
 supersedes: "0089"
+superseded_by: "0181"
 ---
 
 ## Context

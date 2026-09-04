@@ -2,7 +2,8 @@ import { invoke } from '@tauri-apps/api/core'
 import { isTauri, mockInvoke } from '../mock-tauri'
 import type { FolderNode, VaultEntry } from '../types'
 import type { VaultOption } from '../components/status-bar/types'
-import { normalizeVaultEntries } from '../utils/vaultMetadataNormalization'
+import { normalizeVaultEntries, normalizeVaultEntry } from '../utils/vaultMetadataNormalization'
+import { isPathInsideVaultRoot } from '../utils/vaultPathContainment'
 import {
   isNonBlankWorkspacePath,
   uniqueNonBlankWorkspacePaths,
@@ -304,5 +305,51 @@ export async function loadVaultChrome(options: MountedVaultEntriesOptions): Prom
 
   return {
     folders: folders ?? [],
+  }
+}
+
+export interface ChangedPathRefreshResult {
+  folderReload: boolean
+  removed: string[]
+  upserts: VaultEntry[]
+}
+
+function deepestVaultOptionForPath(
+  path: string,
+  vaults: VaultOption[] | undefined,
+  fallbackPath: string,
+): VaultOption | undefined {
+  const candidates = vaults?.length
+    ? vaults
+    : [{ path: fallbackPath, label: fallbackPath, mounted: true, available: true } as VaultOption]
+  let match: VaultOption | undefined
+  for (const vault of candidates) {
+    if (!vault.path || !isPathInsideVaultRoot(path, vault.path)) continue
+    if (!match || vault.path.length > match.path.length) match = vault
+  }
+  return match
+}
+
+export async function refreshChangedVaultPaths({
+  defaultWorkspacePath,
+  paths,
+  vaultPath,
+  vaults,
+}: MountedVaultEntriesOptions & { paths: string[] }): Promise<ChangedPathRefreshResult> {
+  const result = await tauriCall<ChangedPathRefreshResult>({
+    command: 'refresh_changed_vault_paths',
+    tauriArgs: { paths },
+  })
+  const upserts = (result.upserts ?? []).map((entry, index) => {
+    const vault = deepestVaultOptionForPath(entry.path, vaults, vaultPath)
+    const workspace = vault
+      ? workspaceIdentityFromVault(vault, { defaultWorkspacePath })
+      : undefined
+    return normalizeVaultEntry(entry, vault?.path ?? vaultPath, index, workspace)
+  })
+  return {
+    folderReload: result.folderReload === true,
+    removed: result.removed ?? [],
+    upserts,
   }
 }

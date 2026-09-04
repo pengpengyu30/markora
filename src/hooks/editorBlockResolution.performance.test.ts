@@ -146,4 +146,25 @@ describe('resolveBlocksForTarget performance paths', () => {
     expect(resolved.scrollTop).toBe(12)
     expect(resolved.blocks).toEqual(warmedBlocks)
   })
+
+  it('keeps the previous editor scroll when the same note is reparsed from new disk content', async () => {
+    const editor = makeEditor()
+    const cache = new Map([
+      ['/vault/note.md', {
+        blocks: [{ type: 'paragraph', content: [], children: [] }],
+        scrollTop: 420,
+        sourceContent: '# Old\n',
+      }],
+    ])
+
+    const resolved = await resolveBlocksForTarget({
+      editor: editor as never,
+      cache,
+      targetPath: '/vault/note.md',
+      content: '# Fresh title\n\nUpdated body.\n',
+    })
+
+    expect(resolved.scrollTop).toBe(420)
+    expect(resolved.sourceContent).toBe('# Fresh title\n\nUpdated body.\n')
+  })
 })

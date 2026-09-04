@@ -1129,6 +1129,35 @@ describe('useEditorTabSwap scroll position', () => {
     expect(scrollEl.scrollTop).toBe(75)
   })
 
+  it('keeps the current scroll position when the active note reloads in place', async () => {
+    const { scrollEl } = installEditorDomSpies()
+    const docRef = { current: blocksA as unknown[] }
+    const mockEditor = makeMockEditor(docRef)
+
+    const tabA = makeTab('a.md', 'Note A')
+    const updatedA = {
+      ...tabA,
+      content: '---\ntitle: Note A\n---\n\n# Note A\n\nUpdated body of Note A.',
+    }
+
+    const rendered = renderHook(
+      ({ tabs, activeTabPath }) => useEditorTabSwap({
+        tabs,
+        activeTabPath,
+        editor: mockEditor as never,
+      }),
+      { initialProps: { tabs: [tabA], activeTabPath: 'a.md' } },
+    )
+    await flushEditorTick()
+
+    scrollEl.scrollTop = 240
+    rendered.rerender({ tabs: [updatedA], activeTabPath: 'a.md' })
+    await flushEditorTick()
+
+    expect(document.querySelector).toHaveBeenCalledWith('.editor-scroll-area')
+    expect(scrollEl.scrollTop).toBe(240)
+  })
+
   it('defaults to scroll top 0 for newly opened note', async () => {
     const scrollEl = { scrollTop: 0 }
     vi.spyOn(document, 'querySelector').mockReturnValue(scrollEl as unknown as Element)

@@ -307,6 +307,11 @@ export const mockHandlers = {
   reload_vault: () => MOCK_ENTRIES,
   ensure_vault_asset_scope: () => null,
   reload_vault_entry: (args: { path: string }) => MOCK_ENTRIES.find(e => e.path === args.path) ?? { path: args.path, title: 'Unknown', filename: 'unknown.md', aliases: [], belongsTo: [], relatedTo: [], archived: false, snippet: '', wordCount: 0, fileSize: 0, relationships: {}, outgoingLinks: [], properties: {} },
+  refresh_changed_vault_paths: (args: { paths?: string[] } = {}) => ({
+    upserts: (args.paths ?? []).map((path) => MOCK_ENTRIES.find(e => e.path === path)).filter(Boolean),
+    removed: [],
+    folderReload: false,
+  }),
   sync_note_title: () => false,
   get_note_content: (args: { path: string }) => MOCK_CONTENT[args.path] ?? '',
   validate_note_content: (args: { path: string; content: string }) => (MOCK_CONTENT[args.path] ?? '') === args.content,

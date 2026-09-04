@@ -30,7 +30,7 @@ import {
   pathStem,
   slugifyPathStem,
 } from './editorTabContent'
-import { clearEditorDomSelection, EDITOR_CONTAINER_SELECTOR } from './editorDomSelection'
+import { clearEditorDomSelection, readLiveEditorScrollTop } from './editorDomSelection'
 import { editorDocumentSignature, isBlankEditorDocument } from './editorDocumentState'
 import {
   cacheEditorState,
@@ -144,8 +144,7 @@ function signalEditorTabSwapped(path: string): void {
 }
 
 function readEditorScrollTop(): number {
-  const scrollEl = document.querySelector(EDITOR_CONTAINER_SELECTOR)
-  return scrollEl?.scrollTop ?? 0
+  return readLiveEditorScrollTop() ?? 0
 }
 
 function findActiveTab(options: {
@@ -828,6 +827,7 @@ function scheduleTabSwap(options: {
   rawSwapPendingRef: MutableRefObject<boolean>
   suppressChangeRef: MutableRefObject<boolean>
   editorContentPathRef: EditorContentPathRef
+  preserveLiveScroll: boolean
   vaultPath?: string
 }) {
   const {
@@ -843,6 +843,7 @@ function scheduleTabSwap(options: {
     rawSwapPendingRef,
     suppressChangeRef,
     editorContentPathRef,
+    preserveLiveScroll,
     vaultPath,
   } = options
 
@@ -896,6 +897,7 @@ function scheduleTabSwap(options: {
       tabsRef,
       token,
       signalTabSwap,
+      preserveLiveScroll,
       vaultPath,
     })
   }
@@ -1082,6 +1084,7 @@ function runTabSwapEffect(options: RunTabSwapEffectOptions) {
     rawSwapPendingRef,
     suppressChangeRef,
     editorContentPathRef,
+    preserveLiveScroll: !state.pathChanged,
     vaultPath,
   })
 }

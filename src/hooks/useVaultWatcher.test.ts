@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   VAULT_CHANGED_EVENT,
   VAULT_WATCHER_DEBOUNCE_MS,
+  deepestWatchRoot,
   normalizeWatchPath,
   resolveChangedPath,
   useRecentVaultWrites,
@@ -88,6 +89,21 @@ describe('watch path helpers', () => {
   it('resolves relative watcher paths against the active vault', () => {
     expect(resolveChangedPath({ path: 'notes/day.md', vaultPath: '/vault' })).toBe('/vault/notes/day.md')
     expect(resolveChangedPath({ path: '/vault/notes/day.md', vaultPath: '/vault' })).toBe('/vault/notes/day.md')
+  })
+
+  it('prefers the nested Project root when several watched roots contain a path', () => {
+    const roots = [
+      '/Users/me/projects/repo',
+      '/Users/me/projects/repo/docs',
+      '/Users/me/notes',
+    ]
+    expect(deepestWatchRoot('/Users/me/projects/repo/docs/rca/note.md', roots)).toBe(
+      '/Users/me/projects/repo/docs',
+    )
+    expect(deepestWatchRoot('/Users/me/projects/repo/README.md', roots)).toBe(
+      '/Users/me/projects/repo',
+    )
+    expect(deepestWatchRoot('/Users/me/unrelated/note.md', roots)).toBeNull()
   })
 })
 
@@ -235,6 +251,34 @@ describe('useVaultWatcher', () => {
     await flushWatcherDebounce()
 
     expect(onVaultChanged).not.toHaveBeenCalled()
+  })
+
+  it('starts a native watcher for every mounted Project root', async () => {
+    renderHook(() => useVaultWatcher({
+      vaultPath: '/vault-a',
+      vaultPaths: ['/vault-a', '/vault-b'],
+      onVaultChanged: vi.fn(),
+    }))
+
+    await settleWatcherSubscription()
+    expect(mocks.invoke).toHaveBeenCalledWith('start_vault_watcher', { path: '/vault-a' })
+    expect(mocks.invoke).toHaveBeenCalledWith('start_vault_watcher', { path: '/vault-b' })
+  })
+
+  it('batches changed paths from a non-active watched Project', async () => {
+    const onVaultChanged = vi.fn()
+    renderHook(() => useVaultWatcher({
+      vaultPath: '/vault-a',
+      vaultPaths: ['/vault-a', '/vault-b'],
+      onVaultChanged,
+    }))
+
+    await settleWatcherSubscription()
+    expect(mocks.listener).toBeDefined()
+    emitVaultChanged({ vaultPath: '/vault-b', paths: ['/vault-b/rca/note.md'] })
+    await flushWatcherDebounce()
+
+    expect(onVaultChanged).toHaveBeenCalledWith(['/vault-b/rca/note.md'])
   })
 
   it('lets callers suppress app-owned writes before refreshing', async () => {

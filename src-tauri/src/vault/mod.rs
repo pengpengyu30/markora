@@ -17,6 +17,15 @@ mod trash;
 
 pub use cache::{invalidate_cache, read_vault_snapshot, refresh_vault_cache, scan_vault_cached};
 pub use entry::{FolderNode, VaultEntry};
+
+#[derive(Clone, Debug, Default, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChangedPathRefresh {
+    pub upserts: Vec<VaultEntry>,
+    pub removed: Vec<String>,
+    pub folder_reload: bool,
+}
+
 pub use file::{create_note_content, get_note_content, note_content_matches, save_note_content};
 pub use folders::{delete_folder, rename_folder, FolderRenameResult};
 pub use getting_started::{create_getting_started_vault, default_vault_path, vault_exists};
@@ -373,13 +382,22 @@ fn scan_all_files(
     git_dates: &HashMap<String, GitDates>,
     entries: &mut Vec<VaultEntry>,
 ) {
-    let walker = WalkDir::new(vault_path)
+    scan_files_under(vault_path, vault_path, git_dates, entries);
+}
+
+fn scan_files_under(
+    scan_root: &Path,
+    vault_path: &Path,
+    git_dates: &HashMap<String, GitDates>,
+    entries: &mut Vec<VaultEntry>,
+) {
+    let walker = WalkDir::new(scan_root)
         .follow_links(true)
         .into_iter()
         .filter_entry(|e| {
             if e.file_type().is_dir() {
                 let name = e.file_name().to_string_lossy();
-                // Skip the vault root itself (depth 0) — we only filter subdirs
+                // Skip the walk root itself (depth 0) — we only filter nested dirs
                 if e.depth() == 0 {
                     return true;
                 }
@@ -396,6 +414,76 @@ fn scan_all_files(
             }
             try_parse_file(entry.path(), vault_path, git_dates, entries);
         }
+    }
+}
+
+fn path_is_inside_vault(vault_path: &Path, path: &Path) -> bool {
+    path == vault_path || path.starts_with(vault_path)
+}
+
+fn path_has_hidden_component(vault_path: &Path, path: &Path) -> bool {
+    let Ok(relative) = path.strip_prefix(vault_path) else {
+        return true;
+    };
+    relative.components().any(|component| {
+        let name = component.as_os_str().to_string_lossy();
+        is_hidden_dir(&name)
+    })
+}
+
+fn is_hidden_leaf_file(path: &Path) -> bool {
+    path.file_name()
+        .map(|name| name.to_string_lossy().starts_with('.'))
+        .unwrap_or(false)
+}
+
+fn drop_ancestor_changed_paths(paths: &[std::path::PathBuf]) -> Vec<std::path::PathBuf> {
+    let mut sorted = paths.to_vec();
+    sorted.sort_by_key(|path| std::cmp::Reverse(path.components().count()));
+    let mut kept = Vec::new();
+    for path in sorted {
+        if kept
+            .iter()
+            .any(|child: &std::path::PathBuf| child.starts_with(&path) && child != &path)
+        {
+            continue;
+        }
+        kept.push(path);
+    }
+    kept
+}
+
+/// Re-read the watcher-reported paths from disk and patch the disposable index.
+/// Gitignore remains a display filter at the command boundary, not a watch filter.
+pub fn refresh_changed_paths(vault_path: &Path, paths: &[std::path::PathBuf]) -> ChangedPathRefresh {
+    let mut refresh = ChangedPathRefresh::default();
+    for path in drop_ancestor_changed_paths(paths) {
+        apply_one_changed_path(vault_path, &path, &mut refresh);
+    }
+    cache::apply_changed_path_updates(vault_path, &refresh.upserts, &refresh.removed);
+    refresh
+}
+
+fn apply_one_changed_path(vault_path: &Path, path: &Path, refresh: &mut ChangedPathRefresh) {
+    if !path_is_inside_vault(vault_path, path) || path_has_hidden_component(vault_path, path) {
+        return;
+    }
+    if path.is_dir() {
+        refresh.folder_reload = true;
+        scan_files_under(path, vault_path, &HashMap::new(), &mut refresh.upserts);
+        return;
+    }
+    if path.is_file() {
+        if is_hidden_leaf_file(path) {
+            return;
+        }
+        try_parse_file(path, vault_path, &HashMap::new(), &mut refresh.upserts);
+        return;
+    }
+
+    refresh.removed.push(path.to_string_lossy().to_string());
+    if path.extension().is_none() {
+        refresh.folder_reload = true;
     }
 }
 
