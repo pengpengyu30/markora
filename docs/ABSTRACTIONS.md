@@ -132,7 +132,7 @@ Do not add a broad “normalize all frontmatter” operation. It can destroy use
 
 ### Tag contract
 
-`src/utils/noteTags.ts` owns normalization, validation, extraction, counts, and AND filtering. `NoteTagsRow.tsx` owns the note-header chips and add/remove interaction. `SidebarTagsSection.tsx` owns counts and selection affordances.
+`src/utils/noteTags.ts` owns normalization, validation, extraction, counts, and AND filtering. `NoteTagsRow.tsx` owns the note-header chips and add/remove interaction. `SidebarTagsSection.tsx` owns counts and selection affordances. `useNoteListModel.tsx` switches the list to the visible mounted Project graph while a tag filter is active, and `NoteItem.tsx` renders Project/location provenance only for those cross-Project results.
 
 The durable contract is:
 
@@ -147,7 +147,8 @@ Rules:
 - reject `_`, spaces, punctuation, and empty segments;
 - reject values longer than 15 characters;
 - preserve all non-`tags` frontmatter exactly;
-- apply multiple selected tags with AND semantics;
+- apply multiple selected tags with AND semantics across all visible mounted Projects;
+- show Project/location provenance for tag-filtered results, but keep it out of ordinary Project/folder lists;
 - keep selection in session state rather than writing it to the Project.
 
 ## Navigation and search abstractions
@@ -157,7 +158,7 @@ Rules:
 | Command palette | `useCommandRegistry`, command domain modules | `Cmd+K` resolves actions, never note content |
 | Quick Open | `QuickOpenPalette`, `useTabManagement`, visible entries | `Cmd+O`, case-insensitive fuzzy/prefix matching, max 20 results |
 | Full-text search | `SearchPanel`, `useUnifiedSearch`, `search_vault` | `Cmd+Shift+F`, all visible mounted Project roots, case-insensitive token-AND search across filename/title/content, snippets, max 200 default with truncation total |
-| Sidebar selection | `SidebarSelection`, `FolderTree`, tag section | Folder navigation and tag filtering are independent dimensions |
+| Sidebar selection | `SidebarSelection`, `FolderTree`, tag section | Folder navigation remains the Project/folder context; tag filtering spans all visible mounted Projects and is session-only |
 | Tabs | `useTabManagement` | Path identity is stable; warm content is validated before reuse |
 
 Search is not a semantic index and does not use an AI/MCP service. Gitignored visibility is applied before results cross the native boundary.

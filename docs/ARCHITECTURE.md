@@ -69,7 +69,7 @@ Vault startup/load commands also initialize the cumulative Tauri asset scope for
 The main visual regions are:
 
 1. **Sidebar** — Tags, folder navigation, and Project switching/configuration affordances. Tags are collapsed by default and are session-filter controls, not folder nodes. There is no dedicated All Notes sidebar item.
-2. **Note list** — The visible entries for the selected folder/Project graph, plus tag-filter state and full-text search results.
+2. **Note list** — The visible entries for the selected folder/Project graph, plus tag-filter state and full-text search results. When tags are active, the list spans every visible mounted Project and includes compact Project/location provenance on each result.
 3. **Editor** — Rich BlockNote editing, raw text editing, note metadata actions, tabs, and file previews.
 4. **Status and overlays** — Settings, command palette, Quick Open, recovery, update shell, and transient messages.
 
@@ -169,7 +169,7 @@ tags:
   - review-2026
 ```
 
-Tag rules are enforced in `utils/noteTags.ts`: lowercase storage, ASCII letters/digits/hyphens only, no underscores or other punctuation, and a 15-character maximum. The header displays fixed-width chips with hover text; the sidebar counts tags across visible entries and applies an AND filter. Tag selection is session-only.
+Tag rules are enforced in `utils/noteTags.ts`: lowercase storage, ASCII letters/digits/hyphens only, no underscores or other punctuation, and a 15-character maximum. The header displays fixed-width chips with hover text; the sidebar counts tags across visible mounted Project entries and applies an AND filter across that graph. Tag-filtered results intentionally ignore the current folder/Project selection and show compact Project/location provenance, while ordinary Project lists do not. Tag selection is session-only.
 
 Existing frontmatter remains opaque to the rich editor and is preserved when the note body is rewritten. This is the portability boundary: Tolaria can read older files without requiring a migration, while the simplified UI avoids silently deleting metadata it does not own.
 
