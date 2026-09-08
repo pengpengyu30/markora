@@ -5,6 +5,7 @@ import {
   mockEntries,
   renderNoteList,
 } from '../test-utils/noteListTestUtils'
+import { workspaceIdentityFromVault } from '../utils/workspaces'
 
 vi.mock('../hooks/useTabManagement', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../hooks/useTabManagement')>()
@@ -127,6 +128,38 @@ describe('NoteList rendering', () => {
 
     expect(screen.getByRole('heading', { name: 'Knowledge Base' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'docs' })).not.toBeInTheDocument()
+  })
+
+  it('shows tag results from every visible Project with Project information', () => {
+    renderNoteList({
+      entries: [
+        makeEntry({
+          path: '/projects/edge/edge-note.md',
+          title: 'Edge note',
+          properties: { tags: ['shared'] },
+          workspace: workspaceIdentityFromVault({ label: 'Edge', path: '/projects/edge' }),
+        }),
+        makeEntry({
+          path: '/projects/tolaria/tolaria-note.md',
+          title: 'Tolaria note',
+          properties: { tags: ['shared'] },
+          workspace: workspaceIdentityFromVault({ label: 'Tolaria', path: '/projects/tolaria' }),
+        }),
+      ],
+      selection: {
+        kind: 'folder',
+        path: '',
+        rootPath: '/projects/edge',
+        includeDescendants: true,
+      },
+      selectedTags: ['shared'],
+    })
+
+    expect(screen.getByText('Edge note')).toBeInTheDocument()
+    expect(screen.getByText('Tolaria note')).toBeInTheDocument()
+    expect(screen.getAllByTestId('note-project-info')).toHaveLength(2)
+    expect(screen.getByText('Edge').closest('[data-testid="note-project-info"]')).toBeInTheDocument()
+    expect(screen.getByText('Tolaria').closest('[data-testid="note-project-info"]')).toBeInTheDocument()
   })
 
   it('toggles the search input from the header action', () => {

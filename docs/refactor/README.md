@@ -24,6 +24,7 @@ The owner's actual need is a **simple, Typora-style Markdown notebook** that ret
 | [03-phase-plan.md](./03-phase-plan.md) | P0–P8 phase plan: scope, affected modules, risks, and validation gates for each phase |
 | [04-invisible-git.md](./04-invisible-git.md) | Dedicated invisible-Git design, including the three-part rule for directories that are already Git repositories |
 | [05-m5-project-addendum.md](./05-m5-project-addendum.md) | **M5 implementation addendum**: single-window runtime, the restored multi-Project model, persistence rules, search scope, and handoff notes for later agents |
+| [08-public-macos-releases.md](./08-public-macos-releases.md) | **Public macOS install (Chinese handbook)**: phased GitHub Releases delivery, acceptance gates, and handoff context for other agents |
 
 > **Current implementation note (M5):** The original target-state text still contains the earlier “one vault at a time” and “All Notes in the sidebar” wording. The user-confirmed implementation keeps the multi-vault capability as a visible/configurable **Project** model and removes the All Notes sidebar entry. Read [05-m5-project-addendum.md](./05-m5-project-addendum.md) before continuing M5+ work; it is the effective implementation boundary for this area.
 

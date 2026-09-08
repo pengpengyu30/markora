@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { NoteItem } from './NoteItem'
 import { makeEntry } from '../test-utils/noteListTestUtils'
+import { workspaceIdentityFromVault } from '../utils/workspaces'
 
 const NOW_SECONDS = 1_744_286_400
 
@@ -101,6 +102,34 @@ describe('NoteItem', () => {
 
     expect(screen.getByText('My Note')).toBeInTheDocument()
     expect(screen.queryByText('note.md')).not.toBeInTheDocument()
+  })
+
+  it('shows Project information only when the list is a cross-Project tag result', () => {
+    const entry = makeEntry({
+      path: '/projects/edge/docs/note.md',
+      workspace: workspaceIdentityFromVault({ label: 'Edge', path: '/projects/edge' }),
+    })
+
+    const { rerender } = render(
+      <NoteItem
+        entry={entry}
+        isSelected={false}
+        onClickNote={vi.fn()}
+      />,
+    )
+
+    expect(screen.queryByTestId('note-project-info')).not.toBeInTheDocument()
+
+    rerender(
+      <NoteItem
+        entry={entry}
+        isSelected={false}
+        showProjectInfo={true}
+        onClickNote={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByTestId('note-project-info')).toHaveTextContent('Edge / docs')
   })
 
   it('renders the filename stem when the note-list filename setting is enabled', () => {

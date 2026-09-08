@@ -12,6 +12,7 @@ import { formatTimestampForDateDisplay } from '../utils/dateDisplay'
 import { filePreviewKind, type FilePreviewKind } from '../utils/filePreview'
 import { useDateDisplayFormat } from '../hooks/useAppPreferences'
 import { clearDraggedNotePath, writeNoteDragData } from '../utils/noteDragDrop'
+import { workspaceLocationLabel } from '../utils/workspaces'
 
 type VisibleNoteStatus = Exclude<NoteStatus, 'clean'>
 
@@ -133,18 +134,38 @@ function InteractiveNoteDetails({
   noteStatus,
   isSelected,
   showFilename,
+  showProjectInfo,
 }: {
   entry: VaultEntry
   noteStatus: NoteStatus
   isSelected: boolean
   showFilename: boolean
+  showProjectInfo: boolean
 }) {
   return (
     <>
       <NoteTitleRow entry={entry} isBinary={false} isSelected={isSelected} noteStatus={noteStatus} showFilename={showFilename} />
+      <NoteProjectInfo entry={entry} visible={showProjectInfo} />
       <NoteSnippet snippet={entry.snippet} />
       <NoteDateRow entry={entry} />
     </>
+  )
+}
+
+function NoteProjectInfo({ entry, visible }: { entry: VaultEntry; visible: boolean }) {
+  if (!visible) return null
+
+  const location = workspaceLocationLabel(entry)
+  if (!location) return null
+
+  return (
+    <div
+      className="truncate text-[11px] leading-[1.4] text-muted-foreground"
+      data-testid="note-project-info"
+      title={location}
+    >
+      {location}
+    </div>
   )
 }
 
@@ -155,6 +176,7 @@ function StandardNoteContent(options: {
   noteStatus: NoteStatus
   isSelected: boolean
   showFilename: boolean
+  showProjectInfo: boolean
 }) {
   const {
     entry,
@@ -163,6 +185,7 @@ function StandardNoteContent(options: {
     noteStatus,
     isSelected,
     showFilename,
+    showProjectInfo,
   } = options
 
   return (
@@ -176,6 +199,7 @@ function StandardNoteContent(options: {
             noteStatus={noteStatus}
             isSelected={isSelected}
             showFilename={showFilename}
+            showProjectInfo={showProjectInfo}
           />
         )}
       </div>
@@ -255,6 +279,7 @@ type NoteItemProps = {
   isHighlighted?: boolean
   noteStatus?: NoteStatus
   showFilename?: boolean
+  showProjectInfo?: boolean
   onClickNote: (entry: VaultEntry, e: ReactMouseEvent) => void
   onPrefetch?: (entry: VaultEntry) => void
   onContextMenu?: (entry: VaultEntry, e: ReactMouseEvent) => void
@@ -409,6 +434,7 @@ function NoteItemContent(options: {
   isSelected: boolean
   noteStatus: NoteStatus
   showFilename: boolean
+  showProjectInfo: boolean
 }) {
   const {
     entry,
@@ -417,6 +443,7 @@ function NoteItemContent(options: {
     isSelected,
     noteStatus,
     showFilename,
+    showProjectInfo,
   } = options
   return (
     <StandardNoteContent
@@ -426,6 +453,7 @@ function NoteItemContent(options: {
       noteStatus={noteStatus}
       isSelected={isSelected}
       showFilename={showFilename}
+      showProjectInfo={showProjectInfo}
     />
   )
 }
@@ -438,6 +466,7 @@ export function NoteItem(options: NoteItemProps) {
     isHighlighted = false,
     noteStatus = 'clean',
     showFilename = false,
+    showProjectInfo = false,
     onClickNote,
     onPrefetch,
     onContextMenu,
@@ -472,6 +501,7 @@ export function NoteItem(options: NoteItemProps) {
         isSelected={isSelected}
         noteStatus={noteStatus}
         showFilename={showFilename}
+        showProjectInfo={showProjectInfo}
       />
     </NoteItemRow>
   )

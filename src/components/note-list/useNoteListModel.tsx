@@ -29,6 +29,7 @@ const LIKELY_NEXT_PRELOAD_LIMIT = 6
 const ADJACENT_PRELOAD_RADIUS = 3
 const LIKELY_NEXT_PRELOAD_START_DELAY_MS = 350
 const LIKELY_NEXT_PRELOAD_STEP_DELAY_MS = 180
+const TAG_FILTER_LIST_SELECTION: SidebarSelection = { kind: 'filter', filter: 'all' }
 
 function likelyNextPreloadEntries(entries: VaultEntry[], selectedNotePath: string | null): VaultEntry[] {
   if (entries.length === 0) return []
@@ -253,6 +254,7 @@ function useNoteListInteractionState(options: UseNoteListInteractionStateParams)
       multiSelect: MultiSelectState
       noteListKeyboard: { highlightedPath: string | null }
       showFilename?: boolean
+      showProjectInfo?: boolean
     }
 
     function useRenderItem(functionOptions: UseRenderItemParams) {
@@ -264,6 +266,7 @@ function useNoteListInteractionState(options: UseNoteListInteractionStateParams)
       multiSelect,
       noteListKeyboard,
       showFilename,
+      showProjectInfo,
   } = functionOptions
 
   return useCallback(
@@ -276,6 +279,7 @@ function useNoteListInteractionState(options: UseNoteListInteractionStateParams)
         isHighlighted={entry.path === noteListKeyboard.highlightedPath}
         noteStatus={resolvedGetNoteStatus(entry.path)}
         showFilename={showFilename}
+        showProjectInfo={showProjectInfo}
         onClickNote={handleClickNote}
         onPrefetch={prefetchNoteContent}
         onContextMenu={noteListContextMenu}
@@ -288,6 +292,7 @@ function useNoteListInteractionState(options: UseNoteListInteractionStateParams)
     noteListContextMenu,
     resolvedGetNoteStatus,
     showFilename,
+    showProjectInfo,
     selectedNotePath,
     ],
   )
@@ -382,6 +387,9 @@ function buildNoteListLayoutModel(params: {
 
 export function useNoteListModel(options: NoteListProps) {
   const { entries, vaultPath, selection, projectLabel, selectedNote, revealRequestId, onRevealCurrentNote, loading = false, getNoteStatus, sidebarCollapsed, onReplaceActiveTab, onCreateNote, onBulkDeletePermanently, onRenameFilename, onExportPdf, onRevealFile, onCopyFilePath, visibleNotesRef, allNotesFileVisibility, folderViewShowNonMarkdown, showFilename, locale = 'en', selectedTags, onToggleTag, onClearTagFilter } = options
+  const tagFilterActive = (selectedTags?.length ?? 0) > 0
+  const showProjectInfo = tagFilterActive
+  const listSelection = tagFilterActive ? TAG_FILTER_LIST_SELECTION : selection
   const selectedNotePath = selectedNote?.path ?? null
   const { resolvedGetNoteStatus } = useNoteStatusState(
     getNoteStatus,
@@ -389,7 +397,7 @@ export function useNoteListModel(options: NoteListProps) {
   const content = useNoteListContent({
     entries,
     vaultPath,
-    selection,
+    selection: listSelection,
     selectedNotePath,
     visibleNotesRef,
     allNotesFileVisibility,
@@ -419,6 +427,7 @@ export function useNoteListModel(options: NoteListProps) {
     multiSelect: interaction.multiSelect,
     noteListKeyboard: interaction.noteListKeyboard,
     showFilename,
+    showProjectInfo,
   })
   const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key !== 'Escape') return
@@ -444,7 +453,7 @@ export function useNoteListModel(options: NoteListProps) {
   }, [isNoteListSearchActive, toggleSearchShortcut])
 
   return buildNoteListLayoutModel({
-    selection,
+    selection: listSelection,
     projectLabel,
     sidebarCollapsed,
     loading,
