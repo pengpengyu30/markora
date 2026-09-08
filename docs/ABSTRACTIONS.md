@@ -249,7 +249,7 @@ The renderer may cache recently opened or preloaded markdown content, but cached
 
 ### Table of Contents Outline
 
-The editor Table of Contents is a lazy right-side index derived from the active note's Markdown source. `TableOfContentsPanel` builds the title-rooted H1/H2/H3 tree through the debounced worker path in `src/components/tableOfContentsWorkerClient.ts`, falling back to a live BlockNote document scan only when no Markdown source is available. The panel deliberately avoids reading `editor.document` while source content exists, so opening the TOC does not put full-document BlockNote traversal on ordinary render, typing, or scrolling paths. Selecting a heading resolves the current live BlockNote block id at click time, then focuses BlockNote and moves the cursor to that block.
+The editor Table of Contents is a lazy right-side index derived from the active note's Markdown source. `TableOfContentsPanel` builds the title-rooted H1/H2/H3 tree through the debounced worker path in `src/components/tableOfContentsWorkerClient.ts`, falling back to a live BlockNote document scan only when no Markdown source is available. Renderer TOC and snippet display text share `src/utils/inlineMarkdown.ts`; its behavior follows the golden fixtures in `src/shared/inlineMarkdownContract.json`, which Rust vault title/snippet parsing also asserts, so links, wikilinks, formatting, escapes, and identifier underscores cannot drift between indexed metadata and renderer surfaces. The panel deliberately avoids reading `editor.document` while source content exists, so opening the TOC does not put full-document BlockNote traversal on ordinary render, typing, or scrolling paths. Selecting a heading resolves the current live BlockNote block id at click time, then focuses BlockNote and moves the cursor to that block.
 
 ### Entity Types (isA / type)
 
@@ -823,6 +823,8 @@ flowchart LR
 ```
 
 Rich-editor change events are coalesced before this serialization runs. `useEditorTabSwap` keeps the latest BlockNote state in the editor, schedules one Markdown serialization for a short idle window, and exposes an explicit flush hook for save, note switch, raw-mode entry, and destructive note actions. `src/utils/richEditorMarkdown.ts` is the shared BlockNote-to-Markdown owner for autosave/tab-swap and raw-mode entry, so wikilink restoration, durable schema-node serialization, frontmatter preservation, file-attachment block round-tripping, and portable attachment paths cannot drift between editor modes. This keeps long notes from paying full-document Markdown serialization on every keystroke while preserving the disk-first save path.
+
+`useCompositionAwareEditorChange` suppresses serialization during native IME composition and waits for BlockNote's reconciled post-composition change before publishing the update, with a short fallback for input methods that emit no final change. The Safari-only IME guard keeps an out-of-model zero-width sentinel beside composing nested-list text so WebKit cannot normalize away the active text block between `deleteCompositionText` and `insertFromComposition`; the sentinel never enters the ProseMirror document or saved Markdown.
 
 Autosave then waits for a 1.5s idle window before invoking `save_note_content`. If an older save resolves after the user has already typed newer content, the older save is treated as stale and cannot clear the newer pending buffer or repaint tab state over it; the latest pending content remains scheduled for its own save.
 

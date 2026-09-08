@@ -1,3 +1,5 @@
+import { stripInlineMarkdown } from '../utils/inlineMarkdown'
+
 type TocLevel = 1 | 2 | 3
 
 interface TocInlineText {
@@ -168,40 +170,6 @@ function stripFrontmatter({ markdown }: { markdown: string }): string {
   return afterDelimiter === -1 ? '' : markdown.slice(afterDelimiter + 1)
 }
 
-function stripStrikethroughMarkdown({ text }: { text: string }): string {
-  let result = ''
-  let searchStart = 0
-
-  while (searchStart < text.length) {
-    const opening = text.indexOf('~~', searchStart)
-    if (opening === -1) return result + text.slice(searchStart)
-
-    const contentStart = opening + 2
-    const closing = text.indexOf('~~', contentStart)
-    if (closing === -1) return result + text.slice(searchStart)
-
-    const content = text.slice(contentStart, closing)
-    if (content && content.trim() === content) {
-      result += text.slice(searchStart, opening) + content
-      searchStart = closing + 2
-    } else {
-      result += text.slice(searchStart, contentStart)
-      searchStart = contentStart
-    }
-  }
-
-  return result
-}
-
-function stripInlineMarkdown({ text }: { text: string }): string {
-  return stripStrikethroughMarkdown({ text })
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-    .replace(/\[\[[^|\]]+\|([^\]]+)\]\]/g, '$1')
-    .replace(/\[\[([^\]]+)\]\]/g, '$1')
-    .replace(/[*_`]/g, '')
-    .trim()
-}
-
 function codeFenceForLine(line: string): MarkdownCodeFence | null {
   const match = line.match(/^ {0,3}(`{3,}|~{3,})/)
   const fence = match?.at(1)
@@ -335,6 +303,6 @@ function parseMarkdownHeading(line: string): MarkdownHeading | null {
   const marker = match.at(1)
   const headingText = match.at(2)
   if (!marker || !headingText) return null
-  const title = stripInlineMarkdown({ text: headingText })
+  const title = stripInlineMarkdown(headingText)
   return title.length > 0 ? { level: marker.length as TocLevel, title } : null
 }
