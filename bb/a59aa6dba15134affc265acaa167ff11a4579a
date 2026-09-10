@@ -1,0 +1,289 @@
+src/hooks/editorContentSwapApply.ts
+  s_be8f381d4e9dbb::t_9b0cd0fbbe647e 21,158-160,287-290
+  s_be8f381d4e9dbb::t_e458d414f6a5f3 156-157,161
+  s_be8f381d4e9dbb::t_4700a0e0144048 326
+  s_be8f381d4e9dbb::t_def66c9e895b53 340
+  s_be8f381d4e9dbb::t_6e70230968d458 16-17,108-122,247-249
+src/hooks/editorParsedBlockSwap.ts
+  s_be8f381d4e9dbb::t_8f401449d09cef 31
+  s_be8f381d4e9dbb::t_584bfb7f3f872d 47,68
+src/hooks/useEditorTabSwap.test.ts
+  s_be8f381d4e9dbb::t_9a4b23fb8400b8 563,590,626,679,756,793,864
+src/hooks/useEditorTabSwap.ts
+  s_be8f381d4e9dbb::t_4a4f116a06216c 1119
+  s_be8f381d4e9dbb::t_db3aba3cb896c2 310-318
+  s_be8f381d4e9dbb::t_4ddeb019448207 112,757,799,856
+  s_be8f381d4e9dbb::t_8f10d98fdaa38c 926
+  s_be8f381d4e9dbb::t_c0ee1d252836a8 1262,1264-1265,1267,1281,1319
+  s_be8f381d4e9dbb::t_571a652449f7ea 873,897,909
+  s_be8f381d4e9dbb::t_13af32ae0a23cc 300
+  s_be8f381d4e9dbb::t_23c7b3c4df29ae 812,831
+  s_be8f381d4e9dbb::t_443a94e627f3be 1045
+  s_be8f381d4e9dbb::t_f94f0f114e1c74 1198
+  s_be8f381d4e9dbb::t_896ff9492bb0a2 766,774
+  s_be8f381d4e9dbb::t_a46206565f91c2 1263,1266,1268
+  s_be8f381d4e9dbb::t_1ff97d75bbc5b9 266,278,293-299
+  s_be8f381d4e9dbb::t_86a573560e12aa 233,239,292,303
+  s_be8f381d4e9dbb::t_d1d60ed54ad48f 1148,1173
+  s_be8f381d4e9dbb::t_657f97dbff3564 327
+src/hooks/useEditorTabSwap.performance.test.ts
+  s_be8f381d4e9dbb::t_7d47961cecea0a 153
+  s_be8f381d4e9dbb::t_db3aba3cb896c2 109-135
+  s_be8f381d4e9dbb::t_ebac25741b1aa9 155
+  s_be8f381d4e9dbb::t_5816f601a76265 136-152,154,156-164
+src/hooks/editorDocumentState.ts
+  s_be8f381d4e9dbb::t_13af32ae0a23cc 28-30
+src/utils/sourcePreservingMarkdown.test.ts
+  s_be8f381d4e9dbb::t_7c187dec333d82 204-210
+  s_be8f381d4e9dbb::t_340d791832a989 6,8,10,12,15,18,20-21,23,26,28,30,32,34-35,38,40,42,44,47,50,52-54,56,59,61,63,65,70,76-77,80,82-83,85-87,89,91-92,96-97,99,101,104,106,109-110,112,114,119-120,122-123,125,128-129,131,135-136,138,143-144,146,150,153-154,156,160-161,163,168-169,172,175,178,181,188-189,191,194,196,199-200,202-203,211-232
+  s_be8f381d4e9dbb::t_83bbd00dee0077 3-5
+  s_be8f381d4e9dbb::t_807396de45428d 7
+  s_be8f381d4e9dbb::t_20369d48e0bad7 9
+  s_be8f381d4e9dbb::t_0d45d0b9bb948c 11
+  s_be8f381d4e9dbb::t_1561edc0fbd2c0 13-14
+  s_be8f381d4e9dbb::t_c29f230f509240 16-17
+  s_be8f381d4e9dbb::t_aeb141fe4019e3 19
+  s_be8f381d4e9dbb::t_6a925ff9c6af3b 22
+  s_be8f381d4e9dbb::t_0e1357b50d11d5 24-25
+  s_be8f381d4e9dbb::t_4d8461c4c51b02 27
+  s_be8f381d4e9dbb::t_4337cfc6fdeb69 29
+  s_be8f381d4e9dbb::t_853985bc6e7897 31
+  s_be8f381d4e9dbb::t_217607bc1ed102 33
+  s_be8f381d4e9dbb::t_daed5b8a2ded4f 36-37
+  s_be8f381d4e9dbb::t_cc1802a210517a 39
+  s_be8f381d4e9dbb::t_022409562b22be 41
+  s_be8f381d4e9dbb::t_8563f64d2efeec 43
+  s_be8f381d4e9dbb::t_51e1577b166ad2 45-46
+  s_be8f381d4e9dbb::t_06cf3cf7675b3d 48-49
+  s_be8f381d4e9dbb::t_9b1626ec0d2cc1 51
+  s_be8f381d4e9dbb::t_dbbbd6e20df5a8 55
+  s_be8f381d4e9dbb::t_f225c3a7d5148b 57-58
+  s_be8f381d4e9dbb::t_0e70300c180462 60
+  s_be8f381d4e9dbb::t_bbb09f2a706f58 62
+  s_be8f381d4e9dbb::t_ec75db2c8dbb7a 64
+  s_be8f381d4e9dbb::t_f979e5e12cab69 66-69
+  s_be8f381d4e9dbb::t_37022f40ce604a 71-75
+  s_be8f381d4e9dbb::t_4d5800be90e7f6 78-79
+  s_be8f381d4e9dbb::t_e8459e5a035834 81
+  s_be8f381d4e9dbb::t_c787de4821ef9b 84
+  s_be8f381d4e9dbb::t_91308b205ad54e 88
+  s_be8f381d4e9dbb::t_60fce668f4d463 90
+  s_be8f381d4e9dbb::t_3b2a52983d955e 93-95
+  s_be8f381d4e9dbb::t_3d39f878df2dd7 98
+  s_be8f381d4e9dbb::t_dcae3fa8b24e2a 100
+  s_be8f381d4e9dbb::t_03106cfd7f5949 102-103
+  s_be8f381d4e9dbb::t_db333a821dc3c3 105
+  s_be8f381d4e9dbb::t_3ca1bb41dfd5ca 107-108
+  s_be8f381d4e9dbb::t_91c0f16d7a57c6 111
+  s_be8f381d4e9dbb::t_69b3c8013de198 113
+  s_be8f381d4e9dbb::t_a10c245e1a23d7 115-118
+  s_be8f381d4e9dbb::t_77bbba0f02164e 121
+  s_be8f381d4e9dbb::t_b77af902cbf75c 124
+  s_be8f381d4e9dbb::t_fb0c48e49d2a1f 126-127
+  s_be8f381d4e9dbb::t_d6f135eab393a4 130
+  s_be8f381d4e9dbb::t_57cadce2078546 132-134
+  s_be8f381d4e9dbb::t_e6579ffde1ea7d 137
+  s_be8f381d4e9dbb::t_5c0dba669b7ae6 139-142
+  s_be8f381d4e9dbb::t_b75993052bd2d8 145
+  s_be8f381d4e9dbb::t_5f7c509e7e66da 147-149
+  s_be8f381d4e9dbb::t_77c43c74a67bff 151-152
+  s_be8f381d4e9dbb::t_8c63992f2132f2 155
+  s_be8f381d4e9dbb::t_e7ae49e0512357 157-159
+  s_be8f381d4e9dbb::t_85ef7499669d32 162
+  s_be8f381d4e9dbb::t_6ccf42f5b4bcce 164-167
+  s_be8f381d4e9dbb::t_7133ee363a1637 170-171
+  s_be8f381d4e9dbb::t_6f201472e56402 173-174
+  s_be8f381d4e9dbb::t_6d25363dfed229 176-177
+  s_be8f381d4e9dbb::t_9e2b114473bbce 179-180
+  s_be8f381d4e9dbb::t_5f4af2d9c4bca4 182-187
+  s_be8f381d4e9dbb::t_9314f04bc7dcf5 190
+  s_be8f381d4e9dbb::t_7472d12150ef5b 192-193
+  s_be8f381d4e9dbb::t_74f37c4938631b 195
+  s_be8f381d4e9dbb::t_509785931431bf 197-198
+  s_be8f381d4e9dbb::t_12def5c4c142d7 201
+  s_be8f381d4e9dbb::t_05625108a37be8 233
+  s_be8f381d4e9dbb::t_a1736040dd401d 1-2
+src/hooks/editorDocumentState.test.ts
+  s_be8f381d4e9dbb::t_b5b197133e0466 1-19
+src/utils/sourcePreservingMarkdown.ts
+  s_be8f381d4e9dbb::t_cdb920e0d203c1 470-478
+  s_be8f381d4e9dbb::t_e841c72137ac3f 461-466
+  s_be8f381d4e9dbb::t_b590a504879cb8 261,644-730
+  s_be8f381d4e9dbb::t_23de01141337b6 491-492
+  s_be8f381d4e9dbb::t_fd671fd2fbf774 383,493-495
+  s_be8f381d4e9dbb::t_f5033ee89c3971 258-260
+  s_be8f381d4e9dbb::t_35d8eaf7f0ce2e 262-264,380-382
+  s_be8f381d4e9dbb::t_74b6da89dfbfab 384-386,458-460
+  s_be8f381d4e9dbb::t_72428acde4d719 467-469
+  s_be8f381d4e9dbb::t_26132a623ab4f4 479-481,488-490
+  s_be8f381d4e9dbb::t_75b8be151d1751 496-498,641-643
+  s_be8f381d4e9dbb::t_ddf04f4dee73ce 731-733
+  s_be8f381d4e9dbb::t_c58d976d60ad44 1-257,265-379,387-457,482-487,499-640,734-753
+tests/smoke/editor-large-note-performance.spec.ts
+  s_be8f381d4e9dbb::t_708c3a098f817b 78,91-101,109-112,164-177
+  s_be8f381d4e9dbb::t_9fd4a006ae2b42 178-179
+docs/ABSTRACTIONS.md
+  s_be8f381d4e9dbb::t_6102c138a8e8bc 49,54,59-63,87-91,179,235-239,256-259,264-265,267-269,286
+docs/ARCHITECTURE.md
+  s_be8f381d4e9dbb::t_e95a84ec09b5f8 15,56,129-133,194,198,233-241,265-274,280-282,284-285,294-296
+docs/adr/README.md
+  s_be8f381d4e9dbb::t_da469c27612449 242-244
+playwright.config.ts
+  s_be8f381d4e9dbb::t_2098f95521b0af 11
+playwright.smoke.config.ts
+  s_be8f381d4e9dbb::t_cf9f0c1bc43234 15
+scripts/editor-performance-benchmark.mjs
+  s_be8f381d4e9dbb::t_22625effc1fa9c 368-373,378-380
+src-tauri/src/commands/git.rs
+  s_be8f381d4e9dbb::t_162aba7da539fe 7-18,25,41,50-52,59,70,81,92
+src-tauri/src/commands/vault.rs
+  s_be8f381d4e9dbb::t_f95441763c71f5 267-270,272
+src-tauri/src/commands/vault/lifecycle_cmds.rs
+  s_be8f381d4e9dbb::t_33b7bb82e9abe5 7-17,19,23,28-30,157-167
+src-tauri/src/commands/vault/rename_cmds.rs
+  s_be8f381d4e9dbb::t_afd1657c7ae3fe 229,231,238,240-248,372,378
+src-tauri/src/settings.rs
+  s_be8f381d4e9dbb::t_b2f4fd543781c2 6-7,160-183,193-194,351-376
+src-tauri/src/vault/cache.rs
+  s_be8f381d4e9dbb::t_74efb6510c0ea0 593-605,861-867,875-880,935-941,949-951,970-981,1189-1215
+src-tauri/src/vault/getting_started.rs
+  s_be8f381d4e9dbb::t_f1b7b9d8ef9856 62-71,82-84,168-169,213-214,230-231,256,266-276
+src-tauri/src/vault_watcher.rs
+  s_be8f381d4e9dbb::t_f89f624649a0b8 91,96,238,250,258,280,292-298,317-321,328-330,334-336,339,342,346-348,352-360,363,366,506-508,515-529
+src/App.test.tsx
+  s_be8f381d4e9dbb::t_cb4ed30fccef56 370-382
+src/App.tsx
+  s_be8f381d4e9dbb::t_74d7f7e889ac2f 82,228-229,237,336,338,361,894
+src/components/BreadcrumbBar.tsx
+  s_be8f381d4e9dbb::t_eba4c8a8e76218 560
+src/components/Editor.helpers.test.tsx
+  s_be8f381d4e9dbb::t_7aa9e496411c81 7,329
+src/components/Editor.raw-mode-sync.test.ts
+  s_be8f381d4e9dbb::t_363207add4ede5 114,130,149
+src/components/Editor.test.tsx
+  s_be8f381d4e9dbb::t_29aee4afaf3dbc 25-35,472,563,619
+src/components/EditorTheme.css
+  s_be8f381d4e9dbb::t_a401dc7d21ce06 883,892,896
+src/components/EditorTheme.regressions.test.ts
+  s_be8f381d4e9dbb::t_e194ad201bdd7b 31,33,36
+src/components/SettingsBodyNav.tsx
+  s_be8f381d4e9dbb::t_02014d95e67ef6 1,20
+src/components/SettingsPanel.test.tsx
+  s_be8f381d4e9dbb::t_cc21ada02e568f 153-171,204,214
+src/components/SettingsPanel.tsx
+  s_be8f381d4e9dbb::t_1c837f04e0a53f 1,32,77,93-94,141,148,165,172,501-502,543,551-571,630,641
+src/components/StatusBar.test.tsx
+  s_be8f381d4e9dbb::t_aec31a7da057f9 111-126
+src/components/VaultContentSettingsSection.tsx
+  s_be8f381d4e9dbb::t_38fe6328107756 18,67,122
+src/components/codeBlockLanguageControls.test.tsx
+  s_be8f381d4e9dbb::t_bb23c7f40f0d97 5,18-29,34,38-39,41-42,50-51,53,77-108
+src/components/codeBlockLanguageControls.tsx
+  s_be8f381d4e9dbb::t_9cbd75f5bcbd76 25-29,34,48-57,61-62,64-65,69-73,77,79,81-85,87,90-93,96-98,101-103,106-117,121-122,130-133,136-161,163,168-171,179-183,188,190,242-243,245,260
+src/components/codeBlockLineNumbers.test.ts
+  s_be8f381d4e9dbb::t_c327b73b388bf5 5-9,13,15-19,21,71-104
+src/components/codeBlockLineNumbers.ts
+  s_be8f381d4e9dbb::t_bb458f66d831c5 2,34-40,43-47,49-64,67-100,104-125,136-143
+src/components/codeBlockOptions.test.ts
+  s_be8f381d4e9dbb::t_3bb0461aeb6205 1,9-10,46-63,74-109
+src/components/codeBlockOptions.ts
+  s_be8f381d4e9dbb::t_48a3ae80debfef 138-144,275-330,333-341,358,361,378-380
+src/components/editor-content/EditorContentLayout.tsx
+  s_be8f381d4e9dbb::t_5d8451d77de0bd 17-24,30,36,50,415,532
+src/components/editorRawModeSync.arrowLigatures.test.ts
+  s_be8f381d4e9dbb::t_6b02f3fa400cc4 43,72
+src/components/editorRawModeSync.images.test.ts
+  s_be8f381d4e9dbb::t_2d03aec885b471 20,35,47
+src/components/editorSchema.tsx
+  s_be8f381d4e9dbb::t_5de37a30dc9236 418-432
+src/components/editorSchema.webkit.test.ts
+  s_be8f381d4e9dbb::t_640eb2fde2ae82 3,137-154
+src/components/richEditorTextDirection.test.ts
+  s_be8f381d4e9dbb::t_29d6cce89f5bf0 1-2,4-16,35-46
+src/components/richEditorTextDirection.ts
+  s_be8f381d4e9dbb::t_eb450682b995b9 3,51-80,92
+src/components/settingsSectionIds.ts
+  s_be8f381d4e9dbb::t_c549113775bcae 3
+src/components/status-bar/VaultMenu.tsx
+  s_be8f381d4e9dbb::t_4011a557e41dbd 251
+src/components/tolariaEditorFormatting.behavior.test.tsx
+  s_be8f381d4e9dbb::t_e425d7fa6e2968 417-441
+src/components/tolariaEditorFormatting.tsx
+  s_be8f381d4e9dbb::t_ed68b026c5bf26 100-112,944,954
+src/components/useRawModeWithFlush.test.tsx
+  s_be8f381d4e9dbb::t_9047a3033b7289 24
+src/components/useRawModeWithFlush.ts
+  s_be8f381d4e9dbb::t_b7642404cc7946 370
+src/editorThemes/EditorThemeLaboratory.tsx
+  s_be8f381d4e9dbb::t_2f4496128864fa 109
+src/editorThemes/EditorThemePreview.tsx
+  s_be8f381d4e9dbb::t_24dc812b49af59 63
+src/editorThemes/editorThemeCatalog.test.ts
+  s_be8f381d4e9dbb::t_f6b4bbf2614c0c 68
+src/editorThemes/editorThemeCatalog.ts
+  s_be8f381d4e9dbb::t_d69e525aca5c0c 673,723,778,793,809,824
+src/hooks/commands/settingsCommands.test.ts
+  s_be8f381d4e9dbb::t_5a83f7752c6e50 234-245
+src/hooks/commands/settingsCommands.ts
+  s_be8f381d4e9dbb::t_10f66b92539da3 31,222-223,230,244,273
+src/hooks/editorBlockResolution.preprocess.test.ts
+  s_be8f381d4e9dbb::t_62055307aa9af7 141-185,219,251,280,304
+src/hooks/editorContentSwapApply.test.ts
+  s_be8f381d4e9dbb::t_514261e44998f4 5,68-84,178-199
+src/hooks/editorFastMarkdownBlocks.test.ts
+  s_be8f381d4e9dbb::t_70d86ca42cc4db 62-92
+src/hooks/editorFastMarkdownBlocks.ts
+  s_be8f381d4e9dbb::t_61b68487019c37 57,102,294-295,305-306,317-318,325-352,369-409,453,457-486
+src/hooks/editorParsedBlockPreload.test.tsx
+  s_be8f381d4e9dbb::t_489040db4849d9 181-197
+src/hooks/editorParsedBlockPreload.ts
+  s_be8f381d4e9dbb::t_3cc0dccd5c3291 134,161,171
+src/hooks/useAppCommands.ts
+  s_be8f381d4e9dbb::t_216f1a3c0092bf 18,140,350
+src/hooks/useCommandRegistry.ts
+  s_be8f381d4e9dbb::t_c2eb17e490411e 22,101,164,170
+src/hooks/useManagedGit.test.ts
+  s_be8f381d4e9dbb::t_d504a21f3de4d4 24-30,41,58,81
+src/hooks/useManagedGit.ts
+  s_be8f381d4e9dbb::t_90557abf4e9efa 27
+src/hooks/useRawMode.test.ts
+  s_be8f381d4e9dbb::t_a6768496a037ac 3,8,12-19,26,30,34-37,39-44,48,149,172-202
+src/hooks/useRawMode.ts
+  s_be8f381d4e9dbb::t_995cb0e2c9a44f 6-7,15-66,71,73-81,83,85-86,89-92,94,101-103,106-108,110
+src/hooks/useVaultLoader.extra.test.ts
+  s_be8f381d4e9dbb::t_c9f50ee56d8827 127-149
+src/hooks/useVaultLoader.ts
+  s_be8f381d4e9dbb::t_6ed1cbbbfa7fc8 469-473,485,493,498
+src/hooks/useVaultRenameDetection.ts
+  s_be8f381d4e9dbb::t_fb4661b9821ee3 7,20,28-33,45,48,60
+src/utils/fileAttachmentMarkdown.test.ts
+  s_be8f381d4e9dbb::t_be33f7aeb7ee17 49,63,72
+src/utils/gitFeatureState.test.ts
+  s_be8f381d4e9dbb::t_c69a83a1372c05 1-14
+src/utils/gitFeatureState.ts
+  s_be8f381d4e9dbb::t_d748fe44ff2752 1-7
+src/utils/richEditorMarkdown.ts
+  s_be8f381d4e9dbb::t_edf8ce3c6b00ed 18,149,156-159,405,408-412,418-419
+tests/helpers/fixtureVault.ts
+  s_be8f381d4e9dbb::t_52778a428e9eb1 18-20,30-32,79-80,82-87,355,506-507,509,529-531
+tests/smoke/editor-code-block-theme.spec.ts
+  s_be8f381d4e9dbb::t_fe83e86094fea6 12-13,57-75,261-280,329-341
+tests/smoke/non-git-vault-init.spec.ts
+  s_be8f381d4e9dbb::t_f0d7fde69b57de 2-3,7,16,19-22,24-26,28-111
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "bba59aa6dba15134affc265acaa167ff11a4579a",
+  "prompts": {},
+  "sessions": {
+    "s_be8f381d4e9dbb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07f6b-7e89-7c83-9268-285e054d1e6f",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "pengpengyu30 <pengpengyu30@gmail.com>"
+    }
+  }
+}
