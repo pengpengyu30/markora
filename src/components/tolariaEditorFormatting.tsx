@@ -97,6 +97,19 @@ function isFocusStillWithinToolbar(
   return nextTarget instanceof Node && currentTarget.contains(nextTarget)
 }
 
+function isFocusStillWithinToolbarSurface(
+  currentTarget: EventTarget & Element,
+  nextTarget: EventTarget | null,
+) {
+  if (isFocusStillWithinToolbar(currentTarget, nextTarget)) return true
+  if (!(nextTarget instanceof Element)) return false
+
+  // Mantine renders the block-type dropdown outside the toolbar wrapper even
+  // when `withinPortal={false}`. Treat that dropdown as part of the same
+  // interaction surface while the pointer/focus crosses the DOM boundary.
+  return nextTarget.closest('.bn-select') !== null
+}
+
 function clearToolbarCloseGrace(
   timeoutRef: MutableRefObject<number | null>,
   setCloseGraceActive: Dispatch<SetStateAction<boolean>>,
@@ -928,7 +941,7 @@ export function TolariaFormattingToolbarController(props: {
               setToolbarHovered(true)
             }}
             onPointerLeave={(event) => {
-              if (isFocusStillWithinToolbar(event.currentTarget, event.relatedTarget)) {
+              if (isFocusStillWithinToolbarSurface(event.currentTarget, event.relatedTarget)) {
                 return
               }
 
@@ -938,7 +951,7 @@ export function TolariaFormattingToolbarController(props: {
               setToolbarHasFocus(true)
             }}
             onBlurCapture={(event) => {
-              if (isFocusStillWithinToolbar(event.currentTarget, event.relatedTarget)) {
+              if (isFocusStillWithinToolbarSurface(event.currentTarget, event.relatedTarget)) {
                 return
               }
 

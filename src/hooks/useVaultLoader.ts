@@ -466,6 +466,11 @@ function useModifiedFilesLoader(
     const path = vaultPath
     setModifiedFilesError(null)
 
+    if (!enabled) {
+      setModifiedFiles([])
+      return
+    }
+
     if (!hasVaultPath({ vaultPath: path })) {
       setModifiedFiles([])
       return
@@ -477,7 +482,7 @@ function useModifiedFilesLoader(
         tauriArgs: { vaultPath: path, includeStats: false },
         mockArgs: {},
       })
-      if (isCurrentVaultPath(path)) setModifiedFiles(files)
+      if (enabled && isCurrentVaultPath(path)) setModifiedFiles(files)
     } catch (err) {
       if (!isCurrentVaultPath(path)) return
       const message = typeof err === 'string' ? err : 'Failed to load changes'
@@ -485,12 +490,12 @@ function useModifiedFilesLoader(
       setModifiedFilesError(message)
       setModifiedFiles([])
     }
-  }, [vaultPath, isCurrentVaultPath])
+  }, [enabled, vaultPath, isCurrentVaultPath])
 
   const loadModifiedFiles = useCoalescedAsyncTask(runModifiedFilesLoad)
 
   useEffect(() => {
-    if (enabled) loadModifiedFiles()
+    void loadModifiedFiles()
   }, [enabled, loadModifiedFiles])
 
   return {

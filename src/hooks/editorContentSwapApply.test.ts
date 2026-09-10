@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   applyBlocksToEditor,
   applyBlocksToEditorProgressively,
+  CODE_HEAVY_CODE_BLOCK_COUNT_THRESHOLD,
   PROGRESSIVE_BLOCK_APPLY_CHUNK_SIZE,
   PROGRESSIVE_BLOCK_APPLY_THRESHOLD,
   PROGRESSIVE_INITIAL_BLOCK_APPLY_CHUNK_SIZE,
@@ -62,6 +63,23 @@ function makeNumberedListBlocks(count: number) {
     content: [{ type: 'text', text: `Step ${index + 1}`, styles: {} }],
     children: [],
   }))
+}
+
+function makeCodeHeavyBlocks(count: number) {
+  return Array.from({ length: count }, (_, index) => index % 8 === 0
+    ? {
+        id: `code-block-${index}`,
+        type: 'codeBlock',
+        props: { language: 'markdown' },
+        content: [{ type: 'text', text: `code ${index}`, styles: {} }],
+        children: [],
+      }
+    : {
+        id: `paragraph-${index}`,
+        type: 'paragraph',
+        content: [{ type: 'text', text: `Block ${index}`, styles: {} }],
+        children: [],
+      })
 }
 
 afterEach(() => {
@@ -155,6 +173,28 @@ describe('applyBlocksToEditor', () => {
     expect(editor.replaceBlocks).toHaveBeenCalledWith(expect.any(Array), blocks)
     expect(editor.insertBlocks).not.toHaveBeenCalled()
     expect(editor.document).toEqual(blocks)
+  })
+
+  it('applies code-heavy documents in one transaction to avoid repeated full-document highlighting', async () => {
+    const requestAnimationFrame = vi.spyOn(window, 'requestAnimationFrame')
+    const editor = makeEditor()
+    const blocks = makeCodeHeavyBlocks(
+      PROGRESSIVE_BLOCK_APPLY_THRESHOLD + CODE_HEAVY_CODE_BLOCK_COUNT_THRESHOLD * 8,
+    )
+
+    const applied = await applyBlocksToEditorProgressively({
+      blocks,
+      editor: editor as never,
+      editorContentPathRef: makeFrameRef<string | null>(null),
+      scrollTop: 0,
+      suppressChangeRef: makeFrameRef(false),
+      targetPath: 'code-heavy.md',
+    })
+
+    expect(applied).toBe(true)
+    expect(editor.replaceBlocks).toHaveBeenCalledWith(expect.any(Array), blocks)
+    expect(editor.insertBlocks).not.toHaveBeenCalled()
+    expect(requestAnimationFrame).toHaveBeenCalledTimes(1)
   })
 
   it('falls back to whole-document HTML if progressive append loses its insertion reference', async () => {

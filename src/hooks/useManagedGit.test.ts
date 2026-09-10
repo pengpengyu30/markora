@@ -21,6 +21,13 @@ describe('useManagedGit', () => {
     expect(mockInvoke).not.toHaveBeenCalled()
   })
 
+  it('does not probe when the Git feature gate is omitted', () => {
+    const { result } = renderHook(() => useManagedGit('/vault'))
+
+    expect(result.current.mode).toBe('unavailable')
+    expect(mockInvoke).not.toHaveBeenCalled()
+  })
+
   it('reports a managed workspace after detection', async () => {
     mockInvoke.mockResolvedValue({
       vaultRoot: '/vault',
@@ -31,7 +38,7 @@ describe('useManagedGit', () => {
       resolutionFailure: null,
     })
 
-    const { result } = renderHook(() => useManagedGit('/vault'))
+    const { result } = renderHook(() => useManagedGit('/vault', true))
 
     expect(result.current.mode).toBe('checking')
     await waitFor(() => expect(result.current.mode).toBe('managed'))
@@ -48,7 +55,7 @@ describe('useManagedGit', () => {
       resolutionFailure: null,
     })
 
-    const { result } = renderHook(() => useManagedGit('/vault'))
+    const { result } = renderHook(() => useManagedGit('/vault', true))
     await waitFor(() => expect(result.current.mode).toBe('readOnly'))
 
     mockInvoke.mockResolvedValueOnce({
@@ -71,7 +78,7 @@ describe('useManagedGit', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
     mockInvoke.mockRejectedValue(new Error('probe failed'))
 
-    const { result } = renderHook(() => useManagedGit('/vault'))
+    const { result } = renderHook(() => useManagedGit('/vault', true))
 
     await waitFor(() => expect(result.current.mode).toBe('unavailable'))
     expect(warnSpy).toHaveBeenCalledWith(

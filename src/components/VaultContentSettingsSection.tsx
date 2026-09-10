@@ -15,6 +15,7 @@ interface VaultContentSettingsSectionProps {
   setDefaultNoteWidth: (value: NoteWidthPreference) => void
   initialH1AutoRename: boolean
   setInitialH1AutoRename: (value: boolean) => void
+  gitEnabled: boolean
   hideGitignoredFiles: boolean
   setHideGitignoredFiles: (value: boolean) => void
   allNotesFileVisibility: AllNotesFileVisibility
@@ -63,6 +64,7 @@ export function VaultContentSettingsSection(functionOptions: VaultContentSetting
     setDefaultNoteWidth,
     initialH1AutoRename,
     setInitialH1AutoRename,
+    gitEnabled,
     hideGitignoredFiles,
     setHideGitignoredFiles,
     allNotesFileVisibility,
@@ -117,6 +119,7 @@ export function VaultContentSettingsSection(functionOptions: VaultContentSetting
           description={t('settings.vaultContent.hideGitignoredDescription')}
           checked={hideGitignoredFiles}
           onChange={setHideGitignoredFiles}
+          disabled={!gitEnabled}
           testId="settings-hide-gitignored-files"
         />
 

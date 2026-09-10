@@ -22,6 +22,17 @@ import {
   runConfiguredPlainTextPaste,
 } from './Editor.helpers.test'
 
+beforeEach(() => {
+  bindVaultConfigStore(
+    {
+      zoom: null,
+      view_mode: null,
+      editor_mode: 'preview',
+    },
+    vi.fn(),
+  )
+})
+
 describe('Editor', () => {
   beforeEach(() => {
     resetEditorTestState()
@@ -159,7 +170,6 @@ describe('Editor', () => {
       tabs: [{ entry: standalonePreviewEntry, content: '' }],
       activeTabPath: standalonePreviewEntry.path,
       entries: [standalonePreviewEntry],
-      vaultPath: '/vault',
     })
 
     expect(screen.getByTestId('file-preview-fallback')).toHaveTextContent('Preview unavailable')
@@ -459,7 +469,7 @@ describe('Editor', () => {
       {
         zoom: null,
         view_mode: null,
-        editor_mode: null,
+        editor_mode: 'preview',
       },
       vi.fn(),
     )
@@ -550,7 +560,7 @@ describe('Editor', () => {
       {
         zoom: null,
         view_mode: null,
-        editor_mode: null,
+        editor_mode: 'preview',
       },
       vi.fn(),
     )
@@ -606,7 +616,7 @@ describe('Editor', () => {
       {
         zoom: null,
         view_mode: null,
-        editor_mode: null,
+        editor_mode: 'preview',
       },
       vi.fn(),
     )

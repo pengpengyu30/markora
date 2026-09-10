@@ -1,5 +1,6 @@
 export const SETTINGS_SECTION_IDS = {
   projects: 'settings-section-projects',
+  git: 'settings-section-git',
   appearance: 'settings-section-appearance',
   content: 'settings-section-content',
 } as const

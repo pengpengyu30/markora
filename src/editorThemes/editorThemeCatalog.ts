@@ -670,7 +670,7 @@ const DEFAULT_LIGHT_VARIANT: EditorThemeVariantTokens = {
   embeddedControls: {
     background: '#EBEBEA', text: '#37352F', border: '#D9D9D6', hoverBackground: '#E0E0DE',
   },
-  behavior: { showRichCodeBlockLineNumbers: false },
+  behavior: { showRichCodeBlockLineNumbers: true },
   compatibility: {
     editorCodeBlockBackground: '#F7F6F3', editorCodeBlockBorder: '#E9E9E7',
     editorCodeBlockText: '#37352F', editorCodeBlockLanguage: '#787774',
@@ -720,7 +720,7 @@ const DEFAULT_DARK_VARIANT: EditorThemeVariantTokens = {
   embeddedControls: {
     background: '#34322D', text: '#E6E1D8', border: '#46433B', hoverBackground: '#403E37',
   },
-  behavior: { showRichCodeBlockLineNumbers: false },
+  behavior: { showRichCodeBlockLineNumbers: true },
   compatibility: {
     editorCodeBlockBackground: '#161616', editorCodeBlockBorder: 'transparent',
     editorCodeBlockText: '#FFFFFF', editorCodeBlockLanguage: 'rgba(255, 255, 255, 0.7)',
@@ -775,6 +775,7 @@ const EDITORIAL_LIGHT_VARIANT = createVariant(DEFAULT_LIGHT_VARIANT, {
   syntax: { foreground: '#302B2B', mutedPunctuation: '#5B5552', comment: '#625B57', keyword: '#9F1239', string: '#075985', number: '#1D4ED8', typeClass: '#9A3412', function: '#7D3045', variableProperty: '#0F766E', operator: '#7C2D12', tagAttribute: '#9A3412', invalidError: '#9F1239', selection: '#F2DDE2', activeLine: '#F8F1EC', codeSurface: '#F3EBE5', codeBorder: '#D5C5BC' },
   mermaid: { background: '#FCF9F5', text: '#302B2B', nodeBackground: '#F7F0EA', nodeBorder: '#5B5552', edge: '#8F3D52', cluster: '#F8F1EC', accent: '#8F3D52' },
   embeddedControls: { background: '#EFE5DE', text: '#302B2B', border: '#D5C5BC', hoverBackground: '#E5D8D0' },
+  behavior: { showRichCodeBlockLineNumbers: false },
   compatibility: { editorCodeBlockBackground: '#F3EBE5', editorCodeBlockBorder: '#D5C5BC', editorCodeBlockText: '#423839', editorCodeBlockLanguage: '#5B5552' },
 })
 const EDITORIAL_DARK_VARIANT = createVariant(DEFAULT_DARK_VARIANT, {
@@ -789,6 +790,7 @@ const EDITORIAL_DARK_VARIANT = createVariant(DEFAULT_DARK_VARIANT, {
   syntax: { foreground: '#F1E5DF', mutedPunctuation: '#D3BFB7', comment: '#C6B0A8', keyword: '#FFB4B7', string: '#A9D6FF', number: '#B6C7FF', typeClass: '#F6B26B', function: '#F2A7B8', variableProperty: '#86D8C5', operator: '#F2C879', tagAttribute: '#F6B26B', invalidError: '#FFB4AB', selection: '#5A303B', activeLine: '#2A2220', codeSurface: '#2A2221', codeBorder: '#624946' },
   mermaid: { background: '#211D1B', text: '#F1E5DF', nodeBackground: '#302625', nodeBorder: '#D3BFB7', edge: '#F2A7B8', cluster: '#2A2220', accent: '#E39AAA' },
   embeddedControls: { background: '#4A3937', text: '#F1E5DF', border: '#6A504D', hoverBackground: '#594442' },
+  behavior: { showRichCodeBlockLineNumbers: false },
   compatibility: { editorCodeBlockBackground: '#2A2221', editorCodeBlockBorder: '#624946', editorCodeBlockText: '#F1DDD5', editorCodeBlockLanguage: '#D3BFB7' },
 })
 
@@ -804,6 +806,7 @@ const CANVAS_LIGHT_VARIANT = createVariant(DEFAULT_LIGHT_VARIANT, {
   syntax: { foreground: '#263449', mutedPunctuation: '#536176', comment: '#5D6A7D', keyword: '#B42318', string: '#0E7490', number: '#4338A3', typeClass: '#9A3412', function: '#4338A3', variableProperty: '#0F766E', operator: '#92400E', tagAttribute: '#9A3412', invalidError: '#B42318', selection: '#E5E7FF', activeLine: '#EEF2F7', codeSurface: '#EEF2F7', codeBorder: '#C9D3E1' },
   mermaid: { background: '#F7F9FC', text: '#263449', nodeBackground: '#EFF3F9', nodeBorder: '#536176', edge: '#4F46B8', cluster: '#EEF2F7', accent: '#4F46B8' },
   embeddedControls: { background: '#E9EDF5', text: '#263449', border: '#C9D3E1', hoverBackground: '#DDE4F0' },
+  behavior: { showRichCodeBlockLineNumbers: false },
   compatibility: { editorCodeBlockBackground: '#EEF2F7', editorCodeBlockBorder: '#C9D3E1', editorCodeBlockText: '#263449', editorCodeBlockLanguage: '#536176' },
 })
 const CANVAS_DARK_VARIANT = createVariant(DEFAULT_DARK_VARIANT, {
@@ -818,6 +821,7 @@ const CANVAS_DARK_VARIANT = createVariant(DEFAULT_DARK_VARIANT, {
   syntax: { foreground: '#F1F3FF', mutedPunctuation: '#CCD1E1', comment: '#B8BED1', keyword: '#FFB4B7', string: '#A9D6FF', number: '#BFC8FF', typeClass: '#F6B26B', function: '#A8A4FF', variableProperty: '#86D8C5', operator: '#F2C879', tagAttribute: '#F6B26B', invalidError: '#FFAAA8', selection: '#413C70', activeLine: '#292C35', codeSurface: '#292C35', codeBorder: '#505666' },
   mermaid: { background: '#202225', text: '#F1F3FF', nodeBackground: '#2C303A', nodeBorder: '#CCD1E1', edge: '#A8A4FF', cluster: '#292C35', accent: '#A8A4FF' },
   embeddedControls: { background: '#3F4350', text: '#F1F3FF', border: '#5C6273', hoverBackground: '#4A4F5E' },
+  behavior: { showRichCodeBlockLineNumbers: false },
   compatibility: { editorCodeBlockBackground: '#292C35', editorCodeBlockBorder: '#505666', editorCodeBlockText: '#F1F3FF', editorCodeBlockLanguage: '#CCD1E1' },
 })
 

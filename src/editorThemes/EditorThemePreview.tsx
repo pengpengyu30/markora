@@ -60,6 +60,7 @@ export function EditorThemePreview({
       className="editor-theme-preview editor-theme-scope"
       data-editor-theme={theme.id}
       data-editor-theme-variant={theme.variant}
+      data-editor-code-line-numbers={theme.tokens.behavior.showRichCodeBlockLineNumbers ? 'true' : 'false'}
       data-editor-theme-scale="100"
       data-testid="settings-editor-theme-preview"
       style={style as React.CSSProperties}

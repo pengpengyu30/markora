@@ -414,6 +414,31 @@ describe('tolariaEditorFormatting behavior', () => {
     expect(formattingToolbarStore.setState).toHaveBeenCalledWith(false)
   })
 
+  it('keeps the block type menu open while focus moves into its external dropdown', () => {
+    const editor = createMockEditor('paragraph')
+    useBlockNoteEditorMock.mockReturnValue(editor)
+
+    render(<TolariaFormattingToolbarController />)
+
+    act(() => {
+      const onChange = blockTypeMenuState.lastProps?.onChange as ((opened: boolean) => void)
+      onChange(true)
+    })
+
+    const toolbarWrapper = screen.getByTestId('mock-formatting-toolbar').parentElement as HTMLElement
+    const externalDropdown = document.createElement('div')
+    externalDropdown.className = 'bn-select'
+    const externalMenuItem = document.createElement('button')
+    externalDropdown.appendChild(externalMenuItem)
+    document.body.appendChild(externalDropdown)
+
+    fireEvent.pointerLeave(toolbarWrapper, { relatedTarget: externalMenuItem })
+    fireEvent.blur(toolbarWrapper, { relatedTarget: externalMenuItem })
+
+    expect(blockTypeMenuState.lastProps?.opened).toBe(true)
+    expect(formattingToolbarStore.setState).not.toHaveBeenCalledWith(false)
+  })
+
   it('keeps the toolbar open during close grace and clears the timeout on unmount', () => {
     vi.useFakeTimers()
     const clearTimeoutSpy = vi.spyOn(window, 'clearTimeout')

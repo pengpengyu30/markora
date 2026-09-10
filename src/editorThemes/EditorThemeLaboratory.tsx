@@ -106,6 +106,7 @@ function LaboratoryPreview({
       data-editor-theme-preview={themeId}
       data-editor-theme-variant={variant}
       data-editor-theme-width={widthMode}
+      data-editor-code-line-numbers={theme.tokens.behavior.showRichCodeBlockLineNumbers ? 'true' : 'false'}
       style={style}
     >
       <header className="editor-theme-laboratory__preview-header">

@@ -1,6 +1,6 @@
 import { createExtension } from '@blocknote/core'
 import type { Node as ProsemirrorNode } from '@tiptap/pm/model'
-import { Plugin, PluginKey } from '@tiptap/pm/state'
+import { Plugin, PluginKey, type Transaction } from '@tiptap/pm/state'
 import { Decoration, DecorationSet, type DecorationSet as ProsemirrorDecorationSet } from '@tiptap/pm/view'
 
 const CALLOUT_MARKER_PATTERN = /^\s*\[![^\]\s]+\](?![+-])[ \t]*/u
@@ -48,6 +48,36 @@ function buildTextDirectionDecorations(doc: ProsemirrorNode): ProsemirrorDecorat
   return DecorationSet.create(doc, decorations)
 }
 
+function rangeTouchesQuote(doc: ProsemirrorNode, from: number, to: number): boolean {
+  const start = Math.max(0, Math.min(from, doc.content.size))
+  const end = Math.max(start, Math.min(to, doc.content.size))
+  if (start === end) return doc.resolve(start).parent.type.name === QUOTE_NODE_TYPE
+
+  let touched = false
+  doc.nodesBetween(start, end, (node) => {
+    if (node.type.name !== QUOTE_NODE_TYPE) return true
+    touched = true
+    return false
+  })
+  return touched
+}
+
+/** Avoid rebuilding RTL quote decorations for edits outside quote blocks. */
+export function richEditorTransactionTouchesQuote(transaction: Transaction): boolean {
+  if (!transaction.docChanged || !transaction.before) return false
+
+  for (const map of transaction.mapping.maps) {
+    let touched = false
+    map.forEach((oldStart, oldEnd, newStart, newEnd) => {
+      touched = touched
+        || rangeTouchesQuote(transaction.before, oldStart, oldEnd)
+        || rangeTouchesQuote(transaction.doc, newStart, newEnd)
+    })
+    if (touched) return true
+  }
+  return false
+}
+
 export const createRichEditorTextDirectionExtension = createExtension(() => ({
   key: 'richEditorTextDirection',
   prosemirrorPlugins: [
@@ -59,7 +89,7 @@ export const createRichEditorTextDirectionExtension = createExtension(() => ({
       state: {
         init: (_, state) => buildTextDirectionDecorations(state.doc),
         apply: (transaction, decorations) => (
-          transaction.docChanged
+          richEditorTransactionTouchesQuote(transaction)
             ? buildTextDirectionDecorations(transaction.doc)
             : decorations.map(transaction.mapping, transaction.doc)
         ),

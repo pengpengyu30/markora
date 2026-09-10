@@ -138,7 +138,51 @@ describe('preProcessRichEditorMarkdown', () => {
       blocks: resolved.blocks,
       editor,
       tabContent: content,
-    })).toBe(`${content}\n`)
+    })).toBe(content)
+  })
+
+  it('does not reformat untouched Markdown when a rich-editor line changes', async () => {
+    const editor = BlockNoteEditor.create({ schema })
+    installRichEditorMarkdownSerializer(editor)
+    const content = [
+      '# Root',
+      '',
+      '1. Parent',
+      '',
+      '   1. Child',
+      '',
+      '      ~~~markdown',
+      '      # Inner Markdown',
+      '',
+      '      **bold** and `inline code`',
+      '      ~~~',
+      '',
+      '2. Keep this line',
+      '',
+    ].join('\n')
+
+    const resolved = await resolveBlocksForTarget({
+      cache: new Map(),
+      content,
+      editor,
+      targetPath: 'source-preserving-edit.md',
+    })
+    const editedBlocks = structuredClone(resolved.blocks) as Array<{
+      content?: Array<{ text?: string }>
+      type?: string
+    }>
+    const editedItem = editedBlocks.find((block) => (
+      block.type === 'numberedListItem'
+      && block.content?.[0]?.text === 'Keep this line'
+    ))
+    if (!editedItem?.content?.[0]) throw new Error('Expected the editable list item')
+    editedItem.content[0].text = 'Keep this edited line'
+
+    expect(serializeRichEditorDocumentToMarkdown({
+      blocks: editedBlocks,
+      editor,
+      tabContent: content,
+    })).toBe(content.replace('2. Keep this line', '2. Keep this edited line'))
   })
 
   it('keeps underscored wikilinks stable across repeated rich-editor reloads', async () => {
@@ -172,7 +216,7 @@ describe('preProcessRichEditorMarkdown', () => {
       blocks: secondResolution.blocks,
       editor,
       tabContent: firstSave,
-    })).toBe(`${content}\n`)
+    })).toBe(content)
   })
 
   it('keeps empty-alt image embeds as editable image blocks', async () => {
@@ -204,7 +248,7 @@ describe('preProcessRichEditorMarkdown', () => {
       notePath: targetPath,
       tabContent: content,
       vaultPath: '/vault',
-    })).toBe(`${content}\n`)
+    })).toBe(content)
   })
 
   it('preserves manually inserted blank paragraphs through rich/raw round-trips', async () => {
@@ -233,7 +277,7 @@ describe('preProcessRichEditorMarkdown', () => {
       blocks: resolved.blocks,
       editor,
       tabContent: content,
-    })).toBe(`${content}\n`)
+    })).toBe(content)
   })
 
   it('preserves blank quoted paragraphs through rich/raw round-trips', async () => {
@@ -257,7 +301,7 @@ describe('preProcessRichEditorMarkdown', () => {
       blocks: resolved.blocks,
       editor,
       tabContent: content,
-    })).toBe(`${content}\n`)
+    })).toBe(content)
   })
 
   it('keeps nested ordered-list hierarchy when resolving Markdown into editor blocks', async () => {

@@ -25,6 +25,9 @@ function inlineContentSignature(content: unknown): unknown[] {
     return {
       type: item.type,
       text: item.text,
+      href: item.href,
+      props: item.props,
+      styles: item.styles,
       content: inlineContentSignature(item.content),
     }
   })

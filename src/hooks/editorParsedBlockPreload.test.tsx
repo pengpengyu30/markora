@@ -178,4 +178,21 @@ describe('useParsedBlockPreload', () => {
     })
     expect(prepareParsedBlocks).toHaveBeenCalledWith(expect.objectContaining({ path: entry.path }))
   })
+
+  it('does not repeatedly retry warm parsing while source mode is active', async () => {
+    const entry = makeEntry({ path: '/vault/source-mode.md' })
+    const refs = makeRefs({ rawMode: true })
+    const prepareParsedBlocks = vi.fn(async () => {})
+
+    renderParsedPreload(refs, prepareParsedBlocks)
+    cacheNoteContent(entry.path, '# Source mode\n\nBody', entry)
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(PARSED_BLOCK_PRELOAD_DELAY_MS)
+      await vi.advanceTimersByTimeAsync(PARSED_BLOCK_PRELOAD_DELAY_MS * 3)
+    })
+
+    expect(prepareParsedBlocks).not.toHaveBeenCalled()
+    expect(vi.getTimerCount()).toBe(0)
+  })
 })

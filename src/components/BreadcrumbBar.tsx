@@ -557,7 +557,7 @@ function useBreadcrumbOverflow(
       cancelAnimationFrame(frame)
       resizeObserver.disconnect()
     }
-  })
+  }, [actionsRef, collapsed, titleRef])
 
   return collapsed
 }

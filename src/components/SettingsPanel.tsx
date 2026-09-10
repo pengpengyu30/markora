@@ -1,4 +1,4 @@
-import { Monitor, Moon, Sun, X } from '@phosphor-icons/react'
+import { GitBranch, Monitor, Moon, Sun, X } from '@phosphor-icons/react'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Settings } from '../types'
 import type { VaultOption } from './status-bar/types'
@@ -29,6 +29,7 @@ import {
   SettingsGroup,
   SettingsRow,
   SettingsSection,
+  SettingsSwitchRow,
 } from './SettingsControls'
 import { SettingsFooter } from './SettingsFooter'
 import { VaultContentSettingsSection } from './VaultContentSettingsSection'
@@ -73,6 +74,7 @@ interface SettingsPanelProps {
 }
 
 interface SettingsDraft {
+  gitEnabled: boolean
   themeMode: ThemeMode
   editorTheme: EditorThemeId
   uiLanguage: UiLanguagePreference
@@ -88,6 +90,8 @@ interface SettingsDraft {
 
 interface SettingsBodyProps {
   t: Translate
+  gitEnabled: boolean
+  setGitEnabled: (value: boolean) => void
   themeMode: ThemeMode
   setThemeMode: (value: ThemeMode) => void
   editorTheme: EditorThemeId
@@ -134,13 +138,14 @@ function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
 
 function createSettingsDraft(settings: Settings): SettingsDraft {
   return {
+    gitEnabled: settings.git_enabled === true,
     themeMode: resolveSettingsDraftThemeMode(settings.theme_mode),
     editorTheme: normalizeEditorThemeId(settings.editor_theme),
     uiLanguage: settings.ui_language ?? SYSTEM_UI_LANGUAGE,
     dateDisplayFormat: normalizeDateDisplayFormat(settings.date_display_format) ?? DEFAULT_DATE_DISPLAY_FORMAT,
     defaultNoteWidth: normalizeNoteWidthMode(settings.note_width_mode),
     initialH1AutoRename: settings.initial_h1_auto_rename_enabled ?? true,
-    hideGitignoredFiles: shouldHideGitignoredFiles(settings),
+    hideGitignoredFiles: settings.git_enabled === true && shouldHideGitignoredFiles(settings),
     allNotesFileVisibility: resolveAllNotesFileVisibility(settings),
     noteListShowFilename: settings.note_list_show_filename === true,
     folderViewShowNonMarkdown: settings.folder_view_show_non_markdown === true,
@@ -157,13 +162,14 @@ function resolveSettingsDraftThemeMode(themeMode: Settings['theme_mode']): Theme
 function buildSettingsFromDraft(settings: Settings, draft: SettingsDraft): Settings {
   const nextSettings = {
     ...settings,
+    git_enabled: draft.gitEnabled,
     theme_mode: draft.themeMode,
     editor_theme: draft.editorTheme,
     ui_language: serializeUiLanguagePreference(draft.uiLanguage),
     date_display_format: draft.dateDisplayFormat,
     note_width_mode: draft.defaultNoteWidth,
     initial_h1_auto_rename_enabled: draft.initialH1AutoRename,
-    hide_gitignored_files: draft.hideGitignoredFiles,
+    hide_gitignored_files: draft.gitEnabled ? draft.hideGitignoredFiles : false,
     note_list_show_filename: draft.noteListShowFilename,
     folder_view_show_non_markdown: draft.folderViewShowNonMarkdown,
     multi_workspace_enabled: draft.multiProjectEnabled,
@@ -492,6 +498,8 @@ function SettingsBodyFromDraft(options: SettingsBodyFromDraftProps) {
   return (
     <SettingsBody
       t={t}
+      gitEnabled={draft.gitEnabled}
+      setGitEnabled={(value) => updateDraft('gitEnabled', value)}
       locale={locale}
       systemLocale={systemLocale}
       themeMode={draft.themeMode}
@@ -532,10 +540,32 @@ function SettingsBody(props: SettingsBodyProps) {
       <SettingsBodyNav t={props.t} />
       <div className="min-w-0 flex-1 overflow-auto px-6 py-4">
         <SettingsProjectSections {...props} />
+        <SettingsGitSection {...props} />
         <SettingsSyncAndAppearanceSections {...props} />
         <SettingsContentSections {...props} />
       </div>
     </div>
+  )
+}
+
+function SettingsGitSection({
+  gitEnabled,
+  setGitEnabled,
+  t,
+}: Pick<SettingsBodyProps, 'gitEnabled' | 'setGitEnabled' | 't'>) {
+  return (
+    <SettingsSection id={SETTINGS_SECTION_IDS.git}>
+      <SectionHeading icon={<GitBranch size={16} aria-hidden="true" />} title={t('settings.autogit.title')} />
+      <SettingsGroup>
+        <SettingsSwitchRow
+          label={t('settings.git.enable')}
+          description={t('settings.git.enableDescription')}
+          checked={gitEnabled}
+          onChange={setGitEnabled}
+          testId="settings-git-enabled"
+        />
+      </SettingsGroup>
+    </SettingsSection>
   )
 }
 
@@ -597,7 +627,7 @@ function SettingsSyncAndAppearanceSections(options: SettingsBodyProps) {
 }
 
 function SettingsContentSections(options: SettingsBodyProps) {
-  const { t, dateDisplayFormat, setDateDisplayFormat, defaultNoteWidth, setDefaultNoteWidth, initialH1AutoRename, setInitialH1AutoRename, hideGitignoredFiles, setHideGitignoredFiles, allNotesFileVisibility, setAllNotesFileVisibility, noteListShowFilename, setNoteListShowFilename, folderViewShowNonMarkdown, setFolderViewShowNonMarkdown } = options
+  const { t, dateDisplayFormat, setDateDisplayFormat, defaultNoteWidth, setDefaultNoteWidth, initialH1AutoRename, setInitialH1AutoRename, gitEnabled, hideGitignoredFiles, setHideGitignoredFiles, allNotesFileVisibility, setAllNotesFileVisibility, noteListShowFilename, setNoteListShowFilename, folderViewShowNonMarkdown, setFolderViewShowNonMarkdown } = options
   return (
     <SettingsSection id={SETTINGS_SECTION_IDS.content}>
       <VaultContentSettingsSection
@@ -608,6 +638,7 @@ function SettingsContentSections(options: SettingsBodyProps) {
         setDefaultNoteWidth={setDefaultNoteWidth}
         initialH1AutoRename={initialH1AutoRename}
         setInitialH1AutoRename={setInitialH1AutoRename}
+        gitEnabled={gitEnabled}
         hideGitignoredFiles={hideGitignoredFiles}
         setHideGitignoredFiles={setHideGitignoredFiles}
         allNotesFileVisibility={allNotesFileVisibility}

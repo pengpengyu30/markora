@@ -108,6 +108,22 @@ describe('StatusBar', () => {
     expect(screen.getByText('Main Vault')).toBeInTheDocument()
   })
 
+  it('does not truncate the active Project label in the bottom bar', () => {
+    const longLabel = 'tolaria-customize-workspace-with-a-long-name'
+    render(
+      <StatusBar
+        noteCount={100}
+        vaultPath="/Users/luca/Laputa"
+        vaults={[{ label: longLabel, path: '/Users/luca/Laputa' }]}
+        onSwitchVault={vi.fn()}
+      />,
+    )
+
+    const label = screen.getByText(longLabel)
+    expect(label).not.toHaveClass('truncate')
+    expect(label).not.toHaveClass('max-w-32')
+  })
+
   it('shows fallback "Project" when vault path does not match', () => {
     render(<StatusBar noteCount={100} vaultPath="/unknown/path" vaults={vaults} onSwitchVault={vi.fn()} />)
     expect(screen.getByText('Project')).toBeInTheDocument()

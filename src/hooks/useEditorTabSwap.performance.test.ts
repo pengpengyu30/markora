@@ -106,6 +106,62 @@ describe('useEditorTabSwap rich-editor serialization performance', () => {
     expect(editor.blocksToMarkdownLossy).not.toHaveBeenCalled()
   })
 
+  it('does not enqueue a write when a delayed editor event serializes the original source', async () => {
+    installEditorDomSpies()
+    const tab = makeTab('a.md', 'Note A')
+    const onContentChange = vi.fn()
+    const docRef = { current: initialBlocks as unknown[] }
+    const editor = makeMockEditor(docRef)
+    editor.blocksToMarkdownLossy.mockReturnValue('# Note A\n\nBody of Note A.')
+
+    const { result } = renderHook(
+      () => useEditorTabSwap({
+        tabs: [tab],
+        activeTabPath: 'a.md',
+        rawMode: false,
+        editor: editor as never,
+        onContentChange,
+      }),
+    )
+    await flushEditorTick()
+
+    act(() => {
+      result.current.handleEditorChange()
+      result.current.flushPendingEditorChange()
+    })
+
+    expect(onContentChange).not.toHaveBeenCalled()
+  })
+
+  it('ignores a delayed programmatic event even when its serializer output is lossy', async () => {
+    installEditorDomSpies()
+    const tab = makeTab('a.md', 'Note A')
+    const onContentChange = vi.fn()
+    const docRef = { current: initialBlocks as unknown[] }
+    const editor = makeMockEditor(docRef)
+    editor.blocksToMarkdownLossy.mockReturnValue('# Lossy serializer output')
+
+    const { result } = renderHook(
+      () => useEditorTabSwap({
+        tabs: [tab],
+        activeTabPath: 'a.md',
+        rawMode: false,
+        editor: editor as never,
+        onContentChange,
+      }),
+    )
+    await flushEditorTick()
+    await flushEditorTick()
+    await flushEditorTick()
+
+    act(() => {
+      result.current.handleEditorChange()
+      result.current.flushPendingEditorChange()
+    })
+
+    expect(onContentChange).not.toHaveBeenCalled()
+  })
+
   it('reads the BlockNote document only once when flushing a rich-editor change', async () => {
     installEditorDomSpies()
     const tab = makeTab('a.md', 'Note A')

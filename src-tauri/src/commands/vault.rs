@@ -264,9 +264,12 @@ mod tests {
         let dir = tempfile::TempDir::new().unwrap();
         let vault_path = dir.path().join("fresh-vault");
 
-        let result = create_empty_vault(vault_path.to_string_lossy().to_string());
+        let result = super::lifecycle_cmds::create_empty_vault_with_git_enabled(
+            vault_path.to_string_lossy().as_ref(),
+            false,
+        );
         assert!(result.is_ok());
-        assert_paths_exist(&vault_path, &[".git"]);
+        assert_paths_absent(&vault_path, &[".git"]);
         assert_paths_absent(&vault_path, &["config.md"]);
         assert_paths_absent(&vault_path, &["AGENTS.md", "CLAUDE.md", "GEMINI.md"]);
         assert_paths_absent(&vault_path, &["type.md", "note.md"]);

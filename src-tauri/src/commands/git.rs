@@ -5,11 +5,24 @@ use super::expand_tilde;
 type VaultPathArg = String;
 
 #[cfg(desktop)]
+fn disabled_workspace_info(vault_path: String) -> GitWorkspaceInfo {
+    GitWorkspaceInfo {
+        vault_root: vault_path,
+        git_root: None,
+        vault_pathspec: None,
+        git_root_relation: "none".to_string(),
+        mode: "none".to_string(),
+        resolution_failure: Some("git_disabled".to_string()),
+    }
+}
+
+#[cfg(desktop)]
 #[tauri::command]
 pub async fn get_modified_files(
     vault_path: VaultPathArg,
     include_stats: Option<bool>,
 ) -> Result<Vec<ModifiedFile>, String> {
+    crate::settings::require_git_features_enabled()?;
     let vault_path = expand_tilde(&vault_path).into_owned();
     tokio::task::spawn_blocking(move || {
         if include_stats.unwrap_or(false) {
@@ -25,6 +38,7 @@ pub async fn get_modified_files(
 #[cfg(desktop)]
 #[tauri::command]
 pub fn git_snapshot(vault_path: VaultPathArg) -> Result<String, String> {
+    crate::settings::require_git_features_enabled()?;
     let vault_path = expand_tilde(&vault_path);
     crate::git::git_snapshot(&vault_path)
 }
@@ -33,12 +47,16 @@ pub fn git_snapshot(vault_path: VaultPathArg) -> Result<String, String> {
 #[tauri::command]
 pub fn git_workspace_info(vault_path: VaultPathArg) -> GitWorkspaceInfo {
     let vault_path = expand_tilde(&vault_path);
+    if !crate::settings::git_features_enabled_globally() {
+        return disabled_workspace_info(vault_path.into_owned());
+    }
     crate::git::git_workspace_info(std::path::Path::new(vault_path.as_ref()))
 }
 
 #[cfg(desktop)]
 #[tauri::command]
 pub fn ensure_git_repository(vault_path: VaultPathArg) -> Result<GitWorkspaceInfo, String> {
+    crate::settings::require_git_features_enabled()?;
     let vault_path = expand_tilde(&vault_path).into_owned();
     crate::git::ensure_vault_repository(std::path::Path::new(&vault_path))?;
     Ok(crate::git::git_workspace_info(std::path::Path::new(
@@ -49,6 +67,7 @@ pub fn ensure_git_repository(vault_path: VaultPathArg) -> Result<GitWorkspaceInf
 #[cfg(desktop)]
 #[tauri::command]
 pub fn list_deleted_notes(vault_path: VaultPathArg) -> Result<Vec<DeletedNote>, String> {
+    crate::settings::require_git_features_enabled()?;
     let vault_path = expand_tilde(&vault_path);
     crate::git::list_deleted_notes(vault_path.as_ref())
 }
@@ -59,6 +78,7 @@ pub fn get_deleted_note_preview(
     vault_path: VaultPathArg,
     relative_path: String,
 ) -> Result<DeletedNotePreview, String> {
+    crate::settings::require_git_features_enabled()?;
     let vault_path = expand_tilde(&vault_path);
     crate::git::get_deleted_note_preview(vault_path.as_ref(), &relative_path)
 }
@@ -69,6 +89,7 @@ pub fn restore_deleted_note(
     vault_path: VaultPathArg,
     relative_path: String,
 ) -> Result<RestoredNote, String> {
+    crate::settings::require_git_features_enabled()?;
     let vault_path = expand_tilde(&vault_path);
     crate::git::restore_deleted_note(vault_path.as_ref(), &relative_path)
 }

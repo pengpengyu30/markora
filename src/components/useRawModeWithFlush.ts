@@ -367,6 +367,7 @@ export function useRawModeWithFlush(
 
   const { rawMode, handleToggleRaw } = useRawMode({
     activeTabPath,
+    projectPath: vaultPath,
     onFlushPending: handleFlushPending,
     onBeforeRawEnd: handleBeforeRawEnd,
   })

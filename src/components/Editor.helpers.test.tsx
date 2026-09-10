@@ -4,6 +4,7 @@ import { expect, it, vi } from 'vitest'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { clearParsedNoteBlockCache } from '../hooks/editorParsedBlockCache'
 import type { VaultEntry } from '../types'
+import { bindVaultConfigStore } from '../utils/vaultConfigStore'
 
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
@@ -325,6 +326,7 @@ export async function flushEditorSwapWork() {
 }
 
 export function resetEditorTestState() {
+  bindVaultConfigStore({ zoom: null, view_mode: null, editor_mode: 'preview' }, vi.fn())
   blockNoteCreation.options = []
   blockNoteViewState.onChange = null
   mockEditor.document = [{ id: '1', type: 'paragraph', content: [], props: {}, children: [] }]

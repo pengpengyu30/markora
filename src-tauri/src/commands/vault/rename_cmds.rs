@@ -226,16 +226,26 @@ pub fn auto_rename_untitled(
 
 #[tauri::command]
 pub fn detect_renames(args: VaultPathCommandArgs) -> Result<Vec<DetectedRename>, String> {
+    crate::settings::require_git_features_enabled()?;
     let vault_path = expand_tilde(&args.vault_path);
-    vault::detect_renames(Path::new(vault_path.as_ref()))
+    detect_renames_at(Path::new(vault_path.as_ref()))
 }
 
 #[tauri::command]
 pub fn update_wikilinks_for_renames(
     args: UpdateWikilinksForRenamesCommandArgs,
 ) -> Result<usize, String> {
+    crate::settings::require_git_features_enabled()?;
     let vault_path = expand_tilde(&args.vault_path);
-    vault::update_wikilinks_for_renames(Path::new(vault_path.as_ref()), &args.renames)
+    update_wikilinks_at(Path::new(vault_path.as_ref()), &args.renames)
+}
+
+fn detect_renames_at(vault_path: &Path) -> Result<Vec<DetectedRename>, String> {
+    vault::detect_renames(vault_path)
+}
+
+fn update_wikilinks_at(vault_path: &Path, renames: &[DetectedRename]) -> Result<usize, String> {
+    vault::update_wikilinks_for_renames(vault_path, renames)
 }
 
 #[cfg(test)]
@@ -359,20 +369,13 @@ mod tests {
             .output()
             .unwrap();
 
-        let renames = detect_renames(VaultPathCommandArgs {
-            vault_path: vault.clone(),
-        })
-        .unwrap();
+        let renames = detect_renames_at(Path::new(&vault)).unwrap();
         assert_eq!(renames.len(), 1);
         assert_eq!(renames[0].old_path, "project-plan.md");
         assert_eq!(renames[0].new_path, "plans.md");
 
         assert_eq!(
-            update_wikilinks_for_renames(UpdateWikilinksForRenamesCommandArgs {
-                vault_path: vault,
-                renames,
-            })
-            .unwrap(),
+            update_wikilinks_at(Path::new(&vault), &renames).unwrap(),
             0,
         );
     }

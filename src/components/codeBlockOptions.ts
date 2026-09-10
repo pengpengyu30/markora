@@ -135,6 +135,13 @@ export function createTolariaShikiTheme(theme: EffectiveEditorTheme): TolariaShi
       syntaxRule(['keyword.operator', 'punctuation.definition.operator'], syntax.operator),
       syntaxRule(['entity.other.attribute-name', 'entity.other.inherited-class'], syntax.tagAttribute),
       syntaxRule(['invalid', 'invalid.illegal', 'invalid.deprecated'], syntax.invalidError),
+      // Markdown is also a code-block language. Keep its structure visible inside
+      // nested `markdown` fences instead of flattening every token to the body color.
+      syntaxRule(['markup.heading', 'entity.name.section'], syntax.function, 'bold'),
+      syntaxRule(['markup.inline.raw', 'markup.raw.inline'], syntax.typeClass),
+      syntaxRule('punctuation.definition.list.begin', syntax.number),
+      syntaxRule('markup.italic', syntax.string, 'italic'),
+      syntaxRule('markup.bold', syntax.foreground, 'bold'),
     ],
     colors: {
       'editor.background': syntax.codeSurface,
@@ -265,8 +272,73 @@ async function expandLanguage(language: TolariaLanguageInput): Promise<TolariaLa
   return expandGoLanguage(language) ?? await expandExternalLanguage(language) ?? [language]
 }
 
+export function createCachedLanguageLoader<T>(
+  loadLanguage: (...languages: T[]) => Promise<unknown>,
+  keyForLanguage: (language: T) => string | null,
+): (...languages: T[]) => Promise<void> {
+  const pendingLoads = new Map<string, Promise<void>>()
+
+  return async (...languages: T[]) => {
+    const loads = languages.map((language) => {
+      const key = keyForLanguage(language)
+      if (key === null) return Promise.resolve(loadLanguage(language)).then(() => undefined)
+
+      const existing = pendingLoads.get(key)
+      if (existing) return existing
+
+      const pending = Promise.resolve(loadLanguage(language)).then(
+        () => undefined,
+        (error: unknown) => {
+          pendingLoads.delete(key)
+          throw error
+        },
+      )
+      pendingLoads.set(key, pending)
+      return pending
+    })
+
+    await Promise.all(loads)
+  }
+}
+
+export function createMemoizedCodeToTokens<TOptions, TResult>(
+  codeToTokens: (source: string, options: TOptions) => TResult,
+): (source: string, options: TOptions) => TResult {
+  const cache = new Map<string, TResult>()
+  const maxEntries = 512
+
+  return (source, options) => {
+    let key: string
+    try {
+      key = JSON.stringify([source, options])
+    } catch {
+      return codeToTokens(source, options)
+    }
+
+    const cached = cache.get(key)
+    if (cached !== undefined) return cached
+
+    const result = codeToTokens(source, options)
+    cache.set(key, result)
+    if (cache.size > maxEntries) {
+      const oldestKey = cache.keys().next().value
+      if (oldestKey !== undefined) cache.delete(oldestKey)
+    }
+    return result
+  }
+}
+
 async function createTolariaCodeHighlighter(): Promise<TolariaCodeHighlighter> {
   const highlighter = await codeBlockOptions.createHighlighter()
+  const loadLanguageWithCache = createCachedLanguageLoader<TolariaLanguageInput>(
+    (...languages) => highlighter.loadLanguage(...languages),
+    (language) => typeof language === 'string' ? language.trim().toLowerCase() : null,
+  )
+  const codeToTokensWithCache = createMemoizedCodeToTokens(
+    (source: string, options: Parameters<TolariaCodeHighlighter['codeToTokens']>[1]) => (
+      highlighter.codeToTokens(source, options)
+    ),
+  )
   const controller: TolariaCodeThemeController = {
     currentThemeName: '',
     highlighter,
@@ -283,9 +355,10 @@ async function createTolariaCodeHighlighter(): Promise<TolariaCodeHighlighter> {
   return {
     ...highlighter,
     getLoadedThemes: () => prioritizeTheme(highlighter.getLoadedThemes(), controller.currentThemeName),
+    codeToTokens: codeToTokensWithCache,
     loadLanguage: async (...languages) => {
       const expandedLanguages = await Promise.all(languages.map(expandLanguage))
-      return highlighter.loadLanguage(...expandedLanguages.flat())
+      await loadLanguageWithCache(...expandedLanguages.flat())
     },
   }
 }
@@ -302,7 +375,9 @@ export function createTolariaCodeBlockOptions(): Partial<CodeBlockOptions> {
     },
   }
 
-  if (supportsShikiRegexFeatures()) return options
+  if (supportsShikiRegexFeatures()) {
+    return options
+  }
 
   delete options.createHighlighter
   return options

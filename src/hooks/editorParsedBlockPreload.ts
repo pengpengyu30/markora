@@ -131,7 +131,7 @@ export function useParsedBlockPreload({
         pending: queueRef.current.values().next().value as NoteContentResolvedEvent | undefined,
         rawModeRef,
       })
-      scheduleNext()
+      if (!rawModeRef.current) scheduleNext()
       return
     }
 
@@ -158,6 +158,7 @@ export function useParsedBlockPreload({
     const queue = queueRef.current
     const unsubscribe = subscribeNoteContentResolved((event) => {
       if (!canPreloadParsedBlocks(event, activeTabPathRef.current)) return
+      if (rawModeRef.current) return
       queue.set(event.path, event)
       logQueuedPreload(event)
       scheduleNext()
@@ -167,5 +168,5 @@ export function useParsedBlockPreload({
       clearScheduledTimer(timerRef)
       queue.clear()
     }
-  }, [activeTabPathRef, scheduleNext])
+  }, [activeTabPathRef, rawModeRef, scheduleNext])
 }

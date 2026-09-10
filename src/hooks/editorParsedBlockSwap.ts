@@ -28,6 +28,7 @@ export function scheduleParsedBlockSwap(options: {
   prevActivePathRef: MutableRefObject<string | null>
   suppressChangeRef: MutableRefObject<boolean>
   editorContentPathRef: EditorContentPathRef
+  onContentApplied?: (path: string, blocks: unknown[]) => void
   swapSeqRef: MutableRefObject<number>
   tabsRef: MutableRefObject<Tab[]>
   token: SwapToken
@@ -43,6 +44,7 @@ export function scheduleParsedBlockSwap(options: {
     prevActivePathRef,
     suppressChangeRef,
     editorContentPathRef,
+    onContentApplied,
     swapSeqRef,
     tabsRef,
     token,
@@ -63,6 +65,7 @@ export function scheduleParsedBlockSwap(options: {
         scrollTop: appliedScroll,
         suppressChangeRef,
         editorContentPathRef,
+        onContentApplied,
         targetPath,
         shouldAbort,
       })

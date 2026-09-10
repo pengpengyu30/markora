@@ -59,6 +59,16 @@ fn has_getting_started_template_marker(path: &Path) -> bool {
 
 /// Create the local starter vault in the requested path.
 pub fn create_getting_started_vault(target_path: &str) -> Result<String, String> {
+    create_getting_started_vault_with_git_enabled(
+        target_path,
+        crate::settings::git_features_enabled_globally(),
+    )
+}
+
+fn create_getting_started_vault_with_git_enabled(
+    target_path: &str,
+    git_enabled: bool,
+) -> Result<String, String> {
     let target_path = Path::new(target_path);
     let target_path_str = target_path.to_string_lossy();
     if target_path_str.trim().is_empty() {
@@ -69,7 +79,9 @@ pub fn create_getting_started_vault(target_path: &str) -> Result<String, String>
     ensure_empty_destination(target_path)?;
 
     let result = write_local_template(target_path).and_then(|()| {
-        crate::git::ensure_vault_repository(target_path)?;
+        if git_enabled {
+            crate::git::ensure_vault_repository(target_path)?;
+        }
         canonical_vault_path(target_path)
     });
 
@@ -153,7 +165,8 @@ mod tests {
         let dir = tempfile::TempDir::new().unwrap();
         let dest = dir.path().join("Getting Started");
 
-        let result = create_getting_started_vault(dest.to_str().unwrap()).unwrap();
+        let result = create_getting_started_vault_with_git_enabled(dest.to_str().unwrap(), true)
+            .unwrap();
 
         assert_eq!(result, dest.canonicalize().unwrap().to_string_lossy());
         assert_eq!(
@@ -197,7 +210,8 @@ mod tests {
         let dir = tempfile::TempDir::new().unwrap();
         let dest = dir.path().join("Getting Started");
 
-        let result = create_getting_started_vault(dest.to_str().unwrap()).unwrap();
+        let result = create_getting_started_vault_with_git_enabled(dest.to_str().unwrap(), true)
+            .unwrap();
 
         assert_eq!(result, dest.canonicalize().unwrap().to_string_lossy());
         assert!(dest.join("welcome.md").exists());
@@ -213,7 +227,8 @@ mod tests {
         let dir = tempfile::TempDir::new().unwrap();
         let default_path = dir.path().join("Getting Started");
 
-        create_getting_started_vault(default_path.to_str().unwrap()).unwrap();
+        create_getting_started_vault_with_git_enabled(default_path.to_str().unwrap(), true)
+            .unwrap();
 
         assert!(vault_exists_with_default_path(
             &default_path,
@@ -238,7 +253,7 @@ mod tests {
         let dir = tempfile::TempDir::new().unwrap();
         let dest = dir.path().join("Getting Started");
 
-        create_getting_started_vault(dest.to_str().unwrap()).unwrap();
+        create_getting_started_vault_with_git_enabled(dest.to_str().unwrap(), true).unwrap();
 
         let output = std::process::Command::new("git")
             .args(["remote", "get-url", "origin"])
@@ -247,5 +262,16 @@ mod tests {
             .unwrap();
         assert!(!output.status.success());
         assert!(String::from_utf8_lossy(&output.stdout).trim().is_empty());
+    }
+
+    #[test]
+    fn create_getting_started_vault_skips_git_when_features_are_disabled() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let dest = dir.path().join("Getting Started");
+
+        create_getting_started_vault_with_git_enabled(dest.to_str().unwrap(), false).unwrap();
+
+        assert!(dest.join("welcome.md").is_file());
+        assert!(!dest.join(".git").exists());
     }
 }

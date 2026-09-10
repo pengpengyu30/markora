@@ -4,6 +4,7 @@ import { isTauri } from '../mock-tauri'
 import type { DetectedRename } from '../components/RenameDetectedBanner'
 
 interface UseVaultRenameDetectionArgs {
+  enabled?: boolean
   vaultPath: string
   reloadVault: () => unknown
   setToastMessage: (message: string) => void
@@ -16,6 +17,7 @@ interface UseVaultRenameDetectionResult {
 }
 
 export function useVaultRenameDetection({
+  enabled = true,
   vaultPath,
   reloadVault,
   setToastMessage,
@@ -23,7 +25,12 @@ export function useVaultRenameDetection({
   const [detectedRenames, setDetectedRenames] = useState<DetectedRename[]>([])
 
   useEffect(() => {
-    if (!isTauri() || !vaultPath) return
+    if (!enabled || !isTauri() || !vaultPath) {
+      // Reset stale detections when Git is disabled or the Project disappears.
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronize gate-driven UI state
+      setDetectedRenames([])
+      return
+    }
 
     const handleFocus = () => {
       invoke<DetectedRename[]>('detect_renames', { args: { vaultPath } })
@@ -35,10 +42,10 @@ export function useVaultRenameDetection({
 
     window.addEventListener('focus', handleFocus)
     return () => window.removeEventListener('focus', handleFocus)
-  }, [vaultPath])
+  }, [enabled, vaultPath])
 
   const handleUpdateWikilinks = useCallback(async () => {
-    if (!isTauri()) return
+    if (!enabled || !isTauri()) return
 
     try {
       const count = await invoke<number>('update_wikilinks_for_renames', {
@@ -50,7 +57,7 @@ export function useVaultRenameDetection({
     } catch (err) {
       setToastMessage(`Failed to update wikilinks: ${err}`)
     }
-  }, [detectedRenames, reloadVault, setToastMessage, vaultPath])
+  }, [detectedRenames, enabled, reloadVault, setToastMessage, vaultPath])
 
   const handleDismissRenames = useCallback(() => setDetectedRenames([]), [])
 

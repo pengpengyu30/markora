@@ -1,5 +1,19 @@
+import { Schema } from '@tiptap/pm/model'
+import { EditorState } from '@tiptap/pm/state'
 import { describe, expect, it } from 'vitest'
-import { directionForCalloutMarkerText } from './richEditorTextDirection'
+import {
+  directionForCalloutMarkerText,
+  richEditorTransactionTouchesQuote,
+} from './richEditorTextDirection'
+
+const schema = new Schema({
+  nodes: {
+    doc: { content: 'block+' },
+    text: { group: 'inline' },
+    paragraph: { group: 'block', content: 'inline*' },
+    quote: { group: 'block', content: 'block+' },
+  },
+})
 
 describe('directionForCalloutMarkerText', () => {
   it('uses the first strong RTL character after an Obsidian callout marker', () => {
@@ -17,5 +31,17 @@ describe('directionForCalloutMarkerText', () => {
 
   it('detects RTL quote content without a callout marker', () => {
     expect(directionForCalloutMarkerText('ציטוט חשוב')).toBe('rtl')
+  })
+
+  it('does not rebuild quote decorations for edits outside quote blocks', () => {
+    const state = EditorState.create({
+      doc: schema.node('doc', null, [
+        schema.node('paragraph', null, schema.text('before')),
+        schema.node('quote', null, [schema.node('paragraph', null, schema.text('quote'))]),
+      ]),
+    })
+
+    expect(richEditorTransactionTouchesQuote(state.tr.insertText('!', 2))).toBe(false)
+    expect(richEditorTransactionTouchesQuote(state.tr.insertText('!', 11))).toBe(true)
   })
 })

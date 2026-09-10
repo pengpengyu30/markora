@@ -111,7 +111,7 @@ describe('raw-mode sync content guards', () => {
       rawLatestContentRef,
     })
 
-    expect(result).toBe('---\ntitle: Test Project\nis_a: Project\nStatus: Active\n---\n# Test Project\n\nThis is a test note with some words to count.\n')
+    expect(result).toBe(mockContent)
     expect(rawLatestContentRef.current).toBe(result)
     expect(onContentChange).not.toHaveBeenCalled()
   })
@@ -127,7 +127,7 @@ describe('raw-mode sync content guards', () => {
       rawLatestContentRef,
     })
 
-    expect(result).toBe('---\ntitle: Test Project\nis_a: Project\nStatus: Active\n---\n# Test Project\n\nUpdated body\n')
+    expect(result).toBe('---\ntitle: Test Project\nis_a: Project\nStatus: Active\n---\n\n# Test Project\n\nUpdated body\n')
     expect(rawLatestContentRef.current).toBe(result)
   })
 
@@ -146,7 +146,7 @@ describe('raw-mode sync content guards', () => {
     })
 
     expect(result).toBe(
-      '---\ntitle: Test Project\nis_a: Project\nStatus: Active\n---\n# Test Project\n\n![shot](attachments/shot.png)\n',
+      '---\ntitle: Test Project\nis_a: Project\nStatus: Active\n---\n\n# Test Project\n\n![shot](attachments/shot.png)\n',
     )
     expect(rawLatestContentRef.current).toBe(result)
   })

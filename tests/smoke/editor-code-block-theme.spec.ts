@@ -9,6 +9,8 @@ import {
 
 const CODE_NOTE_RELATIVE_PATH = path.join('note', 'code-block-theme.md')
 const CODE_NOTE_TITLE = 'Code Block Theme'
+const NESTED_MARKDOWN_NOTE_RELATIVE_PATH = path.join('note', 'nested-markdown.md')
+const NESTED_MARKDOWN_NOTE_TITLE = 'Nested Markdown'
 const PASTED_CPP_SNIPPET = '#include <iostream>\nint main() { return 0; }'
 const NAVIGATION_SNIPPET = 'alpha\nbravo\ncharlie'
 const NAVIGATION_AFTER_TEXT = 'Navigation boundary after.'
@@ -49,6 +51,25 @@ ${NAVIGATION_SNIPPET}
 \`\`\`
 
 ${NAVIGATION_AFTER_TEXT}
+`)
+}
+
+function writeNestedMarkdownFixtureNote(tempVaultDir: string) {
+  const notePath = path.join(tempVaultDir, NESTED_MARKDOWN_NOTE_RELATIVE_PATH)
+  fs.writeFileSync(notePath, `---
+Is A: Note
+Status: Active
+---
+
+# ${NESTED_MARKDOWN_NOTE_TITLE}
+
+1. Outer item
+   1. Inner item
+
+      ~~~markdown
+      # Inner Markdown
+      **bold** and \`inline code\`
+      ~~~
 `)
 }
 
@@ -237,6 +258,26 @@ test.describe('Editor code block theme', () => {
     await expect(highlightedToken).toBeVisible()
   })
 
+  test('opens nested Markdown fences in rich preview with syntax highlighting', async ({ page }) => {
+    writeNestedMarkdownFixtureNote(tempVaultDir)
+    await openFixtureVault(page, tempVaultDir, { editorMode: null })
+
+    const noteItem = page.locator('[data-testid="note-list-container"]')
+      .getByText(NESTED_MARKDOWN_NOTE_TITLE, { exact: true })
+    await expect(noteItem).toBeVisible({ timeout: 10_000 })
+    await noteItem.click()
+
+    await expect(page.locator('.bn-editor')).toBeVisible({ timeout: 10_000 })
+    const nestedCodeBlock = page.locator('[data-content-type="codeBlock"]')
+      .filter({ hasText: '# Inner Markdown' })
+      .last()
+    await expect(nestedCodeBlock).toBeVisible({ timeout: 10_000 })
+    await expect(nestedCodeBlock.locator('.shiki').first()).toBeVisible({ timeout: 10_000 })
+    await expect.poll(() => nestedCodeBlock.locator('.shiki').evaluateAll((tokens) => (
+      new Set(tokens.map((token) => getComputedStyle(token).color)).size
+    ))).toBeGreaterThan(1)
+  })
+
   test('creates a code block by shortcut and scopes select-all to its source', async ({ page }) => {
     await openFixtureVault(page, tempVaultDir)
     const noteItem = page.locator('[data-testid="note-list-container"]')
@@ -285,25 +326,19 @@ test.describe('Editor code block theme', () => {
       .last()
     await expect(pastedCodeBlock).toBeVisible({ timeout: 10_000 })
 
-    const languageSelect = pastedCodeBlock.locator('select').first()
-    await expect(languageSelect).toBeVisible()
-    await expect(languageSelect).toBeEnabled()
-    await expect(languageSelect).toHaveValue('text')
-    await expect.poll(() => languageSelect.evaluate((select) => {
-      const style = getComputedStyle(select)
-      return {
-        cursor: style.cursor,
-        minHeight: Number.parseFloat(style.minHeight),
-        paddingInlineEnd: Number.parseFloat(style.paddingInlineEnd),
-      }
-    })).toEqual({
-      cursor: 'pointer',
-      minHeight: 28,
-      paddingInlineEnd: 28,
-    })
+    await pastedCodeBlock.hover()
+    const languageTrigger = page.locator('.editor__code-block-language-overlay [data-slot="select-trigger"]').last()
+    await expect(languageTrigger).toBeVisible()
+    await expect(languageTrigger).toBeEnabled()
+    await expect(languageTrigger).toHaveText('Plain Text')
 
-    await languageSelect.selectOption('cpp')
-    await expect(languageSelect).toHaveValue('cpp')
+    await languageTrigger.click()
+    const cppOption = page.getByRole('option', { name: 'C++' })
+    await cppOption.hover()
+    await expect(cppOption).toBeVisible()
+    await cppOption.click()
+    await pastedCodeBlock.hover()
+    await expect(page.locator('.editor__code-block-language-overlay [data-slot="select-trigger"]').last()).toHaveText('C++')
     await expect.poll(() => fs.readFileSync(path.join(tempVaultDir, CODE_NOTE_RELATIVE_PATH), 'utf8'), {
       timeout: 10_000,
     }).toContain(`\`\`\`cpp\n${PASTED_CPP_SNIPPET}\n\`\`\``)

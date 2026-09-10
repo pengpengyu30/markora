@@ -59,6 +59,37 @@ describe('tryParseFastMarkdownBlocks', () => {
     ])
   })
 
+  it('keeps indented Markdown fences nested under their list item', () => {
+    const result = tryParseFastMarkdownBlocks([
+      '1. Parent item',
+      '',
+      '   1. Child item',
+      '',
+      '      ~~~markdown',
+      '      # Inner Markdown',
+      '      **bold** and `inline code`',
+      '      ~~~',
+      '',
+      '2. Next parent item',
+    ].join('\n'))
+
+    expect(result.supported).toBe(true)
+    expect(result.blocks).toEqual([
+      expect.objectContaining({
+        type: 'numberedListItem',
+        children: [expect.objectContaining({
+          type: 'numberedListItem',
+          children: [expect.objectContaining({
+            type: 'codeBlock',
+            props: { language: 'markdown' },
+            content: [expect.objectContaining({ text: '# Inner Markdown\n**bold** and `inline code`' })],
+          })],
+        })],
+      }),
+      expect.objectContaining({ type: 'numberedListItem' }),
+    ])
+  })
+
   it('rejects Markdown constructs that need BlockNote parsing to preserve semantics', () => {
     const referenceLink = tryParseFastMarkdownBlocks('[docs]: https://example.com')
     const image = tryParseFastMarkdownBlocks('![diagram](attachments/diagram.png)')

@@ -365,10 +365,19 @@ async function installSyntheticVault(page, entries, contentByPath) {
     const handlerPatches = {
       get_all_content: () => () => syntheticContent,
       get_note_content: () => contentFor,
+      load_vault_list: () => () => ({
+        vaults: [{ label: 'Performance Fixture', path: '/performance-fixture' }],
+        active_vault: '/performance-fixture',
+        default_workspace_path: '/performance-fixture',
+        hidden_defaults: [],
+      }),
       list_vault: () => () => syntheticEntries,
       read_vault_snapshot: () => () => syntheticEntries,
       reload_vault: () => () => syntheticEntries,
       reload_vault_entry: () => entryFor,
+      get_last_vault_path: () => () => '/performance-fixture',
+      set_last_vault_path: () => () => null,
+      check_vault_exists: () => () => true,
       validate_note_content: () => args => args?.content === contentFor(args),
     }
 

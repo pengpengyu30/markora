@@ -3,6 +3,8 @@ use std::fs;
 use std::path::PathBuf;
 
 pub const DEFAULT_HIDE_GITIGNORED_FILES: bool = true;
+pub const DEFAULT_GIT_FEATURES_ENABLED: bool = false;
+pub const GIT_FEATURES_DISABLED_ERROR: &str = "Git features are disabled in settings";
 const SUPPORTED_NOTE_WIDTH_MODES: &[&str] = &["normal", "wide"];
 const SUPPORTED_EDITOR_THEME_IDS: &[&str] = &["default", "code", "editorial", "canvas"];
 const SUPPORTED_DATE_DISPLAY_FORMATS: &[&str] = &["us", "european", "friendly", "iso"];
@@ -155,6 +157,30 @@ pub fn should_hide_gitignored_files(settings: &Settings) -> bool {
         .unwrap_or(DEFAULT_HIDE_GITIGNORED_FILES)
 }
 
+pub fn git_features_enabled(settings: &Settings) -> bool {
+    settings
+        .git_enabled
+        .unwrap_or(DEFAULT_GIT_FEATURES_ENABLED)
+}
+
+pub fn should_filter_gitignored_files(settings: &Settings) -> bool {
+    git_features_enabled(settings) && should_hide_gitignored_files(settings)
+}
+
+pub fn git_features_enabled_globally() -> bool {
+    get_settings()
+        .map(|settings| git_features_enabled(&settings))
+        .unwrap_or(DEFAULT_GIT_FEATURES_ENABLED)
+}
+
+pub fn require_git_features_enabled() -> Result<(), String> {
+    if git_features_enabled_globally() {
+        Ok(())
+    } else {
+        Err(GIT_FEATURES_DISABLED_ERROR.to_string())
+    }
+}
+
 pub fn normalize_git_provider(value: Option<&str>) -> Option<String> {
     match value.map(|candidate| candidate.trim().to_ascii_lowercase()) {
         Some(provider) if provider == "native" || provider == "wsl" => Some(provider),
@@ -164,8 +190,8 @@ pub fn normalize_git_provider(value: Option<&str>) -> Option<String> {
 
 pub fn hide_gitignored_files_enabled() -> bool {
     get_settings()
-        .map(|settings| should_hide_gitignored_files(&settings))
-        .unwrap_or(DEFAULT_HIDE_GITIGNORED_FILES)
+        .map(|settings| should_filter_gitignored_files(&settings))
+        .unwrap_or(false)
 }
 
 fn canonical_language_code(value: &str) -> Option<String> {
@@ -320,6 +346,32 @@ mod tests {
     #[test]
     fn test_default_settings_all_none() {
         assert_empty_settings(&Settings::default());
+    }
+
+    #[test]
+    fn test_git_features_are_disabled_by_default_and_require_explicit_enablement() {
+        assert!(!git_features_enabled(&Settings::default()));
+        assert!(!git_features_enabled(&Settings {
+            git_enabled: Some(false),
+            ..Default::default()
+        }));
+        assert!(git_features_enabled(&Settings {
+            git_enabled: Some(true),
+            ..Default::default()
+        }));
+    }
+
+    #[test]
+    fn test_gitignored_filter_is_disabled_with_git_features() {
+        assert!(!should_filter_gitignored_files(&Settings {
+            hide_gitignored_files: Some(true),
+            ..Default::default()
+        }));
+        assert!(should_filter_gitignored_files(&Settings {
+            git_enabled: Some(true),
+            hide_gitignored_files: Some(true),
+            ..Default::default()
+        }));
     }
 
     #[test]

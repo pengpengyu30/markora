@@ -75,6 +75,7 @@ function largeNoteMockScript(markdown: string): string {
   const markdownJson = JSON.stringify(markdown)
   return `
 (() => {
+  const projectPath = '/Users/luca/Laputa';
   const entry = ${entryJson};
   const markdown = ${markdownJson};
   const browserWindow = window;
@@ -87,6 +88,17 @@ function largeNoteMockScript(markdown: string): string {
   const singleEntryHandler = original => args => invokesLargePath(args) ? entry : original?.(args);
   const contentHandler = original => args => invokesLargePath(args) ? markdown : original?.(args) ?? '';
   const validationHandler = original => args => invokesLargePath(args) ? args.content === markdown : Boolean(original?.(args));
+  const projectListHandler = original => () => {
+    const result = original?.() ?? {};
+    return {
+      ...result,
+      active_vault: projectPath,
+      default_workspace_path: projectPath,
+      vaults: [{ label: 'Laputa', path: projectPath }],
+    };
+  };
+  const projectPathHandler = () => projectPath;
+  const projectExistsHandler = () => true;
   const patchHandlers = (handlers) => {
     if (!handlers || handlers.__largeNotePerformancePatched) return handlers ?? null;
     handlers.list_vault = entryListHandler(handlers.list_vault);
@@ -94,6 +106,10 @@ function largeNoteMockScript(markdown: string): string {
     handlers.reload_vault_entry = singleEntryHandler(handlers.reload_vault_entry);
     handlers.get_note_content = contentHandler(handlers.get_note_content);
     handlers.validate_note_content = validationHandler(handlers.validate_note_content);
+    handlers.load_vault_list = projectListHandler(handlers.load_vault_list);
+    handlers.get_last_vault_path = projectPathHandler;
+    handlers.set_last_vault_path = () => null;
+    handlers.check_vault_exists = projectExistsHandler;
     handlers.__largeNotePerformancePatched = true;
     return handlers;
   };
@@ -143,6 +159,22 @@ test('large Markdown notes use the fast resolver and progressive editor apply pa
 
   await expectPerfLog(perfLogs, 'editorBlockResolve', 'strategy=direct-markdown')
   await expectPerfLog(perfLogs, 'editorBlockApply', 'mode=progressive')
+})
+
+test('opening a large Markdown note does not enqueue an automatic rewrite', async ({ page }) => {
+  const content = largeMarkdown()
+  const saveRequests: string[] = []
+  page.on('request', (request) => {
+    if (request.url().endsWith('/api/vault/save') && request.method() === 'POST') {
+      saveRequests.push(request.postData() ?? '')
+    }
+  })
+
+  await installLargeNoteMock(page, content)
+  await openLargeNote(page)
+  await page.waitForTimeout(1_200)
+
+  expect(saveRequests).toEqual([])
 })
 
 test('large-note external links keep their URLs through raw-mode round trips', async ({ page }) => {

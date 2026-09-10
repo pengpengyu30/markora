@@ -22,11 +22,16 @@ type CodeBlockLanguageTarget = {
   top: number
 }
 
+type CodeBlockLanguageBlock = {
+  props?: { language?: unknown }
+  type?: unknown
+}
+
 type LanguageSelectControl = Element & { value: string }
 
 const NATIVE_LANGUAGE_CONTROL_SELECTOR =
   '.bn-block-content[data-content-type="codeBlock"] > div > select'
-const ELEMENT_NODE = 1
+const CODE_BLOCK_SELECTOR = '.bn-block-content[data-content-type="codeBlock"]'
 
 const LANGUAGE_OPTIONS = Object.entries(
   createTolariaCodeBlockOptions().supportedLanguages ?? {},
@@ -40,59 +45,81 @@ function liveCodeBlock(editor: CodeBlockLanguageEditor, blockId: string): boolea
   }
 }
 
-function languageControlTarget(
-  editor: CodeBlockLanguageEditor,
-  blockId: string,
-  nativeControl: LanguageSelectControl,
-): CodeBlockLanguageTarget {
-  const rect = nativeControl.getBoundingClientRect()
-  return {
-    blockId,
-    editable: editor.isEditable
-      && nativeControl.closest('.bn-editor')?.getAttribute('contenteditable') !== 'false',
-    height: rect.height,
-    language: nativeControl.value || 'text',
-    left: rect.left,
-    top: rect.top,
+function blockLanguage(editor: CodeBlockLanguageEditor, blockId: string): string {
+  try {
+    const block = editor.getBlock(blockId) as CodeBlockLanguageBlock | undefined
+    const language = block?.type === 'codeBlock' ? block.props?.language : undefined
+    return typeof language === 'string' && language.length > 0 ? language : 'text'
+  } catch {
+    return 'text'
   }
 }
 
-function codeBlockLanguageTarget(
+function languageControlTarget(
   editor: CodeBlockLanguageEditor,
-  element: Element,
+  blockId: string,
+  codeBlock: HTMLElement,
+  nativeControl?: LanguageSelectControl,
+): CodeBlockLanguageTarget {
+  const rect = (nativeControl ?? codeBlock).getBoundingClientRect()
+  const width = 160
+  return {
+    blockId,
+    editable: editor.isEditable
+      && codeBlock.closest('.bn-editor')?.getAttribute('contenteditable') !== 'false',
+    height: nativeControl ? rect.height : 28,
+    language: nativeControl?.value || blockLanguage(editor, blockId),
+    left: nativeControl ? rect.left : Math.max(rect.left + 8, rect.right - width - 8),
+    top: nativeControl ? rect.top : rect.top + 4,
+  }
+}
+
+function codeBlockLanguageTargetForId(
+  editor: CodeBlockLanguageEditor,
+  blockId: string,
 ): CodeBlockLanguageTarget | null {
-  if (element.tagName !== 'SELECT') return null
-  const nativeControl = element as LanguageSelectControl
-  const blockId = element.closest(BLOCK_CONTAINER_SELECTOR)?.getAttribute('data-id')
-  if (!blockId) return null
+  const blockContainer = Array.from(document.querySelectorAll(BLOCK_CONTAINER_SELECTOR))
+    .find((element) => element.getAttribute('data-id') === blockId)
+  const codeBlock = blockContainer?.querySelector<HTMLElement>(CODE_BLOCK_SELECTOR)
+  if (!codeBlock) return null
+  const nativeControl = blockContainer?.querySelector<LanguageSelectControl>(NATIVE_LANGUAGE_CONTROL_SELECTOR) ?? undefined
   if (!liveCodeBlock(editor, blockId)) return null
-  return languageControlTarget(editor, blockId, nativeControl)
+  return languageControlTarget(editor, blockId, codeBlock, nativeControl)
 }
 
-function codeBlockLanguageTargets(editor: CodeBlockLanguageEditor): CodeBlockLanguageTarget[] {
-  return Array.from(document.querySelectorAll(NATIVE_LANGUAGE_CONTROL_SELECTOR))
-    .map((element) => codeBlockLanguageTarget(editor, element))
-    .filter((target): target is CodeBlockLanguageTarget => target !== null)
+function blockIdFromElement(element: Element | null): string | null {
+  return element?.closest(CODE_BLOCK_SELECTOR)
+    ?.closest(BLOCK_CONTAINER_SELECTOR)
+    ?.getAttribute('data-id') ?? null
 }
 
-function sameTargets(current: CodeBlockLanguageTarget[], next: CodeBlockLanguageTarget[]): boolean {
-  return JSON.stringify(current) === JSON.stringify(next)
+function blockIdFromTarget(target: EventTarget | null): string | null {
+  if (!(target instanceof Element)) return null
+  return blockIdFromElement(target)
 }
 
-function addedNodeTouchesEditor(node: Node): boolean {
-  if (node.nodeType !== ELEMENT_NODE) return false
-  const element = node as Element
-  return element.matches('.bn-editor') || element.querySelector('.bn-editor') !== null
+function languagePickerSurfaceTarget(target: EventTarget | null): Element | null {
+  if (!(target instanceof Element)) return null
+  return target.closest('.editor__code-block-language-overlay, [data-slot="select-content"]')
 }
 
-function mutationTouchesEditor(mutation: MutationRecord): boolean {
-  if (mutation.target.nodeType === ELEMENT_NODE
-    && (mutation.target as Element).closest('.bn-editor')) return true
-  return Array.from(mutation.addedNodes).some(addedNodeTouchesEditor)
+function sameTarget(
+  current: CodeBlockLanguageTarget | null,
+  next: CodeBlockLanguageTarget | null,
+): boolean {
+  if (current === next) return true
+  if (!current || !next) return false
+  return current.blockId === next.blockId
+    && current.editable === next.editable
+    && current.height === next.height
+    && current.language === next.language
+    && current.left === next.left
+    && current.top === next.top
 }
 
 function useCodeBlockLanguageTargets(editor: CodeBlockLanguageEditor) {
-  const [targets, setTargets] = useState<CodeBlockLanguageTarget[]>([])
+  const [activeBlockId, setActiveBlockId] = useState<string | null>(null)
+  const [target, setTarget] = useState<CodeBlockLanguageTarget | null>(null)
 
   useEffect(() => {
     let refreshFrame: number | null = null
@@ -100,19 +127,48 @@ function useCodeBlockLanguageTargets(editor: CodeBlockLanguageEditor) {
       if (refreshFrame !== null) return
       refreshFrame = requestAnimationFrame(() => {
         refreshFrame = null
-        const nextTargets = codeBlockLanguageTargets(editor)
-        setTargets((current) => sameTargets(current, nextTargets) ? current : nextTargets)
+        const nextTarget = activeBlockId === null
+          ? null
+          : codeBlockLanguageTargetForId(editor, activeBlockId)
+        setTarget((current) => sameTarget(current, nextTarget) ? current : nextTarget)
       })
     }
-    const observer = new MutationObserver((mutations) => {
-      if (mutations.some(mutationTouchesEditor)) refresh()
+    const handlePointerOver = (event: PointerEvent) => {
+      const nextBlockId = blockIdFromTarget(event.target)
+      if (nextBlockId) setActiveBlockId(nextBlockId)
+    }
+    const handlePointerOut = (event: PointerEvent) => {
+      const relatedTarget = event.relatedTarget
+      if (languagePickerSurfaceTarget(relatedTarget) || blockIdFromTarget(relatedTarget) !== null) return
+      if (languagePickerSurfaceTarget(event.target) || blockIdFromTarget(event.target) !== null) {
+        setActiveBlockId(null)
+      }
+    }
+    const handleFocusIn = (event: FocusEvent) => {
+      const nextBlockId = blockIdFromTarget(event.target)
+      if (nextBlockId) setActiveBlockId(nextBlockId)
+    }
+    const handleFocusOut = (event: FocusEvent) => {
+      const relatedTarget = event.relatedTarget
+      if (languagePickerSurfaceTarget(relatedTarget) || blockIdFromTarget(relatedTarget) !== null) return
+      if (languagePickerSurfaceTarget(event.target) || blockIdFromTarget(event.target) !== null) {
+        setActiveBlockId(null)
+      }
+    }
+    const editorStateObserver = new MutationObserver((mutations) => {
+      if (mutations.some((mutation) => (
+        mutation.target instanceof Element && mutation.target.closest('.bn-editor') !== null
+      ))) refresh()
     })
-    observer.observe(document.body, {
+    editorStateObserver.observe(document.body, {
       attributeFilter: ['contenteditable'],
       attributes: true,
-      childList: true,
       subtree: true,
     })
+    document.addEventListener('pointerover', handlePointerOver, true)
+    document.addEventListener('pointerout', handlePointerOut, true)
+    document.addEventListener('focusin', handleFocusIn, true)
+    document.addEventListener('focusout', handleFocusOut, true)
     const unsubscribe = editor.onChange?.(refresh) ?? (() => {})
     window.addEventListener('resize', refresh)
     document.addEventListener('scroll', refresh, true)
@@ -120,14 +176,18 @@ function useCodeBlockLanguageTargets(editor: CodeBlockLanguageEditor) {
 
     return () => {
       if (refreshFrame !== null) cancelAnimationFrame(refreshFrame)
-      observer.disconnect()
+      editorStateObserver.disconnect()
+      document.removeEventListener('pointerover', handlePointerOver, true)
+      document.removeEventListener('pointerout', handlePointerOut, true)
+      document.removeEventListener('focusin', handleFocusIn, true)
+      document.removeEventListener('focusout', handleFocusOut, true)
       unsubscribe()
       window.removeEventListener('resize', refresh)
       document.removeEventListener('scroll', refresh, true)
     }
-  }, [editor])
+  }, [activeBlockId, editor])
 
-  return targets
+  return target
 }
 
 function updateCodeBlockLanguage(
@@ -179,9 +239,10 @@ function CodeBlockLanguagePicker({
 }
 
 export function CodeBlockLanguageControls({ editor }: { editor: CodeBlockLanguageEditor }) {
-  const targets = useCodeBlockLanguageTargets(editor)
+  const target = useCodeBlockLanguageTargets(editor)
+  if (!target) return null
 
-  return targets.map((target) => createPortal(
+  return createPortal(
     <div
       className="editor__code-block-language-overlay"
       data-code-block-id={target.blockId}
@@ -196,5 +257,5 @@ export function CodeBlockLanguageControls({ editor }: { editor: CodeBlockLanguag
     </div>,
     document.body,
     target.blockId,
-  ))
+  )
 }

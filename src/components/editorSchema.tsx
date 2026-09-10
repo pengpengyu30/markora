@@ -415,6 +415,21 @@ const TldrawBlock = createReactBlockSpec(
 )
 
 const codeBlock = createCodeBlockSpec(createTolariaCodeBlockOptions())
+const codeBlockRender = codeBlock.implementation?.render
+if (typeof codeBlockRender === 'function') {
+  codeBlock.implementation.render = function (block, editor) {
+    const rendered = codeBlockRender.call(this, block, editor)
+    rendered.dom.querySelectorAll('select').forEach((select) => {
+      const wrapper = select.parentElement
+      if (wrapper?.getAttribute('contenteditable') === 'false' && wrapper.children.length === 1) {
+        wrapper.remove()
+      } else {
+        select.remove()
+      }
+    })
+    return rendered
+  }
+}
 const audioBlock = AudioBlockSpec()
 const mathBlock = MathBlock()
 const mermaidBlock = MermaidBlock()

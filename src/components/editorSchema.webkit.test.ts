@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { EXTRA_CODE_BLOCK_LANGUAGES } from '../utils/codeBlockLanguageCatalog'
+import { schema } from './editorSchema'
 
 const nativeRegExpDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'RegExp')
 const NativeRegExp = RegExp
@@ -131,6 +132,24 @@ describe('editor schema code block highlighting', () => {
       name: 'PHP',
       aliases: ['php'],
     })
+  })
+
+  it('keeps the language catalog for parsing without mounting a native selector', async () => {
+    const rendered = schema.blockSpecs.codeBlock.implementation.render(
+      {
+        id: 'code-block-1',
+        type: 'codeBlock',
+        props: { language: 'markdown' },
+        content: [],
+        children: [],
+      } as never,
+      { isEditable: true } as never,
+    )
+    const host = document.createElement('div')
+    host.appendChild(rendered.dom)
+
+    expect(host.querySelector('select')).toBeNull()
+    rendered.destroy?.()
   })
 
   it('loads the Go Shiki grammar for Go code blocks', async () => {

@@ -21,7 +21,7 @@ describe('useRawModeWithFlush', () => {
       {
         zoom: null,
         view_mode: null,
-        editor_mode: null,
+        editor_mode: 'preview',
       },
       vi.fn(),
     )

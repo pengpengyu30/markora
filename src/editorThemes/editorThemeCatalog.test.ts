@@ -65,7 +65,7 @@ describe('editor theme catalog', () => {
     expect(cssVars['--editor-padding-horizontal']).toBe('40px')
     expect(cssVars['--headings-h1-line-height']).toBe('1.2')
     expect(cssVars['--headings-h1-letter-spacing']).toBe('-0.5px')
-    expect(cssVars['--editor-theme-behavior-show-rich-code-block-line-numbers']).toBe('false')
+    expect(cssVars['--editor-theme-behavior-show-rich-code-block-line-numbers']).toBe('true')
   })
 
   it('keeps Default Light and Dark aligned with the Phase 0 baseline', () => {

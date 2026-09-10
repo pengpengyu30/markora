@@ -239,3 +239,6 @@ proposed → active → superseded
 | [0181](0181-editor-theme-application-shell-projection.md) | Editor theme semantic projection across the application shell | active |
 | [0182](0181-multi-root-filesystem-watching.md) | Multi-root filesystem watching with path-scoped invalidation | active |
 | [0183](0182-in-place-clean-note-refresh-preserves-scroll.md) | In-place clean note refresh preserves editor scroll | active |
+| [0185](0185-global-git-feature-gate.md) | Global Git feature gate defaults to disabled | active |
+| [0186](0186-rich-preview-default-with-source-preserving-open.md) | Rich Markdown preview by default without write-on-open | active |
+| [0187](0187-source-preserving-rich-editor-writes.md) | Source-preserving rich-editor writes | active |

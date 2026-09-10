@@ -12,7 +12,7 @@ The maintained surface is:
 - rich Markdown editing plus a raw Markdown/text mode;
 - tags stored in a lossless `tags` frontmatter array;
 - an optional graph containing multiple registered Projects;
-- local, invisible Git safety snapshots and deleted-note recovery;
+- optional, invisible Git safety snapshots and deleted-note recovery after an explicit opt-in;
 - PDF, image, audio, video, and unsupported-file handling;
 - durable tldraw whiteboards embedded in notes;
 - persistent appearance, language, content, and Project settings.
@@ -53,7 +53,7 @@ flowchart LR
 | Vault and files | `commands/vault/*`, `vault/*` | Scan Projects, read/write notes, rename and move files, folders, attachments, reloads |
 | Frontmatter | `commands/vault/frontmatter_cmds.rs`, `vault/frontmatter.rs` | Parse metadata and perform narrow metadata updates |
 | Search | `search.rs`, `commands/vault/scan_cmds.rs` | Recursive Markdown full-text search with visibility filters |
-| Git safety | `git/*`, `commands/git.rs` | Resolve repository scope, make local snapshots, expose recovery data |
+| Git safety | `git/*`, `commands/git.rs` | Resolve repository scope, make local snapshots, expose recovery data when Git is explicitly enabled |
 | Project registry | `vault_list.rs`, `commands/vault_list.rs` | Persist registered Project paths and identities |
 | Settings | `settings.rs`, `commands/settings.rs` | Read and normalize installation-local preferences |
 | Runtime shell | `commands/runtime.rs`, `menu.rs`, update/icon modules | Menu routing, update shell, window/runtime integration |
@@ -126,7 +126,11 @@ sequenceDiagram
 
 ### Installation-local state
 
-The native settings store persists installation preferences such as language, application appearance, editor theme, date display, note width, ignored-file visibility, media visibility, automatic H1 rename, and the multi-Project switch. The vault registry persists Project paths and their display identity:
+The native settings store persists installation preferences such as the global Git feature gate,
+language, application appearance, editor theme, date display, note width, ignored-file
+visibility, media visibility, automatic H1 rename, and the multi-Project switch. Git is disabled
+when `git_enabled` is missing or null and is activated only by an explicit Settings choice. The
+vault registry persists Project paths and their display identity:
 
 `editor_theme` is also an installation-local setting. It stores one of the four app-owned
 editor family IDs and is never written to Project files, Markdown frontmatter, or vault
@@ -187,10 +191,11 @@ Gitignored visibility is applied at the native command boundary. The full-text i
 
 ## Editor and file handling
 
-The editor supports a rich BlockNote path and a raw CodeMirror/text path. Markdown serialization remains durable and includes the retained editor features:
+The editor supports a rich BlockNote preview path and an explicit CodeMirror source path. Existing Markdown files open in rich preview when the current Project has no explicit mode choice; only an explicit per-Project Raw choice opts into source editing. The legacy global `editor_mode` value is not used to select a newly opened Project. Opening a file is presentation-only and never schedules a content save or rewrites source bytes. Rich-editor writes use a source-preserving merge: unchanged source lines and layout are retained, while only the content affected by an intentional edit is replaced. This default and no-write/source-preservation boundary are recorded in [ADR-0186](adr/0186-rich-preview-default-with-source-preserving-open.md) and [ADR-0187](adr/0187-source-preserving-rich-editor-writes.md); ADR-0186 supersedes the earlier source-first default in [ADR-0183](adr/0183-source-first-markdown-opening.md) and updates [ADR-0184](adr/0184-project-scoped-editor-mode.md). Markdown serialization remains durable and includes the retained editor features:
 
 - headings, lists, links, wikilinks, code blocks, tables, math, Mermaid, callouts, and images;
 - raw Markdown/text editing for unsupported or explicitly raw content;
+- indented fenced Markdown inside list items remains a child code block, with the `markdown` grammar used for syntax highlighting;
 - local attachment import and safe remote-image import;
 - protected linked inline-code Markdown paste with canonical link/code mark ordering;
 - tabs with content identity checks before reusing a warm cache;
@@ -225,11 +230,15 @@ editor tokens.
 
 Rich fenced-code presentation is owned by `src/components/codeBlockOptions.ts`. It creates a
 catalog-backed Shiki theme for each effective family/variant and keeps the active theme first in
-the highlighter's theme list. `src/components/richEditorCodeHighlighting.ts` is the only adapter
-allowed to inspect the BlockNote/ProseMirror highlight plugin cache; it clears decorations and
-dispatches a presentation-only refresh without changing the document or editor instance. The
-existing `src/components/codeBlockLineNumbers.ts` decorations remain non-content markers, and
-`EditorTheme.css` makes them visible only for the `Code` family.
+the highlighter's theme list, while reusing in-flight language loads and repeated tokenization.
+`src/components/richEditorCodeHighlighting.ts` is the only adapter allowed to inspect the
+BlockNote/ProseMirror highlight plugin cache; it clears decorations and dispatches a
+presentation-only refresh without changing the document or editor instance. BlockNote's native
+per-block language selector is removed from the rendered fragment because its full option list
+multiplies with every code block; `src/components/codeBlockLanguageControls.tsx` provides one
+app-owned selector on interaction. The existing `src/components/codeBlockLineNumbers.ts`
+decorations remain non-content markers, and `EditorTheme.css` makes them visible from the active
+catalog behavior flag.
 
 `src/components/MermaidDiagram.tsx` owns the Mermaid renderer boundary. It uses Mermaid's `base`
 theme with the effective semantic diagram tokens, rerenders on family or resolved appearance
@@ -253,17 +262,27 @@ Standalone HTML files are not rendered as an in-app HTML application preview. Ex
 
 ## Invisible Git safety boundary
 
-Git is a local safety mechanism rather than a collaboration UI. The app may create a local repository and make automatic snapshots so a deleted or overwritten note can be recovered, but the active product does not expose commit history, diff, remote, push, pull, or provider OAuth workflows.
+Git is a local safety mechanism rather than a collaboration UI. It is disabled globally unless
+the user explicitly enables it in Settings. While disabled, opening, scanning, editing, saving,
+and watching a Project use the filesystem only: the app does not initialize or probe a repository,
+load Git status or history, derive Git dates, maintain the Git-backed cache, filter Gitignored
+content, run AutoGit, detect Git renames, or expose recovery actions. The filesystem watcher is
+still retained for ordinary external file changes, but skips Git metadata resolution.
+
+After opt-in, the app may create a local repository and make automatic snapshots so a deleted or
+overwritten note can be recovered, but the active product does not expose commit history, diff,
+remote, push, pull, or provider OAuth workflows.
 
 Repository scope is deliberately constrained:
 
 | Project location | Tolaria behavior |
 |---|---|
-| Plain folder | Tolaria may create a local managed repository for safety snapshots |
-| Repository root with the Tolaria marker | Managed local snapshots are allowed |
-| Existing repository root without the marker | Git data is read conservatively; the app does not silently take ownership |
+| Plain folder | With Git enabled, Tolaria may create a local managed repository for safety snapshots |
+| Repository root with the Tolaria marker | With Git enabled, managed local snapshots are allowed |
+| Existing repository root without the marker | With Git enabled, Git data is read conservatively; the app does not silently take ownership |
 | Project nested in an ancestor repository | The ancestor repository remains read-only from Tolaria; sibling files are outside the Project boundary |
-| Non-Git or unavailable Git | File editing still works; Git dates/cache/recovery fall back or become unavailable |
+| Git disabled globally | File editing and filesystem watching still work; no Git repository/cache/date/status/recovery operation runs |
+| Git unavailable after opt-in | File editing still works; Git dates/cache/recovery fall back or become unavailable |
 
 Managed snapshots use a fixed local identity, path-limited operations, and no network side effects. The marker and workspace resolver survive restart. Deleted Markdown recovery is exposed as the `Restore Deleted Note…` command and only lists content that exists in a Tolaria-managed local snapshot; it is not a general undelete facility for every external repository or arbitrary binary file.
 
@@ -272,9 +291,9 @@ Managed snapshots use a fixed local identity, path-limited operations, and no ne
 The settings panel currently persists four sections:
 
 1. Projects (registry, identity, order, mounted/default state, and multi-Project display);
-2. Sync & Updates (automatic update checks and release channel compatibility);
-3. Appearance (theme and related display preferences);
-4. Content (language, dates, note width, H1 rename, ignored files, and file-category visibility);
+2. Git (one installation-global opt-in switch; disabled by default);
+3. Appearance (theme, editor theme, and language preferences);
+4. Content (dates, note width, H1 rename, ignored files, and file-category visibility);
 
 Telemetry is not rendered as a settings section and no telemetry implementation is used by the simplified product. Historical telemetry fields and ADRs remain only as compatibility/audit material.
 

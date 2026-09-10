@@ -19,6 +19,7 @@ export { buildViewCommands } from './commands/viewCommands'
 
 interface CommandRegistryConfig {
   activeTabPath: string | null
+  gitFeaturesEnabled?: boolean
   entries: VaultEntry[]
   onReloadVault?: () => void
   onRepairVault?: () => void
@@ -97,6 +98,7 @@ export function useCommandRegistry(config: CommandRegistryConfig): import('./com
     onRemoveActiveVault, onRestoreGettingStarted, isGettingStartedHidden, vaultCount,
     onReloadVault, onRepairVault, onRestoreDeletedNote,
     locale, systemLocale, selectedUiLanguage, onSetUiLanguage, onSetThemeMode, onSetEditorTheme,
+    gitFeaturesEnabled,
     onMoveNoteToFolder, canMoveNoteToFolder, onTurnCurrentBlockInto,
     onRevealActiveFile, onCopyActiveFilePath, onOpenActiveFileExternal, onExportNoteAsPdf,
     
@@ -159,11 +161,13 @@ export function useCommandRegistry(config: CommandRegistryConfig): import('./com
     vaultCount, isGettingStartedHidden,
     onOpenSettings, onOpenVault, onCreateEmptyVault, onRemoveActiveVault, onRestoreGettingStarted,
     onReloadVault, onRepairVault, onRestoreDeletedNote,
+    gitFeaturesEnabled,
     locale, systemLocale, selectedUiLanguage, onSetUiLanguage, onSetThemeMode, onSetEditorTheme,
   }), [
     vaultCount, isGettingStartedHidden, onOpenSettings,
     onOpenVault, onCreateEmptyVault, onRemoveActiveVault, onRestoreGettingStarted,
     onReloadVault, onRepairVault, onRestoreDeletedNote,
+    gitFeaturesEnabled,
     locale, systemLocale, selectedUiLanguage, onSetUiLanguage, onSetThemeMode, onSetEditorTheme,
   ])
 

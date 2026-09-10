@@ -560,7 +560,7 @@ describe('useEditorTabSwap raw mode sync', () => {
 
     expect(onContentChange).toHaveBeenCalledWith(
       'a.md',
-      '---\ntitle: Note A\n---\n![shot](attachments/shot.png)\n',
+      '---\ntitle: Note A\n---\n![shot](attachments/shot.png)',
     )
   })
 
@@ -587,7 +587,7 @@ describe('useEditorTabSwap raw mode sync', () => {
 
     expect(onContentChange).toHaveBeenCalledWith(
       'a.md',
-      '---\ntitle: Note A\n---\nTyped draft before raw mode\n',
+      '---\ntitle: Note A\n---\nTyped draft before raw mode',
     )
   })
 
@@ -623,7 +623,7 @@ describe('useEditorTabSwap raw mode sync', () => {
 
     expect(onContentChange).toHaveBeenCalledWith(
       'a.md',
-      '---\ntitle: Note A\n---\n[project brief.pdf](<attachments/project brief.pdf>)\n',
+      '---\ntitle: Note A\n---\n[project brief.pdf](<attachments/project brief.pdf>)',
     )
     expect(mockEditor.blocksToMarkdownLossy).not.toHaveBeenCalled()
   })
@@ -676,7 +676,7 @@ describe('useEditorTabSwap raw mode sync', () => {
 
     expect(onContentChange).toHaveBeenCalledWith(
       'a.md',
-      '---\ntitle: Note A\n---\nInline $x^2$\n',
+      '---\ntitle: Note A\n---\nInline $x^2$',
     )
   })
 
@@ -753,7 +753,7 @@ describe('useEditorTabSwap raw mode sync', () => {
 
       expect(onContentChange).toHaveBeenCalledWith(
         'a.md',
-        '---\ntitle: Note A\n---\nChanged before switch\n',
+        '---\ntitle: Note A\n---\nChanged before switch',
       )
     } finally {
       vi.useRealTimers()
@@ -790,7 +790,7 @@ describe('useEditorTabSwap raw mode sync', () => {
 
       expect(onContentChange).toHaveBeenCalledWith(
         'a.md',
-        '---\ntitle: Note A\n---\nChanged before close\n',
+        '---\ntitle: Note A\n---\nChanged before close',
       )
     } finally {
       vi.useRealTimers()
@@ -861,7 +861,7 @@ describe('useEditorTabSwap raw mode sync', () => {
     await rerenderWith({ tabs: [tabA, tabB], activeTabPath: 'b.md' })
 
     const flushedTabAContent = savedContentByPath.get('a.md')
-    expect(flushedTabAContent).toBe('---\ntitle: Note A\n---\nChanged before switch\n')
+    expect(flushedTabAContent).toBe('---\ntitle: Note A\n---\nChanged before switch')
 
     mockEditor.replaceBlocks.mockClear()
     mockEditor.tryParseMarkdownToBlocks.mockClear()

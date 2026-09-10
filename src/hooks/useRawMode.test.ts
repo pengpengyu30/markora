@@ -1,33 +1,51 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { useRawMode } from './useRawMode'
+import { PROJECT_EDITOR_MODE_STORAGE_KEY, useRawMode } from './useRawMode'
 import * as store from '../utils/vaultConfigStore'
 
 describe('useRawMode', () => {
   let onFlushPending: ReturnType<typeof vi.fn>
+  let projectStorage: Record<string, string>
 
   beforeEach(() => {
     onFlushPending = vi.fn().mockResolvedValue(true)
+    projectStorage = {}
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: {
+        getItem: (key: string) => projectStorage[key] ?? null,
+        setItem: (key: string, value: string) => { projectStorage[key] = value },
+      },
+    })
     // Reset vault config to defaults before each test
     store.resetVaultConfigStore()
     store.bindVaultConfigStore(
       { zoom: null, view_mode: null, editor_mode: null },
       vi.fn(),
     )
+    window.localStorage.setItem(PROJECT_EDITOR_MODE_STORAGE_KEY, '')
   })
 
   afterEach(() => {
+    window.localStorage.setItem(PROJECT_EDITOR_MODE_STORAGE_KEY, '')
     store.resetVaultConfigStore()
   })
 
-  function renderRawHook(activeTabPath: string | null = '/note.md') {
+  function renderRawHook(
+    activeTabPath: string | null = '/note.md',
+    projectPath?: string,
+  ) {
     return renderHook(
-      ({ path }) => useRawMode({ activeTabPath: path, onFlushPending }),
-      { initialProps: { path: activeTabPath } },
+      ({ path, project }) => useRawMode({
+        activeTabPath: path,
+        onFlushPending,
+        projectPath: project,
+      }),
+      { initialProps: { path: activeTabPath, project: projectPath } },
     )
   }
 
-  it('starts with raw mode off', () => {
+  it('starts with rich preview when no editor preference has been selected', () => {
     const { result } = renderRawHook()
     expect(result.current.rawMode).toBe(false)
   })
@@ -128,7 +146,7 @@ describe('useRawMode', () => {
     const saveFn = vi.fn()
     store.resetVaultConfigStore()
     store.bindVaultConfigStore(
-      { zoom: null, view_mode: null, editor_mode: null },
+      { zoom: null, view_mode: null, editor_mode: 'preview' },
       saveFn,
     )
 
@@ -149,6 +167,37 @@ describe('useRawMode', () => {
     )
 
     const { result } = renderRawHook()
+    expect(result.current.rawMode).toBe(true)
+  })
+
+  it('defaults a Project to rich preview instead of inheriting the global Raw preference', () => {
+    store.resetVaultConfigStore()
+    store.bindVaultConfigStore(
+      { zoom: null, view_mode: null, editor_mode: 'raw' },
+      vi.fn(),
+    )
+    const { result } = renderRawHook('/project-a/note.md', '/project-a')
+
+    expect(result.current.rawMode).toBe(false)
+  })
+
+  it('persists an explicit Raw choice per Project without leaking it to another Project', async () => {
+    const { result, rerender } = renderHook(
+      ({ path, project }) => useRawMode({
+        activeTabPath: path,
+        onFlushPending,
+        projectPath: project,
+      }),
+      { initialProps: { path: '/project-a/note.md', project: '/project-a' } },
+    )
+
+    await act(async () => { await result.current.handleToggleRaw() })
+    expect(result.current.rawMode).toBe(true)
+
+    rerender({ path: '/project-b/note.md', project: '/project-b' })
+    expect(result.current.rawMode).toBe(false)
+
+    rerender({ path: '/project-a/note.md', project: '/project-a' })
     expect(result.current.rawMode).toBe(true)
   })
 })

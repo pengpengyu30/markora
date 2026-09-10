@@ -590,6 +590,19 @@ pub(super) fn apply_changed_path_updates(
     upserts: &[VaultEntry],
     removed: &[String],
 ) {
+    apply_changed_path_updates_with_git_enabled(vault, upserts, removed, git_cache_enabled());
+}
+
+fn apply_changed_path_updates_with_git_enabled(
+    vault: &Path,
+    upserts: &[VaultEntry],
+    removed: &[String],
+    git_enabled: bool,
+) {
+    if !git_enabled {
+        return;
+    }
+
     let CacheLoadState::Loaded(loaded) = load_cache(vault) else {
         return;
     };
@@ -845,6 +858,13 @@ pub fn read_vault_snapshot(vault_path: &Path) -> Result<Option<Vec<VaultEntry>>,
 /// Scan vault with incremental caching via git.
 /// Falls back to full scan if cache is missing/corrupt or git is unavailable.
 pub fn scan_vault_cached(vault_path: &Path) -> Result<Vec<VaultEntry>, String> {
+    scan_vault_cached_with_git_enabled(vault_path, git_cache_enabled())
+}
+
+fn scan_vault_cached_with_git_enabled(
+    vault_path: &Path,
+    git_enabled: bool,
+) -> Result<Vec<VaultEntry>, String> {
     if !vault_path.exists() || !vault_path.is_dir() {
         return Err(format!(
             "Vault path does not exist or is not a directory: {}",
@@ -852,7 +872,12 @@ pub fn scan_vault_cached(vault_path: &Path) -> Result<Vec<VaultEntry>, String> {
         ));
     }
 
-    // Migrate legacy in-vault cache to external location on first run
+    if !git_enabled {
+        return scan_vault(vault_path, &HashMap::new());
+    }
+
+    // Migrate legacy in-vault cache to external location on first run only
+    // when the Git-backed cache is active.
     migrate_legacy_cache(vault_path);
 
     let Some(workspace) = crate::git::ensure_vault_repository(vault_path)
@@ -907,6 +932,13 @@ pub fn scan_vault_cached(vault_path: &Path) -> Result<Vec<VaultEntry>, String> {
 /// the replacement is complete. This makes explicit reloads crash-safe: an app
 /// exit during the scan cannot leave the next startup without a usable cache.
 pub fn refresh_vault_cache(vault_path: &Path) -> Result<Vec<VaultEntry>, String> {
+    refresh_vault_cache_with_git_enabled(vault_path, git_cache_enabled())
+}
+
+fn refresh_vault_cache_with_git_enabled(
+    vault_path: &Path,
+    git_enabled: bool,
+) -> Result<Vec<VaultEntry>, String> {
     if !vault_path.is_dir() {
         return Err(format!(
             "Vault path does not exist or is not a directory: {}",
@@ -914,6 +946,9 @@ pub fn refresh_vault_cache(vault_path: &Path) -> Result<Vec<VaultEntry>, String>
         ));
     }
 
+    if !git_enabled {
+        return scan_vault(vault_path, &HashMap::new());
+    }
     migrate_legacy_cache(vault_path);
     // Fingerprint the bytes directly so even an invalid cache can be replaced
     // transactionally. Parsing it first would lose the expected fingerprint
@@ -930,6 +965,18 @@ pub fn refresh_vault_cache(vault_path: &Path) -> Result<Vec<VaultEntry>, String>
     };
     let git_dates = load_git_dates(&workspace);
     scan_and_cache_full(vault_path, &git_dates, current_hash, expected_previous)
+}
+
+#[cfg(not(test))]
+fn git_cache_enabled() -> bool {
+    crate::settings::git_features_enabled_globally()
+}
+
+#[cfg(test)]
+fn git_cache_enabled() -> bool {
+    // Existing cache tests intentionally exercise the Git-backed matrix. The
+    // explicit false path is covered by scan_vault_cached_with_git_enabled.
+    true
 }
 
 #[cfg(test)]
@@ -1137,6 +1184,33 @@ mod tests {
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].title, "Note");
         assert_eq!(entries[0].snippet, "Content here.");
+    }
+
+    #[test]
+    fn test_scan_vault_cached_when_git_disabled_never_initializes_repository() {
+        let dir = TempDir::new().unwrap();
+        create_test_file(dir.path(), "note.md", "# Note\n");
+
+        let entries = scan_vault_cached_with_git_enabled(dir.path(), false).unwrap();
+
+        assert_eq!(entries.len(), 1);
+        assert!(!dir.path().join(".git").exists());
+    }
+
+    #[test]
+    fn test_changed_path_cache_updates_are_skipped_when_git_is_disabled() {
+        let (_lock, _cache_tmp, vault_tmp) = setup_git_vault();
+        let vault = vault_tmp.path();
+        create_test_file(vault, "note.md", "# Note\n");
+        git_add_commit(vault, "initial");
+        scan_vault_cached(vault).unwrap();
+        let cache_before = fs::read(cache_path(vault)).unwrap();
+
+        create_test_file(vault, "note.md", "# Updated\n");
+        let updated_entry = parse_md_file(&vault.join("note.md"), None).unwrap();
+        apply_changed_path_updates_with_git_enabled(vault, &[updated_entry], &[], false);
+
+        assert_eq!(fs::read(cache_path(vault)).unwrap(), cache_before);
     }
 
     #[test]

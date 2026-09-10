@@ -28,6 +28,7 @@ interface SettingsCommandsConfig {
   onRepairVault?: () => void
   onRestoreDeletedNote?: () => void
   onToggleGitignoredFilesVisibility?: () => void
+  gitFeaturesEnabled?: boolean
   locale?: AppLocale
   systemLocale?: AppLocale
   selectedUiLanguage?: UiLanguagePreference
@@ -218,14 +219,15 @@ function buildMaintenanceCommands({
   onRepairVault,
   onRestoreDeletedNote,
   onToggleGitignoredFilesVisibility,
-}: Pick<SettingsCommandsConfig, 'onReloadVault' | 'onRepairVault' | 'onRestoreDeletedNote' | 'onToggleGitignoredFilesVisibility'>): CommandAction[] {
+  gitFeaturesEnabled = true,
+}: Pick<SettingsCommandsConfig, 'onReloadVault' | 'onRepairVault' | 'onRestoreDeletedNote' | 'onToggleGitignoredFilesVisibility' | 'gitFeaturesEnabled'>): CommandAction[] {
   return [
     {
       id: 'toggle-gitignored-files-visibility',
       label: 'Toggle Gitignored Files Visibility',
       group: 'Settings',
       keywords: ['gitignore', 'ignored', 'files', 'folders', 'visibility', 'hide', 'show', 'generated', 'local'],
-      enabled: true,
+      enabled: gitFeaturesEnabled,
       execute: onToggleGitignoredFilesVisibility ?? requestGitignoredVisibilityToggle,
     },
     { id: 'reload-vault', label: 'Reload Project', group: 'Settings', keywords: ['project', 'reload', 'refresh', 'rescan', 'sync', 'filesystem', 'cache'], enabled: !!onReloadVault, execute: () => onReloadVault?.() },
@@ -239,6 +241,7 @@ export function buildSettingsCommands(config: SettingsCommandsConfig): CommandAc
     vaultCount, isGettingStartedHidden,
     onOpenSettings, onOpenVault, onCreateEmptyVault, onRemoveActiveVault, onRestoreGettingStarted,
     onReloadVault, onRepairVault, onRestoreDeletedNote, onToggleGitignoredFilesVisibility,
+    gitFeaturesEnabled,
     locale = 'en', systemLocale = locale, selectedUiLanguage = SYSTEM_UI_LANGUAGE, onSetUiLanguage, onSetThemeMode,
     onSetEditorTheme,
   } = config
@@ -267,6 +270,7 @@ export function buildSettingsCommands(config: SettingsCommandsConfig): CommandAc
       onRepairVault,
       onRestoreDeletedNote,
       onToggleGitignoredFilesVisibility,
+      gitFeaturesEnabled,
     }),
   ]
 }

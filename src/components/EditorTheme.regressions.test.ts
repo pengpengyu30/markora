@@ -28,12 +28,12 @@ describe('EditorTheme regression guards', () => {
     expect(editorThemeCss).toContain('var(--editor-theme-embedded-controls-text)')
   })
 
-  it('shows rich code line numbers only for the Code family', () => {
+  it('follows the explicit theme behavior flag for rich code line numbers', () => {
     expect(editorThemeCss).toMatch(
-      /\.editor-theme-scope\[data-editor-theme="code"\][^{]*\.editor__code-line-numbers*\s*\{[^}]*display:\s*inline-block/s,
+      /\[data-editor-code-line-numbers="true"\][^{]*\.editor__code-line-numbers*\s*\{[^}]*display:\s*inline-block/s,
     )
     expect(editorThemeCss).toMatch(
-      /\.editor-theme-scope:not\(\[data-editor-theme="code"\]\)[^{]*\.editor__code-line-numbers*\s*\{[^}]*display:\s*none/s,
+      /\[data-editor-code-line-numbers="false"\][^{]*\.editor__code-line-numbers*\s*\{[^}]*display:\s*none/s,
     )
   })
 

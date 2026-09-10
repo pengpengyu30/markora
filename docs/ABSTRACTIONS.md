@@ -46,16 +46,21 @@ The identity is installation-local. It is stored in the registered Project list,
 |---|---|
 | `theme_mode` | Light, dark, or system appearance |
 | `editor_theme` | Installation-local built-in editor family ID; missing or invalid values resolve to `default` |
+| `git_enabled` | Installation-global Git feature gate; only explicit `true` enables Git, while missing/null defaults to disabled |
 | `ui_language` | Persisted locale preference; `null` follows the system |
 | `date_display_format` | Date rendering outside editable content |
 | `note_width_mode` | Default rich-editor width |
 | `initial_h1_auto_rename_enabled` | Rename an untitled note after its first H1 |
-| `hide_gitignored_files` | Visibility boundary for notes, folders, Quick Open, and search |
+| `hide_gitignored_files` | Visibility boundary for notes, folders, Quick Open, and search when Git features are enabled; ineffective while Git is disabled |
 | `all_notes_show_pdfs/images/unsupported` | File-category visibility settings retained by the current file index |
 | `multi_workspace_enabled` | Show all mounted Projects in one graph; absent means enabled for compatibility |
 | `automatic_update_checks_enabled` | Update shell preference |
 
-Older Git fields remain in the serialized type because existing settings files must load safely. The simplified UI does not make remote Git collaboration a product surface.
+Older Git fields remain in the serialized type because existing settings files must load safely. The
+global Git switch is the only activation boundary for the retained local Git safety layer. A
+missing or null `git_enabled` value is deliberately treated as false, so opening a normal folder
+does not initialize or inspect a repository until the user opts in and saves. The simplified UI
+does not make remote Git collaboration a product surface.
 
 ## Persistence abstractions
 
@@ -79,7 +84,11 @@ application appearance, editor theme, and locale without mutating the stored pre
 settings panel edits an editor-theme draft and persists it only after the user confirms Save;
 the existing Light/Dark/System appearance control retains its immediate-apply behavior. Native
 `Settings.editor_theme` is durable; the `markora-editor-theme` localStorage entry is only a
-validated pre-React cache and never replaces native settings.
+validated pre-React cache and never replaces native settings. `Settings.git_enabled` is the
+installation-global Git gate: the renderer and native command/cache boundaries require explicit
+`true`, while the missing/null compatibility state is off. Disabling Git also makes
+`hide_gitignored_files` ineffective and prevents Git-backed date, status, snapshot, AutoGit,
+rename-detection, and recovery work; ordinary filesystem watching remains active.
 
 ### Note width resolution
 
@@ -167,7 +176,7 @@ Search is not a semantic index and does not use an AI/MCP service. Gitignored vi
 
 ### Rich/raw ownership
 
-BlockNote owns rich editor interaction and durable Markdown conversion. CodeMirror owns raw text editing. `useEditorSave`, `useAppSave`, and `useEditorSaveWithLinks` coordinate persistence, title synchronization, wikilink updates, autosave, and external-change rules. `useEditorTabSwap` must flush and await the outgoing path before applying a new rich document; mounted-Project/default-workspace selection uses the same coalesced boundary; `useWindowSaveFlush` applies it to blur, visibility changes, and native close requests.
+BlockNote owns the default rich preview and durable Markdown conversion, while CodeMirror owns the explicit source-editing path. A Project with no explicit mode choice opens existing Markdown in BlockNote; only an explicit per-Project `raw` choice opts into CodeMirror. The legacy global `editor_mode` value is ignored for Project-scoped runtime state so one Project cannot silently force a mode in another. Opening a file is read-only with respect to its source bytes and must not enqueue a content save. Rich-editor persistence uses `preserveMarkdownSourceFormatting` to retain unchanged source lines, fence styles, indentation, blank lines, line endings, and trailing-newline state; canonical serialization is used only for the intentionally changed payload or newly created structure. Indented fenced Markdown nested under a list item remains a code block and receives `markdown` syntax highlighting; it is not recursively converted into outer rich-editor blocks. `useEditorSave`, `useAppSave`, and `useEditorSaveWithLinks` coordinate persistence, title synchronization, wikilink updates, autosave, and external-change rules. `useEditorTabSwap` must flush and await the outgoing path before applying a new rich document; mounted-Project/default-workspace selection uses the same coalesced boundary; `useWindowSaveFlush` applies it to blur, visibility changes, and native close requests.
 
 The current write window is 300ms for rich-editor serialization followed by 800ms for application
 autosave. Failed writes remain pending and keep the note marked unsaved. Diagnostic write timeline
@@ -223,8 +232,11 @@ tokens and is not part of the editor theme scope.
 syntax role into an isolated theme name and tracks each BlockNote highlighter so a theme change
 can load the new palette before refreshing existing decorations. That refresh is intentionally
 contained in `src/components/richEditorCodeHighlighting.ts`; it is the sole compatibility boundary
-for the private ProseMirror highlight cache. `codeBlockLineNumbers.ts` supplies presentation-only
-line markers, while the theme scope controls their `Code`-only visibility.
+for the private ProseMirror highlight cache. Language-load and tokenization results are reused for
+identical requests. `editorSchema.tsx` removes BlockNote's per-block native language selector from
+the rendered fragment, while `codeBlockLanguageControls.tsx` mounts one app-owned selector only
+for the code block being interacted with. `codeBlockLineNumbers.ts` supplies presentation-only
+line markers, while the theme scope controls their visibility through the catalog behavior flag.
 
 `src/components/MermaidDiagram.tsx` owns Mermaid configuration and asynchronous SVG replacement.
 It maps semantic background, text, node, border, cluster, and edge roles to Mermaid's base theme,
@@ -241,14 +253,20 @@ variant, so runtime resolution has no element-level fallback to `Default`.
 
 ## Invisible Git abstractions
 
-`src-tauri/src/git/workspace.rs` resolves repository scope into a `GitWorkspace`. The important distinction is Project root versus repository root:
+`Settings.git_enabled` is checked before any Git workspace resolution. When it is off,
+`src-tauri/src/git/workspace.rs` is not reached by Project startup, cache/reload, status,
+snapshot, rename-detection, or recovery commands. When it is on, the module resolves repository
+scope into a `GitWorkspace`. The important distinction is Project root versus repository root:
 
 - a Tolaria-managed root may receive local snapshot commits;
 - an ordinary repository root is not silently claimed without the Tolaria marker;
 - an ancestor repository is read-only from the Project boundary;
-- non-Git folders continue to support file editing with fallback behavior.
+- non-Git folders continue to support file editing with fallback behavior;
+- the filesystem watcher remains active when Git is off, but skips `.git` metadata resolution.
 
-`git_snapshot`, recovery commands, cache probes, and date helpers share this boundary. Network operations and visible collaboration workflows are outside the simplified UI contract.
+`git_snapshot`, recovery commands, cache probes, date helpers, Gitignored filtering, and Git rename
+detection share this boundary. Network operations and visible collaboration workflows are outside
+the simplified UI contract.
 
 The recovery surface is intentionally narrow: `list_deleted_notes`, `get_deleted_note_preview`, and `restore_deleted_note` operate on deleted Markdown content available in a Tolaria-managed local snapshot. They do not promise universal recovery for external Git history, binary assets, or an unmanaged ancestor repository.
 
@@ -265,7 +283,7 @@ The command list in `src-tauri/src/lib.rs` is the authoritative registration. Ne
 | Search | `search_vault` |
 | Project registry | `load_vault_list`, `save_vault_list`, `check_vault_exists` |
 | Settings | `get_settings`, `save_settings` |
-| Git safety | `git_snapshot`, `git_workspace_info`, `ensure_git_repository`, recovery commands |
+| Git safety | `git_workspace_info`, `ensure_git_repository`, `get_modified_files`, `git_snapshot`, recovery and rename-detection commands; all require the global Git gate |
 | Runtime | menu, icon, updater, clipboard, external open/reveal, PDF export |
 
 Avoid introducing a new command for a renderer-only transformation. Conversely, do not access the filesystem directly from React when a validated native command already exists.

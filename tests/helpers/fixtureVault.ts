@@ -15,6 +15,9 @@ interface FixtureVaultPageArgs {
   page: Page
   vaultPath: string
   isGitRepo: boolean
+  gitEnabled: boolean
+  editorMode: 'raw' | 'preview' | null
+  legacyEditorMode: 'raw' | 'preview' | null
   folders: FolderNode[]
 }
 
@@ -24,6 +27,9 @@ interface FixturePageArgs {
 
 interface FixtureVaultOptions {
   isGitRepo?: boolean
+  gitEnabled?: boolean
+  editorMode?: 'raw' | 'preview' | null
+  legacyEditorMode?: 'raw' | 'preview' | null
   expectedReadyTitle?: string
   folders?: FolderNode[]
 }
@@ -70,9 +76,15 @@ export function removeFixtureVaultCopy(tempVaultDir: string | null | undefined):
   removeFixtureVaultDirectory({ tempVaultDir })
 }
 
-async function installFixtureVaultInitScript({ page, vaultPath, isGitRepo, folders }: FixtureVaultPageArgs): Promise<void> {
-  await page.addInitScript(({ fixtureFolders, initialIsGitRepo, resolvedVaultPath }: { fixtureFolders: FolderNode[]; initialIsGitRepo: boolean; resolvedVaultPath: string }) => {
+async function installFixtureVaultInitScript({ page, vaultPath, isGitRepo, gitEnabled, editorMode, legacyEditorMode, folders }: FixtureVaultPageArgs): Promise<void> {
+  await page.addInitScript(({ fixtureFolders, initialEditorMode, initialGitEnabled, initialIsGitRepo, initialLegacyEditorMode, resolvedVaultPath }: { fixtureFolders: FolderNode[]; initialEditorMode: 'raw' | 'preview' | null; initialGitEnabled: boolean; initialIsGitRepo: boolean; initialLegacyEditorMode: 'raw' | 'preview' | null; resolvedVaultPath: string }) => {
     localStorage.clear()
+    if (initialLegacyEditorMode) {
+      localStorage.setItem('markora:project-config', JSON.stringify({ editor_mode: initialLegacyEditorMode }))
+    }
+    if (initialEditorMode) {
+      localStorage.setItem('markora:editor-mode-by-project', JSON.stringify({ [resolvedVaultPath]: initialEditorMode }))
+    }
     let gitRepoReady = initialIsGitRepo
 
     const jsonHeaders = { 'Content-Type': 'application/json' }
@@ -340,6 +352,7 @@ async function installFixtureVaultInitScript({ page, vaultPath, isGitRepo, folde
       update_menu_state: () => null,
       get_settings: () => ({
         auto_pull_interval_minutes: 5,
+        git_enabled: initialGitEnabled,
         release_channel: null,
       }),
     })
@@ -490,7 +503,10 @@ async function installFixtureVaultInitScript({ page, vaultPath, isGitRepo, folde
     })
   }, {
     fixtureFolders: folders,
+    initialEditorMode: editorMode,
+    initialGitEnabled: gitEnabled,
     initialIsGitRepo: isGitRepo,
+    initialLegacyEditorMode: legacyEditorMode,
     resolvedVaultPath: vaultPath,
   })
 }
@@ -510,6 +526,9 @@ export async function openFixtureVault(
   options: FixtureVaultOptions = {},
 ): Promise<void> {
   await installFixtureVaultInitScript({
+    editorMode: options.editorMode === undefined ? 'preview' : options.editorMode,
+    gitEnabled: options.gitEnabled ?? false,
+    legacyEditorMode: options.legacyEditorMode ?? null,
     page,
     vaultPath,
     isGitRepo: options.isGitRepo ?? true,

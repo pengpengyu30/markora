@@ -150,6 +150,25 @@ describe('SettingsPanel', () => {
     expect(screen.queryByText('Sync & Updates')).not.toBeInTheDocument()
   })
 
+  it('keeps Git features off by default and saves an explicit enable choice', () => {
+    renderOpenSettings()
+
+    const gitSetting = screen.getByTestId('settings-git-enabled')
+    const gitSwitch = within(gitSetting).getByRole('switch')
+    expect(gitSwitch).toHaveAttribute('aria-checked', 'false')
+
+    fireEvent.click(gitSwitch)
+    saveSettingsPanel()
+
+    expectSettingsSaved({ git_enabled: true })
+  })
+
+  it('disables Gitignore filtering while Git features are disabled', () => {
+    renderOpenSettings()
+
+    expect(within(screen.getByTestId('settings-hide-gitignored-files')).getByRole('switch')).toBeDisabled()
+  })
+
   it('updates the draft language when stored settings finish loading', () => {
     const { rerender } = render(
       <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
@@ -182,7 +201,7 @@ describe('SettingsPanel', () => {
       theme_mode: 'light',
       date_display_format: 'friendly',
       note_width_mode: null,
-      hide_gitignored_files: true,
+      hide_gitignored_files: false,
       all_notes_show_pdfs: false,
       all_notes_show_images: false,
       all_notes_show_unsupported: false,
@@ -192,7 +211,7 @@ describe('SettingsPanel', () => {
 
   it('saves Gitignored content visibility immediately for keyboard close', () => {
     render(
-      <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
+      <SettingsPanel open={true} settings={{ ...emptySettings, git_enabled: true }} onSave={onSave} onClose={onClose} />
     )
 
     fireEvent.click(screen.getByTestId('settings-hide-gitignored-files'))

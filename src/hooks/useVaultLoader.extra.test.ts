@@ -124,6 +124,29 @@ describe('useVaultLoader extra', () => {
     expect(result.current.entries[0]?.title).toBe('Renamed')
   })
 
+  it('does not query Git modified files when the Git feature gate is disabled', async () => {
+    const getModifiedFiles = vi.fn(() => [makeModifiedFile()])
+    configureBackend({
+      list_vault: [makeEntry()],
+      get_modified_files: getModifiedFiles,
+    })
+
+    const { result } = renderHook(() => useVaultLoader(
+      '/vault',
+      undefined,
+      undefined,
+      undefined,
+      { loadModifiedFiles: false },
+    ))
+    await waitForEntries(result)
+    await act(async () => {
+      await result.current.loadModifiedFiles()
+    })
+
+    expect(getModifiedFiles).not.toHaveBeenCalled()
+    expect(result.current.modifiedFiles).toEqual([])
+  })
+
   it('surfaces modified-file refresh failures with an empty fallback list', async () => {
     configureBackend({
       list_vault: [makeEntry()],

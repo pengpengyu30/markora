@@ -17,7 +17,7 @@ describe('editorRawModeSync image paths', () => {
       '---\ntitle: Project Plan\n---\n',
       '/vault',
       '/vault/projects/notes/plan.md',
-    )).toBe('---\ntitle: Project Plan\n---\n![shot](./img/shot.png)\n')
+    )).toBe('---\ntitle: Project Plan\n---\n![shot](./img/shot.png)')
   })
 
   it('uses activeTabPath when syncing rich editor images into raw mode', () => {
@@ -32,7 +32,7 @@ describe('editorRawModeSync image paths', () => {
       vaultPath: '/vault',
     })
 
-    expect(synced).toBe('---\ntitle: Project Plan\n---\n![diagram](../shared/diagram.png)\n')
+    expect(synced).toBe('---\ntitle: Project Plan\n---\n\n![diagram](../shared/diagram.png)\n')
     expect(rawLatestContentRef.current).toBe(synced)
   })
 
@@ -44,6 +44,6 @@ describe('editorRawModeSync image paths', () => {
       '---\ntitle: Project Plan\n---\n',
       '/vault',
       '/vault/projects/notes/plan.md',
-    )).toBe('---\ntitle: Project Plan\n---\n![shot](attachments/shot.png)\n')
+    )).toBe('---\ntitle: Project Plan\n---\n![shot](attachments/shot.png)')
   })
 })

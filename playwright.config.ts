@@ -8,6 +8,7 @@ const claudeCodeOnboardingStorageState = {
       origin: baseURL,
       localStorage: [
         { name: 'tolaria:claude-code-onboarding-dismissed', value: '1' },
+        { name: 'markora:project-config', value: '{"editor_mode":"preview"}' },
       ],
     },
   ],

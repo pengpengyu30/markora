@@ -4,18 +4,30 @@ use std::path::Path;
 
 #[tauri::command]
 pub fn create_empty_vault(target_path: String) -> Result<String, String> {
-    let path = expand_tilde(&target_path).into_owned();
+    create_empty_vault_with_git_enabled(
+        &target_path,
+        crate::settings::git_features_enabled_globally(),
+    )
+}
+
+pub(super) fn create_empty_vault_with_git_enabled(
+    target_path: &str,
+    git_enabled: bool,
+) -> Result<String, String> {
+    let path = expand_tilde(target_path).into_owned();
     let vault_dir = Path::new(&path);
-    initialize_empty_vault(vault_dir, &path)?;
+    initialize_empty_vault(vault_dir, git_enabled)?;
     Ok(canonical_vault_path_string(vault_dir))
 }
 
-fn initialize_empty_vault(vault_dir: &Path, _vault_path: &str) -> Result<(), String> {
+fn initialize_empty_vault(vault_dir: &Path, git_enabled: bool) -> Result<(), String> {
     ensure_directory_is_missing_or_empty(vault_dir)?;
     std::fs::create_dir_all(vault_dir)
         .map_err(|e| format!("Failed to create project directory: {}", e))?;
 
-    git::ensure_vault_repository(vault_dir)?;
+    if git_enabled {
+        git::ensure_vault_repository(vault_dir)?;
+    }
     Ok(())
 }
 
@@ -141,5 +153,16 @@ mod tests {
             resolve_getting_started_target(explicit.to_str()),
             Ok(explicit.to_string_lossy().to_string())
         );
+    }
+
+    #[test]
+    fn empty_vault_initialization_skips_git_when_features_are_disabled() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let vault = dir.path().join("new-project");
+
+        initialize_empty_vault(&vault, false).unwrap();
+
+        assert!(vault.is_dir());
+        assert!(!vault.join(".git").exists());
     }
 }

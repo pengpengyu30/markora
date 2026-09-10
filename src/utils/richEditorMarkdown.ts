@@ -15,6 +15,7 @@ import { advanceMarkdownFence, type MarkdownFence } from './markdownFences'
 import { preProcessSingleTildeStrikethrough } from './markdownStrikethrough'
 import { normalizeBareImageUrls, portableImageUrls, resolveImageUrls } from './vaultImages'
 import { injectWikilinks, preProcessWikilinks, splitFrontmatter } from './wikilinks'
+import { preserveMarkdownSourceFormatting } from './sourcePreservingMarkdown'
 import type {
   BlockNoteDirectMarkdownMetrics,
   DirectMarkdownCapableSerializer,
@@ -145,16 +146,17 @@ function serializeRichEditorBodyToMarkdownWithTrace(
   vaultPath?: string,
   notePath?: string,
   blocks: EditorBlocksSnapshot = [],
+  options: { compact?: boolean } = {},
 ): string {
   const startedAt = now()
   const directEditor = editor as DirectMarkdownCapableSerializer
   delete directEditor.__markoraLastDirectMarkdownMetrics
   const document = blocks
   const serialized = serializeDurableEditorBlocks(editor, document, vaultPath)
-  const body = compactMarkdown(
-    restoreBlankBlockquoteParagraphs(serialized),
-    { preserveConsecutiveBlankLines: true },
-  )
+  const restored = restoreBlankBlockquoteParagraphs(serialized)
+  const body = options.compact === false
+    ? restored
+    : compactMarkdown(restored, { preserveConsecutiveBlankLines: true })
   const metrics = readDirectMarkdownMetrics(directEditor)
   logRichEditorSerializationTrace({
     blockCount: metrics?.blockCount ?? document.length,
@@ -400,18 +402,20 @@ export function serializeRichEditorDocumentToMarkdown({
   tabContent,
   vaultPath,
 }: RichEditorDocumentSerializationOptions): string {
-  const rawBodyMarkdown = serializeRichEditorBlocksToMarkdown({
-    blocks: blocks ?? editor.document,
+  const rawBodyMarkdown = serializeRichEditorBodyToMarkdownWithTrace(
     editor,
-    notePath,
     vaultPath,
-  })
-  const bodyMarkdown = vaultPath
+    notePath,
+    blocks ?? editor.document,
+    { compact: false },
+  )
+  const serializedBodyMarkdown = vaultPath
     ? portableFileAttachmentUrls(
       portableImageUrls(rawBodyMarkdown, vaultPath, notePath),
       vaultPath,
     )
     : rawBodyMarkdown
-  const [frontmatter] = splitFrontmatter(tabContent)
+  const [frontmatter, sourceBody] = splitFrontmatter(tabContent)
+  const bodyMarkdown = preserveMarkdownSourceFormatting(sourceBody, serializedBodyMarkdown)
   return `${frontmatter}${bodyMarkdown}`
 }

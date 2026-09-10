@@ -79,6 +79,7 @@ import { buildTagCounts, filterEntriesByTags } from './utils/noteTags'
 import type { SearchHighlightRequest } from './utils/searchHighlight'
 import { resolveStartupSelection } from './utils/startupSelection'
 import { DEFAULT_NOTE_WIDTH_PX } from './utils/noteWidth'
+import { areGitFeaturesEnabled } from './utils/gitFeatureState'
 import { EDITOR_THEME_CATALOG } from './editorThemes/editorThemeCatalog'
 import './App.css'
 
@@ -224,7 +225,8 @@ function MainApp() {
     settings,
     windowMode: false,
   })
-  const managedGit = useManagedGit(resolvedPath, vaultSwitcher.loaded)
+  const gitFeaturesEnabled = settingsLoaded && areGitFeaturesEnabled(settings)
+  const managedGit = useManagedGit(resolvedPath, vaultSwitcher.loaded && gitFeaturesEnabled)
   const automaticGitEnabled = managedGit.mode === 'managed'
 
   const vault = useVaultLoader(
@@ -232,7 +234,7 @@ function MainApp() {
     graphVaults,
     multiWorkspaceEnabled ? defaultWorkspacePath : null,
     folderVaults,
-    { loadModifiedFiles: true },
+    { loadModifiedFiles: gitFeaturesEnabled },
   )
   const visibleWorkspaceRoots = useMemo(() => {
     if (visibleWorkspacePathList && visibleWorkspacePathList.length > 0) return visibleWorkspacePathList
@@ -331,8 +333,9 @@ function MainApp() {
   })
   const loadDefaultVaultModifiedFiles = vault.loadModifiedFiles
   const refreshGitModifiedFiles = useCallback(async () => {
+    if (!gitFeaturesEnabled) return
     await loadDefaultVaultModifiedFiles()
-  }, [loadDefaultVaultModifiedFiles])
+  }, [gitFeaturesEnabled, loadDefaultVaultModifiedFiles])
   const reloadVault = vault.reloadVault
 
   const handleDeletedNoteRestored = useCallback(async () => {
@@ -355,6 +358,7 @@ function MainApp() {
     handleUpdateWikilinks,
     handleDismissRenames,
   } = useVaultRenameDetection({
+    enabled: gitFeaturesEnabled,
     reloadVault: vault.reloadVault,
     setToastMessage,
     vaultPath: resolvedPath,
@@ -887,6 +891,7 @@ function MainApp() {
 
   const commands = useAppCommands({
     activeTabPath: notes.activeTabPath, activeTabPathRef: notes.activeTabPathRef,
+    gitFeaturesEnabled,
     entries: visibleEntries,
     visibleNotesRef,
     multiSelectionCommandRef,

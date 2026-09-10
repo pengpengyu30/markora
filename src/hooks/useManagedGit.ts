@@ -24,7 +24,7 @@ async function ensureWorkspace(vaultPath: string): Promise<GitWorkspaceInfo> {
     : mockInvoke<GitWorkspaceInfo>('ensure_git_repository', { vaultPath })
 }
 
-export function useManagedGit(vaultPath: string, enabled = true): ManagedGitState {
+export function useManagedGit(vaultPath: string, enabled = false): ManagedGitState {
   const detectionKey = enabled && vaultPath.trim() ? vaultPath : ''
   const [detection, setDetection] = useState<{ key: string; mode: DetectedGitMode }>({
     key: '',

@@ -40,7 +40,7 @@ describe('editorRawModeSync arrow ligatures', () => {
       serializeRichEditorContent: true,
     })
 
-    expect(result).toBe('---\ntitle: Flows\n---\nFlow → left ← both ↔\n')
+    expect(result).toBe('---\ntitle: Flows\n---\n\nFlow → left ← both ↔\n')
     expect(rawLatestContentRef.current).toBe(result)
   })
 
@@ -69,6 +69,6 @@ describe('editorRawModeSync arrow ligatures', () => {
     expect(serializeEditorDocumentToMarkdown(
       mockEditor as never,
       '---\ntitle: Graph\n---\n',
-    )).toBe('---\ntitle: Graph\n---\nA → B, B ← C, A ↔ C\n')
+    )).toBe('---\ntitle: Graph\n---\nA → B, B ← C, A ↔ C')
   })
 })

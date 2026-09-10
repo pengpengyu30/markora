@@ -54,6 +54,7 @@ interface ParserState {
 interface ListLine {
   checked?: boolean
   depth: number
+  indentWidth: number
   marker: string
   orderedStart?: number
   text: string
@@ -98,6 +99,7 @@ const UNORDERED_LIST_RE = /^([ \t]*)([-*+])[ \t]+(.+)$/u
 const CHECK_LIST_PREFIX_RE = /^([ \t]*)([-*+])[ \t]+\[([ xX])\]/u
 const THEMATIC_BREAK_RE = /^[ \t]{0,3}(?:-{3,}|\*{3,}|_{3,})[ \t]*$/u
 const FENCE_RE = /^[ \t]{0,3}(`{3,}|~{3,})(.*)$/u
+const INDENTED_FENCE_RE = /^([ \t]{2,})(`{3,}|~{3,})(.*)$/u
 const MARKDOWN_IMAGE_RE = /(^|[^\\])!\[[^\]]*\]\(/u
 const REFERENCE_LINK_RE = /^[ \t]{0,3}\[[^\]]+\]:[ \t]+/u
 const UNSUPPORTED_BLOCK_RE = /^[ \t]{0,3}(?:#{7,}|:::+|\[\^.+\]:)/u
@@ -289,7 +291,8 @@ function listLine(line: MarkdownLine): ListLine | null {
   if (check) {
     return {
       checked: (check.at(3) ?? '').toLowerCase() === 'x',
-      depth: listDepth(check.at(1) ?? ''),
+      depth: 0,
+      indentWidth: listIndentWidth(check.at(1) ?? ''),
       marker: check.at(2) ?? '-',
       text: line.slice(check.at(0)?.length ?? 0).trimStart(),
       type: 'checkListItem',
@@ -299,7 +302,8 @@ function listLine(line: MarkdownLine): ListLine | null {
   const ordered = ORDERED_LIST_RE.exec(line)
   if (ordered) {
     return {
-      depth: listDepth(ordered[1]),
+      depth: 0,
+      indentWidth: listIndentWidth(ordered[1]),
       marker: ordered[2],
       orderedStart: Number(ordered[2]),
       text: ordered[3],
@@ -310,15 +314,42 @@ function listLine(line: MarkdownLine): ListLine | null {
   const unordered = UNORDERED_LIST_RE.exec(line)
   if (!unordered) return null
   return {
-    depth: listDepth(unordered[1]),
+    depth: 0,
+    indentWidth: listIndentWidth(unordered[1]),
     marker: unordered[2],
     text: unordered[3],
     type: 'bulletListItem',
   }
 }
 
-function listDepth(indent: MarkdownLine): number {
-  return Math.floor(indent.replace(/\t/gu, '  ').length / 2)
+function listIndentWidth(indent: MarkdownLine): number {
+  return indent.replace(/\t/gu, '  ').length
+}
+
+function listDepthForIndent(indentWidth: number, indentLevels: number[]): number {
+  if (indentLevels.length === 0) {
+    indentLevels.push(indentWidth)
+    return 0
+  }
+
+  const exactDepth = indentLevels.indexOf(indentWidth)
+  if (exactDepth >= 0) {
+    indentLevels.length = exactDepth + 1
+    return exactDepth
+  }
+
+  let parentDepth = -1
+  for (let depth = indentLevels.length - 1; depth >= 0; depth -= 1) {
+    if ((indentLevels[depth] ?? 0) < indentWidth) {
+      parentDepth = depth
+      break
+    }
+  }
+
+  const nextDepth = parentDepth + 1
+  indentLevels.length = nextDepth
+  indentLevels.push(indentWidth)
+  return nextDepth
 }
 
 function listBlock(item: ListLine): BlockLike {
@@ -333,6 +364,47 @@ function listBlock(item: ListLine): BlockLike {
     content: parseInline(item.text),
     children: [],
   }
+}
+
+function stripFenceIndent(line: MarkdownLine, indent: MarkdownLine): MarkdownLine {
+  if (line.startsWith(indent)) return line.slice(indent.length)
+  return line.trim() ? line : ''
+}
+
+function parseIndentedFence(
+  state: ParserState,
+  start: LineIndex,
+): { block: BlockLike; next: LineIndex } | null {
+  const opening = INDENTED_FENCE_RE.exec(state.lines.at(start) ?? '')
+  if (!opening) return null
+
+  const indent = opening[1]
+  const marker = opening[2]
+  const markerChar = marker.charAt(0)
+  const language = opening[3].trim().split(/\s+/u)[0] ?? ''
+  let end = start + 1
+
+  while (end < state.lines.length) {
+    const line = state.lines.at(end) ?? ''
+    const trimmed = line.trim()
+    if (trimmed.startsWith(markerChar.repeat(marker.length))) {
+      return {
+        block: {
+          type: 'codeBlock',
+          props: { language: language || 'text' },
+          content: [textItem(state.lines.slice(start + 1, end)
+            .map(contentLine => stripFenceIndent(contentLine, indent))
+            .join('\n'))],
+          children: [],
+        },
+        next: end + 1,
+      }
+    }
+    end += 1
+  }
+
+  state.fallbackReason = 'unclosed-code-fence'
+  return null
 }
 
 function appendListBlock(
@@ -378,13 +450,40 @@ function parseList(state: ParserState, start: LineIndex): { blocks: BlockLike[];
 
   const root: BlockLike[] = []
   const stack: BlockLike[] = []
+  const indentLevels: number[] = []
   let index = start
 
   while (index < state.lines.length) {
-    const item = listLine(state.lines.at(index) ?? '')
-    if (!item) break
-    if (!appendListBlock(state, root, stack, item)) return null
-    index += 1
+    const line = state.lines.at(index) ?? ''
+    if (!line.trim()) {
+      index += 1
+      continue
+    }
+
+    const item = listLine(line)
+    if (item) {
+      const normalizedItem = {
+        ...item,
+        depth: listDepthForIndent(item.indentWidth, indentLevels),
+      }
+      if (!appendListBlock(state, root, stack, normalizedItem)) return null
+      index += 1
+      continue
+    }
+
+    const nestedFence = parseIndentedFence(state, index)
+    if (nestedFence) {
+      const parent = stack.at(-1)
+      if (!parent) {
+        state.fallbackReason = 'nested-fence-parent-missing'
+        return null
+      }
+      parent.children.push(nestedFence.block)
+      index = nestedFence.next
+      continue
+    }
+    if (state.fallbackReason) return null
+    break
   }
 
   return { blocks: root, next: index }

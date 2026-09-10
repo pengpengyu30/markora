@@ -88,11 +88,12 @@ where
 fn register_watch_root(
     roots: &mut std::collections::HashMap<PathBuf, Option<PathBuf>>,
     vault_path: PathBuf,
+    git_enabled: bool,
 ) -> bool {
     if roots.contains_key(&vault_path) {
         return false;
     }
-    let git_dir = resolve_git_dir(&vault_path);
+    let git_dir = git_enabled.then(|| resolve_git_dir(&vault_path)).flatten();
     roots.insert(vault_path, git_dir);
     true
 }
@@ -169,18 +170,6 @@ mod desktop {
         !matches!(event.kind, EventKind::Access(_))
     }
 
-    fn changed_paths(event: Event, git_dir: Option<&Path>) -> Vec<String> {
-        if !should_emit_event(&event) {
-            return Vec::new();
-        }
-        event
-            .paths
-            .into_iter()
-            .filter(|path| is_watchable_path(path, git_dir))
-            .map(|path| path.to_string_lossy().to_string())
-            .collect()
-    }
-
     fn group_changed_paths(event: Event, roots: &WatchedRoots) -> HashMap<PathBuf, Vec<String>> {
         if !should_emit_event(&event) {
             return HashMap::new();
@@ -246,6 +235,7 @@ mod desktop {
         path: PathBuf,
     ) -> Result<(), String> {
         let vault_path = validate_vault_path(path)?;
+        let git_enabled = crate::settings::git_features_enabled_globally();
         let mut active = state
             .active
             .lock()
@@ -257,7 +247,7 @@ mod desktop {
                     .roots
                     .lock()
                     .map_err(|_| "Failed to lock vault watcher roots".to_string())?;
-                if !register_watch_root(&mut roots, vault_path.clone()) {
+                if !register_watch_root(&mut roots, vault_path.clone(), git_enabled) {
                     return Ok(());
                 }
             }
@@ -265,7 +255,7 @@ mod desktop {
         }
 
         let mut roots = WatchedRoots::new();
-        register_watch_root(&mut roots, vault_path.clone());
+        register_watch_root(&mut roots, vault_path.clone(), git_enabled);
         let roots = Arc::new(Mutex::new(roots));
         let mut watcher = create_shared_watcher(app, roots.clone())?;
         watch_vault_path(&mut watcher, &vault_path)?;
@@ -287,6 +277,7 @@ mod desktop {
         use notify::event::{AccessKind, CreateKind, EventAttributes};
         use notify::{Event, EventKind};
         use std::collections::HashMap;
+        use std::path::Path;
 
         use super::*;
 
@@ -296,6 +287,13 @@ mod desktop {
                 paths: paths.iter().map(PathBuf::from).collect(),
                 attrs: EventAttributes::default(),
             }
+        }
+
+        fn changed_paths_for_root(event: Event, root: &Path) -> Vec<String> {
+            let roots = HashMap::from([(root.to_path_buf(), None)]);
+            group_changed_paths(event, &roots)
+                .remove(root)
+                .unwrap_or_default()
         }
 
         #[test]
@@ -316,53 +314,56 @@ mod desktop {
         }
 
         #[test]
-        fn changed_paths_ignores_access_events() {
-            let paths = changed_paths(
-                event(EventKind::Access(AccessKind::Read), &["notes/today.md"]),
-                None,
+        fn group_changed_paths_ignores_access_events() {
+            let root = Path::new("/vault");
+            let paths = changed_paths_for_root(
+                event(EventKind::Access(AccessKind::Read), &["/vault/notes/today.md"]),
+                root,
             );
 
             assert!(paths.is_empty());
         }
 
         #[test]
-        fn changed_paths_filters_unwatchable_paths() {
-            let paths = changed_paths(
+        fn group_changed_paths_filters_unwatchable_paths() {
+            let root = Path::new("/vault");
+            let paths = changed_paths_for_root(
                 event(
                     EventKind::Create(CreateKind::File),
                     &[
-                        ".git/index.lock",
-                        "node_modules/pkg/index.js",
-                        "notes/today.md",
+                        "/vault/.git/index.lock",
+                        "/vault/node_modules/pkg/index.js",
+                        "/vault/notes/today.md",
                     ],
                 ),
-                None,
+                root,
             );
 
-            assert_eq!(paths, vec!["notes/today.md"]);
+            assert_eq!(paths, vec!["/vault/notes/today.md"]);
         }
 
         #[test]
-        fn changed_paths_filters_editor_temporary_files() {
-            let paths = changed_paths(
+        fn group_changed_paths_filters_editor_temporary_files() {
+            let root = Path::new("/vault");
+            let paths = changed_paths_for_root(
                 event(
                     EventKind::Create(CreateKind::File),
                     &[
-                        ".DS_Store",
-                        ".markora-rename-txn",
-                        ".tolaria-rename-txn",
-                        ".#draft.md",
-                        "draft.md~",
-                        "draft.tmp",
-                        "draft.swp",
-                        "draft.swx",
-                        "notes/keep.md",
+                        "/vault/.DS_Store",
+                        "/vault/.markora-rename-txn",
+                        "/vault/.tolaria-rename-txn",
+                        "/vault/.#draft.md",
+                        "/vault/draft.md~",
+                        "/vault/draft.tmp",
+                        "/vault/draft.swp",
+                        "/vault/draft.swx",
+                        "/vault/notes/keep.md",
                     ],
                 ),
-                None,
+                root,
             );
 
-            assert_eq!(paths, vec!["notes/keep.md"]);
+            assert_eq!(paths, vec!["/vault/notes/keep.md"]);
         }
 
         #[test]
@@ -502,13 +503,28 @@ mod tests {
         let first = PathBuf::from("/vault-a");
         let second = PathBuf::from("/vault-b");
 
-        assert!(register_watch_root(&mut roots, first.clone()));
-        assert!(register_watch_root(&mut roots, second.clone()));
-        assert!(!register_watch_root(&mut roots, first.clone()));
+        assert!(register_watch_root(&mut roots, first.clone(), false));
+        assert!(register_watch_root(&mut roots, second.clone(), false));
+        assert!(!register_watch_root(&mut roots, first.clone(), false));
 
         assert_eq!(roots.len(), 2);
         assert!(roots.contains_key(&first));
         assert!(roots.contains_key(&second));
+    }
+
+    #[test]
+    fn register_watch_root_skips_git_metadata_resolution_when_disabled() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::create_dir(dir.path().join(".git.nosync")).unwrap();
+        std::os::unix::fs::symlink(".git.nosync", dir.path().join(".git")).unwrap();
+
+        let mut roots = HashMap::new();
+        assert!(register_watch_root(&mut roots, dir.path().to_path_buf(), false));
+        assert_eq!(roots.get(dir.path()), Some(&None));
+
+        let mut roots = HashMap::new();
+        assert!(register_watch_root(&mut roots, dir.path().to_path_buf(), true));
+        assert_eq!(roots.get(dir.path()), Some(&Some(dir.path().join(".git.nosync"))));
     }
 
     #[test]

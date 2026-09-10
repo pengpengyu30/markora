@@ -14,16 +14,26 @@ import type { useEditorContentModel } from './useEditorContentModel'
 
 type EditorContentModel = ReturnType<typeof useEditorContentModel>
 
+function richCodeLineNumbersEnabled(
+  editorTheme: EditorContentModel['editorTheme'] | undefined,
+  cssVars: EditorContentModel['cssVars'],
+): boolean {
+  return editorTheme?.tokens.behavior.showRichCodeBlockLineNumbers
+    ?? cssVars['--editor-theme-behavior-show-rich-code-block-line-numbers'] === 'true'
+}
+
 function EditorThemeScope({
   children,
   cssVars,
   editorThemeId,
   noteWidthMaxWidth,
+  showRichCodeBlockLineNumbers,
 }: {
   children: React.ReactNode
   cssVars: EditorContentModel['cssVars']
   editorThemeId: EditorContentModel['editorThemeId']
   noteWidthMaxWidth?: number | null
+  showRichCodeBlockLineNumbers: boolean
 }) {
   const scopeStyle = {
     ...cssVars,
@@ -37,6 +47,7 @@ function EditorThemeScope({
       className="editor-theme-scope flex flex-1 min-h-0 flex-col"
       data-editor-theme-scope="true"
       data-editor-theme={editorThemeId}
+      data-editor-code-line-numbers={showRichCodeBlockLineNumbers ? 'true' : 'false'}
       style={scopeStyle}
     >
       {children}
@@ -401,6 +412,7 @@ function StandardEditorCanvas(options: EditorCanvasProps) {
         cssVars={cssVars}
         editorThemeId={editorThemeId}
         noteWidthMaxWidth={noteWidthMaxWidth}
+        showRichCodeBlockLineNumbers={richCodeLineNumbersEnabled(editorTheme, cssVars)}
       >
         <div className="editor-content-wrapper" data-note-document-body="true" data-note-pdf-export-root="true">
           <SingleEditorView
@@ -517,6 +529,7 @@ export function EditorContentLayout(model: EditorContentModel) {
           cssVars={cssVars}
           editorThemeId={model.editorThemeId}
           noteWidthMaxWidth={noteWidthMaxWidth}
+          showRichCodeBlockLineNumbers={richCodeLineNumbersEnabled(model.editorTheme, cssVars)}
         >
           <RawModeEditorSection
             activeTab={activeTab}

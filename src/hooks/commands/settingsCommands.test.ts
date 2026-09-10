@@ -231,6 +231,18 @@ describe('buildSettingsCommands', () => {
     expect(onToggleGitignoredFilesVisibility).toHaveBeenCalledTimes(1)
   })
 
+  it('disables Gitignored visibility controls while Git features are disabled', () => {
+    const command = findCommand('toggle-gitignored-files-visibility', buildSettingsCommands({
+      onOpenSettings: vi.fn(),
+      gitFeaturesEnabled: false,
+    }))
+
+    expect(command).toMatchObject({
+      label: 'Toggle Gitignored Files Visibility',
+      enabled: false,
+    })
+  })
+
   it('dispatches the Gitignored visibility event when no direct handler is provided', () => {
     const listener = vi.fn()
     window.addEventListener(TOGGLE_GITIGNORED_VISIBILITY_EVENT, listener)

@@ -367,6 +367,19 @@ describe('App', () => {
     expect(await screen.findByTestId('status-bar', {}, { timeout: 5000 })).toBeInTheDocument()
   })
 
+  it('does not probe Git or load modified files when Git features are disabled', async () => {
+    const ensureGitRepository = vi.fn(() => mockCommandResults.ensure_git_repository)
+    const getModifiedFiles = vi.fn(() => [])
+    mockCommandResults.ensure_git_repository = ensureGitRepository
+    mockCommandResults.get_modified_files = getModifiedFiles
+
+    render(<App />)
+    await screen.findByTestId('status-bar')
+
+    expect(ensureGitRepository).not.toHaveBeenCalled()
+    expect(getModifiedFiles).not.toHaveBeenCalled()
+  })
+
   it('loads and displays vault entries in sidebar', async () => {
     render(<App />)
     await waitFor(() => {

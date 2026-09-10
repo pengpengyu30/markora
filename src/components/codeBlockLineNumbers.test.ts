@@ -2,13 +2,23 @@ import { Schema } from '@tiptap/pm/model'
 import { EditorState } from '@tiptap/pm/state'
 import { EditorView } from '@tiptap/pm/view'
 import { describe, expect, it } from 'vitest'
-import { createCodeBlockLineNumberPlugin } from './codeBlockLineNumbers'
+import {
+  codeBlockTransactionTouchesCodeBlock,
+  codeBlockNodesChanged,
+  createCodeBlockLineNumberPlugin,
+} from './codeBlockLineNumbers'
 
 const schema = new Schema({
   nodes: {
-    doc: { content: 'codeBlock+' },
+    doc: { content: 'block+' },
     text: { group: 'inline' },
+    paragraph: {
+      group: 'block',
+      content: 'inline*',
+      toDOM: () => ['p', 0],
+    },
     codeBlock: {
+      group: 'block',
       code: true,
       content: 'text*',
       toDOM: () => ['pre', ['code', 0]],
@@ -57,5 +67,39 @@ describe('code block line numbers', () => {
     expect(host.querySelector('code')?.textContent).toBe('one\ntwo\nthree')
 
     view.destroy()
+  })
+
+  it('recognizes paragraph-only changes without invalidating code-block markers', () => {
+    const codeBlock = (source: string) => schema.node('codeBlock', null, source ? schema.text(source) : undefined)
+    const before = schema.node('doc', null, [
+      schema.node('paragraph', null, schema.text('before')),
+      codeBlock('one\ntwo'),
+    ])
+    const paragraphChanged = schema.node('doc', null, [
+      schema.node('paragraph', null, schema.text('before changed')),
+      codeBlock('one\ntwo'),
+    ])
+    const codeChanged = schema.node('doc', null, [
+      schema.node('paragraph', null, schema.text('before')),
+      codeBlock('one\ntwo\nthree'),
+    ])
+
+    expect(codeBlockNodesChanged(before, paragraphChanged)).toBe(false)
+    expect(codeBlockNodesChanged(before, codeChanged)).toBe(true)
+  })
+
+  it('checks only changed transaction ranges for ordinary paragraph edits', () => {
+    const codeBlock = schema.node('codeBlock', null, schema.text('one\ntwo'))
+    const state = EditorState.create({
+      doc: schema.node('doc', null, [
+        schema.node('paragraph', null, schema.text('before')),
+        codeBlock,
+      ]),
+    })
+    const paragraphEdit = state.tr.insertText(' changed', 7)
+    const codeEdit = state.tr.insertText(' three', 15)
+
+    expect(codeBlockTransactionTouchesCodeBlock(paragraphEdit)).toBe(false)
+    expect(codeBlockTransactionTouchesCodeBlock(codeEdit)).toBe(true)
   })
 })

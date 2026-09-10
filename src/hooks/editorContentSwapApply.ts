@@ -13,10 +13,12 @@ export type EditorContentPathRef = MutableRefObject<string | null>
 
 export const PROGRESSIVE_BLOCK_APPLY_THRESHOLD = 320
 export const PROGRESSIVE_INITIAL_BLOCK_APPLY_CHUNK_SIZE = 48
-export const PROGRESSIVE_BLOCK_APPLY_CHUNK_SIZE = 120
+export const PROGRESSIVE_BLOCK_APPLY_CHUNK_SIZE = 240
+export const CODE_HEAVY_CODE_BLOCK_COUNT_THRESHOLD = 32
 
 interface AppliedEditorContentCommit {
   editorContentPathRef: EditorContentPathRef
+  onContentApplied?: (path: string, blocks: EditorBlocks) => void
   scrollTop: number
   suppressChangeRef: MutableRefObject<boolean>
   targetPath: string
@@ -103,6 +105,21 @@ function progressiveChunkEnd(blocks: EditorBlocks, start: number, size: number):
   return end
 }
 
+function codeBlockCount(blocks: EditorBlocks): number {
+  return blocks.reduce<number>((count, block) => {
+    if (typeof block !== 'object' || block === null) return count
+    const record = block as { children?: unknown; type?: unknown }
+    const children = Array.isArray(record.children) ? record.children : []
+    return count
+      + (record.type === 'codeBlock' ? 1 : 0)
+      + codeBlockCount(children)
+  }, 0)
+}
+
+function shouldApplyCodeHeavyDocumentSynchronously(blocks: EditorBlocks): boolean {
+  return codeBlockCount(blocks) >= CODE_HEAVY_CODE_BLOCK_COUNT_THRESHOLD
+}
+
 function applyPreparedBlocksToEditor(
   options: ApplyBlocksToEditorOptions,
   safeBlocks: EditorBlocks,
@@ -136,7 +153,12 @@ function applyPreparedBlocksToEditor(
     mode: 'sync',
     notePath: targetPath,
   })
-  commitAppliedEditorContent(options)
+  commitAppliedEditorContent({
+    ...options,
+    onContentApplied: safeBlocks.length > 0
+      ? (path) => options.onContentApplied?.(path, safeBlocks)
+      : undefined,
+  })
   return true
 }
 
@@ -222,6 +244,9 @@ export async function applyBlocksToEditorProgressively(
 
   const startedAt = now()
   const safeBlocks = repairMalformedEditorBlocks(blocks)
+  if (shouldApplyCodeHeavyDocumentSynchronously(safeBlocks)) {
+    return applyPreparedBlocksToEditor(options, safeBlocks, startedAt)
+  }
   const previousEditable = readEditorEditable(editor)
   let appliedChunks = 0
 
@@ -259,7 +284,10 @@ export async function applyBlocksToEditorProgressively(
     mode: 'progressive',
     notePath: targetPath,
   })
-  commitAppliedEditorContent(options, () => {
+  commitAppliedEditorContent({
+    ...options,
+    onContentApplied: (path) => options.onContentApplied?.(path, safeBlocks),
+  }, () => {
     setEditorEditable(editor, previousEditable)
   }, shouldAbort)
   return true
@@ -295,6 +323,7 @@ function commitAppliedEditorContent(
 ) {
   const {
     editorContentPathRef,
+    onContentApplied,
     scrollTop,
     suppressChangeRef,
     targetPath,
@@ -308,6 +337,7 @@ function commitAppliedEditorContent(
     editorContentPathRef.current = targetPath
     restoreEditorScrollTop(scrollTop)
     onCommitted?.()
+    onContentApplied?.(targetPath, [])
     suppressChangeRef.current = false
   })
 }

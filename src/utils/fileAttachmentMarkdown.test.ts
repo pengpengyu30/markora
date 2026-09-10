@@ -46,7 +46,7 @@ describe('file attachment Markdown roundtrip', () => {
   it('serializes file blocks as portable attachment links', () => {
     expect(serializeFileBlocks([
       fileBlock('report.pdf', 'asset://localhost/%2Fvault%2Fattachments%2Freport.pdf'),
-    ])).toBe('---\ntitle: Note A\n---\n[report.pdf](attachments/report.pdf)\n')
+    ])).toBe('---\ntitle: Note A\n---\n[report.pdf](attachments/report.pdf)')
   })
 
   it('normalizes embedded file paths from the current attachments folder', () => {
@@ -60,7 +60,7 @@ describe('file attachment Markdown roundtrip', () => {
       notePath: 'a.md',
       tabContent: '---\ntitle: Note A\n---\n',
       vaultPath: '/vault',
-    })).toBe('---\ntitle: Note A\n---\n[project brief.pdf](<attachments/project brief.pdf>)\n')
+    })).toBe('---\ntitle: Note A\n---\n[project brief.pdf](<attachments/project brief.pdf>)')
     expect(editor.blocksToMarkdownLossy).not.toHaveBeenCalled()
   })
 
@@ -69,7 +69,7 @@ describe('file attachment Markdown roundtrip', () => {
     expect(serializeFileBlocks([
       fileBlock('project brief.pdf', pdfPath),
     ], `[project brief.pdf](<${pdfPath}>)`)).toBe(
-      '---\ntitle: Note A\n---\n[project brief.pdf](</shared/attachments/project brief.pdf>)\n',
+      '---\ntitle: Note A\n---\n[project brief.pdf](</shared/attachments/project brief.pdf>)',
     )
   })
 

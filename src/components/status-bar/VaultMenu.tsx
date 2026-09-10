@@ -248,7 +248,7 @@ export function VaultMenu(props: VaultMenuProps) {
           data-testid="status-vault-trigger"
         >
           <Cube size={13} weight="regular" />
-          {compact ? null : <span className="max-w-32 truncate">{activeVaultLabel}</span>}
+          {compact ? null : <span className="whitespace-nowrap">{activeVaultLabel}</span>}
         </Button>
       </ActionTooltip>
       {open && (

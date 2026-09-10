@@ -15,6 +15,7 @@ import type { EditorThemeId } from '../editorThemes/editorThemeCatalog'
 
 interface AppCommandsConfig {
   activeTabPath: string | null
+  gitFeaturesEnabled?: boolean
   activeTabPathRef: React.MutableRefObject<string | null>
   entries: VaultEntry[]
   visibleNotesRef: React.RefObject<VaultEntry[]>
@@ -136,6 +137,7 @@ type CommandRegistryVaultActions = Pick<
   | 'onReloadVault'
   | 'onRepairVault'
   | 'onRestoreDeletedNote'
+  | 'gitFeaturesEnabled'
   | 'onRevealActiveFile'
   | 'onCopyActiveFilePath'
   | 'onOpenActiveFileExternal'
@@ -345,6 +347,7 @@ function createCommandRegistryVaultConfig(
     onReloadVault: config.onReloadVault,
     onRepairVault: config.onRepairVault,
     onRestoreDeletedNote: config.onRestoreDeletedNote,
+    gitFeaturesEnabled: config.gitFeaturesEnabled,
     onRevealActiveFile: config.onRevealActiveFile,
     onCopyActiveFilePath: config.onCopyActiveFilePath,
     onOpenActiveFileExternal: config.onOpenActiveFileExternal,
