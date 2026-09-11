@@ -1,0 +1,88 @@
+src/utils/sourcePreservingMarkdown.ts
+  s_be8f381d4e9dbb::t_5c91bc16cb719c 897-898
+  s_be8f381d4e9dbb::t_f8321e8ffec18d 64,904-925,929-939,953-967,970-999,1003-1013,1020,1026,1055-1056
+  s_be8f381d4e9dbb::t_6f153637d35d69 926-928
+  s_be8f381d4e9dbb::t_42e1388408bbd8 542-549,551-552,554-560,563-574,576-585,968-969,1001-1002,1022-1023,1039-1040
+  s_be8f381d4e9dbb::t_c5ead8df87eeaa 61,178,243,492,513,588-589
+  s_be8f381d4e9dbb::t_bb7d58611988df 1041-1043
+  s_be8f381d4e9dbb::t_a79100a7e59854 522-537,1000,1021,1045
+  s_be8f381d4e9dbb::t_524b3f939fc41f 940-952
+  s_be8f381d4e9dbb::t_2c97dba42b7660 733,738-744,747
+  s_be8f381d4e9dbb::t_5c3ea5733cec0e 502
+  s_be8f381d4e9dbb::t_6ed9c3d7233ea7 469
+  s_be8f381d4e9dbb::t_7abe6e06fedf2a 882-892,894-896
+  s_be8f381d4e9dbb::t_a69e9b69714a15 1024-1025,1028-1032,1044
+  s_be8f381d4e9dbb::t_be8b4b59fb21ad 497-499
+  s_be8f381d4e9dbb::t_455540e9d7ed30 1048-1053
+  s_be8f381d4e9dbb::t_e79a1ae1f572ea 1142
+  s_be8f381d4e9dbb::t_34900c01c8ee22 610-613,615,618-620,658-732,734-737,745-746,748-751
+  s_be8f381d4e9dbb::t_c8a00ac56fbe79 62-63,590,752,855-881,893,899-903,1014-1019,1027,1033-1038,1046-1047,1054,1057-1068,1137-1139
+  s_be8f381d4e9dbb::t_1b25e28e258063 65,538-541,575,586-587
+  s_be8f381d4e9dbb::t_05c093fd729015 504
+  s_be8f381d4e9dbb::t_0d194c5077bdf9 592-608
+  s_be8f381d4e9dbb::t_f5083de577885e 591
+  s_be8f381d4e9dbb::t_8b8267067b7090 609
+  s_be8f381d4e9dbb::t_05b7bb05ef8bfa 753
+src/components/SingleEditorView.test.tsx
+  s_be8f381d4e9dbb::t_dd3ef01e72c359 443,448-466,468,470-473,475-476,478-482
+  s_be8f381d4e9dbb::t_82c84901d6a601 444-447,467,469,474,477
+src/utils/richEditorMarkdown.test.ts
+  s_be8f381d4e9dbb::t_52e6dc84c48915 2-3,9,42-51,55-82
+  s_be8f381d4e9dbb::t_772f2a145dd65b 129-132
+  s_be8f381d4e9dbb::t_07c393686f36fb 84-128,133
+  s_be8f381d4e9dbb::t_e24a2a5a8e6db2 52-54
+  s_be8f381d4e9dbb::t_ef328aaacc0fb1 83
+docs/adr/README.md
+  s_be8f381d4e9dbb::t_4fe14d6e93d045 246
+  s_be8f381d4e9dbb::t_d4a1bdc79f1306 245
+src/components/Editor.raw-mode-sync.test.ts
+  s_be8f381d4e9dbb::t_0d3240cdec6922 128,146,191
+docs/ABSTRACTIONS.md
+  s_be8f381d4e9dbb::t_4fe14d6e93d045 179
+src/utils/sourcePreservingMarkdown.test.ts
+  s_be8f381d4e9dbb::t_06d24be6e1fd03 267-294
+  s_be8f381d4e9dbb::t_ecd62fb27abcca 238-239,241,245,247,251-256,258-260,264
+  s_be8f381d4e9dbb::t_8426b777b702ce 233-237,240,242-244,246,248-250,257,261-263,265-266
+  s_be8f381d4e9dbb::t_fb2b4f4cabc6a0 308-330
+  s_be8f381d4e9dbb::t_85ca0de8b30cf9 295-307
+src/utils/blockNoteDirectMarkdown.test.ts
+  s_be8f381d4e9dbb::t_655ee47ebb5884 285-297
+  s_be8f381d4e9dbb::t_d4c64167b8cb9f 326-361
+  s_be8f381d4e9dbb::t_8b6ec19e6bcf12 362-381
+src/components/editorRawModeSync.ts
+  s_be8f381d4e9dbb::t_fd92b905989592 116
+  s_be8f381d4e9dbb::t_0d3240cdec6922 125,130
+src/utils/blockNoteDirectMarkdown.ts
+  s_be8f381d4e9dbb::t_0e6192b87947a2 215,220,230,233,239-243,358
+  s_be8f381d4e9dbb::t_7c639fc57dd7c2 253-258,402-404
+  s_be8f381d4e9dbb::t_47e7cb69793c5c 216,231
+  s_be8f381d4e9dbb::t_34edd0d2a06679 169-180,182,185
+src/components/editorRawModeSync.mermaid.test.ts
+  s_be8f381d4e9dbb::t_dd3ef01e72c359 33,64-72
+  s_be8f381d4e9dbb::t_416f30a04836a9 74-105
+  s_be8f381d4e9dbb::t_740d2de029046d 73
+docs/ARCHITECTURE.md
+  s_be8f381d4e9dbb::t_4fe14d6e93d045 194
+src/components/useRawModeWithFlush.ts
+  s_be8f381d4e9dbb::t_3fb7479399d716 178
+src/components/SingleEditorView.tsx
+  s_be8f381d4e9dbb::t_0d3240cdec6922 800,804-821,824,828,838-851,856-858,862-863,878,899,901-904,1355-1358,1360,1513
+  s_be8f381d4e9dbb::t_a8bc1b790c9f5a 801-803,852-855
+  s_be8f381d4e9dbb::t_7e232cf7892a38 859-861
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "02094710efeb4fd3db94c1a823f0a5bcf0e99531",
+  "prompts": {},
+  "sessions": {
+    "s_be8f381d4e9dbb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07f6b-7e89-7c83-9268-285e054d1e6f",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "pengpengyu30 <pengpengyu30@gmail.com>"
+    }
+  }
+}
