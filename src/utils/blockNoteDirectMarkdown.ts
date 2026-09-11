@@ -166,14 +166,23 @@ function wrapInlineMarkdown(text: string, marker: string): string {
   return `${marker}${text}${marker}`
 }
 
+function wrapStyledTextWithoutWhitespace(text: string, styles: TextStyles): string {
+  const leading = text.match(/^[ \t]*/u)?.[0] ?? ''
+  const trailing = text.match(/[ \t]*$/u)?.[0] ?? ''
+  const end = trailing ? text.length - trailing.length : text.length
+  let styled = text.slice(leading.length, end)
+  if (!styled) return text
+  if (styles.bold === true) styled = wrapInlineMarkdown(styled, '**')
+  if (styles.italic === true) styled = wrapInlineMarkdown(styled, '*')
+  if (styles.strike === true) styled = wrapInlineMarkdown(styled, '~~')
+  return `${leading}${styled}${trailing}`
+}
+
 function styledTextMarkdown(item: InlineItem): string {
-  let text = escapeText(item.text ?? '')
+  const text = escapeText(item.text ?? '')
   const styles = item.styles ?? {}
   if (styles.code === true) return codeSpan(item.text ?? '')
-  if (styles.bold === true) text = wrapInlineMarkdown(text, '**')
-  if (styles.italic === true) text = wrapInlineMarkdown(text, '*')
-  if (styles.strike === true) text = wrapInlineMarkdown(text, '~~')
-  return text
+  return wrapStyledTextWithoutWhitespace(text, styles)
 }
 
 function codeSpan(text: string): string {
@@ -203,12 +212,12 @@ function literalTextContent(content: InlineItem[] | undefined): string {
 function blockPrefix(block: BlockLike, depth: number, context: SerializeContext): MarkdownLinePrefix | null {
   const indent = ' '.repeat(context.indentStack.at(depth) ?? 0)
   if (block.type === 'numberedListItem') {
-    const next = context.numberedStack.at(depth) ?? Number(block.props?.start ?? 1)
-    context.numberedStack.splice(depth, 1, next + 1)
+    const next = context.numberedStack.at(depth) ?? numberedListStart(block)
+    context.numberedStack[depth] = next + 1
     const marker = `${next}. `
     return { contentIndent: marker.length, indent, marker }
   }
-  context.numberedStack.splice(depth, 1, 1)
+  context.numberedStack.splice(depth, 1)
   if (block.type === 'bulletListItem') return { contentIndent: 2, indent, marker: '- ' }
   if (block.type === 'checkListItem') {
     return { contentIndent: 2, indent, marker: block.props?.checked === true ? '- [x] ' : '- [ ] ' }
@@ -218,13 +227,18 @@ function blockPrefix(block: BlockLike, depth: number, context: SerializeContext)
 
 function advanceCachedBlockContext(block: BlockLike, depth: number, context: SerializeContext): void {
   if (block.type === 'numberedListItem') {
-    const next = context.numberedStack.at(depth) ?? Number(block.props?.start ?? 1)
-    context.numberedStack.splice(depth, 1, next + 1)
+    const next = context.numberedStack.at(depth) ?? numberedListStart(block)
+    context.numberedStack[depth] = next + 1
   } else {
-    context.numberedStack.splice(depth, 1, 1)
+    context.numberedStack.splice(depth, 1)
   }
   context.indentStack.length = depth + 1
   context.numberedStack.length = depth + 1
+}
+
+function numberedListStart(block: BlockLike): number {
+  const start = Number(block.props?.start ?? 1)
+  return Number.isFinite(start) ? start : 1
 }
 
 function prependLinePrefix(markdown: string, prefix: MarkdownLinePrefix): string {
@@ -234,6 +248,12 @@ function prependLinePrefix(markdown: string, prefix: MarkdownLinePrefix): string
       ? `${prefix.indent}${prefix.marker}${line}`
       : `${prefix.indent}${' '.repeat(prefix.contentIndent)}${line}`
   )).join('\n')
+}
+
+function prependIndent(markdown: string, indent: number): string {
+  if (!markdown || indent <= 0) return markdown
+  const prefix = ' '.repeat(indent)
+  return markdown.split('\n').map(line => `${prefix}${line}`).join('\n')
 }
 
 function codeBlockMarkdown(block: BlockLike): string {
@@ -335,7 +355,7 @@ function serializeChildren(
   const childDepth = depth + 1
   const parentIndent = context.indentStack.at(depth) ?? 0
   context.indentStack.splice(childDepth, 1, parentIndent + (prefix?.contentIndent ?? 2))
-  context.numberedStack.splice(childDepth, 1, 1)
+  context.numberedStack.splice(childDepth, 1)
   const markdown = serializeBlockList(children, childDepth, context)
   context.indentStack.length = childDepth
   context.numberedStack.length = childDepth
@@ -379,7 +399,9 @@ function renderUncachedBlock(block: BlockLike, depth: number, context: Serialize
   if (ownMarkdown === null) return null
 
   const prefix = blockPrefix(block, depth, context)
-  const ownWithPrefix = prefix ? prependLinePrefix(ownMarkdown, prefix) : ownMarkdown
+  const ownWithPrefix = prefix
+    ? prependLinePrefix(ownMarkdown, prefix)
+    : prependIndent(ownMarkdown, context.indentStack.at(depth) ?? 0)
   const childMarkdown = serializeChildren(block, depth, context, prefix)
   return childMarkdown ? `${ownWithPrefix}\n${childMarkdown}` : ownWithPrefix
 }

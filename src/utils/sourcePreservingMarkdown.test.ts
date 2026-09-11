@@ -230,4 +230,102 @@ describe('source-preserving Markdown edits', () => {
 
     expect(preserveMarkdownSourceFormatting(source, serialized)).toBe(source)
   })
+
+  it('keeps later duplicate content aligned when a changed line removes a blank separator', () => {
+    const source = [
+      '1. First section',
+      '',
+      '   1. Changed target',
+      '   2. Optimize work',
+      '',
+      '2. Keep this item',
+      '',
+      '1. First section',
+      '',
+      '   1. Unchanged target',
+      '',
+      '   2. Optimize work',
+    ].join('\n')
+    const serialized = [
+      '1. First section',
+      '   1. Changed target edited',
+      '',
+      '   2. Optimize work',
+      '',
+      '2. Keep this item',
+      '',
+      '1. First section',
+      '   1. Unchanged target',
+      '',
+      '   2. Optimize work',
+    ].join('\n')
+
+    expect(preserveMarkdownSourceFormatting(source, serialized)).toBe(
+      source.replace('1. Changed target', '1. Changed target edited'),
+    )
+  })
+
+  it('treats generated zero-width placeholders as blank lines during alignment', () => {
+    const source = [
+      '1. First section',
+      '',
+      '2. Edited target',
+      '',
+      '---',
+      '',
+      '\u200B',
+      '',
+      '### Later section',
+    ].join('\n')
+    const serialized = [
+      '1. First section',
+      '',
+      '2. Edited target edited',
+      '',
+      '\u200B',
+      '---',
+      '',
+      '### Later section',
+    ].join('\n')
+
+    expect(preserveMarkdownSourceFormatting(source, serialized)).toBe(
+      source.replace('2. Edited target', '2. Edited target edited'),
+    )
+  })
+
+  it('fails closed instead of rebuilding a long source with unsafe alignment', () => {
+    const source = [
+      '# User source',
+      ...Array.from({ length: 240 }, (_, index) => `Source-only line ${index + 1}`),
+    ].join('\n')
+    const serialized = [
+      '# User source',
+      'Canonical replacement that cannot be mapped safely',
+    ].join('\n')
+
+    expect(preserveMarkdownSourceFormatting(source, serialized)).toBe(source)
+  })
+
+  it('does not promote source content into a generated list item', () => {
+    const source = [
+      '# User source',
+      '',
+      '1. ~~~markdown',
+      '   prodcolo-sjc-common (prod/aw1/sjc3/common)',
+      '   ~~~',
+      '',
+      ...Array.from({ length: 240 }, (_, index) => `Stable source line ${index + 1}`),
+    ].join('\n')
+    const serialized = [
+      '# User source',
+      '',
+      '1. prodcolo-sjc-common (prod/aw1/sjc3/common)',
+      '   prodcolo-sjc-common (prod/aw1/sjc3/common)',
+      '   ~~~',
+      '',
+      ...Array.from({ length: 240 }, (_, index) => `Stable source line ${index + 1}`),
+    ].join('\n')
+
+    expect(preserveMarkdownSourceFormatting(source, serialized)).toBe(source)
+  })
 })

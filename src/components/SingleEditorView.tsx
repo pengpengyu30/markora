@@ -797,12 +797,35 @@ function useEditorContainerClickHandler(options: {
   )
 }
 
+interface RichEditorDocumentUpdate {
+  appendedTransactions?: Array<{
+    docChanged?: boolean
+  }>
+  transaction?: {
+    docChanged?: boolean
+  }
+}
+
+interface RichEditorTiptapEventApi {
+  off?: (event: 'update', listener: (payload: RichEditorDocumentUpdate) => void) => unknown
+  on?: (event: 'update', listener: (payload: RichEditorDocumentUpdate) => void) => unknown
+}
+
+function richEditorTiptapEventApi(
+  editor: ReturnType<typeof useCreateBlockNote>,
+): RichEditorTiptapEventApi | null {
+  const tiptap = editor._tiptapEditor as RichEditorTiptapEventApi | undefined
+  if (typeof tiptap?.on !== 'function' || typeof tiptap.off !== 'function') return null
+  return tiptap
+}
+
 function useCompositionAwareEditorChange(options: {
   containerRef: React.RefObject<HTMLDivElement | null>
+  editor: ReturnType<typeof useCreateBlockNote>
   onChange?: () => void
 }) {
   const COMPOSITION_CHANGE_SETTLE_MS = 120
-  const { containerRef, onChange } = options
+  const { containerRef, editor, onChange } = options
   const onChangeRef = useRef(onChange)
   const composingRef = useRef(false)
   const pendingChangeRef = useRef(false)
@@ -811,6 +834,32 @@ function useCompositionAwareEditorChange(options: {
   useEffect(() => {
     onChangeRef.current = onChange
   }, [onChange])
+
+  const notifyEditorChange = useCallback(() => {
+    if (composingRef.current || settleTimeoutRef.current !== null) {
+      pendingChangeRef.current = true
+      return
+    }
+
+    pendingChangeRef.current = false
+    onChangeRef.current?.()
+  }, [])
+
+  const tiptapEventApi = richEditorTiptapEventApi(editor)
+  useEffect(() => {
+    if (!tiptapEventApi) return
+
+    const handleUpdate = ({ appendedTransactions, transaction }: RichEditorDocumentUpdate) => {
+      const documentChanged = transaction?.docChanged === true
+        || appendedTransactions?.some((appended) => appended.docChanged === true)
+      if (!documentChanged) return
+      notifyEditorChange()
+    }
+    tiptapEventApi.on?.('update', handleUpdate)
+    return () => {
+      tiptapEventApi.off?.('update', handleUpdate)
+    }
+  }, [notifyEditorChange, tiptapEventApi])
 
   useEffect(() => {
     const container = containerRef.current
@@ -826,7 +875,7 @@ function useCompositionAwareEditorChange(options: {
       settleTimeoutRef.current = null
       if (composingRef.current || !pendingChangeRef.current) return
       pendingChangeRef.current = false
-      onChangeRef.current?.()
+      notifyEditorChange()
     }
 
     const handleCompositionStart = () => {
@@ -847,17 +896,12 @@ function useCompositionAwareEditorChange(options: {
       container.removeEventListener('compositionstart', handleCompositionStart, true)
       container.removeEventListener('compositionend', handleCompositionEnd, true)
     }
-  }, [containerRef])
+  }, [containerRef, notifyEditorChange])
 
-  return useCallback(() => {
-    if (composingRef.current || settleTimeoutRef.current !== null) {
-      pendingChangeRef.current = true
-      return
-    }
-
-    pendingChangeRef.current = false
-    onChangeRef.current?.()
-  }, [])
+  return {
+    handleEditorChange: notifyEditorChange,
+    usesTiptapUpdateSubscription: tiptapEventApi !== null,
+  }
 }
 
 function handleCodeBlockCopy(event: React.ClipboardEvent<HTMLDivElement>): boolean {
@@ -1308,8 +1352,12 @@ export function SingleEditorView(options: {
     editor,
     suppressNextContainerClickRef,
   })
-  const handleEditorChange = useCompositionAwareEditorChange({
+  const {
+    handleEditorChange,
+    usesTiptapUpdateSubscription,
+  } = useCompositionAwareEditorChange({
     containerRef,
+    editor,
     onChange,
   })
   const onImageUrl = useInsertImageCallback(editor)
@@ -1462,7 +1510,7 @@ export function SingleEditorView(options: {
             key={recoveryKey}
             editor={editor}
             theme={themeMode}
-            onChange={handleEditorChange}
+            onChange={usesTiptapUpdateSubscription ? undefined : handleEditorChange}
             editable={editable}
             emojiPicker={false}
             formattingToolbar={false}

@@ -125,6 +125,7 @@ describe('raw-mode sync content guards', () => {
       activeTabPath: mockEntry.path,
       activeTabContent: mockContent,
       rawLatestContentRef,
+      serializeRichEditorContent: true,
     })
 
     expect(result).toBe('---\ntitle: Test Project\nis_a: Project\nStatus: Active\n---\n\n# Test Project\n\nUpdated body\n')
@@ -142,6 +143,7 @@ describe('raw-mode sync content guards', () => {
       activeTabPath: mockEntry.path,
       activeTabContent: mockContent,
       rawLatestContentRef,
+      serializeRichEditorContent: true,
       vaultPath: '/vault',
     })
 
@@ -186,6 +188,7 @@ describe('raw-mode sync content guards', () => {
         activeTabPath: mockEntry.path,
         activeTabContent: mockContent,
         rawLatestContentRef,
+        serializeRichEditorContent: true,
       })
 
       expect(result).toBe(

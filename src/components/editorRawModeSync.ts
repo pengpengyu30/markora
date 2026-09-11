@@ -2,7 +2,6 @@ import type { useCreateBlockNote } from '@blocknote/react'
 import type { MutableRefObject, SetStateAction } from 'react'
 import type { VaultEntry } from '../types'
 import {
-  hasRichEditorDurableBlocks,
   serializeRichEditorDocumentToMarkdown,
 } from '../utils/richEditorMarkdown'
 
@@ -114,6 +113,7 @@ export function syncActiveTabIntoRawBuffer(options: {
   activeTabPath: string | null
   activeTabContent: string | null
   rawLatestContentRef: MutableRefObject<string | null>
+  /** True only when a real rich-editor document change was flushed. */
   serializeRichEditorContent?: boolean
   vaultPath?: string
 }) {
@@ -122,13 +122,12 @@ export function syncActiveTabIntoRawBuffer(options: {
     activeTabPath,
     activeTabContent,
     rawLatestContentRef,
-    serializeRichEditorContent = true,
+    serializeRichEditorContent = false,
     vaultPath,
   } = options
   if (!activeTabPath || activeTabContent === null) return null
 
-  const shouldSerializeRichEditorContent = serializeRichEditorContent || hasRichEditorDurableBlocks(editor.document)
-  const syncedContent = shouldSerializeRichEditorContent
+  const syncedContent = serializeRichEditorContent
     ? serializeEditorDocumentToMarkdown(editor, activeTabContent, vaultPath, activeTabPath)
     : activeTabContent
   rawLatestContentRef.current = syncedContent

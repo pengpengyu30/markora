@@ -440,6 +440,46 @@ describe('SingleEditorView', () => {
     }
   })
 
+  it('ignores rich-editor updates that do not change document content', () => {
+    type UpdateListener = (payload: {
+      appendedTransactions?: Array<{ docChanged: boolean }>
+      transaction: { docChanged: boolean }
+    }) => void
+    const listeners = new Set<UpdateListener>()
+    const editor = createEditor()
+    const tiptap = editor._tiptapEditor as typeof editor._tiptapEditor & {
+      on: (event: 'update', listener: UpdateListener) => void
+      off: (event: 'update', listener: UpdateListener) => void
+    }
+    tiptap.on = vi.fn((_event, listener) => { listeners.add(listener) })
+    tiptap.off = vi.fn((_event, listener) => { listeners.delete(listener) })
+    const onChange = vi.fn()
+
+    const { unmount } = render(
+      <SingleEditorView
+        editor={editor as never}
+        entries={[makeEntry()]}
+        onNavigateWikilink={vi.fn()}
+        onChange={onChange}
+      />,
+    )
+
+    const emitUpdate = (payload: Parameters<UpdateListener>[0]) => {
+      act(() => {
+        for (const listener of listeners) listener(payload)
+      })
+    }
+
+    expect(state.capturedBlockNoteOnChange).toBeNull()
+    emitUpdate({ transaction: { docChanged: false } })
+    expect(onChange).not.toHaveBeenCalled()
+
+    emitUpdate({ transaction: { docChanged: false }, appendedTransactions: [{ docChanged: true }] })
+    expect(onChange).toHaveBeenCalledOnce()
+    unmount()
+    expect(tiptap.off).toHaveBeenCalled()
+  })
+
   it('copies selected fenced code text without markdown escape backslashes', async () => {
     const json = '{\n  "id": "Demo"\n}'
     const { container } = renderEditorHarness()

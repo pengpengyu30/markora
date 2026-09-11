@@ -175,7 +175,7 @@ function useHandleFlushPending(options: {
   } = options
   return useCallback(async () => {
     rawSourceContentRef.current = activeTabContent
-    const serializeRichEditorContent = flushPendingEditorChangeRef?.current?.() ?? true
+    const serializeRichEditorContent = flushPendingEditorChangeRef?.current?.() ?? false
     const syncedContent = syncActiveTabIntoRawBuffer({
       editor,
       activeTabPath,

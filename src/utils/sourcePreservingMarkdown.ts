@@ -58,6 +58,11 @@ const ORDERED_LIST_RE = /^([ \t]*\d+[.)][ \t]+)(.*)$/u
 const UNORDERED_LIST_RE = /^([ \t]*[-+*][ \t]+)(.*)$/u
 const BLOCKQUOTE_RE = /^([ \t]*>+[ \t]?)(.*)$/u
 const THEMATIC_BREAK_RE = /^[ \t]{0,3}(?:-{3,}|\*{3,}|_{3,})[ \t]*$/u
+const INVISIBLE_PLACEHOLDER_RE = /[\u200B\uFEFF]/gu
+const LARGE_SOURCE_PATCH_MIN_LINES = 200
+const LARGE_SOURCE_PATCH_MAX_LINE_DRIFT = 32
+const LARGE_SOURCE_PATCH_MAX_INSERTION_LINES = 16
+const LINK_VALUE_RE = /(?:https?|mailto):\/\/[^\s<>\])]+/giu
 
 function splitMarkdownLines(markdown: string): {
   hasTrailingNewline: boolean
@@ -170,7 +175,7 @@ function tokenForContentLine(line: string, lineIndex: number): MarkdownToken {
 
 function scanMarkdown(markdown: string): MarkdownScan {
   const split = splitMarkdownLines(markdown)
-  const lineKinds = split.lines.map(line => line.trim() ? 'content' : 'blank') as SourceLineKind[]
+  const lineKinds = split.lines.map(line => isBlankMarkdownLine(line) ? 'blank' : 'content') as SourceLineKind[]
   const tokens: MarkdownToken[] = []
   const fenceGroups: FenceGroup[] = []
   let fence: FenceState | null = null
@@ -235,7 +240,7 @@ function scanMarkdown(markdown: string): MarkdownScan {
       return
     }
 
-    if (!line.trim()) return
+    if (isBlankMarkdownLine(line)) return
     tokens.push(tokenForContentLine(line, lineIndex))
   })
 
@@ -461,7 +466,7 @@ function blankLinesInRange(scan: MarkdownScan, from: number, to: number): string
   const start = Math.max(0, from)
   const end = Math.min(to, scan.lines.length)
   for (let index = start; index < end; index += 1) {
-    if (scan.lineKinds[index] !== 'blank') return []
+    if (!isBlankMarkdownLine(scan.lines[index] ?? '')) return []
   }
   return scan.lines.slice(start, end)
 }
@@ -484,15 +489,19 @@ interface SourceLineAnchor {
 }
 
 function matchingLineSignature(line: string): string {
-  const normalized = line.trim()
+  const normalized = line.replace(INVISIBLE_PLACEHOLDER_RE, '').trim()
   if (!normalized) return ''
 
   return normalized
     .replace(/\\([\\`*_{}\x5b\x5d()#!~>|])/gu, '$1')
+    .replace(/\[((?:https?|mailto):\/\/[^\x5d\n]+)\]\(((?:https?|mailto):\/\/[^)\n]+)\)/giu, (match, label: string, destination: string) => (
+      normalizedLinkValue(label) === normalizedLinkValue(destination) ? label : match
+    ))
     .replace(/\[([^\x5d\n]+)\]\((?:<([^>\n]+)>|([^)\n]+))\)/gu, (match, label: string, angle: string | undefined, plain: string | undefined) => {
       const destination = angle ?? plain
-      return label === destination ? label : match
+      return normalizedLinkValue(label) === normalizedLinkValue(destination ?? '') ? label : match
     })
+    .replace(/\[((?:https?|mailto):\/\/[^\x5d\n]+)\](?!\()/giu, '$1')
     .replace(/(`{3,}|~{3,})/u, '~~~')
     .replace(/^\d+[.)](?=[ \t]+)/u, '1.')
     .replace(/^[*+](?=[ \t]+)/u, '-')
@@ -501,7 +510,7 @@ function matchingLineSignature(line: string): string {
 }
 
 function matchingLineShape(line: string): string {
-  if (!line.trim()) return 'blank'
+  if (isBlankMarkdownLine(line)) return 'blank'
   if (FENCE_RE.test(line)) return 'fence'
   if (HEADING_RE.test(line)) return 'heading'
   if (ORDERED_LIST_RE.test(line)) return 'ordered-list'
@@ -510,37 +519,105 @@ function matchingLineShape(line: string): string {
   return 'text'
 }
 
-function buildSourceLineAnchors(source: MarkdownScan, serialized: MarkdownScan): Map<number, SourceLineAnchor> {
-  const sourcePositions = new Map<string, number[]>()
-  source.lines.forEach((line, index) => {
-    const signature = matchingLineSignature(line)
-    const positions = sourcePositions.get(signature) ?? []
-    positions.push(index)
-    sourcePositions.set(signature, positions)
-  })
+function matchingLinePayloadSignature(line: string): string {
+  const ordered = ORDERED_LIST_RE.exec(line)
+  if (ordered) return matchingLineSignature(ordered[2])
 
-  const anchors = new Map<number, SourceLineAnchor>()
-  const nextPositionBySignature = new Map<string, number>()
-  let sourceCursor = -1
-  serialized.lines.forEach((line, serializedIndex) => {
-    const signature = matchingLineSignature(line)
-    const positions = sourcePositions.get(signature) ?? []
-    let positionIndex = nextPositionBySignature.get(signature) ?? 0
-    while (positionIndex < positions.length && (positions[positionIndex] ?? -1) <= sourceCursor) {
-      positionIndex += 1
+  const unordered = UNORDERED_LIST_RE.exec(line)
+  if (unordered) return matchingLineSignature(unordered[2])
+
+  const heading = HEADING_RE.exec(line)
+  if (heading) return matchingLineSignature(heading[4])
+
+  const blockquote = BLOCKQUOTE_RE.exec(line)
+  if (blockquote) return matchingLineSignature(blockquote[2])
+
+  return matchingLineSignature(line)
+}
+
+function normalizedLinkValues(line: string): string[] {
+  return (line.match(LINK_VALUE_RE) ?? []).map(normalizedLinkValue)
+}
+
+function linePositionsByPayloadSignature(scan: MarkdownScan): Map<string, number[]> {
+  const positions = new Map<string, number[]>()
+  scan.lines.forEach((line, index) => {
+    const signature = matchingLinePayloadSignature(line)
+    if (!signature) return
+    const indexes = positions.get(signature) ?? []
+    indexes.push(index)
+    positions.set(signature, indexes)
+  })
+  return positions
+}
+
+function linePositionsByLinkValue(scan: MarkdownScan): Map<string, number[]> {
+  const positions = new Map<string, number[]>()
+  scan.lines.forEach((line, index) => {
+    for (const value of normalizedLinkValues(line)) {
+      const indexes = positions.get(value) ?? []
+      indexes.push(index)
+      positions.set(value, indexes)
     }
-    const sourceIndex = positions[positionIndex]
-    if (sourceIndex === undefined) return
-    anchors.set(serializedIndex, { exact: true, sourceIndex })
-    sourceCursor = sourceIndex
-    nextPositionBySignature.set(signature, positionIndex + 1)
   })
+  return positions
+}
 
-  const exactSourceIndices = new Set(
+function hasNearbySourceValue(
+  positions: Map<string, number[]>,
+  values: string[],
+  sourceIndex: number,
+): boolean {
+  return values.some(value => (positions.get(value) ?? []).some(index => (
+    Math.abs(index - sourceIndex) <= LARGE_SOURCE_PATCH_MAX_LINE_DRIFT
+  )))
+}
+
+function hasNearbySourcePayload(
+  positions: Map<string, number[]>,
+  line: string,
+  sourceIndex: number,
+): boolean {
+  return hasNearbySourceValue(
+    positions,
+    [matchingLinePayloadSignature(line)],
+    sourceIndex,
+  )
+}
+
+function isBlankMarkdownLine(line: string): boolean {
+  return line.replace(INVISIBLE_PLACEHOLDER_RE, '').trim() === ''
+}
+
+function normalizedLinkValue(value: string): string {
+  const withoutAngles = value.startsWith('<') && value.endsWith('>')
+    ? value.slice(1, -1)
+    : value
+  let decoded = withoutAngles
+  try {
+    decoded = decodeURIComponent(withoutAngles)
+  } catch {
+    // Keep malformed or partially encoded URLs comparable as written.
+  }
+  return decoded
+    .replaceAll('\\_', '_')
+    .replaceAll('\\*', '*')
+    .replaceAll('\\~', '~')
+    .replaceAll('\\!', '!')
+}
+
+function buildSourceLineAnchors(source: MarkdownScan, serialized: MarkdownScan): Map<number, SourceLineAnchor> {
+  const sourcePositions = linePositionsBySignature(source)
+  const serializedPositions = linePositionsBySignature(serialized)
+  const anchors = monotonicUniqueLineAnchors(sourcePositions, serializedPositions)
+  fillExactLineAnchors({ anchors, serialized, source, sourcePositions })
+
+  const usedSourceIndices = new Set(
     [...anchors.values()].map(anchor => anchor.sourceIndex),
   )
-  const usedSourceIndices = new Set(exactSourceIndices)
-  const exactAnchors = [...anchors.entries()].sort((left, right) => left[0] - right[0])
+  const exactAnchors = [...anchors.entries()]
+    .filter(([, anchor]) => anchor.exact)
+    .sort((left, right) => left[0] - right[0])
   const boundaries = [
     ...exactAnchors.map(([serializedIndex, anchor]) => [serializedIndex, anchor.sourceIndex] as const),
     [serialized.lines.length, source.lines.length] as const,
@@ -576,6 +653,102 @@ function buildSourceLineAnchors(source: MarkdownScan, serialized: MarkdownScan):
   }
 
   return anchors
+}
+
+function linePositionsBySignature(scan: MarkdownScan): Map<string, number[]> {
+  const positions = new Map<string, number[]>()
+  scan.lines.forEach((line, index) => {
+    const signature = matchingLineSignature(line)
+    if (!signature) return
+    const indexes = positions.get(signature) ?? []
+    indexes.push(index)
+    positions.set(signature, indexes)
+  })
+  return positions
+}
+
+interface UniqueLineCandidate {
+  serializedIndex: number
+  sourceIndex: number
+}
+
+function monotonicUniqueLineAnchors(
+  sourcePositions: Map<string, number[]>,
+  serializedPositions: Map<string, number[]>,
+): Map<number, SourceLineAnchor> {
+  const candidates: UniqueLineCandidate[] = []
+  for (const [signature, serializedIndexes] of serializedPositions) {
+    const sourceIndexes = sourcePositions.get(signature)
+    if (serializedIndexes.length !== 1 || sourceIndexes?.length !== 1) continue
+    const serializedIndex = serializedIndexes[0]
+    const sourceIndex = sourceIndexes[0]
+    if (serializedIndex === undefined || sourceIndex === undefined) continue
+    candidates.push({ serializedIndex, sourceIndex })
+  }
+  candidates.sort((left, right) => left.serializedIndex - right.serializedIndex)
+
+  const tails: number[] = []
+  const predecessors = candidates.map(() => -1)
+  candidates.forEach((candidate, candidateIndex) => {
+    let low = 0
+    let high = tails.length
+    while (low < high) {
+      const middle = Math.floor((low + high) / 2)
+      const tail = candidates[tails[middle] ?? -1]
+      if (tail && tail.sourceIndex < candidate.sourceIndex) low = middle + 1
+      else high = middle
+    }
+    predecessors[candidateIndex] = low > 0 ? tails[low - 1] ?? -1 : -1
+    tails[low] = candidateIndex
+  })
+
+  const anchors = new Map<number, SourceLineAnchor>()
+  let candidateIndex = tails.at(-1) ?? -1
+  while (candidateIndex >= 0) {
+    const candidate = candidates[candidateIndex]
+    if (!candidate) break
+    anchors.set(candidate.serializedIndex, { exact: true, sourceIndex: candidate.sourceIndex })
+    candidateIndex = predecessors[candidateIndex] ?? -1
+  }
+  return anchors
+}
+
+function fillExactLineAnchors(options: {
+  anchors: Map<number, SourceLineAnchor>
+  serialized: MarkdownScan
+  source: MarkdownScan
+  sourcePositions: Map<string, number[]>
+}): void {
+  const { anchors, serialized, source, sourcePositions } = options
+  const exactAnchors = [...anchors.entries()].sort((left, right) => left[0] - right[0])
+  const boundaries = [
+    ...exactAnchors.map(([serializedIndex, anchor]) => [serializedIndex, anchor.sourceIndex] as const),
+    [serialized.lines.length, source.lines.length] as const,
+  ]
+  let previousSerialized = -1
+  let previousSource = -1
+
+  for (const [nextSerialized, nextSource] of boundaries) {
+    let sourceCursor = previousSource
+    const nextSourcePositionBySignature = new Map<string, number>()
+    for (let serializedIndex = previousSerialized + 1; serializedIndex < nextSerialized; serializedIndex += 1) {
+      if (anchors.has(serializedIndex)) continue
+      const signature = matchingLineSignature(serialized.lines[serializedIndex] ?? '')
+      if (!signature) continue
+      const positions = sourcePositions.get(signature) ?? []
+      let positionIndex = nextSourcePositionBySignature.get(signature) ?? 0
+      while (positionIndex < positions.length && (positions[positionIndex] ?? -1) <= sourceCursor) {
+        positionIndex += 1
+      }
+      const sourceIndex = positions[positionIndex]
+      if (sourceIndex === undefined || sourceIndex >= nextSource) continue
+      anchors.set(serializedIndex, { exact: true, sourceIndex })
+      sourceCursor = sourceIndex
+      nextSourcePositionBySignature.set(signature, positionIndex + 1)
+    }
+    previousSerialized = nextSerialized
+    previousSource = nextSource
+  }
 }
 
 function shouldUseSourceLineAnchors(
@@ -679,6 +852,220 @@ function mergeSourceLineAnchors(
   return source.hasTrailingNewline && text ? `${text}${source.newline}` : text
 }
 
+function sourceLineAnchorCoverage(
+  source: MarkdownScan,
+  serialized: MarkdownScan,
+  anchors: Map<number, SourceLineAnchor>,
+): number {
+  const sourceContentLines = source.lines.filter(line => matchingLineSignature(line) !== '').length
+  const serializedContentLines = serialized.lines.filter(line => matchingLineSignature(line) !== '').length
+  const maximumContentLines = Math.max(sourceContentLines, serializedContentLines)
+  if (maximumContentLines === 0) return 0
+
+  const exactContentLines = [...anchors.entries()].filter(([serializedIndex, anchor]) => (
+    anchor.exact && matchingLineSignature(serialized.lines[serializedIndex] ?? '') !== ''
+  )).length
+  return exactContentLines / maximumContentLines
+}
+
+function locallyAlignedSourceLine(
+  serializedIndex: number,
+  sourceIndex: number,
+): boolean {
+  return Math.abs(serializedIndex - sourceIndex) <= LARGE_SOURCE_PATCH_MAX_LINE_DRIFT
+}
+
+function semanticallyChangedLine(canonical: string, source: string): boolean {
+  if (matchingLineSignature(canonical) === matchingLineSignature(source)) return false
+
+  const collapseWhitespace = (line: string) => line.trim().replace(/[ \t]+/gu, ' ')
+  const structuralPayload = (line: string): string => {
+    const ordered = ORDERED_LIST_RE.exec(line)
+    if (ordered) return ordered[2]
+    const unordered = UNORDERED_LIST_RE.exec(line)
+    if (unordered) return unordered[2]
+    const heading = HEADING_RE.exec(line)
+    if (heading) return heading[4]
+    const blockquote = BLOCKQUOTE_RE.exec(line)
+    if (blockquote) return blockquote[2]
+    return line
+  }
+  if (matchingLineShape(canonical) !== 'code' && collapseWhitespace(canonical) === collapseWhitespace(source)) {
+    return false
+  }
+  if (matchingLineShape(canonical) !== 'code'
+    && collapseWhitespace(matchingLineSignature(structuralPayload(canonical)))
+      === collapseWhitespace(matchingLineSignature(structuralPayload(source)))) {
+    return false
+  }
+  return true
+}
+
+function isSafeLargeSourceInsertionLine(serialized: MarkdownScan, lineIndex: number): boolean {
+  if (serialized.lineKinds[lineIndex] !== 'content') return false
+
+  const line = serialized.lines[lineIndex]
+  if (line === undefined || !matchingLineSignature(line)) return false
+
+  // Fence and code lines need block-level reconciliation. Treating one of
+  // those lines as a standalone insertion can create an invalid code block.
+  return matchingLineShape(line) !== 'fence'
+}
+
+function nearestSourceStyleLine(
+  source: MarkdownScan,
+  sourceIndex: number,
+  shape: string,
+): string | undefined {
+  for (let distance = 0; distance < source.lines.length; distance += 1) {
+    const candidates = distance === 0
+      ? [sourceIndex]
+      : [sourceIndex - distance, sourceIndex + distance]
+    for (const candidate of candidates) {
+      const line = source.lines[candidate]
+      if (line !== undefined
+        && source.lineKinds[candidate] === 'content'
+        && matchingLineShape(line) === shape) return line
+    }
+    if (distance > LARGE_SOURCE_PATCH_MAX_LINE_DRIFT) break
+  }
+  return undefined
+}
+
+function renderLargeSourceInsertionLine(
+  source: MarkdownScan,
+  canonical: string,
+  sourceIndex: number,
+): string {
+  const shape = matchingLineShape(canonical)
+  const styleLine = nearestSourceStyleLine(source, sourceIndex, shape)
+  if (shape === 'ordered-list' && styleLine !== undefined) {
+    const sourceOrdered = ORDERED_LIST_RE.exec(styleLine)
+    const canonicalOrdered = ORDERED_LIST_RE.exec(canonical)
+    if (sourceOrdered && canonicalOrdered) {
+      const canonicalNumber = /\d+/u.exec(canonicalOrdered[1])?.[0]
+      const sourcePrefix = canonicalNumber === undefined
+        ? sourceOrdered[1]
+        : sourceOrdered[1].replace(/\d+/u, canonicalNumber)
+      return `${sourcePrefix}${canonicalOrdered[2]}`
+    }
+  }
+  return styleLine === undefined
+    ? canonical
+    : renderAnchoredLine(canonical, styleLine, false)
+}
+
+function mergeLargeSourceInsertions(
+  source: MarkdownScan,
+  serialized: MarkdownScan,
+  anchors: Map<number, SourceLineAnchor>,
+): Map<number, string[]> {
+  const sourceSignatures = new Set(
+    source.lines
+      .map(matchingLineSignature)
+      .filter(Boolean),
+  )
+  const sourcePayloadPositions = linePositionsByPayloadSignature(source)
+  const sourceLinkPositions = linePositionsByLinkValue(source)
+  const insertions = new Map<number, string[]>()
+  let previousAnchor: { serializedIndex: number; sourceIndex: number } | null = null
+  let serializedIndex = 0
+
+  while (serializedIndex < serialized.lines.length) {
+    const anchor = anchors.get(serializedIndex)
+    if (anchor) {
+      previousAnchor = { serializedIndex, sourceIndex: anchor.sourceIndex }
+      serializedIndex += 1
+      continue
+    }
+
+    const runStart = serializedIndex
+    while (serializedIndex < serialized.lines.length && !anchors.has(serializedIndex)) {
+      serializedIndex += 1
+    }
+    const nextAnchor = anchors.get(serializedIndex)
+    if (!previousAnchor || !nextAnchor) continue
+    if (!locallyAlignedSourceLine(previousAnchor.serializedIndex, previousAnchor.sourceIndex)
+      || !locallyAlignedSourceLine(serializedIndex, nextAnchor.sourceIndex)) continue
+    if (serializedIndex - runStart > LARGE_SOURCE_PATCH_MAX_INSERTION_LINES) continue
+    if (nextAnchor.sourceIndex < previousAnchor.sourceIndex) continue
+
+    for (let index = runStart; index < serializedIndex; index += 1) {
+      const line = serialized.lines[index]
+      if (line === undefined || !isSafeLargeSourceInsertionLine(serialized, index)) continue
+
+      // If the line already exists in the source, an absent anchor is more
+      // likely an alignment ambiguity than an insertion. Failing closed here
+      // avoids duplicating repeated content in a user document.
+      if (sourceSignatures.has(matchingLineSignature(line))
+        || hasNearbySourcePayload(sourcePayloadPositions, line, nextAnchor.sourceIndex)
+        || hasNearbySourceValue(sourceLinkPositions, normalizedLinkValues(line), nextAnchor.sourceIndex)) continue
+
+      const rendered = renderLargeSourceInsertionLine(source, line, nextAnchor.sourceIndex)
+      const pending = insertions.get(nextAnchor.sourceIndex) ?? []
+      pending.push(rendered)
+      insertions.set(nextAnchor.sourceIndex, pending)
+    }
+  }
+
+  return insertions
+}
+
+function mergeLargeSourceLinePatches(
+  source: MarkdownScan,
+  serialized: MarkdownScan,
+  anchors: Map<number, SourceLineAnchor>,
+): string {
+  const merged = [...source.lines]
+  const insertions = mergeLargeSourceInsertions(source, serialized, anchors)
+  const orderedAnchors = [...anchors.entries()].sort((left, right) => left[0] - right[0])
+  const sourcePayloadPositions = linePositionsByPayloadSignature(source)
+  const sourceLinkPositions = linePositionsByLinkValue(source)
+  let previousAnchor: [number, SourceLineAnchor] | undefined
+  let nextAnchorIndex = 0
+
+  serialized.lines.forEach((line, serializedIndex) => {
+    while (nextAnchorIndex < orderedAnchors.length
+      && (orderedAnchors[nextAnchorIndex]?.[0] ?? Number.POSITIVE_INFINITY) < serializedIndex) {
+      previousAnchor = orderedAnchors[nextAnchorIndex]
+      nextAnchorIndex += 1
+    }
+    const anchor = anchors.get(serializedIndex)
+    if (!anchor || anchor.exact || !locallyAlignedSourceLine(serializedIndex, anchor.sourceIndex)) return
+
+    const sourceLine = source.lines[anchor.sourceIndex]
+    if (sourceLine === undefined || matchingLineShape(line) !== matchingLineShape(sourceLine)) return
+    if (!semanticallyChangedLine(line, sourceLine)) return
+    if (hasNearbySourcePayload(sourcePayloadPositions, line, anchor.sourceIndex)
+      || hasNearbySourceValue(sourceLinkPositions, normalizedLinkValues(line), anchor.sourceIndex)) return
+    const next = orderedAnchors[nextAnchorIndex]?.[0] === serializedIndex
+      ? orderedAnchors[nextAnchorIndex + 1]
+      : orderedAnchors[nextAnchorIndex]
+    if ((previousAnchor && !locallyAlignedSourceLine(previousAnchor[0], previousAnchor[1].sourceIndex))
+      || (next && !locallyAlignedSourceLine(next[0], next[1].sourceIndex))) return
+    merged[anchor.sourceIndex] = renderAnchoredLine(line, sourceLine, false)
+  })
+
+  const withInsertions: string[] = []
+  source.lines.forEach((_, sourceIndex) => {
+    withInsertions.push(...(insertions.get(sourceIndex) ?? []), merged[sourceIndex] ?? '')
+  })
+  withInsertions.push(...(insertions.get(source.lines.length) ?? []))
+
+  const text = withInsertions
+    .join(source.newline)
+  return source.hasTrailingNewline && text ? `${text}${source.newline}` : text
+}
+
+function shouldUseLargeSourceLinePatches(
+  source: MarkdownScan,
+  serialized: MarkdownScan,
+  anchors: Map<number, SourceLineAnchor>,
+): boolean {
+  return source.lines.length >= LARGE_SOURCE_PATCH_MIN_LINES
+    && sourceLineAnchorCoverage(source, serialized, anchors) >= 0.75
+}
+
 function mergeScans(source: MarkdownScan, serialized: MarkdownScan): string {
   const matches = buildTokenMatches(source, serialized)
   const merged: string[] = []
@@ -747,7 +1134,11 @@ export function preserveMarkdownSourceFormatting(source: string, serialized: str
   if (sourceScan.tokens.length === 0 || serializedScan.tokens.length === 0) return serialized
   const sourceLineAnchors = buildSourceLineAnchors(sourceScan, serializedScan)
   if (shouldUseSourceLineAnchors(sourceScan, serializedScan, sourceLineAnchors)) {
+    if (shouldUseLargeSourceLinePatches(sourceScan, serializedScan, sourceLineAnchors)) {
+      return mergeLargeSourceLinePatches(sourceScan, serializedScan, sourceLineAnchors)
+    }
     return mergeSourceLineAnchors(sourceScan, serializedScan, sourceLineAnchors)
   }
+  if (sourceScan.lines.length >= LARGE_SOURCE_PATCH_MIN_LINES) return source
   return mergeScans(sourceScan, serializedScan)
 }

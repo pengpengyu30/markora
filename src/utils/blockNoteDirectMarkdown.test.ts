@@ -282,6 +282,19 @@ describe('BlockNote direct Markdown serialization', () => {
     )
   })
 
+  it('keeps whitespace outside inline style delimiters', () => {
+    const blocks = [{
+      type: 'paragraph',
+      content: [
+        { type: 'text', text: 'referenced ', styles: { bold: true } },
+        { type: 'text', text: 'by', styles: {} },
+      ],
+      children: [],
+    }]
+
+    expect(blocksToMarkdownDirect(blocks).markdown).toBe('**referenced** by')
+  })
+
   it('caches unchanged block objects across rich-editor body serialization', () => {
     const block = {
       type: 'paragraph',
@@ -308,6 +321,62 @@ describe('BlockNote direct Markdown serialization', () => {
 
     expect(blocksToMarkdownDirect([item], cache).markdown).toBe('1. Step')
     expect(blocksToMarkdownDirect([item, item], cache).markdown).toBe('1. Step\n\n2. Step')
+  })
+
+  it('honors an explicit ordered-list start after a non-list boundary', () => {
+    const blocks = [
+      {
+        type: 'numberedListItem',
+        content: [{ type: 'text', text: 'First list item', styles: {} }],
+        children: [],
+      },
+      {
+        type: 'paragraph',
+        content: [{ type: 'text', text: 'A separate paragraph', styles: {} }],
+        children: [],
+      },
+      {
+        type: 'numberedListItem',
+        props: { start: 5 },
+        content: [{ type: 'text', text: 'Second list item', styles: {} }],
+        children: [],
+      },
+      {
+        type: 'numberedListItem',
+        content: [{ type: 'text', text: 'Third list item', styles: {} }],
+        children: [],
+      },
+    ]
+
+    expect(blocksToMarkdownDirect(blocks).markdown).toBe([
+      '1. First list item',
+      '',
+      'A separate paragraph',
+      '',
+      '5. Second list item',
+      '',
+      '6. Third list item',
+    ].join('\n'))
+  })
+
+  it('indents non-list child blocks so nested Markdown remains inside its parent list item', () => {
+    const blocks = [{
+      type: 'numberedListItem',
+      content: [{ type: 'text', text: 'Parent', styles: {} }],
+      children: [{
+        type: 'codeBlock',
+        props: { language: 'markdown' },
+        content: [{ type: 'text', text: '# Nested heading', styles: {} }],
+        children: [],
+      }],
+    }]
+
+    expect(blocksToMarkdownDirect(blocks).markdown).toBe([
+      '1. Parent',
+      '   ```markdown',
+      '   # Nested heading',
+      '   ```',
+    ].join('\n'))
   })
 
   it('resets nested ordered-list numbering for separate parent list items', () => {

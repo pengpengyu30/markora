@@ -30,7 +30,7 @@ describe('editorRawModeSync Mermaid serialization', () => {
     )).toBe(`---\ntitle: Flow\n---\n${source}\n`)
   })
 
-  it('serializes durable blocks into raw mode even when no pending rich edit was flushed', () => {
+  it('uses the original source in raw mode when no pending rich edit was flushed', () => {
     const rawLatestContentRef = { current: null as string | null }
     const editor = {
       document: [{
@@ -59,6 +59,48 @@ describe('editorRawModeSync Mermaid serialization', () => {
       ].join('\n'),
       rawLatestContentRef,
       serializeRichEditorContent: false,
+    })
+
+    expect(synced).toBe([
+      '# Whiteboard Embed',
+      '',
+      '```tldraw id="planning-map"',
+      '{}',
+      '```',
+    ].join('\n'))
+    expect(rawLatestContentRef.current).toBe(synced)
+    expect(editor.blocksToMarkdownLossy).not.toHaveBeenCalled()
+  })
+
+  it('serializes a durable block into raw mode after a pending rich edit', () => {
+    const rawLatestContentRef = { current: null as string | null }
+    const editor = {
+      document: [{
+        id: 'board-1',
+        type: TLDRAW_BLOCK_TYPE,
+        props: {
+          boardId: 'planning-map',
+          height: '520',
+          snapshot: '{}',
+          width: '',
+        },
+        children: [],
+      }],
+      blocksToMarkdownLossy: vi.fn(),
+    }
+
+    const synced = syncActiveTabIntoRawBuffer({
+      editor: editor as never,
+      activeTabPath: 'note/whiteboard-embed.md',
+      activeTabContent: [
+        '# Whiteboard Embed',
+        '',
+        '```tldraw id="planning-map"',
+        '{}',
+        '```',
+      ].join('\n'),
+      rawLatestContentRef,
+      serializeRichEditorContent: true,
     })
 
     expect(synced).toContain('```tldraw id="planning-map" height="520"')

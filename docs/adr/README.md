@@ -242,3 +242,5 @@ proposed → active → superseded
 | [0185](0185-global-git-feature-gate.md) | Global Git feature gate defaults to disabled | active |
 | [0186](0186-rich-preview-default-with-source-preserving-open.md) | Rich Markdown preview by default without write-on-open | active |
 | [0187](0187-source-preserving-rich-editor-writes.md) | Source-preserving rich-editor writes | active |
+| [0188](0188-fail-closed-rich-source-alignment.md) | Fail-closed alignment for rich-editor writes | active |
+| [0189](0189-strict-source-first-editor-boundary.md) | Strict source-first boundary for opening and raw mode | active |
