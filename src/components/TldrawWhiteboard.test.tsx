@@ -36,6 +36,7 @@ interface MockTldrawStore {
 
 const tldrawMock = vi.hoisted(() => ({
   Tldraw: vi.fn(),
+  defaultHandleExternalTldrawContent: vi.fn(),
 }))
 
 const tldrawStoreMock = vi.hoisted(() => ({
@@ -100,6 +101,7 @@ vi.mock('tldraw', async () => {
       colorScheme: 'light',
       locale: 'en',
     },
+    defaultHandleExternalTldrawContent: tldrawMock.defaultHandleExternalTldrawContent,
     getSnapshot: tldrawStoreMock.getSnapshot,
     loadSnapshot: tldrawStoreMock.loadSnapshot,
     useTldrawUser: vi.fn(({ userPreferences }: { userPreferences: { colorScheme: string } }) => ({
@@ -146,9 +148,14 @@ function mockEditor(): Editor {
   canvas.className = 'tl-canvas'
   container.append(canvas)
 
+  const externalContentHandlers = new Map<string, (content: unknown) => Promise<void>>()
   return {
     dispatch: vi.fn(),
+    externalContentHandlers,
     getContainer: vi.fn(() => container),
+    registerExternalContentHandler: vi.fn((type: string, handler: (content: unknown) => Promise<void>) => {
+      externalContentHandlers.set(type, handler)
+    }),
     textMeasure: {
       measureElementTextNodeSpans: vi.fn(() => {
         throw new TypeError("undefined is not an object (evaluating 'v.top')")
@@ -156,6 +163,15 @@ function mockEditor(): Editor {
     },
     updateViewportScreenBounds: vi.fn(),
   } as unknown as Editor
+}
+
+function registeredTldrawPasteHandler(editor: Editor) {
+  const handlers = (editor as unknown as {
+    externalContentHandlers: Map<string, (content: unknown) => Promise<void>>
+  }).externalContentHandlers
+  const handler = handlers.get('tldraw')
+  expect(handler).toEqual(expect.any(Function))
+  return handler as (content: unknown) => Promise<void>
 }
 
 function maskedTldrawIcon(mask: string): HTMLElement {
@@ -352,6 +368,40 @@ describe('TldrawWhiteboard', () => {
     expect(screen.getByTestId('tldraw-whiteboard-permission-error')).toHaveTextContent('reopen the note')
 
     cleanup()
+  })
+
+  it('keeps an incompatible whiteboard paste from reaching the error boundary', async () => {
+    tldrawMock.defaultHandleExternalTldrawContent.mockRejectedValueOnce(
+      new Error('Could not put content: could not migrate content'),
+    )
+    renderWhiteboard()
+
+    const editor = mockEditor()
+    const cleanupRuntime = renderedTldrawProps().onMount(editor)
+
+    await act(async () => {
+      await registeredTldrawPasteHandler(editor)({ type: 'tldraw', content: {} })
+    })
+
+    expect(screen.getByTestId('tldraw-whiteboard-paste-error')).toHaveTextContent(
+      'Whiteboard content could not be pasted',
+    )
+    expect(screen.getByTestId('mock-tldraw')).toBeInTheDocument()
+    cleanupRuntime()
+  })
+
+  it('does not hide unrelated whiteboard paste failures', async () => {
+    tldrawMock.defaultHandleExternalTldrawContent.mockRejectedValueOnce(new Error('Unexpected paste failure'))
+    renderWhiteboard()
+
+    const editor = mockEditor()
+    const cleanupRuntime = renderedTldrawProps().onMount(editor)
+
+    await expect(
+      registeredTldrawPasteHandler(editor)({ type: 'tldraw', content: {} }),
+    ).rejects.toThrow('Unexpected paste failure')
+    expect(screen.queryByTestId('tldraw-whiteboard-paste-error')).not.toBeInTheDocument()
+    cleanupRuntime()
   })
 
   it('prevents whiteboard permission rejections before earlier global listeners observe them', () => {

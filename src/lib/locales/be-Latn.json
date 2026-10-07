@@ -772,6 +772,8 @@
   "editor.wikilink.createNote": "Stvarycie novuju natatku pad nazvaj «{title}»",
   "editor.whiteboard.enterFullscreen": "Pašyryć došku",
   "editor.whiteboard.exitFullscreen": "Vyjsci z poŭnaekrannaj doški",
+  "editor.whiteboard.incompatiblePasteTitle": "Nie ŭdalosia ŭstavić źmieściva doški",
+  "editor.whiteboard.incompatiblePasteBody": "Skapijavanaja doška vykarystoŭvaje niesumiaščalny farmat. Biahučaja doška zastalasia biez źmienaŭ; skapijujcie jaje jaščė raz z abnoŭlenaj versii Tolaria ci tldraw.",
   "editor.whiteboard.permissionDeniedTitle": "Dostup da doški zablakavany",
   "editor.whiteboard.permissionDeniedBody": "Tolaria nie zmahla vykarystać mahčymaść nastolnaj systemy, patrebnuju hetaj došcy. Dazvolcie hety dostup u sistemnych naladach, potym adkryjcie natatku nanoŭ.",
   "editor.exportPdf.unavailable": "Adkryjcie natatku Markdown pierad ekspartam u PDF.",

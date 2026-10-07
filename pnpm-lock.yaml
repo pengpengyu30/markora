@@ -56,6 +56,9 @@ patchedDependencies:
   prosemirror-tables@1.8.5:
     hash: cd456f0d1d88a3ce11bcf53122a0e0575c0d82810eddd887adae21d6ec570a8b
     path: patches/prosemirror-tables@1.8.5.patch
+  prosemirror-view@1.41.6:
+    hash: 0a4742171c717f5525436feb4779d16be6706c58254f8a838f6976be30624883
+    path: patches/prosemirror-view@1.41.6.patch
 
 importers:
 

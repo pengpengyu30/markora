@@ -797,6 +797,8 @@
   "editor.wikilink.createNote": "Crea una nuova nota chiamata “{title}”",
   "editor.whiteboard.enterFullscreen": "Espandi la lavagna",
   "editor.whiteboard.exitFullscreen": "Esci dalla lavagna a schermo intero",
+  "editor.whiteboard.incompatiblePasteTitle": "Impossibile incollare il contenuto della lavagna",
+  "editor.whiteboard.incompatiblePasteBody": "La lavagna copiata utilizza un formato non compatibile. La lavagna corrente è rimasta invariata; copiala di nuovo da una versione aggiornata di Tolaria o di tldraw.",
   "editor.whiteboard.permissionDeniedTitle": "Autorizzazione per la lavagna bloccata",
   "editor.whiteboard.permissionDeniedBody": "Tolaria non ha potuto utilizzare una funzionalità desktop necessaria per questa lavagna. Concedi l'autorizzazione nelle impostazioni di sistema, quindi riapri la nota.",
   "editor.exportPdf.unavailable": "Apri una nota Markdown prima di esportare un PDF.",

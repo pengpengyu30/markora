@@ -465,6 +465,7 @@ export function SingleEditorView(options: {
             >
               <EditorInteractionControllers
                 {...suggestionMenuItems}
+                editor={editor}
                 locale={locale}
                 onToolbarMouseDown={handleToolbarMouseDownCapture}
                 runEditorAction={runEditorAction}

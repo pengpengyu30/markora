@@ -799,6 +799,8 @@ files:
     editor.wikilink.createNote: 25aabcecfee9ad6c2847aa43a8239195
     editor.whiteboard.enterFullscreen: 606bf766125ecff4b33ca98122222c72
     editor.whiteboard.exitFullscreen: afd0a0414d79d047f00319921e4d4944
+    editor.whiteboard.incompatiblePasteTitle: c08e3ff742975d83ce9696ea15b421d6
+    editor.whiteboard.incompatiblePasteBody: 47486c3aac28437050bb28c72b6a2793
     editor.whiteboard.permissionDeniedTitle: f40def4c1928438aa4ac86421fed9fd9
     editor.whiteboard.permissionDeniedBody: eb1399413cae00b1614695d3c5c7ac9f
     editor.exportPdf.unavailable: 2fce9834984172b64b66767485d815e9

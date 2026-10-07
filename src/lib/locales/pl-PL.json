@@ -797,6 +797,8 @@
   "editor.wikilink.createNote": "Utwórz nową notatkę o nazwie „{title}”",
   "editor.whiteboard.enterFullscreen": "Rozwiń tablicę",
   "editor.whiteboard.exitFullscreen": "Wyjdź z tablicy pełnoekranowej",
+  "editor.whiteboard.incompatiblePasteTitle": "Nie udało się wkleić zawartości tablicy",
+  "editor.whiteboard.incompatiblePasteBody": "Skopiowana tablica używa niekompatybilnego formatu. Bieżąca tablica pozostała niezmieniona; skopiuj ją ponownie z zaktualizowanej wersji Tolarii lub tldraw.",
   "editor.whiteboard.permissionDeniedTitle": "Zablokowano uprawnienie do tablicy",
   "editor.whiteboard.permissionDeniedBody": "Tolaria nie mogła użyć funkcji pulpitu, której potrzebuje ta tablica. Przyznaj uprawnienie w ustawieniach systemowych, a następnie ponownie otwórz notatkę.",
   "editor.exportPdf.unavailable": "Otwórz notatkę Markdown przed wyeksportowaniem pliku PDF.",

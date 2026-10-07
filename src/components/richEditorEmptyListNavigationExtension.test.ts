@@ -2,14 +2,15 @@ import { describe, expect, it, vi } from 'vitest'
 import { createRichEditorEmptyListNavigationExtension } from './richEditorEmptyListNavigationExtension'
 
 type KeyListener = (event: KeyboardEvent) => void
+type NavigationKey = 'ArrowDown' | 'ArrowUp' | 'Backspace'
 
-function keyboardEvent(key: 'ArrowDown' | 'ArrowUp', options: Partial<KeyboardEvent> = {}) {
+function keyboardEvent(key: NavigationKey, options: Partial<KeyboardEvent> = {}) {
   return {
     altKey: false,
     ctrlKey: false,
     isComposing: false,
     key,
-    keyCode: key === 'ArrowDown' ? 40 : 38,
+    keyCode: key === 'ArrowDown' ? 40 : key === 'ArrowUp' ? 38 : 8,
     metaKey: false,
     preventDefault: vi.fn(),
     shiftKey: false,
@@ -63,7 +64,7 @@ function createFixture({
 
   return {
     editor,
-    fire(key: 'ArrowDown' | 'ArrowUp', options: Partial<KeyboardEvent> = {}) {
+    fire(key: NavigationKey, options: Partial<KeyboardEvent> = {}) {
       if (!keydownListener) throw new Error('Empty-list navigation listener was not registered')
       const event = keyboardEvent(key, options)
       keydownListener(event)
@@ -102,5 +103,64 @@ describe('createRichEditorEmptyListNavigationExtension', () => {
     expect(createFixture().fire('ArrowDown', { shiftKey: true }).preventDefault).not.toHaveBeenCalled()
     expect(createFixture().fire('ArrowDown', { isComposing: true }).preventDefault).not.toHaveBeenCalled()
     expect(createFixture({ editable: false }).fire('ArrowDown').preventDefault).not.toHaveBeenCalled()
+  })
+
+  it('promotes linked children when deleting an empty paragraph nested under a list', () => {
+    let keydownListener: KeyListener | null = null
+    const linkedChild = {
+      children: [],
+      content: [{
+        content: [{ styles: {}, text: 'Tolaria', type: 'text' }],
+        href: 'https://tolaria.app',
+        type: 'link',
+      }],
+      id: 'linked-child',
+      type: 'bulletListItem',
+    }
+    const emptyParagraph = {
+      children: [linkedChild],
+      content: [],
+      id: 'empty-parent',
+      type: 'paragraph',
+    }
+    const listParent = {
+      children: [emptyParagraph],
+      content: [{ styles: {}, text: 'Parent', type: 'text' }],
+      id: 'list-parent',
+      type: 'bulletListItem',
+    }
+    const view = {
+      composing: false,
+      endOfTextblock: vi.fn(() => true),
+      state: { selection: { empty: true } },
+    }
+    const editor = {
+      _tiptapEditor: { view },
+      document: [listParent],
+      getTextCursorPosition: vi.fn(() => ({ block: emptyParagraph })),
+      isEditable: true,
+      prosemirrorView: view,
+      replaceBlocks: vi.fn(),
+      setTextCursorPosition: vi.fn(),
+    }
+    const extension = createRichEditorEmptyListNavigationExtension()({ editor: editor as never })
+    extension.mount?.({
+      dom: {
+        addEventListener: vi.fn((type: string, listener: KeyListener) => {
+          if (type === 'keydown') keydownListener = listener
+        }),
+      } as never,
+      root: document,
+      signal: new AbortController().signal,
+    })
+
+    const event = keyboardEvent('Backspace')
+    if (!keydownListener) throw new Error('Empty-list navigation listener was not registered')
+    keydownListener(event)
+
+    expect(editor.replaceBlocks).toHaveBeenCalledWith([emptyParagraph], [linkedChild])
+    expect(editor.setTextCursorPosition).toHaveBeenCalledWith(linkedChild, 'start')
+    expect(event.preventDefault).toHaveBeenCalledOnce()
+    expect(event.stopImmediatePropagation).toHaveBeenCalledOnce()
   })
 })

@@ -797,6 +797,8 @@
   "editor.wikilink.createNote": "「{title}」という名前の新しいノートを作成する",
   "editor.whiteboard.enterFullscreen": "ホワイトボードを展開",
   "editor.whiteboard.exitFullscreen": "フルスクリーンホワイトボードを終了",
+  "editor.whiteboard.incompatiblePasteTitle": "ホワイトボードのコンテンツを貼り付けられませんでした",
+  "editor.whiteboard.incompatiblePasteBody": "コピーされたホワイトボードは、互換性のない形式を使用しています。現在のボードは変更されませんでした。更新されたTolariaまたはtldrawのバージョンから再度コピーしてください。",
   "editor.whiteboard.permissionDeniedTitle": "ホワイトボードのアクセスがブロックされました",
   "editor.whiteboard.permissionDeniedBody": "Tolariaは、このホワイトボードに必要なデスクトップ機能を使用できませんでした。システム設定で権限を許可してから、ノートを再度開いてください。",
   "editor.exportPdf.unavailable": "PDFをエクスポートする前に、Markdownノートを開いてください。",

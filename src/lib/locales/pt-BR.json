@@ -797,6 +797,8 @@
   "editor.wikilink.createNote": "Crie uma nova nota chamada “{title}”",
   "editor.whiteboard.enterFullscreen": "Expandir quadro branco",
   "editor.whiteboard.exitFullscreen": "Sair do quadro branco em tela cheia",
+  "editor.whiteboard.incompatiblePasteTitle": "Não foi possível colar o conteúdo do quadro branco",
+  "editor.whiteboard.incompatiblePasteBody": "O quadro branco copiado usa um formato incompatível. O quadro atual não foi alterado; copie-o novamente de uma versão atualizada do Tolaria ou do tldraw.",
   "editor.whiteboard.permissionDeniedTitle": "Permissão do quadro branco bloqueada",
   "editor.whiteboard.permissionDeniedBody": "O Tolaria não conseguiu usar um recurso da área de trabalho necessário para este quadro branco. Ative a permissão nas configurações do sistema e reabra a nota.",
   "editor.exportPdf.unavailable": "Abra uma nota Markdown antes de exportar um PDF.",

@@ -797,6 +797,8 @@
   "editor.wikilink.createNote": "Crea una nueva nota llamada «{title}»",
   "editor.whiteboard.enterFullscreen": "Expandir pizarra",
   "editor.whiteboard.exitFullscreen": "Salir de la pizarra en pantalla completa",
+  "editor.whiteboard.incompatiblePasteTitle": "No se ha podido pegar el contenido de la pizarra",
+  "editor.whiteboard.incompatiblePasteBody": "La pizarra copiada utiliza un formato incompatible. El tablero actual no se ha modificado; cópialo de nuevo desde una versión actualizada de Tolaria o de tldraw.",
   "editor.whiteboard.permissionDeniedTitle": "Permiso de pizarra bloqueado",
   "editor.whiteboard.permissionDeniedBody": "Tolaria no ha podido usar una función de escritorio que esta pizarra necesita. Concede el permiso en la configuración de tu sistema y, a continuación, vuelve a abrir la nota.",
   "editor.exportPdf.unavailable": "Abre una nota de Markdown antes de exportar un PDF.",

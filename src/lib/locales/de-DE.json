@@ -797,6 +797,8 @@
   "editor.wikilink.createNote": "Erstelle eine neue Notiz mit dem Namen „{title}“",
   "editor.whiteboard.enterFullscreen": "Whiteboard erweitern",
   "editor.whiteboard.exitFullscreen": "Vollbild-Whiteboard verlassen",
+  "editor.whiteboard.incompatiblePasteTitle": "Der Inhalt des Whiteboards konnte nicht eingefügt werden",
+  "editor.whiteboard.incompatiblePasteBody": "Das kopierte Whiteboard verwendet ein inkompatibles Format. Das aktuelle Board wurde unverändert belassen. Kopieren Sie es erneut aus einer aktualisierten Version von Tolaria oder tldraw.",
   "editor.whiteboard.permissionDeniedTitle": "Whiteboard-Berechtigung blockiert",
   "editor.whiteboard.permissionDeniedBody": "Tolaria konnte eine Desktop-Funktion, die dieses Whiteboard benötigt, nicht nutzen. Erteilen Sie die Berechtigung in Ihren Systemeinstellungen und öffnen Sie die Notiz dann erneut.",
   "editor.exportPdf.unavailable": "Öffne eine Markdown-Notiz, bevor du sie als PDF exportierst.",

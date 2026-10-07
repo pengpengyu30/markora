@@ -797,6 +797,8 @@
   "editor.wikilink.createNote": "Buat catatan baru bernama “{title}”",
   "editor.whiteboard.enterFullscreen": "Perluas papan tulis",
   "editor.whiteboard.exitFullscreen": "Keluar dari papan tulis layar penuh",
+  "editor.whiteboard.incompatiblePasteTitle": "Konten papan tulis tidak dapat ditempelkan",
+  "editor.whiteboard.incompatiblePasteBody": "Whiteboard yang disalin menggunakan format yang tidak kompatibel. Papan saat ini dibiarkan tanpa perubahan; salin lagi dari versi Tolaria atau tldraw yang sudah diperbarui.",
   "editor.whiteboard.permissionDeniedTitle": "Izin papan tulis diblokir",
   "editor.whiteboard.permissionDeniedBody": "Tolaria tidak dapat menggunakan fitur desktop yang dibutuhkan papan tulis ini. Izinkan di pengaturan sistem Anda, lalu buka kembali catatan tersebut.",
   "editor.exportPdf.unavailable": "Buka catatan Markdown sebelum mengekspor PDF.",

@@ -3,7 +3,6 @@ import { getAssetUrlsByImport } from '@tldraw/assets/imports.vite'
 import { ArrowsIn, ArrowsOut } from '@phosphor-icons/react'
 import { Dialog as DialogPrimitive } from 'radix-ui'
 import {
-  Box,
   Tldraw,
   createTLStore,
   defaultUserPreferences,
@@ -12,7 +11,6 @@ import {
   useTldrawUser,
   useValue,
   type Editor,
-  type TLEventInfo,
   type TLUiDialog,
   type TLStoreSnapshot,
   type TLUserPreferences,
@@ -20,14 +18,12 @@ import {
 import 'tldraw/tldraw.css'
 import { useDocumentThemeMode } from '../hooks/useDocumentThemeMode'
 import { resolveEffectiveLocale, translate, type AppLocale } from '../lib/i18n'
+import { trackEvent } from '../lib/telemetry'
 import type { ResolvedThemeMode } from '../lib/themeMode'
-import {
-  isWhiteboardPlatformPermissionRejection,
-  retainWhiteboardPlatformPermissionGuard,
-} from '../utils/whiteboardPlatformPermissionRejection'
 import { Button } from './ui/button'
 import { ActionTooltip } from './ui/action-tooltip'
 import { installTldrawTextMeasurementGuard } from './tldrawTextMeasurementGuard'
+import { installWhiteboardRuntimeGuards } from './tldrawRuntimeGuards'
 
 const EMPTY_TLDRAW_TRANSLATION_URL = 'data:application/json;base64,e30K'
 const TOLARIA_TLDRAW_USER_ID = 'tolaria-whiteboard'
@@ -76,8 +72,6 @@ function resizeModeFromHandle(handle: HTMLButtonElement): ResizeMode {
 const DEFAULT_HEIGHT = 520
 const MIN_HEIGHT = 260
 const MIN_WIDTH = 360
-const TLDRAW_UI_ICON_SELECTOR = '.tlui-icon'
-const WEBKIT_MASK_PROPERTY = '-webkit-mask'
 
 function parsePixelValue(value: string, fallback: number): number {
   const parsed = Number.parseInt(value, 10)
@@ -139,26 +133,6 @@ function useDocumentLocale(): AppLocale {
   return locale
 }
 
-interface WhiteboardRuntimeGuardOptions {
-  onPlatformPermissionDenied: () => void
-}
-
-function installTldrawPlatformPermissionGuard({ onPlatformPermissionDenied }: WhiteboardRuntimeGuardOptions): () => void {
-  const releaseWhiteboardPermissionGuard = retainWhiteboardPlatformPermissionGuard()
-  const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-    if (!isWhiteboardPlatformPermissionRejection(event.reason)) return
-    event.preventDefault()
-    onPlatformPermissionDenied()
-  }
-
-  // Sentry installs its global rejection handler during app startup, before tldraw mounts.
-  window.addEventListener('unhandledrejection', handleUnhandledRejection, true)
-  return () => {
-    window.removeEventListener('unhandledrejection', handleUnhandledRejection, true)
-    releaseWhiteboardPermissionGuard()
-  }
-}
-
 function parseSnapshot(source: string): TLStoreSnapshot | null {
   if (!source.trim()) return null
 
@@ -180,158 +154,6 @@ function serializeSnapshot(snapshot: TLStoreSnapshot): string {
 
 function getDocumentSnapshot(store: ReturnType<typeof createTLStore>): TLStoreSnapshot {
   return store.getStoreSnapshot()
-}
-
-function documentZoom(): number {
-  const inlineZoom = document.documentElement.style.getPropertyValue('zoom')
-  const computedZoom = getComputedStyle(document.documentElement).zoom
-  const zoom = inlineZoom || computedZoom
-  const parsed = Number.parseFloat(zoom)
-  if (!Number.isFinite(parsed) || parsed <= 0) return 1
-  return zoom.endsWith('%') ? parsed / 100 : parsed
-}
-
-function viewportBounds(screenBounds: Box | HTMLElement): Box | HTMLElement {
-  if (screenBounds instanceof Box) return screenBounds
-
-  const zoom = documentZoom()
-  if (zoom === 1) return screenBounds
-
-  const rect = screenBounds.getBoundingClientRect()
-  return new Box(
-    (rect.left || rect.x) / zoom,
-    (rect.top || rect.y) / zoom,
-    Math.max(rect.width / zoom, 1),
-    Math.max(rect.height / zoom, 1),
-  )
-}
-
-function zoomAdjustedPoint<T extends { x: number; y: number; z?: number }>(point: T, zoom: number): T {
-  return {
-    ...point,
-    x: point.x / zoom,
-    y: point.y / zoom,
-  }
-}
-
-function zoomAdjustedEvent(info: TLEventInfo): TLEventInfo {
-  const zoom = documentZoom()
-  if (zoom === 1) return info
-
-  switch (info.type) {
-    case 'click':
-    case 'pinch':
-    case 'pointer':
-    case 'wheel':
-      return {
-        ...info,
-        point: zoomAdjustedPoint(info.point, zoom),
-      } as TLEventInfo
-    default:
-      return info
-  }
-}
-
-function installZoomAwareViewport(editor: Editor): () => void {
-  const updateViewportScreenBounds = editor.updateViewportScreenBounds.bind(editor)
-  const updateViewport: Editor['updateViewportScreenBounds'] = (screenBounds, center) =>
-    updateViewportScreenBounds(viewportBounds(screenBounds), center)
-  const dispatch = editor.dispatch.bind(editor)
-  const animationFrameIds: number[] = []
-  const timeoutIds: number[] = []
-
-  editor.updateViewportScreenBounds = updateViewport
-  editor.dispatch = (info: TLEventInfo) => dispatch(zoomAdjustedEvent(info))
-
-  const updateCurrentCanvas = () => {
-    const canvas = editor.getContainer().querySelector<HTMLElement>('.tl-canvas')
-    if (canvas) updateViewport(canvas)
-  }
-
-  const scheduleViewportUpdate = () => {
-    updateCurrentCanvas()
-    animationFrameIds.push(window.requestAnimationFrame(updateCurrentCanvas))
-    timeoutIds.push(window.setTimeout(updateCurrentCanvas, 150))
-  }
-
-  scheduleViewportUpdate()
-  window.addEventListener('laputa-zoom-change', scheduleViewportUpdate)
-
-  return () => {
-    window.removeEventListener('laputa-zoom-change', scheduleViewportUpdate)
-    animationFrameIds.forEach((id) => {
-      window.cancelAnimationFrame(id)
-    })
-    timeoutIds.forEach((id) => {
-      window.clearTimeout(id)
-    })
-    editor.updateViewportScreenBounds = updateViewportScreenBounds
-    editor.dispatch = dispatch
-  }
-}
-
-function syncTldrawIconWebkitMask(icon: HTMLElement): void {
-  const mask = icon.style.getPropertyValue('mask').trim()
-  if (!mask) {
-    icon.style.removeProperty(WEBKIT_MASK_PROPERTY)
-    return
-  }
-
-  if (icon.style.getPropertyValue(WEBKIT_MASK_PROPERTY).trim() === mask) return
-  icon.style.setProperty(WEBKIT_MASK_PROPERTY, mask)
-}
-
-function syncTldrawIconWebkitMasks(root: HTMLElement): void {
-  if (root.matches(TLDRAW_UI_ICON_SELECTOR)) {
-    syncTldrawIconWebkitMask(root)
-  }
-
-  for (const icon of root.querySelectorAll<HTMLElement>(TLDRAW_UI_ICON_SELECTOR)) {
-    syncTldrawIconWebkitMask(icon)
-  }
-}
-
-function syncAddedTldrawIconMasks(node: Node): void {
-  if (!(node instanceof HTMLElement)) return
-  syncTldrawIconWebkitMasks(node)
-}
-
-function installTldrawWebkitIconMaskBridge(container: HTMLElement): () => void {
-  syncTldrawIconWebkitMasks(container)
-
-  const observer = new MutationObserver((mutations) => {
-    for (const mutation of mutations) {
-      if (mutation.type === 'attributes' && mutation.target instanceof HTMLElement) {
-        syncTldrawIconWebkitMasks(mutation.target)
-        continue
-      }
-
-      mutation.addedNodes.forEach(syncAddedTldrawIconMasks)
-    }
-  })
-
-  observer.observe(container, {
-    attributeFilter: ['class', 'style'],
-    attributes: true,
-    childList: true,
-    subtree: true,
-  })
-
-  return () => {
-    observer.disconnect()
-  }
-}
-
-function installWhiteboardRuntimeGuards(editor: Editor, options: WhiteboardRuntimeGuardOptions): () => void {
-  const cleanupZoomAwareViewport = installZoomAwareViewport(editor)
-  const cleanupWebkitIconMaskBridge = installTldrawWebkitIconMaskBridge(editor.getContainer())
-  const cleanupPlatformPermissionGuard = installTldrawPlatformPermissionGuard(options)
-
-  return () => {
-    cleanupPlatformPermissionGuard()
-    cleanupWebkitIconMaskBridge()
-    cleanupZoomAwareViewport()
-  }
 }
 
 interface TolariaTldrawDialogProps {
@@ -546,7 +368,9 @@ export function TldrawWhiteboard({
   const persistedSize = useMemo(() => normalizeSize({ height, width }), [height, width])
   const [resizingSize, setResizingSize] = useState<PixelSize | null>(null)
   const [permissionDeniedBoardId, setPermissionDeniedBoardId] = useState<string | null>(null)
+  const [pasteErrorBoardId, setPasteErrorBoardId] = useState<string | null>(null)
   const platformPermissionDenied = permissionDeniedBoardId === boardId
+  const pasteError = pasteErrorBoardId === boardId
   const visibleSize = resizingSize ?? persistedSize
   const { fullscreen, toggleFullscreen } = useFullscreenWhiteboard()
   const locale = useDocumentLocale()
@@ -563,6 +387,10 @@ export function TldrawWhiteboard({
   const tldrawUiComponents = useMemo(() => ({ Dialogs: TolariaTldrawDialogs }), [])
   const handleTldrawMount = useCallback((editor: Editor) =>
     installWhiteboardRuntimeGuards(editor, {
+      onIncompatiblePaste: () => {
+        trackEvent('whiteboard_paste_rejected', { reason: 'incompatible_schema' })
+        setPasteErrorBoardId(boardId)
+      },
       onPlatformPermissionDenied: () => { setPermissionDeniedBoardId(boardId) },
     }), [boardId])
 
@@ -678,6 +506,16 @@ export function TldrawWhiteboard({
         >
           <strong>{translate(locale, 'editor.whiteboard.permissionDeniedTitle')}</strong>
           <span>{translate(locale, 'editor.whiteboard.permissionDeniedBody')}</span>
+        </div>
+      ) : null}
+      {pasteError ? (
+        <div
+          role="alert"
+          className="tldraw-whiteboard__permission-error"
+          data-testid="tldraw-whiteboard-paste-error"
+        >
+          <strong>{translate(locale, 'editor.whiteboard.incompatiblePasteTitle')}</strong>
+          <span>{translate(locale, 'editor.whiteboard.incompatiblePasteBody')}</span>
         </div>
       ) : null}
       <ActionTooltip copy={{ label: fullscreenLabel }} side="left">

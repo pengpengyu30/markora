@@ -797,6 +797,8 @@
   "editor.wikilink.createNote": "Стварыце новую нататку пад назвай «{title}»",
   "editor.whiteboard.enterFullscreen": "Разгарнуць дошку",
   "editor.whiteboard.exitFullscreen": "Выйсці з поўнаэкраннай дошкі",
+  "editor.whiteboard.incompatiblePasteTitle": "Не атрымалася ўставіць змесціва дошкі",
+  "editor.whiteboard.incompatiblePasteBody": "Скапіраваная дошка выкарыстоўвае несумяшчальны фармат. Бягучая дошка засталася нязменнай; скапіюйце яе яшчэ раз з абноўленай версіі Tolaria або tldraw.",
   "editor.whiteboard.permissionDeniedTitle": "Дазвол на выкарыстанне дошкі заблакіраваны",
   "editor.whiteboard.permissionDeniedBody": "Tolaria не змагла выкарыстаць функцыю працоўнага стала, неабходную для гэтай дошкі. Дазвольце доступ у наладах сістэмы, а потым зноў адкрыйце нататку.",
   "editor.exportPdf.unavailable": "Адкрыйце нататку Markdown перад экспартам у PDF.",

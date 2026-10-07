@@ -797,6 +797,8 @@
   "editor.wikilink.createNote": "Vytvorte novú poznámku s názvom „{title}“",
   "editor.whiteboard.enterFullscreen": "Rozbaliť tabuľu",
   "editor.whiteboard.exitFullscreen": "Ukončiť zobrazenie tabule na celú obrazovku",
+  "editor.whiteboard.incompatiblePasteTitle": "Obsah tabule sa nepodarilo vložiť",
+  "editor.whiteboard.incompatiblePasteBody": "Skopírovaná tabuľa používa nekompatibilný formát. Aktuálna tabuľa zostala nezmenená; skopírujte ju znova z aktualizovanej verzie aplikácie Tolaria alebo tldraw.",
   "editor.whiteboard.permissionDeniedTitle": "Povolenie pre tabuľu bolo zablokované",
   "editor.whiteboard.permissionDeniedBody": "Tolaria nemohla použiť funkciu pracovnej plochy, ktorú táto tabuľa vyžaduje. Povoľte povolenie v nastaveniach systému a potom znova otvorte poznámku.",
   "editor.exportPdf.unavailable": "Pred exportom PDF otvorte poznámku vo formáte Markdown.",

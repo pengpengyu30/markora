@@ -797,6 +797,8 @@
   "editor.wikilink.createNote": "建立名為「{title}」的新筆記",
   "editor.whiteboard.enterFullscreen": "展開白板",
   "editor.whiteboard.exitFullscreen": "退出全螢幕白板",
+  "editor.whiteboard.incompatiblePasteTitle": "無法貼上白板內容",
+  "editor.whiteboard.incompatiblePasteBody": "複製的白板使用不相容的格式。目前畫板維持不變；請從更新後的 Tolaria 或 tldraw 版本再次複製。",
   "editor.whiteboard.permissionDeniedTitle": "白板權限遭封鎖",
   "editor.whiteboard.permissionDeniedBody": "Tolaria 無法使用此白板所需的桌面功能。請在系統設定中授予權限，然後重新開啟筆記。",
   "editor.exportPdf.unavailable": "在匯出 PDF 之前，請先開啟 Markdown 筆記。",

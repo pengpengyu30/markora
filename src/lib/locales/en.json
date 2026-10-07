@@ -797,6 +797,8 @@
   "editor.wikilink.createNote": "Create a new note called “{title}”",
   "editor.whiteboard.enterFullscreen": "Expand whiteboard",
   "editor.whiteboard.exitFullscreen": "Exit fullscreen whiteboard",
+  "editor.whiteboard.incompatiblePasteTitle": "Whiteboard content could not be pasted",
+  "editor.whiteboard.incompatiblePasteBody": "The copied whiteboard uses an incompatible format. The current board was left unchanged; copy it again from an updated Tolaria or tldraw version.",
   "editor.whiteboard.permissionDeniedTitle": "Whiteboard permission blocked",
   "editor.whiteboard.permissionDeniedBody": "Tolaria could not use a desktop capability that this whiteboard needs. Allow the permission in your system settings, then reopen the note.",
   "editor.exportPdf.unavailable": "Open a Markdown note before exporting a PDF.",

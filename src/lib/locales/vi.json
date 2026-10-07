@@ -797,6 +797,8 @@
   "editor.wikilink.createNote": "Tạo một ghi chú mới có tên “{title}”",
   "editor.whiteboard.enterFullscreen": "Mở rộng bảng trắng",
   "editor.whiteboard.exitFullscreen": "Thoát chế độ bảng trắng toàn màn hình",
+  "editor.whiteboard.incompatiblePasteTitle": "Không thể dán nội dung bảng trắng",
+  "editor.whiteboard.incompatiblePasteBody": "Bảng trắng được sao chép sử dụng định dạng không tương thích. Bảng hiện tại vẫn được giữ nguyên; hãy sao chép lại từ phiên bản Tolaria hoặc tldraw đã cập nhật.",
   "editor.whiteboard.permissionDeniedTitle": "Quyền truy cập bảng trắng bị chặn",
   "editor.whiteboard.permissionDeniedBody": "Tolaria không thể sử dụng một tính năng trên máy tính mà bảng trắng này cần. Cho phép quyền trong cài đặt hệ thống của bạn, sau đó mở lại ghi chú.",
   "editor.exportPdf.unavailable": "Mở ghi chú Markdown trước khi xuất PDF.",

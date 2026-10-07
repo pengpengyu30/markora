@@ -235,3 +235,4 @@ proposed → active → superseded
 | [0180](0180-shared-cross-runtime-word-count-contract.md) | Shared cross-runtime word-count contract | active |
 | [0181](0181-shared-cross-runtime-inline-markdown-stripping-contract.md) | Shared cross-runtime inline-markdown stripping contract | active |
 | [0182](0182-app-owned-cross-platform-pdf-rendering.md) | App-owned cross-platform PDF rendering | active |
+| [0183](0183-normalize-stale-prosemirror-selection-boundaries.md) | Normalize stale ProseMirror selection boundaries | active |

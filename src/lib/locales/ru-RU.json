@@ -797,6 +797,8 @@
   "editor.wikilink.createNote": "Создайте новую заметку под названием «{title}»",
   "editor.whiteboard.enterFullscreen": "Развернуть доску",
   "editor.whiteboard.exitFullscreen": "Выйти из полноэкранной доски",
+  "editor.whiteboard.incompatiblePasteTitle": "Не удалось вставить содержимое доски",
+  "editor.whiteboard.incompatiblePasteBody": "Скопированная доска использует несовместимый формат. Текущая доска осталась без изменений; скопируйте её ещё раз из обновлённой версии Tolaria или tldraw.",
   "editor.whiteboard.permissionDeniedTitle": "Разрешение для доски заблокировано",
   "editor.whiteboard.permissionDeniedBody": "Tolaria не удалось использовать функцию настольного компьютера, необходимую для этой доски. Разрешите доступ в настройках системы, а затем снова откройте заметку.",
   "editor.exportPdf.unavailable": "Откройте заметку Markdown перед экспортом в PDF.",

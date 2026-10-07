@@ -19,7 +19,9 @@ type ArrowKey = 'ArrowDown' | 'ArrowUp'
 type EmptyListNavigationEditor = EditorLike & { isEditable?: boolean }
 type CursorPosition = ReturnType<EmptyListNavigationEditor['getTextCursorPosition']>
 type BlockLike = {
+  children?: BlockLike[]
   content?: unknown
+  id?: string
   type: string
 }
 type Navigation = {
@@ -70,9 +72,12 @@ function isEmptyListItem(block: BlockLike | null | undefined): block is BlockLik
   return EMPTY_LIST_TYPES.has(block.type) && hasNoInlineContent(block)
 }
 
-function isAtVisualEdge(view: RichEditorView, navigation: Navigation): boolean {
+function isAtVisualEdge(
+  view: RichEditorView,
+  direction: Navigation['direction'] | 'backward',
+): boolean {
   if (!view.state.selection.empty) return false
-  return view.endOfTextblock(navigation.direction)
+  return view.endOfTextblock(direction)
 }
 
 function moveToAdjacentEmptyList(
@@ -80,12 +85,63 @@ function moveToAdjacentEmptyList(
   view: RichEditorView,
   navigation: Navigation,
 ): boolean {
-  if (!isAtVisualEdge(view, navigation)) return false
+  if (!isAtVisualEdge(view, navigation.direction)) return false
 
   const adjacentBlock = navigation.adjacentBlock(editor.getTextCursorPosition())
   if (!isEmptyListItem(adjacentBlock)) return false
 
   editor.setTextCursorPosition(adjacentBlock, navigation.placement)
+  return true
+}
+
+function isNestedUnderList(
+  blocks: readonly BlockLike[],
+  targetId: string,
+  parentIsList = false,
+): boolean {
+  for (const block of blocks) {
+    if (block.id === targetId) return parentIsList
+    if (block.children && isNestedUnderList(block.children, targetId, EMPTY_LIST_TYPES.has(block.type))) return true
+  }
+  return false
+}
+
+function isNestedEmptyParagraphWithChildren(
+  block: BlockLike,
+  document: readonly BlockLike[],
+): boolean {
+  if (block.type !== 'paragraph' || !hasNoInlineContent(block)) return false
+  if (!block.id || !block.children?.length) return false
+  return isNestedUnderList(document, block.id)
+}
+
+function isPlainBackspaceAtBlockStart(
+  event: ArrowEvent,
+  editor: EmptyListNavigationEditor,
+  view: RichEditorView,
+): boolean {
+  return event.key === 'Backspace'
+    && !hasModifier(event)
+    && editor.isEditable !== false
+    && !isComposingKeyboardEvent(event, view)
+    && isAtVisualEdge(view, 'backward')
+}
+
+function promoteNestedEmptyParagraph(
+  event: ArrowEvent,
+  editor: EmptyListNavigationEditor,
+  view: RichEditorView,
+): boolean {
+  if (!isPlainBackspaceAtBlockStart(event, editor, view)) return false
+
+  const { block } = editor.getTextCursorPosition()
+  if (!isNestedEmptyParagraphWithChildren(block, editor.document)) return false
+
+  const children = block.children ?? []
+  const [firstChild] = children
+  editor.replaceBlocks([block], children)
+  editor.setTextCursorPosition(firstChild, 'start')
+  consumeKeyboardEvent(event)
   return true
 }
 
@@ -114,7 +170,8 @@ export const createRichEditorEmptyListNavigationExtension = createExtension(({ e
   return {
     key: 'richEditorEmptyListNavigation',
     mount: createCaptureKeydownMount(richEditor, (event, view) => {
-      if (view) handleArrowKey(event, richEditor, view)
+      if (!view || promoteNestedEmptyParagraph(event, richEditor, view)) return
+      handleArrowKey(event, richEditor, view)
     }),
   } as const
 })

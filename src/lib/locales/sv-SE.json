@@ -797,6 +797,8 @@
   "editor.wikilink.createNote": "Skapa en ny anteckning med namnet ”{title}”",
   "editor.whiteboard.enterFullscreen": "Expandera whiteboard",
   "editor.whiteboard.exitFullscreen": "Avsluta helskärm för whiteboard",
+  "editor.whiteboard.incompatiblePasteTitle": "Whiteboard-innehållet kunde inte klistras in",
+  "editor.whiteboard.incompatiblePasteBody": "Den kopierade whiteboarden använder ett inkompatibelt format. Den aktuella tavlan har lämnats oförändrad. Kopiera den igen från en uppdaterad version av Tolaria eller tldraw.",
   "editor.whiteboard.permissionDeniedTitle": "Whiteboard-behörighet blockerad",
   "editor.whiteboard.permissionDeniedBody": "Tolaria kunde inte använda en skrivbordsfunktion som den här whiteboardtavlan behöver. Tillåt behörigheten i dina systeminställningar och öppna sedan anteckningen igen.",
   "editor.exportPdf.unavailable": "Öppna en Markdown-anteckning innan du exporterar en PDF.",
