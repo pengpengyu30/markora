@@ -3,6 +3,9 @@ set -euo pipefail
 
 total_shards="${1:-${PLAYWRIGHT_SHARDS:-8}}"
 concurrency="${PLAYWRIGHT_CONCURRENCY:-$total_shards}"
+# Optional sub-range, so CI can split the shards across containers.
+first_shard="${PLAYWRIGHT_FIRST_SHARD:-1}"
+last_shard="${PLAYWRIGHT_LAST_SHARD:-$total_shards}"
 log_dir="${TMPDIR:-/tmp}/tolaria-playwright-shards-$$"
 batch_pids=()
 shared_server="${PLAYWRIGHT_SHARED_SERVER:-1}"
@@ -18,6 +21,12 @@ fi
 
 if [[ ! "$concurrency" =~ ^[1-9][0-9]*$ ]]; then
   printf 'PLAYWRIGHT_CONCURRENCY must be a positive integer\n' >&2
+  exit 2
+fi
+
+if [[ ! "$first_shard" =~ ^[1-9][0-9]*$ || ! "$last_shard" =~ ^[1-9][0-9]*$ ]] ||
+  (( first_shard > last_shard || last_shard > total_shards )); then
+  printf 'PLAYWRIGHT_FIRST_SHARD/PLAYWRIGHT_LAST_SHARD must satisfy 1 <= first <= last <= %s\n' "$total_shards" >&2
   exit 2
 fi
 
@@ -75,6 +84,33 @@ wait_for_shared_server() {
   done
 }
 
+warm_shared_server() {
+  if [[ "${PLAYWRIGHT_WARM_SERVER:-0}" != "1" ]]; then
+    return
+  fi
+
+  # A cold Vite server compiles the whole module graph during the first shards' tests, which
+  # can push timing-sensitive smoke tests past their timeouts. Load the app once first.
+  local started="$SECONDS"
+  printf '[chunk-playwright] warming shared server at %s\n' "$base_url"
+  if ! timeout 150 node -e '
+    const { chromium } = require("@playwright/test")
+    const warm = async () => {
+      const browser = await chromium.launch()
+      const page = await browser.newPage()
+      await page.goto(process.argv[1], { waitUntil: "networkidle", timeout: 120000 })
+      await browser.close()
+    }
+    warm().catch((error) => {
+      console.error(error.message)
+      process.exit(1)
+    })
+  ' "$base_url"; then
+    printf '[chunk-playwright] warm-up failed; continuing with a cold server\n' >&2
+  fi
+  printf '[chunk-playwright] warm-up took %ss\n' "$((SECONDS - started))"
+}
+
 start_shared_server() {
   if [[ "$shared_server" != "1" ]]; then
     return
@@ -85,6 +121,7 @@ start_shared_server() {
     node scripts/playwright-smoke-server.mjs "$server_port" >"${log_dir}/shared-server.log" 2>&1 &
   server_pid="$!"
   wait_for_shared_server
+  warm_shared_server
 }
 
 run_batch() {
@@ -95,7 +132,7 @@ run_batch() {
 
   batch_pids=()
 
-  while [[ "$shard" -le "$total_shards" && "${#batch_pids[@]}" -lt "$concurrency" ]]; do
+  while [[ "$shard" -le "$last_shard" && "${#batch_pids[@]}" -lt "$concurrency" ]]; do
     local name="smoke-${shard}-${total_shards}"
     local log_file="${log_dir}/${name}.log"
 
@@ -130,12 +167,12 @@ run_batch() {
   return "$failures"
 }
 
-next_shard=1
+next_shard="$first_shard"
 failed=0
 
 start_shared_server
 
-while [[ "$next_shard" -le "$total_shards" ]]; do
+while [[ "$next_shard" -le "$last_shard" ]]; do
   if ! run_batch "$next_shard"; then
     failed=1
   fi
